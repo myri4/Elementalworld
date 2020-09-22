@@ -1,0 +1,9 @@
+right =  "assets/skybox/right.jpg"
+left =   "assets/skybox/left.jpg"
+top =    "assets/skybox/top.jpg"
+bottom = "assets/skybox/bottom.jpg"
+front =  "assets/skybox/front.jpg"
+back =   "assets/skybox/back.jpg"
+vertexPath = "shaderpacks/default/skybox.vs"
+fragmentPath = "shaderpacks/default/skybox.fs"
+skyboxSize = 50.0

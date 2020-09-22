@@ -1,0 +1,12 @@
+id = 1
+isCollidable = true
+fluid = false
+Discription = "elementalworld:container"
+Name = "Container"
+Drop = "elementalworld:container" 
+Top =    "assets/textures/block/dirt.png"
+Left =   "assets/textures/block/grassblock_side.png"
+Right =  "assets/textures/block/grassblock_side.png"
+Front =  "assets/textures/block/grassblock_side.png"
+Back =   "assets/textures/block/grassblock_side.png"
+Bottom = "assets/textures/block/grassblock_top.png"

@@ -1,0 +1,9 @@
+screenWidth = 1200
+screenHeight = 720
+framerateLimit = 0
+antialiasingLevel = 4
+vsync = false
+fullscreen = false
+majorVersion = 4
+minorVersion = 6
+iconPath = "assets/awesomeface.png"
