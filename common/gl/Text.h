@@ -105,8 +105,9 @@ namespace gl {
             TextVB.Bind();
 
             // iterate through all characters
-            for (std::string::const_iterator c = text.begin(); c != text.end(); c++) {
-                Character ch = Characters[*c];
+            //for (std::string::const_iterator c = text.begin(); c != text.end(); c++) 
+            for(auto c : text){
+                Character ch = Characters[c];
 
                 float xpos = pos.x + ch.Bearing.x * scale;
                 float ypos = pos.y - (ch.Size.y - ch.Bearing.y) * scale;
@@ -116,12 +117,12 @@ namespace gl {
                 // update VBO for each character
                 float vertices[6][4] = {
                     { xpos,     ypos + h,   0.0f, 0.0f },
-                    { xpos,     ypos,       0.0f, 1.0f },
                     { xpos + w, ypos,       1.0f, 1.0f },
+                    { xpos,     ypos,       0.0f, 1.0f },
 
                     { xpos,     ypos + h,   0.0f, 0.0f },
-                    { xpos + w, ypos,       1.0f, 1.0f },
-                    { xpos + w, ypos + h,   1.0f, 0.0f }
+                    { xpos + w, ypos + h,   1.0f, 0.0f },
+                    { xpos + w, ypos,       1.0f, 1.0f }
                 };
                 // render glyph texture over quad
                 glBindTexture(GL_TEXTURE_2D, ch.TextureID);

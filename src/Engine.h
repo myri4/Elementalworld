@@ -26,6 +26,12 @@ private:
 	gl::VertexBuffer chunkMeshBuffer;
 	
 
+	//Screen buffer
+	gl::VertexBuffer scrQuad;
+	gl::Shader screenShader;
+	gl::FrameBuffer screen;
+
+
 //----------------------------------------------------------------------------------------
 	void loadFromFile(const char* file) {
 		Lua windowScript(file);
@@ -143,14 +149,13 @@ private:
 
 	//----------------------------------------------------------------------------------------------------------------------
 
-	void OnCreate() {
+	void OnCreate() override {
 		loadFromFile("config/window.lua");
 		window.setActive();
 		if (!gladLoadGL()) std::cout << "Failed to initialize GLAD" << "\n";
 
 		// OpenGL state
 		// ------------
-		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -163,7 +168,23 @@ private:
 		glCullFace(GL_BACK);
 		glFrontFace(GL_CW);
 
+		float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+		// positions   // texCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
 
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		 1.0f,  1.0f,  1.0f, 1.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+		};
+
+		screenShader.Create("shaderpacks/default/screenShader.vs", "shaderpacks/default/screenShader.fs");
+		screen.Create(window.getSize().x, window.getSize().y);
+
+		scrQuad.Create(quadVertices, sizeof(quadVertices));
+		gl::VertexAttribPointer(0, 2, sizeof(float) * 4, (void*)0);
+		gl::VertexAttribPointer(1, 2, sizeof(float) * 4, (void*)(2 * sizeof(float)));
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		mainShader.Create("shaderpacks/default/core.vs", "shaderpacks/default/core.fs");
@@ -182,7 +203,10 @@ private:
 	
 	//----------------------------------------------------------------------------------------------------------------------
 
-	void OnUpdate() {
+	void OnUpdate() override {
+		screen.Bind();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glEnable(GL_DEPTH_TEST);
 		mainCamera.UpdateCameraAngles({ sf::Mouse::getPosition().x, sf::Mouse::getPosition().y }, { window.getPosition().x, window.getPosition().y }, CenterMouse);
 		
 
@@ -211,7 +235,27 @@ private:
 
 		view = glm::mat4(glm::mat3(mainCamera.GetViewMatrix()));
 		mainSkybox.Draw(window.getSize().x, window.getSize().y, view, projection);
+		deltaTime = deltaTimer.restart().asSeconds();		
 
+			//glFrontFace(GL_CCW);
+			glDisable(GL_DEPTH_TEST);
+			text.Draw("ZDRKPBEBCE", { 25.0f, 700.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
+			text.Draw("FPS: " + std::to_string(FPS), { 25.0f, 670.0f }, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
+
+			glEnable(GL_DEPTH_TEST);
+			//glFrontFace(GL_CW);
+		window.display();
+		
+		// now bind back to default framebuffer and draw a quad plane with the attached framebuffer color texture
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		// clear all relevant buffers
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		screenShader.use();
+		scrQuad.Bind();
+		glDisable(GL_DEPTH_TEST);
+		screen.BindTexture();	// use the color attachment texture as the texture of the quad plane
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 	}
 
 public:
@@ -221,7 +265,6 @@ public:
 	void Start() override {
 		OnCreate();
 		while (GetEngineStatus() == EngineStatus::OK){
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		//Game Events
 		OnUpdate();
 		// Events
@@ -229,16 +272,6 @@ public:
 		// Input handler
 		OnInput();
 
-		deltaTime = deltaTimer.restart().asSeconds();		
-			glFrontFace(GL_CCW);
-			glDisable(GL_DEPTH_TEST);
-			text.Draw(std::to_string(1), { 25.0f, 700.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
-			text.Draw("FPS: " + std::to_string(FPS), { 25.0f, 670.0f }, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
-			//{ 25.0f, 670.0f }, 0.5f, glm::vec3(0.5, 0.8f, 0.2f)
-
-			glEnable(GL_DEPTH_TEST);
-			glFrontFace(GL_CW);
-		window.display();
 
 		//Get the framerate
 		frameCount++;
