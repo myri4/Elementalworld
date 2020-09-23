@@ -133,8 +133,8 @@ namespace gl {
 
         Shader shader;
 	private:
-        uint32_t activeTexture;
-        uint32_t textureID;
+        uint32_t activeTexture = 0;
+        uint32_t textureID = 0;
         VertexBuffer skyboxArray;
         IndexBuffer skyboxIndicies;
 	};

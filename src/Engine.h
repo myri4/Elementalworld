@@ -159,6 +159,8 @@ private:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+		glEnable(GL_MULTISAMPLE);
+
 		//Stencil Test
 		glCall(glStencilMask(0xFF)); // each bit is written to the stencil buffer as is
 		glCall(glStencilMask(0x00)); // each bit ends up as 0 in the stencil buffer (disabling writes)
@@ -255,6 +257,7 @@ private:
 		scrQuad.Bind();
 		glDisable(GL_DEPTH_TEST);
 		screen.BindTexture();	// use the color attachment texture as the texture of the quad plane
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 	}
 

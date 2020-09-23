@@ -116,9 +116,6 @@
     <ClInclude Include="common\gl\VertexArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\Utilitiess\SFMLCLock.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\Utilitiess\State.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -132,6 +129,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\wclibs\wclibspch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Utilitiess\Random.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
