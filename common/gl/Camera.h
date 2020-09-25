@@ -1,23 +1,11 @@
 #pragma once
 
-#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <vector>
-#include <wclibs/Lua.hpp>
+#include <Utilitiess/Lua.hpp>
+#include <Utilitiess/Mouse.hpp>
 
-class Mouse{
-public:
-	glm::vec2 position;
-	void setPosition(glm::vec2 pos) {
-
-	}
-private:
-#ifdef _WIN32
-#endif // _WIN32
-
-};
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
 	FORWARD,
@@ -118,11 +106,11 @@ public:
 			Position.y -= velocity;
 	}
 
-	void UpdateCameraAngles(glm::vec2 mousepos, glm::vec2 windowpos, bool centerMouse = true, bool invertMouse = false) {
+	void UpdateCameraAngles(glm::vec2 windowpos, bool centerMouse = true, bool invertMouse = false) {
 
 		int32_t xt, yt;
 		
-		glm::vec2 pos = mousepos;
+		glm::vec2 pos = ew::GetMousePos();
 
 		xt = windowpos.x + 400;
 		yt = windowpos.y + 300;
@@ -142,7 +130,7 @@ public:
 		// update Front, Right and Up Vectors using the updated Euler angles
 			if (centerMouse) {
 				updateCameraVectors();
-				sf::Mouse::setPosition(sf::Vector2i(xt, yt));
+				ew::SetMousePosition(xt, yt);
 			}
 	}
 

@@ -183,11 +183,13 @@
     <ClInclude Include="common\gl\Text.h" />
     <ClInclude Include="common\gl\Texture.h" />
     <ClInclude Include="common\gl\VertexArray.h" />
+    <ClInclude Include="common\Utilitiess\Keyboard.hpp" />
+    <ClInclude Include="common\Utilitiess\Mouse.hpp" />
     <ClInclude Include="common\Utilitiess\Random.hpp" />
     <ClInclude Include="common\Utilitiess\State.h" />
     <ClInclude Include="common\Utilitiess\Time.hpp" />
     <ClInclude Include="common\wclibs\Core.hpp" />
-    <ClInclude Include="common\wclibs\Lua.hpp" />
+    <ClInclude Include="common\Utilitiess\Lua.hpp" />
     <ClInclude Include="common\wclibs\wclibspch.h" />
     <ClInclude Include="gl\Camera.h" />
     <ClInclude Include="gl\Cubemap.h" />

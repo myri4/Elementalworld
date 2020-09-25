@@ -125,13 +125,19 @@
     <ClInclude Include="common\wclibs\Core.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\wclibs\Lua.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\wclibs\wclibspch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\Utilitiess\Random.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Utilitiess\Mouse.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Utilitiess\Keyboard.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Utilitiess\Lua.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -20,6 +20,8 @@ public:
 	Shader (){}
 	Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr){Create(vertexPath, fragmentPath, geometryPath);}
 	ShaderStatus Create(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr) {
+		if (!m_RendererID) {
+
 		// 1. retrieve the vertex/fragment source code from filePath
 		std::string vertexCode;
 		std::string fragmentCode;
@@ -92,6 +94,8 @@ public:
 		glDeleteShader(fragment);
 		if (geometryPath != nullptr)
 			glDeleteShader(geometry);
+		return ShaderStatus::OK;
+		}
 		return ShaderStatus::OK;
 	}
 	//void stringSource(const char*){}
@@ -207,6 +211,6 @@ private:
 			}
 		}
 	}
-	uint32_t m_RendererID;
+	uint32_t m_RendererID = 0;
 };
 }

@@ -4,7 +4,7 @@
 #include <gl/glErrors.h>
 #include <gl/IndexBuffer.h>
 #include <gl/VertexArray.h>
-#include <wclibs/Lua.hpp>
+#include <Utilitiess/Lua.hpp>
 
 namespace gl {
 

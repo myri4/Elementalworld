@@ -1,7 +1,7 @@
 ﻿#include "Engine.h"
 
 int main() {
-	wc::GameEngine engine;
-	engine.Start();
-		
+	wc::GameEngine* engine = new wc::GameEngine;
+	engine->Start();
+	delete engine;
 }

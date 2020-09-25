@@ -1,6 +1,6 @@
 #pragma once
 #include <wclibs/wclibspch.h>
-#include <wclibs/Lua.hpp>
+#include <Utilitiess/Lua.hpp>
 #include "world/Chunk.h"
 #include <Utilitiess/State.h>
 
@@ -142,8 +142,8 @@ private:
 		if (!window.hasFocus()) CenterMouse = false;
 		else  CenterMouse = true; 
 
-		if (CenterMouse) window.setMouseCursorVisible(false);
-		else window.setMouseCursorVisible(true);
+		if (CenterMouse) ew::ShowMouse(false);
+		else ew::ShowMouse(true);
 
 	}
 
@@ -209,9 +209,8 @@ private:
 		screen.Bind();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
-		mainCamera.UpdateCameraAngles({ sf::Mouse::getPosition().x, sf::Mouse::getPosition().y }, { window.getPosition().x, window.getPosition().y }, CenterMouse);
+		mainCamera.UpdateCameraAngles({ window.getPosition().x, window.getPosition().y }, CenterMouse);
 		
-
 		// activate shader
 		mainShader.use();
 

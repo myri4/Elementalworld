@@ -8,7 +8,7 @@ public:
 	NonCopyable(const NonCopyable&) = delete;
 };
 
-enum class EngineStatus {OK, FAIL, ERROR, FILECANTBELOCATED};
+enum class EngineStatus {OK, FAIL, ENGINE_ERROR, FILECANTBELOCATED};
 
 class Engine : NonCopyable {
 public:
