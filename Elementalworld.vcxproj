@@ -72,8 +72,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)common;$(SolutionDir)Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -86,8 +86,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)common;$(SolutionDir)Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
