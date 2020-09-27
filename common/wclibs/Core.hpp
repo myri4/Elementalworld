@@ -29,6 +29,8 @@
 #pragma comment(lib, "odbc32.lib")
 #pragma comment(lib, "odbccp32.lib")
 
+#pragma comment(lib, "glfw3.lib")
+
 #ifdef _DEBUG
 #pragma comment(lib, "sfml-graphics-d.lib")
 #pragma comment(lib, "sfml-window-d.lib")

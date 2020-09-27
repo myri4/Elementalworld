@@ -37,6 +37,11 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         return FrameBufferStatus::OK;
     }
+    void Update(int x, int y) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, m_RendererID);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_RendererID);
+        glBlitFramebuffer(0, 0, x, y, 0, 0, x, y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    }
     void Bind() {
         glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
     }

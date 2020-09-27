@@ -1,5 +1,5 @@
 #pragma once
-
+#include "../wclibs/Core.hpp"
 namespace ew{
 
 	enum class Key {
@@ -117,6 +117,8 @@ namespace ew{
         Return = Enter         ///<  Use Enter instead
 	};
     bool isKeyPressed(Key key) {
+#ifdef _WIN32
+#endif // _WIN32
 
         return true;
     }

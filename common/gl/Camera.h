@@ -127,6 +127,11 @@ public:
 			if (Pitch < -89.0f)
 				Pitch = -89.0f;
 
+			if (Yaw > 360.0f)
+				Yaw = 0.0f;
+			if (Yaw < -360.0f)
+				Yaw = 0.0f;
+
 		// update Front, Right and Up Vectors using the updated Euler angles
 			if (centerMouse) {
 				updateCameraVectors();

@@ -102,10 +102,10 @@ namespace gl {
             glBindVertexArray(0);
             return TextStatus::OK;
         }
-    protected:
         gl::VertexBuffer TextVB;
-
         std::map<char, Character> Characters;
+    protected:
+
     };
     class Text {
     public:
