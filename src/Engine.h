@@ -6,6 +6,7 @@
 #include "Renderer2D.hpp"
 
 namespace wc {
+
 	class GameEngine : public Engine {
 	private:
 		sf::RenderWindow window;

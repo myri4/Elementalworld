@@ -140,6 +140,9 @@
     <ClInclude Include="src\Renderer2D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\Utilitiess\Window.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\camera.lua" />

@@ -30,6 +30,7 @@
 #pragma comment(lib, "odbccp32.lib")
 
 #pragma comment(lib, "glfw3.lib")
+#pragma comment(lib, "irrKlang.lib")
 
 #ifdef _DEBUG
 #pragma comment(lib, "sfml-graphics-d.lib")
