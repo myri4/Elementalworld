@@ -1,6 +1,6 @@
 #pragma once
 
-#include <wclibs/wclibspch.h>
+#include <wclibs/pch.hpp>
 
 #include "../Block.h"
 

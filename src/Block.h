@@ -1,6 +1,6 @@
 #pragma once
 
-#include <wclibs/wclibspch.h>
+#include <wclibs/pch.hpp>
    
 namespace wc{
 enum BlockType { Fluid, Solid, Air, Leave };

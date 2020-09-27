@@ -3,21 +3,22 @@
 #include <glad/glad.h>
 
 #include <iostream>
+#include <algorithm>
+#include <cmath>
+#include <ctime>
+#include <math.h>
+#include <future>
+#include <thread>
+#include <memory>
+
 #include <fstream>
 #include <string>
 #include <vector>
 #include <ostream>
-#include <algorithm>
-#include <cmath>
 #include <cstdlib>
-#include <ctime>
-#include <math.h>
 #include <map>
 #include <sstream>
 #include <array>
-#include <memory>
-#include <future>
-#include <thread>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -62,7 +63,7 @@
 #include <gl/FrameBuffer.h>
 
 //Core file
-#include "Core.hpp"
+#include <wclibs/Core.hpp>
 
 //Lua
 #include <Utilitiess/Lua.hpp>
