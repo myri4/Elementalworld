@@ -143,6 +143,9 @@
     <ClInclude Include="common\wclibs\pch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\Utilitiess\NonCopyable.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\camera.lua" />

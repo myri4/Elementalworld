@@ -5,12 +5,11 @@
 #include <glm/glm.hpp>
 #include <glad/glad.h>
 #include <gl/Shaders.h>
-#include <gl/glErrors.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
 namespace gl {
-    enum class TextStatus {OK, COULD_NOT_INIT_FREETYPE_LIB, FAILED_TO_FIND_FONT, FAILED_TO_LOAD_FONT, FAILED_TO_LOAD_GLYPH};
+    enum class TextStatus : int {OK, COULD_NOT_INIT_FREETYPE_LIB, FAILED_TO_FIND_FONT, FAILED_TO_LOAD_FONT, FAILED_TO_LOAD_GLYPH};
         class Character {
         public:
             Character() {

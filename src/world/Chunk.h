@@ -9,17 +9,6 @@ wc::Block grassBlock;
 static const size_t chunkSize = 32;
 static const float blockSize = 0.5f;
 
-class Vertex {
-public:
-	glm::vec3 Position = { 0,0,0 };
-	glm::vec2 TexCoords = { 0,0 };
-	float TexID = 0;
-	Vertex() {}
-	Vertex(const Vertex& vertex) : Position(vertex.Position), TexCoords(vertex.TexCoords), TexID(vertex.TexID) {}
-	Vertex(glm::vec3 pos, glm::vec2 texCoord, float texID) : Position(pos), TexCoords(texCoord), TexID(texID) {}
-	~Vertex() {}
-};
-
 using Face = std::array < glm::vec3, 4 >;
 
 Face BACK_FACE = {
@@ -80,13 +69,15 @@ public: // Functions
 		//Temp
 		int limit = 32;
 		for (int x = 0; x <= limit; x++)		
-			for (int y = 0; y <= 1; y++)
+			for (int y = 0; y <= 10; y++) {
 					chunkData[x][y][0] = 1;
-
+			}
 
 		chunkData[0][0][0] = 1;
 
 		chunkPosition = pos;
+		chunkData[5][5][5] = 1;
+		chunkData[5][5][6] = 1;
 
 		chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(Vertex), GL_DYNAMIC_DRAW);
 		gl::VertexAttribPointer(0, 3, sizeof(Vertex), (void*)offsetof(Vertex, Position));  // position attribute
@@ -133,7 +124,7 @@ public: // Functions
 	}
 	void Draw(gl::Shader& shader) {
 
-		/*if (IndexCount > MaxIndexCount || TextureSlotIndex > MaxTextures) {
+		/*if (IndexCount > MaxIndexCount || TextureSlotIndex > GetMaxTextures()) {
 			EndBatch();
 			Flush();
 			BeginBatch();
@@ -177,8 +168,11 @@ private:// Functions
 
 
 	void addFace(Face& face, glm::vec3 pos, float TexID) {
-		for (int i = 0; i < 4; i++) 
+		for (int i = 0; i < 4; i++) {
 			chunkMesh[i + offset] = Vertex(face[i] + pos, TexCoords[i], TexID);
+			//std::cout << pos.x << " " << pos.y << " " << pos.z<< "\n";
+		}
+
 		offset += 4;
 		IndexCount += 6;
 	}

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <glad/glad.h>
 
 #include <iostream>
 #include <algorithm>
@@ -29,20 +28,15 @@
 #include <SFML/Config.hpp>
 #include <SFML/GpuPreference.hpp>
 
-//main
-//#include <SFML/Main.hpp>
+//OpenGL
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 //window
 #include <SFML/Window/Clipboard.hpp>
-//#include <SFML/Window/Context.hpp>
 #include <SFML/Window/ContextSettings.hpp>
-//#include <SFML/Window/Cursor.hpp>
 #include <SFML/Window/Event.hpp>
-//#include <SFML/Window/Joystick.hpp>
 #include <SFML/Window/Keyboard.hpp>
-//#include <SFML/Window/Mouse.hpp>
-//#include <SFML/Window/Sensor.hpp>
-//#include <SFML/Window/Touch.hpp>
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Window/Window.hpp>
 #include <SFML/Window/WindowHandle.hpp>
@@ -52,7 +46,6 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 
 //Custom libraries
-//#include <gl/glErrors.h>
 #include <gl/Camera.h>
 #include <gl/Shaders.h>
 #include <gl/Texture.h>
@@ -67,4 +60,9 @@
 
 //Lua
 #include <Utilitiess/Lua.hpp>
-#include <GLFW/glfw3.h>
+
+//Sound
+#include <irrKlang/irrKlang.h>
+
+#include <Utilitiess/Keyboard.hpp>
+#include <Utilitiess/Mouse.hpp>

@@ -7,7 +7,6 @@
 #include <fstream>
 #include <sstream>
 
-#include "glErrors.h"
 
 namespace gl{
 	enum class ShaderStatus {
@@ -64,21 +63,21 @@ public:
 		uint32_t vertex, fragment;
 		// vertex shader
 		vertex = glCreateShader(GL_VERTEX_SHADER);
-		glCall(glShaderSource(vertex, 1, &vShaderCode, nullptr));
-		glCall(glCompileShader(vertex));
+		glShaderSource(vertex, 1, &vShaderCode, nullptr);
+		glCompileShader(vertex);
 		checkCompileErrors(vertex, "VERTEX");
 		// fragment Shader
 		fragment = glCreateShader(GL_FRAGMENT_SHADER);
-		glCall(glShaderSource(fragment, 1, &fShaderCode, nullptr));
-		glCall(glCompileShader(fragment));
+		glShaderSource(fragment, 1, &fShaderCode, nullptr);
+		glCompileShader(fragment);
 		checkCompileErrors(fragment, "FRAGMENT");
 		// if geometry shader is given, compile geometry shader
 		uint32_t geometry;
 		if (geometryPath != nullptr) {
 			const char* gShaderCode = geometryCode.c_str();
 			geometry = glCreateShader(GL_GEOMETRY_SHADER);
-			glCall(glShaderSource(geometry, 1, &gShaderCode, nullptr));
-			glCall(glCompileShader(geometry));
+			glShaderSource(geometry, 1, &gShaderCode, nullptr);
+			glCompileShader(geometry);
 			checkCompileErrors(geometry, "GEOMETRY");
 		}
 		// shader Program
@@ -87,7 +86,7 @@ public:
 		glAttachShader(m_RendererID, fragment);
 		if (geometryPath != nullptr)
 			glAttachShader(m_RendererID, geometry);
-		glCall(glLinkProgram(m_RendererID));
+		glLinkProgram(m_RendererID);
 		checkCompileErrors(m_RendererID, "PROGRAM");
 		// delete the shaders as they're linked into our program now and no longer necessery
 		glDeleteShader(vertex);
@@ -194,16 +193,16 @@ private:
 		char infoLog[1024];
 		if (type != "PROGRAM")
 		{
-			glCall(glGetShaderiv(shader, GL_COMPILE_STATUS, &success));
+			glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 			if (!success)
 			{
-				glCall(glGetShaderInfoLog(shader, 1024, nullptr, infoLog));
+				glGetShaderInfoLog(shader, 1024, nullptr, infoLog);
 				std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- ------------------------------------------------------ \n";
 			}
 		}
 		else
 		{
-			glCall(glGetProgramiv(shader, GL_LINK_STATUS, &success));
+			glGetProgramiv(shader, GL_LINK_STATUS, &success);
 			if (!success)
 			{
 				glGetProgramInfoLog(shader, 1024, nullptr, infoLog);

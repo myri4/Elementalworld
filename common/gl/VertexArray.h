@@ -2,46 +2,45 @@
 
 #include <glad/glad.h>
 #include <stdint.h>
-#include "glErrors.h"
 
 namespace gl {
 
     class VertexBuffer {
     public:
         VertexBuffer() {}
-        VertexBuffer(const void* data, uint32_t size, GLenum mode = GL_STATIC_DRAW) { Create(data, size, mode); }
+        VertexBuffer(const void* data, uint32_t size, uint32_t mode = GL_STATIC_DRAW) { Create(data, size, mode); }
         ~VertexBuffer() { Destroy(); }
 
         void Bind() {
-            glCall(glBindVertexArray(VAO));
+            glBindVertexArray(VAO);
         }
         void BindVBO() {
-            glCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
         }
-        void Unbind() { glCall(glBindVertexArray(0)); }
+        void Unbind() { glBindVertexArray(0); }
 
-        void Create(const void* data, uint32_t size, GLenum mode = GL_STATIC_DRAW) {
+        void Create(const void* data, uint32_t size, uint32_t mode = GL_STATIC_DRAW) {
             if (!VAO){
-                glCall(glGenVertexArrays(1, &VAO));
-            glCall(glGenBuffers(1, &VBO));
+            glGenVertexArrays(1, &VAO);
+            glGenBuffers(1, &VBO);
 
-            glCall(glBindVertexArray(VAO));
-            glCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
+            glBindVertexArray(VAO);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-            glCall(glBufferData(GL_ARRAY_BUFFER, size, data, mode));
+            glBufferData(GL_ARRAY_BUFFER, size, data, mode);
             }
         }
 
         void Reload(const void* data, uint32_t size, uint32_t offset = 0) {
             BindVBO();
-            glCall(glBufferSubData(GL_ARRAY_BUFFER, offset, size, &data));
+            glBufferSubData(GL_ARRAY_BUFFER, offset, size, &data);
         }
         void Destroy() {
-            glCall(glDeleteVertexArrays(1, &VAO));
-            glCall(glDeleteBuffers(1, &VBO));
+            glDeleteVertexArrays(1, &VAO);
+            glDeleteBuffers(1, &VBO);
         }
         void Update(int offset, size_t size, const void *data) {
-            glCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
         }
         uint32_t GetVAO() {

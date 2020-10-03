@@ -110,7 +110,7 @@ public:
 
 		int32_t xt, yt;
 		
-		glm::vec2 pos = ew::GetMousePos();
+		glm::vec2 pos = ew::Mouse::GetMousePos();
 
 		xt = windowpos.x + 400;
 		yt = windowpos.y + 300;
@@ -135,7 +135,7 @@ public:
 		// update Front, Right and Up Vectors using the updated Euler angles
 			if (centerMouse) {
 				updateCameraVectors();
-				ew::SetMousePosition(xt, yt);
+				ew::Mouse::SetMousePosition(xt, yt);
 			}
 	}
 

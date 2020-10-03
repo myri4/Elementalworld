@@ -1,6 +1,7 @@
 #pragma once
 #include "../wclibs/Core.hpp"
 namespace ew{
+    namespace Keyboard {
 
 	enum class Key {
         Unknown = -1, ///< Unhandled key
@@ -89,15 +90,15 @@ namespace ew{
         Numpad7,      ///< The numpad 7 key
         Numpad8,      ///< The numpad 8 key
         Numpad9,      ///< The numpad 9 key
-        F1,           ///< The F1 key
-        F2,           ///< The F2 key
-        F3,           ///< The F3 key
-        F4,           ///< The F4 key
-        F5,           ///< The F5 key
-        F6,           ///< The F6 key
-        F7,           ///< The F7 key
-        F8,           ///< The F8 key
-        F9,           ///< The F9 key
+        F1 ,           ///< The F1 key
+        F2 ,           ///< The F2 key
+        F3 ,           ///< The F3 key
+        F4 ,           ///< The F4 key
+        F5 ,           ///< The F5 key
+        F6 ,           ///< The F6 key
+        F7 ,           ///< The F7 key
+        F8 ,           ///< The F8 key
+        F9 ,           ///< The F9 key
         F10,          ///< The F10 key
         F11,          ///< The F11 key
         F12,          ///< The F12 key
@@ -116,10 +117,95 @@ namespace ew{
         SemiColon = Semicolon,    ///<  Use Semicolon instead
         Return = Enter         ///<  Use Enter instead
 	};
-    bool isKeyPressed(Key key) {
+
+    bool isButtonPressed(Key key) {
 #ifdef _WIN32
+        if (key == Key::A) if (GetAsyncKeyState('A')) return true;
+        if (key == Key::B) if (GetAsyncKeyState('B')) return true;
+        if (key == Key::C) if (GetAsyncKeyState('C')) return true;
+        if (key == Key::D) if (GetAsyncKeyState('D')) return true;
+        if (key == Key::E) if (GetAsyncKeyState('E')) return true;
+        if (key == Key::F) if (GetAsyncKeyState('F')) return true;
+        if (key == Key::G) if (GetAsyncKeyState('G')) return true;
+        if (key == Key::H) if (GetAsyncKeyState('H')) return true;
+        if (key == Key::I) if (GetAsyncKeyState('I')) return true;
+        if (key == Key::J) if (GetAsyncKeyState('J')) return true;
+        if (key == Key::K) if (GetAsyncKeyState('K')) return true;
+        if (key == Key::L) if (GetAsyncKeyState('L')) return true;
+        if (key == Key::M) if (GetAsyncKeyState('M')) return true;
+        if (key == Key::N) if (GetAsyncKeyState('N')) return true;
+        if (key == Key::O) if (GetAsyncKeyState('O')) return true;
+        if (key == Key::P) if (GetAsyncKeyState('P')) return true;
+        if (key == Key::Q) if (GetAsyncKeyState('Q')) return true;
+        if (key == Key::R) if (GetAsyncKeyState('R')) return true;
+        if (key == Key::S) if (GetAsyncKeyState('S')) return true;
+        if (key == Key::T) if (GetAsyncKeyState('T')) return true;
+        if (key == Key::U) if (GetAsyncKeyState('U')) return true;
+        if (key == Key::V) if (GetAsyncKeyState('V')) return true;
+        if (key == Key::W) if (GetAsyncKeyState('W')) return true;
+        if (key == Key::X) if (GetAsyncKeyState('X')) return true;
+        if (key == Key::Y) if (GetAsyncKeyState('Y')) return true;
+        if (key == Key::Z) if (GetAsyncKeyState('Z')) return true;
+        
+        if (key == Key::Num0) if (GetAsyncKeyState('0')) return true;
+        if (key == Key::Num1) if (GetAsyncKeyState('1')) return true;
+        if (key == Key::Num2) if (GetAsyncKeyState('2')) return true;
+        if (key == Key::Num3) if (GetAsyncKeyState('3')) return true;
+        if (key == Key::Num4) if (GetAsyncKeyState('4')) return true;
+        if (key == Key::Num5) if (GetAsyncKeyState('5')) return true;
+        if (key == Key::Num6) if (GetAsyncKeyState('6')) return true;
+        if (key == Key::Num7) if (GetAsyncKeyState('7')) return true;
+        if (key == Key::Num8) if (GetAsyncKeyState('8')) return true;
+        if (key == Key::Num9) if (GetAsyncKeyState('9')) return true;
+
+        if (key == Key::Escape) if (GetAsyncKeyState(VK_ESCAPE))     return true;
+        if (key == Key::Menu) if (GetAsyncKeyState(VK_MENU))         return true;
+        if (key == Key::Space)  if (GetAsyncKeyState(VK_SPACE))      return true;
+        if (key == Key::SemiColon)  if (GetAsyncKeyState(';'))       return true;
+
+
+        if (key == Key::LControl) if (GetAsyncKeyState(VK_LCONTROL)) return true;
+        if (key == Key::LShift) if (GetAsyncKeyState(VK_LSHIFT))     return true;
+        if (key == Key::LBracket) if (GetAsyncKeyState('['))         return true;
+
+        if (key == Key::RControl) if (GetAsyncKeyState(VK_RCONTROL)) return true;
+        if (key == Key::RShift) if (GetAsyncKeyState(VK_RSHIFT))     return true;
+        if (key == Key::RBracket) if (GetAsyncKeyState(']'))         return true;
+
+                   
+        if (key == Key::Numpad0) if (GetAsyncKeyState(VK_NUMPAD0)) return true;
+        if (key == Key::Numpad1) if (GetAsyncKeyState(VK_NUMPAD1)) return true;
+        if (key == Key::Numpad2) if (GetAsyncKeyState(VK_NUMPAD2)) return true;
+        if (key == Key::Numpad3) if (GetAsyncKeyState(VK_NUMPAD3)) return true;
+        if (key == Key::Numpad4) if (GetAsyncKeyState(VK_NUMPAD4)) return true;
+        if (key == Key::Numpad5) if (GetAsyncKeyState(VK_NUMPAD5)) return true;
+        if (key == Key::Numpad6) if (GetAsyncKeyState(VK_NUMPAD6)) return true;
+        if (key == Key::Numpad7) if (GetAsyncKeyState(VK_NUMPAD7)) return true;
+        if (key == Key::Numpad8) if (GetAsyncKeyState(VK_NUMPAD8)) return true;
+        if (key == Key::Numpad9) if (GetAsyncKeyState(VK_NUMPAD9)) return true;
+           
+        if (key == Key::F1 ) if (GetAsyncKeyState(VK_F1))  return true;
+        if (key == Key::F2 ) if (GetAsyncKeyState(VK_F2))  return true;
+        if (key == Key::F3 ) if (GetAsyncKeyState(VK_F3))  return true;
+        if (key == Key::F4 ) if (GetAsyncKeyState(VK_F4))  return true;
+        if (key == Key::F5 ) if (GetAsyncKeyState(VK_F5))  return true;
+        if (key == Key::F6 ) if (GetAsyncKeyState(VK_F6))  return true;
+        if (key == Key::F7 ) if (GetAsyncKeyState(VK_F7))  return true;
+        if (key == Key::F8 ) if (GetAsyncKeyState(VK_F8))  return true;
+        if (key == Key::F9 ) if (GetAsyncKeyState(VK_F9))  return true;
+        if (key == Key::F10) if (GetAsyncKeyState(VK_F10)) return true;
+        if (key == Key::F11) if (GetAsyncKeyState(VK_F11)) return true;
+        if (key == Key::F12) if (GetAsyncKeyState(VK_F12)) return true;
+        if (key == Key::F13) if (GetAsyncKeyState(VK_F13)) return true;
+        if (key == Key::F14) if (GetAsyncKeyState(VK_F14)) return true;
+        if (key == Key::F15) if (GetAsyncKeyState(VK_F15)) return true;
+           
+           
+
+
 #endif // _WIN32
 
-        return true;
+        return false;
     }
+   }
 }

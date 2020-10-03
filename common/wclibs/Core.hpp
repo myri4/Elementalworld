@@ -68,7 +68,13 @@ using Scope = std::unique_ptr<T>;
 static const size_t MaxFaceCount = 1000;
 static const size_t MaxVertexCount = MaxFaceCount * 4;
 static const size_t MaxIndexCount = MaxFaceCount * 6;
-static const size_t MaxTextures = 32;
+static const size_t MaxTextures = 64;
+
+static const size_t MaxTextureUnits() {
+	static int MaxTextureImageUnits = 0;
+	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &MaxTextureImageUnits);
+	return MaxTextureImageUnits;
+}
 
 typedef signed char        int8_t;
 typedef short              int16_t;
@@ -91,3 +97,14 @@ typedef unsigned char      uint8;
 typedef unsigned short     uint16;
 typedef unsigned int       uint32;
 typedef unsigned long long uint64;
+
+class Vertex {
+public:
+	glm::vec3 Position = { 0,0,0 };
+	glm::vec2 TexCoords = { 0,0 };
+	float TexID = 0;
+	Vertex() {}
+	Vertex(const Vertex& vertex) : Position(vertex.Position), TexCoords(vertex.TexCoords), TexID(vertex.TexID) {}
+	Vertex(glm::vec3 pos, glm::vec2 texCoord, float texID) : Position(pos), TexCoords(texCoord), TexID(texID) {}
+	~Vertex() {}
+};

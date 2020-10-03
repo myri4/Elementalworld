@@ -207,6 +207,7 @@
     <ClInclude Include="gl\Text.h" />
     <ClInclude Include="gl\Texture.h" />
     <ClInclude Include="gl\VertexArray.h" />
+    <ClInclude Include="common\Utilitiess\NonCopyable.hpp" />
     <ClInclude Include="src\Block.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\entityes\Entity.hpp" />

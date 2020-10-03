@@ -1,12 +1,13 @@
 #pragma once
 #include "Entity.hpp"
-#include <wclibs/wclibspch.h>
+#include <wclibs/pch.hpp>
 
 namespace wc{
 class Player : public Entity{
 private:
 public:
 	Camera camera;
+
 	glm::mat4 view;
 	glm::mat4 projection;
 	Player() {
@@ -16,32 +17,32 @@ public:
 	~Player() override{
 
 	}
-	void UpdatePlayerInput(float deltaTime, sf::RenderWindow &window) {
-		if(sf::Keyboard::isKeyPressed(sf::Keyboard::W))		  camera.Move(FORWARD, deltaTime);
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))      camera.Move(BACKWARD, deltaTime);
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))      camera.Move(LEFT, deltaTime);
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))      camera.Move(RIGHT, deltaTime);
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))  camera.Move(UP, deltaTime);
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) camera.Move(DOWN, deltaTime);
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::C)) { camera.Zoom = 10; camera.MouseSensitivity = 18; }
+	void Update() override {
+
+	}
+	void UpdatePlayerInput(float deltaTime) {
+		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::W))      camera.Move(FORWARD, deltaTime);
+		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::S))      camera.Move(BACKWARD, deltaTime);
+		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::A))      camera.Move(LEFT, deltaTime);
+		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::D))      camera.Move(RIGHT, deltaTime);
+		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::Space))  camera.Move(UP, deltaTime);
+		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::LShift)) camera.Move(DOWN, deltaTime);
+		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::C)) { camera.Zoom = 10; camera.MouseSensitivity = 18; }
 		else {
 			camera.MouseSensitivity = 5;
 			camera.Zoom = 90;
 		}
-
-		camera.UpdateCameraAngles(window);
 	}
-	void InitPlayer() {
+	void InitPlayer(glm::vec3 Position) {
 		camera.Create(glm::vec3(Position));
 	}
-	void UpdatePlayer(sf::RenderWindow &window, bool CenterMouse, float deltaTime) {
+	void UpdatePlayer(glm::vec2 windsize, bool CenterMouse, float deltaTime) {
 
-		camera.UpdateCameraAngles(window, CenterMouse);
+		camera.UpdateCameraAngles(windsize, CenterMouse);
 
-		view = camera.GetViewMatrix();
-		projection = glm::perspective(glm::radians(camera.Zoom), (float)window.getSize().x / (float)window.getSize().y, 0.1f, 100.0f);
+		view = camera.GetViewMatrix(); 
+		projection = glm::perspective(glm::radians(camera.Zoom), windsize.x / windsize.y, 0.1f, 100.0f);
 
-		UpdatePlayerInput(deltaTime, window);
 	}
 
 };
