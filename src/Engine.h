@@ -5,6 +5,7 @@
 #include <Utilitiess/State.h>
 #include "Renderer2D.hpp"
 #include "entityes/Player.h"
+#include <gl/glErrors.h>
 
 namespace wc {
 
@@ -21,10 +22,12 @@ namespace wc {
 		Chunk mainChunk;
 
 		gl::Skybox mainSkybox;
-		gl::Text text;
 		gl::Shader mainShader;
 		gl::VertexBuffer chunkMeshBuffer;
-		Renderer2D Renderer;
+
+		gl::Text TextRenderer;
+		gl::Shader textShader;
+
 
 		irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
 
@@ -114,17 +117,22 @@ namespace wc {
 		void OnCreate() override {
 			loadFromFile("config/window.lua");
 			window.setActive();
-			if (!gladLoadGL()) std::cout << "Failed to initialize GLAD" << "\n";
+			if (!gladLoadGL()) std::cout << "Failed to initialize GLAD\n";
 
 			// OpenGL state
 			EnableGLDebuging();
 			// ------------
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+			//Anti aliasing
 			glEnable(GL_MULTISAMPLE);
 
+			//Depth testing
 			glEnable(GL_DEPTH_TEST);
+
 			//Stencil Test
+			glEnable(GL_STENCIL_TEST);
 			glStencilMask(0xFF); // each bit is written to the stencil buffer as is
 			glStencilMask(0x00); // each bit ends up as 0 in the stencil buffer (disabling writes)
 			glStencilFunc(GL_EQUAL, 1, 0xFF);
@@ -142,12 +150,14 @@ namespace wc {
 			for (int i = 0; i < MaxTextureUnits(); i++) samplers[i] = i;
 			mainShader.SetArray("u_Textures", MaxTextureUnits(), samplers);
 
-			Renderer.Init();
 
 			mainSkybox.Create("scripts/skybox.lua", 1);
 			mainChunk.Create({ 0,0,0 });
 			grassBlock.Create("scripts/grassblock.lua");
-			text.Create("assets/font/Minecraft.ttf", "shaderpacks/default/text.vs","shaderpacks/default/text.fs", glm::ortho(0.0f, 800.0f, 0.0f, 600.0f));
+
+			textShader.Create("shaderpacks/default/text.vs", "shaderpacks/default/text.fs");
+			TextRenderer.Create("assets/font/Minecraft.ttf", textShader, glm::ortho(0.0f, (float)window.getSize().x, 0.0f, (float)window.getSize().y));
+
 			p.InitPlayer({ 0,0,0 });
 		}
 
@@ -177,13 +187,9 @@ namespace wc {
 			mainSkybox.Draw(window.getSize().x, window.getSize().y, glm::mat4(glm::mat3(p.camera.GetViewMatrix())), p.projection);
 			deltaTime = deltaTimer.restart().asSeconds();
 
-			//glFrontFace(GL_CCW);
-			//glDisable(GL_DEPTH_TEST);
-			//text.Draw("ZDRKPBEBCE", { 25.0f, 700.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
-
-			text.Draw(std::to_string(FPS).c_str(), { 25.0f, 670.0f }, 0.5f, glm::vec3(0.5, 0.8f, 0.2f));
-			//glEnable(GL_DEPTH_TEST);
-			//glFrontFace(GL_CW);
+			glDisable(GL_DEPTH_TEST);
+			TextRenderer.Draw(std::to_string(FPS), { 25.0f, 700.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
+			glEnable(GL_DEPTH_TEST);
 			window.display();
 
 		}

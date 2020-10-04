@@ -9,7 +9,7 @@ namespace gl{
 class Texture{
 public:
 	Texture(const char* path, bool flipped = false) { load(path, flipped); }
-	Texture() { }
+	Texture() {}
 	TextureStatus load(const char* path, bool flipped = false) {
 		int nrComponents;
 		glGenTextures(1, &m_RendererID);

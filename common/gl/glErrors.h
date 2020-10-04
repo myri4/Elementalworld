@@ -19,6 +19,7 @@ void GLAPIENTRY OpenGLDebugMessege(uint32_t source, uint32_t type, uint32_t id, 
 
         case GL_DEBUG_SEVERITY_NOTIFICATION:
             //std::cout << "NOTIFICATION: " << message << "\n";
+            
         break;
     }
 }

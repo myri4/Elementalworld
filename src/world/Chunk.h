@@ -170,7 +170,6 @@ private:// Functions
 	void addFace(Face& face, glm::vec3 pos, float TexID) {
 		for (int i = 0; i < 4; i++) {
 			chunkMesh[i + offset] = Vertex(face[i] + pos, TexCoords[i], TexID);
-			//std::cout << pos.x << " " << pos.y << " " << pos.z<< "\n";
 		}
 
 		offset += 4;
