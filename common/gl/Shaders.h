@@ -7,6 +7,8 @@
 #include <fstream>
 #include <sstream>
 
+#include <Utilitiess/Log.h>
+
 
 namespace gl{
 	enum class ShaderStatus {
@@ -16,11 +18,11 @@ class Shader{
 public:
 	// constructor generates the shader on the fly
 	// ------------------------------------------------------------------------
+	
 	Shader (){}
 	Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr){Create(vertexPath, fragmentPath, geometryPath);}
 	ShaderStatus Create(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr) {
-		if (!m_RendererID) {
-
+		if (!m_RendererID) {			
 		// 1. retrieve the vertex/fragment source code from filePath
 		std::string vertexCode;
 		std::string fragmentCode;
@@ -56,30 +58,15 @@ public:
 				geometryCode = gShaderStream.str();
 			}
 		}
-		catch (std::ifstream::failure& e){std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ\n";}// return ShaderStatus::OK;
-		const char* vShaderCode = vertexCode.c_str();
-		const char* fShaderCode = fragmentCode.c_str();
-		// 2. compile shaders
-		uint32_t vertex, fragment;
-		// vertex shader
-		vertex = glCreateShader(GL_VERTEX_SHADER);
-		glShaderSource(vertex, 1, &vShaderCode, nullptr);
-		glCompileShader(vertex);
-		checkCompileErrors(vertex, "VERTEX");
-		// fragment Shader
-		fragment = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(fragment, 1, &fShaderCode, nullptr);
-		glCompileShader(fragment);
-		checkCompileErrors(fragment, "FRAGMENT");
+		catch (std::ifstream::failure& e) {WC_ERROR("SHADER::FILE_NOT_SUCCESFULLY_READ"); }
+		// 1. compile shaders
+		uint32_t vertex = CompileShader(vertexCode.c_str(), "vertex");
+		uint32_t fragment = CompileShader(fragmentCode.c_str(), "fragment");
 		// if geometry shader is given, compile geometry shader
 		uint32_t geometry;
-		if (geometryPath != nullptr) {
-			const char* gShaderCode = geometryCode.c_str();
-			geometry = glCreateShader(GL_GEOMETRY_SHADER);
-			glShaderSource(geometry, 1, &gShaderCode, nullptr);
-			glCompileShader(geometry);
-			checkCompileErrors(geometry, "GEOMETRY");
-		}
+		if (geometryPath != nullptr) 
+			geometry = CompileShader(geometryCode.c_str(), "geometry");
+		
 		// shader Program
 		m_RendererID = glCreateProgram();
 		glAttachShader(m_RendererID, vertex);
@@ -197,7 +184,7 @@ private:
 			if (!success)
 			{
 				glGetShaderInfoLog(shader, 1024, nullptr, infoLog);
-				std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- ------------------------------------------------------ \n";
+				WC_ERROR("SHADER_COMPILATION_ERROR of type: {0}\n{1}", type, infoLog);
 			}
 		}
 		else
@@ -206,9 +193,56 @@ private:
 			if (!success)
 			{
 				glGetProgramInfoLog(shader, 1024, nullptr, infoLog);
-				std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- ------------------------------------------------------ \n";
+				WC_ERROR("PROGRAM_LINKING_ERROR of type: {0}\n{1}", type, infoLog);
 			}
 		}
+	}
+	void Compile() {
+
+	}
+
+	uint32_t ShaderTypeFromString(const char* type)
+	{
+		if (type == "vertex")
+			return GL_VERTEX_SHADER;
+		if (type == "fragment" || type == "pixel")
+			return GL_FRAGMENT_SHADER;
+
+		if (type == "geometry")
+			return GL_GEOMETRY_SHADER;
+
+		return 0;
+	}
+
+	std::unordered_map<GLenum, std::string> PreProcess(const std::string& source, const char* typeToken = "#type"){
+
+		std::unordered_map<GLenum, std::string> shaderSources;
+		size_t typeTokenLength = strlen(typeToken);
+		size_t pos = source.find(typeToken, 0); //Start of shader type declaration line
+		while (pos != std::string::npos){
+			size_t eol = source.find_first_of("\r\n", pos); //End of shader type declaration line
+			//HZ_CORE_ASSERT(eol != std::string::npos, "Syntax error");
+			size_t begin = pos + typeTokenLength + 1; //Start of shader type name (after "#type " keyword)
+			std::string type = source.substr(begin, eol - begin);
+			//HZ_CORE_ASSERT(ShaderTypeFromString(type), "Invalid shader type specified");
+
+			size_t nextLinePos = source.find_first_not_of("\r\n", eol); //Start of shader code after shader type declaration line
+			//HZ_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
+			pos = source.find(typeToken, nextLinePos); //Start of next shader type declaration line
+
+			shaderSources[ShaderTypeFromString(type.c_str())] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
+		}
+
+		return shaderSources;
+	}
+
+	uint32_t CompileShader(const char* code, const char* type) {
+		uint32_t shader;
+		shader = glCreateShader(ShaderTypeFromString(type));
+		glShaderSource(shader, 1, &code, nullptr);
+		glCompileShader(shader);
+		checkCompileErrors(shader, type);
+		return shader;
 	}
 	uint32_t m_RendererID = 0;
 };

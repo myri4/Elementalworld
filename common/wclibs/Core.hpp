@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <glad/glad.h>
 
 #ifdef  _WIN32
 #include <Windows.h>
@@ -49,13 +50,6 @@
 
 #endif //  _WIN32
 
-#ifdef _DEBUG
-
-#define dMsg(...) std::cout<<__VA_ARGS__
-#else
-#define dMsg(...)
-#endif // DEBUG
-
 
 //Custom definitions
 template<typename T>
@@ -85,26 +79,3 @@ typedef unsigned char      uint8_t;
 typedef unsigned short     uint16_t;
 typedef unsigned int       uint32_t;
 typedef unsigned long long uint64_t;
-
-
-
-typedef signed char        int8;
-typedef short              int16;
-typedef int                int32;
-typedef long long          int64;
-
-typedef unsigned char      uint8;
-typedef unsigned short     uint16;
-typedef unsigned int       uint32;
-typedef unsigned long long uint64;
-
-class Vertex {
-public:
-	glm::vec3 Position = { 0,0,0 };
-	glm::vec2 TexCoords = { 0,0 };
-	float TexID = 0;
-	Vertex() {}
-	Vertex(const Vertex& vertex) : Position(vertex.Position), TexCoords(vertex.TexCoords), TexID(vertex.TexID) {}
-	Vertex(glm::vec3 pos, glm::vec2 texCoord, float texID) : Position(pos), TexCoords(texCoord), TexID(texID) {}
-	~Vertex() {}
-};

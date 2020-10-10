@@ -7,7 +7,7 @@
 #include <Utilitiess/Mouse.hpp>
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
-enum Camera_Movement {
+enum class Camera_Movement {
 	FORWARD,
 	BACKWARD,
 	LEFT,
@@ -21,66 +21,26 @@ namespace wc{
 class Camera{
 public:
 	// camera Attributes
-	glm::vec3 Position;
-	glm::vec3 Front;
-	glm::vec3 Up;
+	glm::vec3 Position = { 0,0,0 };
+	glm::vec3 Front = { 0.0f, 0.0f, -1.0f };
+	glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 Right;
 	glm::vec3 WorldUp;
 	// euler Angles
-	float Yaw;
-	float Pitch;
+	float Yaw = 0.0f;
+	float Pitch = 0.0f;
 	// camera options
-	float MovementSpeed;
-	float MouseSensitivity;
-	float Zoom;
+	float MovementSpeed = 2.5f;
+	float MouseSensitivity = 5.f;
+	float Zoom = 90.0f;
 
 	// constructor with vectors
 	Camera() {
 	
 	}
-	/*Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM){
-		Create(position, up, yaw, pitch);
-		updateCameraVectors();
-	}
-	// constructor with scalar values
-	Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM){
-		Create(posX, posY, posZ, upX, upY, upZ, yaw, pitch);
-		updateCameraVectors();
-	}*/
-	/*void LoadFromFile(const char* fileName, glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f)) {
-		Lua cameraScript;
-		std::cout << cameraScript.GetErrorMessage();
-		Front = glm::vec3(0.0f, 0.0f, -1.0f);
-		MovementSpeed = cameraScript.GetNumber("speed");
-		MouseSensitivity = cameraScript.GetNumber("sensitivity");
-		Zoom = cameraScript.GetNumber("zoom");
-
-		Position = position;
-		WorldUp = up;
-		Yaw = cameraScript.GetNumber("yaw");
-		Pitch = cameraScript.GetNumber("pitch");
-		updateCameraVectors();
-	}*/
 	void Create(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = 0, float pitch = 0) {
-		Front = glm::vec3(0.0f, 0.0f, -1.0f);
-		MovementSpeed = 2.5f;
-		MouseSensitivity = 5.f;
-		Zoom = 90;
-
 		Position = position;
 		WorldUp = up;
-		Yaw = yaw;
-		Pitch = pitch;
-		updateCameraVectors();
-	}
-
-	void Create(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) {
-		MovementSpeed = 2.5f;
-		MouseSensitivity = 5.f;
-		Zoom = 90;
-
-		Position = glm::vec3(posX, posY, posZ);
-		WorldUp = glm::vec3(upX, upY, upZ);
 		Yaw = yaw;
 		Pitch = pitch;
 		updateCameraVectors();
@@ -90,20 +50,14 @@ public:
 	glm::mat4 GetViewMatrix(){return glm::lookAt(Position, Position + Front, Up);}
 
 	// processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-	void Move(Camera_Movement direction, float deltaTime){
+	void Move(const Camera_Movement& direction, const float& deltaTime){
 		float velocity = MovementSpeed * deltaTime;
-		if (direction == FORWARD)
-			Position += Front * velocity;
-		if (direction == BACKWARD)
-			Position -= Front * velocity;
-		if (direction == LEFT)
-			Position -= Right * velocity;
-		if (direction == RIGHT)
-			Position += Right * velocity;
-		if (direction == UP)
-			Position.y += velocity;
-		if (direction == DOWN)
-			Position.y -= velocity;
+		if (direction == Camera_Movement::FORWARD)  Position += Front * velocity;
+		if (direction == Camera_Movement::BACKWARD) Position -= Front * velocity;
+		if (direction == Camera_Movement::LEFT)     Position -= Right * velocity;
+		if (direction == Camera_Movement::RIGHT)	Position += Right * velocity;
+		if (direction == Camera_Movement::UP)	    Position.y += velocity;
+		if (direction == Camera_Movement::DOWN)	    Position.y -= velocity;
 	}
 
 	void UpdateCameraAngles(glm::vec2 windowpos, bool centerMouse = true, bool invertMouse = false) {
@@ -138,16 +92,6 @@ public:
 				ew::Mouse::SetMousePosition(xt, yt);
 			}
 	}
-
-	// processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-	void ProcessMouseScroll(float yoffset){
-		Zoom -= (float)yoffset;
-		if (Zoom < 1.0f)
-			Zoom = 1.0f;
-		if (Zoom > 45.0f)
-			Zoom = 45.0f;
-	}
-
 private:
 	// calculates the front vector from the Camera's (updated) Euler Angles
 	void updateCameraVectors(){

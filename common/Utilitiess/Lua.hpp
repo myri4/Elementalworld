@@ -6,7 +6,7 @@ extern "C" {
 #include <lua/luaconf.h>
 #include <lua/lualib.h>
 }
-#include <iostream>
+#include <Utilitiess/Log.h>
 
 namespace wc {
 	
@@ -18,7 +18,7 @@ namespace wc {
 			L = luaL_newstate();
 			luaL_openlibs(L);
 			if (!CheckLua(luaL_dofile(L, file))) {
-				std::cout << GetErrorMessage();
+				WC_ERROR(GetErrorMessage());
 			}
 		}
 		int GetNumber(const char* value) {

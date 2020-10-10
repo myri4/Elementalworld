@@ -7,6 +7,7 @@
 wc::Block grassBlock;
 
 static const size_t chunkSize = 32;
+static const size_t chunkVolume = chunkSize * chunkSize * chunkSize;
 static const float blockSize = 0.5f;
 
 using Face = std::array < glm::vec3, 4 >;
@@ -14,8 +15,8 @@ using Face = std::array < glm::vec3, 4 >;
 Face BACK_FACE = {
 	glm::vec3( blockSize,  blockSize, -blockSize), // top-right
 	glm::vec3(-blockSize,  blockSize, -blockSize), // top-left
-	glm::vec3(-blockSize, -blockSize, -blockSize), // Bottom-left
-	glm::vec3( blockSize, -blockSize, -blockSize), // bottom-right    
+	glm::vec3(-blockSize, -blockSize, -blockSize), // Bottom-left  
+	glm::vec3( blockSize, -blockSize, -blockSize), // bottom-right 
 };
 Face FRONT_FACE = {
 	glm::vec3( blockSize,  blockSize,  blockSize), // top-right
@@ -26,7 +27,7 @@ Face FRONT_FACE = {
 Face LEFT_FACE = {
 	glm::vec3(-blockSize,  blockSize,  blockSize),  // top-right
 	glm::vec3(-blockSize, -blockSize,  blockSize),  // bottom-right
-	glm::vec3(-blockSize, -blockSize, -blockSize),  // bottom-left
+	glm::vec3(-blockSize, -blockSize, -blockSize),  // bottom-left 
 	glm::vec3(-blockSize,  blockSize, -blockSize)   // top-left   
 };
 Face RIGHT_FACE = {
@@ -36,7 +37,7 @@ Face RIGHT_FACE = {
 	 glm::vec3(blockSize,  blockSize,  blockSize)   // top-left
 };
 Face BOTTOM_FACE = {
-	glm::vec3(-blockSize, -blockSize, -blockSize),  // top-right
+	glm::vec3(-blockSize, -blockSize, -blockSize),  // top-right 
 	glm::vec3(-blockSize, -blockSize,  blockSize),  // bottom-right
 	glm::vec3( blockSize, -blockSize,  blockSize),  // bottom-left
 	glm::vec3( blockSize, -blockSize, -blockSize)   // top-left  
@@ -63,26 +64,20 @@ public: // Variables
 	uint32_t IndexCount = 0;
 public: // Functions 
 	Chunk() {}
-	Chunk(glm::vec3 pos) { Create(pos); }
+	Chunk(const glm::vec3& pos) { Create(pos); }
 	~Chunk() {}
-	void Create(glm::vec3 pos) {
+	void Create(const glm::vec3& pos) {
 		//Temp
-		int limit = 32;
-		for (int x = 0; x <= limit; x++)		
-			for (int y = 0; y <= 10; y++) {
-					chunkData[x][y][0] = 1;
-			}
-
-		chunkData[0][0][0] = 1;
-
 		chunkPosition = pos;
-		chunkData[5][5][5] = 1;
-		chunkData[5][5][6] = 1;
+		for (int x = 1; x < 16; x++)
+			for (int y = 1; y < 16; y++)setBlock({ x,y,1 }, 1);
 
-		chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(Vertex), GL_DYNAMIC_DRAW);
-		gl::VertexAttribPointer(0, 3, sizeof(Vertex), (void*)offsetof(Vertex, Position));  // position attribute
-		gl::VertexAttribPointer(1, 2, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords)); // texture coord attribute
-		gl::VertexAttribPointer(2, 1, sizeof(Vertex), (void*)offsetof(Vertex, TexID));     // Texture ID attribute
+		chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
+		gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
+		gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
+		gl::VertexAttribPointer(2, 1, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexID));     // Texture ID attribute
+		gl::VertexAttribPointer(3, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Normal));     // Normal attribute
+
 
 		uint32_t indices[MaxIndexCount];
 		uint32_t offset = 0;
@@ -105,19 +100,20 @@ public: // Functions
 
 	}
 	void UpdateMesh() {
-		for (int32_t x = 0; x <= chunkSize - 1; x++)
-			for (int32_t y = 0; y <= chunkSize - 1; y++)
-				for (int32_t z = 0; z <= chunkSize - 1; z++) {
+			for (int32_t x = 0; x < chunkSize; x++) 
+			for (int32_t z = 0; z < chunkSize; z++)
+			for (int32_t y = 0; y < chunkSize; y++)
+				{
 					if (chunkData[x][y][z] > 0) {
 
-						if (chunkData[x + 1][y][z] == 0) addFace(RIGHT_FACE, { x,y,z }, 2);
-						if (chunkData[x - 1][y][z] == 0) addFace(LEFT_FACE, { x,y,z }, 2);
+						if (chunkData[x + 1][y][z] == 0) addFace(RIGHT_FACE, { x,y,z },  glm::vec3( 1.0f, 0.0f, 0.0f), 2);
+						if (chunkData[x - 1][y][z] == 0) addFace(LEFT_FACE, { x,y,z },   glm::vec3(-1.0f, 0.0f, 0.0f), 2);
+																									  
+						if (chunkData[x][y + 1][z] == 0) addFace(TOP_FACE, { x,y,z },    glm::vec3( 0.0f, 1.0f, 0.0f), 2);
+						if (chunkData[x][y - 1][z] == 0) addFace(BOTTOM_FACE, { x,y,z }, glm::vec3( 0.0f,-1.0f, 0.0f), 2);
 
-						if (chunkData[x][y + 1][z] == 0) addFace(TOP_FACE, { x,y,z }, 2);
-						if (chunkData[x][y - 1][z] == 0) addFace(BOTTOM_FACE, { x,y,z }, 2);
-
-						if (chunkData[x][y][z + 1] == 0) addFace(FRONT_FACE, { x,y,z }, 2);
-						if (chunkData[x][y][z - 1] == 0) addFace(BACK_FACE, { x,y,z }, 2);
+						if (chunkData[x][y][z + 1] == 0) addFace(FRONT_FACE, { x,y,z },  glm::vec3( 0.0f, 0.0f, 1.0f), 2);
+						if (chunkData[x][y][z - 1] == 0) addFace(BACK_FACE, { x,y,z },   glm::vec3( 0.0f, 0.0f,-1.0f), 2);
 					}
 				}
 		EndBatch();
@@ -137,7 +133,12 @@ public: // Functions
 		shader.setMat4("model", model);
 		Flush();
 	}
-
+	void setBlock(glm::vec3 pos, int block) {
+		int x = pos.x;
+		int y = pos.y;
+		int z = pos.z;
+		chunkData[x][y][z] = block;
+	}
 private:// Functions
 
 	/*
@@ -167,9 +168,9 @@ private:// Functions
 
 
 
-	void addFace(Face& face, glm::vec3 pos, float TexID) {
+	void addFace(const Face& face, const glm::vec3& pos, const glm::vec3 Normal, const float& TexID) {
 		for (int i = 0; i < 4; i++) {
-			chunkMesh[i + offset] = Vertex(face[i] + pos, TexCoords[i], TexID);
+			chunkMesh[i + offset] = gl::Vertex(face[i] + pos, TexCoords[i], Normal, TexID);
 		}
 
 		offset += 4;
@@ -178,7 +179,7 @@ private:// Functions
 private:// Variables
 	gl::VertexBuffer chunkMeshBuffer;
 	gl::IndexBuffer chunkIndexBuffer;
-	Vertex chunkMesh[MaxVertexCount];
+	gl::Vertex chunkMesh[MaxVertexCount];
 	uint32_t offset = 0;
 
 

@@ -175,6 +175,7 @@
   <ItemGroup>
     <ClCompile Include="src\cpplibs\glad.c" />
     <ClCompile Include="src\cpplibs\stb_image.cpp" />
+    <ClCompile Include="common\Utilitiess\Log.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -183,10 +184,13 @@
     <ClInclude Include="common\gl\FrameBuffer.h" />
     <ClInclude Include="common\gl\glErrors.h" />
     <ClInclude Include="common\gl\IndexBuffer.h" />
+    <ClInclude Include="common\gl\Light.hpp" />
+    <ClInclude Include="common\gl\Material.hpp" />
     <ClInclude Include="common\gl\Shaders.h" />
     <ClInclude Include="common\gl\Skybox.h" />
     <ClInclude Include="common\gl\Text.h" />
     <ClInclude Include="common\gl\Texture.h" />
+    <ClInclude Include="common\gl\Vertex.hpp" />
     <ClInclude Include="common\gl\VertexArray.h" />
     <ClInclude Include="common\Utilitiess\Keyboard.hpp" />
     <ClInclude Include="common\Utilitiess\Mouse.hpp" />
@@ -212,11 +216,10 @@
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\entityes\Entity.hpp" />
     <ClInclude Include="src\entityes\Player.h" />
-    <ClInclude Include="src\Renderer2D.hpp" />
+    <ClInclude Include="common\Utilitiess\Log.h" />
     <ClInclude Include="Utils\SFMLCLock.hpp" />
     <ClInclude Include="Utils\State.h" />
     <ClInclude Include="src\world\Chunk.h" />
-    <ClInclude Include="src\world\World.h" />
     <ClInclude Include="Utils\Time.hpp" />
   </ItemGroup>
   <ItemGroup>

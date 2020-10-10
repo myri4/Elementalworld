@@ -1,18 +1,18 @@
 #pragma once
 #include <wclibs/pch.hpp>
 #include <Utilitiess/Lua.hpp>
-#include "world/Chunk.h"
 #include <Utilitiess/State.h>
-#include "Renderer2D.hpp"
-#include "entityes/Player.h"
 #include <gl/glErrors.h>
+#include "entityes/Player.h"
+#include "world/Chunk.h"
+#include <gl/Material.hpp>
 
 namespace wc {
 
 	class GameEngine : public Engine {
 	private:
 		sf::RenderWindow window;
-		uint32 frameCount, FPS;
+		uint32_t frameCount, FPS;
 		sf::Clock frameTimer, deltaTimer;
 		bool CenterMouse;
 		float deltaTime;
@@ -24,6 +24,8 @@ namespace wc {
 		gl::Skybox mainSkybox;
 		gl::Shader mainShader;
 		gl::VertexBuffer chunkMeshBuffer;
+		gl::Material mat;
+		
 
 		gl::Text TextRenderer;
 		gl::Shader textShader;
@@ -40,8 +42,8 @@ namespace wc {
 			bool fullScreen = 0;
 			bool vsync = 0;
 
-			uint32 frameRateLimit = 0;
-			uint32 style = sf::Style::Default;
+			uint32_t frameRateLimit = 0;
+			uint32_t style = sf::Style::Default;
 
 			fullScreen = windowScript.GetBool("fullscreen");
 			if (fullScreen == true) {
@@ -59,14 +61,13 @@ namespace wc {
 			frameRateLimit = windowScript.GetNumber("framerateLimit");
 			vsync = windowScript.GetBool("vsync");
 
-			int32 nrComponents, imgWidth, imgHeight;
+			int32_t nrComponents, imgWidth, imgHeight;
 			stbi_set_flip_vertically_on_load(false);
 
 			window.create(sf::VideoMode(width, height), "Elementalworld", style, sf::ContextSettings(24, 0, windowScript.GetNumber("antialiasingLevel"), windowScript.GetNumber("majorVersion"), windowScript.GetNumber("minorVersion")));
 			window.setIcon(imgWidth, imgHeight, stbi_load(windowScript.GetString("iconPath"), &imgWidth, &imgHeight, &nrComponents, 0));
 			window.setFramerateLimit(frameRateLimit);
 			window.setVerticalSyncEnabled(vsync);
-
 
 
 		}
@@ -92,18 +93,16 @@ namespace wc {
 		void OnInput() override {
 
 			p.UpdatePlayerInput(deltaTime);
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::F)) {
+			if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::F)) 
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			}
 			else
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) mainChunk.IndexCount++;
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))  mainChunk.IndexCount++;
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))mainChunk.IndexCount--;
 
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) glDisable(GL_CULL_FACE);
+			if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::R)) glDisable(GL_CULL_FACE);
 			else glEnable(GL_CULL_FACE);
-
 
 			if (!window.hasFocus()) CenterMouse = false;
 			else  CenterMouse = true;
@@ -117,7 +116,8 @@ namespace wc {
 		void OnCreate() override {
 			loadFromFile("config/window.lua");
 			window.setActive();
-			if (!gladLoadGL()) std::cout << "Failed to initialize GLAD\n";
+			if (!gladLoadGL()) WC_ERROR("Failed to initialize GLAD");
+			
 
 			// OpenGL state
 			EnableGLDebuging();
@@ -142,6 +142,10 @@ namespace wc {
 			glFrontFace(GL_CW);
 
 			//SoundEngine->play2D("assets/sounds/Alan Walker - The Spectre_wJnBTPUQS5A_youtube.mp3");
+			mat.ambient = glm::vec3(0.5f, 0.5f, 0.5f);
+			mat.diffuse = glm::vec3(0.5f, 0.5f, 0.5f);
+			mat.specular = glm::vec3(0.5f, 0.5f, 0.5f);
+			mat.shininess = 32.0f;
 
 			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			mainShader.Create("shaderpacks/default/core.vs", "shaderpacks/default/core.fs");
@@ -150,15 +154,16 @@ namespace wc {
 			for (int i = 0; i < MaxTextureUnits(); i++) samplers[i] = i;
 			mainShader.SetArray("u_Textures", MaxTextureUnits(), samplers);
 
-
-			mainSkybox.Create("scripts/skybox.lua", 1);
+			mainSkybox.Create("scripts/skybox.lua");
 			mainChunk.Create({ 0,0,0 });
 			grassBlock.Create("scripts/grassblock.lua");
 
 			textShader.Create("shaderpacks/default/text.vs", "shaderpacks/default/text.fs");
 			TextRenderer.Create("assets/font/Minecraft.ttf", textShader, glm::ortho(0.0f, (float)window.getSize().x, 0.0f, (float)window.getSize().y));
+			mat.Apply(mainShader, "material");
 
 			p.InitPlayer({ 0,0,0 });
+			
 		}
 
 		//----------------------------------------------------------------------------------------------------------------------
@@ -169,6 +174,7 @@ namespace wc {
 
 			// activate shader
 			mainShader.use();
+			mainShader.setVec3("viewPos", p.Position);
 
 			// pass projection matrix to shader (note that in this case it could change every frame)
 			mainShader.setMat4("projection", p.projection);
@@ -176,19 +182,18 @@ namespace wc {
 			// camera/view transformation
 			mainShader.setMat4("view", p.view);
 
-			// create transformations
-
 			// pass them to the shaders (3 different ways)
 			mainShader.setMat4("view", p.view);
 			mainShader.setMat4("projection", p.projection);
-			//mainChunk.UpdateMesh();
+
 			mainChunk.Draw(mainShader);
 
-			mainSkybox.Draw(window.getSize().x, window.getSize().y, glm::mat4(glm::mat3(p.camera.GetViewMatrix())), p.projection);
+			//mainSkybox.Draw(glm::mat4(glm::mat3(p.camera.GetViewMatrix())), p.projection);
 			deltaTime = deltaTimer.restart().asSeconds();
 
 			glDisable(GL_DEPTH_TEST);
 			TextRenderer.Draw(std::to_string(FPS), { 25.0f, 700.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
+			TextRenderer.Draw("X: " + std::to_string(p.Position.x) + " Y: " + std::to_string(p.Position.y) + " Z: " + std::to_string(p.Position.z), { 25.0f, 660.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
 			glEnable(GL_DEPTH_TEST);
 			window.display();
 
@@ -212,12 +217,12 @@ namespace wc {
 				//Get the framerate
 				frameCount++;
 				if (frameTimer.getElapsedTime().asSeconds() > 1) {
-					uint32 secs = frameTimer.getElapsedTime().asSeconds();
+					uint32_t secs = frameTimer.getElapsedTime().asSeconds();
 					FPS = frameCount / secs;
 					frameCount = 0;
 					frameTimer.restart();
 				}
 			}
 		}
-	};
+	};//Qe805145
 }

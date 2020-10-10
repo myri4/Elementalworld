@@ -1,25 +1,24 @@
 #pragma once
 #include <glad/glad.h>
-#include <iostream>
+#include <Utilitiess/Log.h>
 
 void GLAPIENTRY OpenGLDebugMessege(uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int length, const char* message, const void* userParam) {
     switch (severity)
     {
         case GL_DEBUG_SEVERITY_HIGH:
-            std::cout << "ERROR: " << message << "\n";
+            WC_ERROR("[OpenGL Debug ERROR] {0}", message);
         break;
 
         case GL_DEBUG_SEVERITY_MEDIUM:
-            std::cout << "WARN: " << message << "\n";
+            WC_WARN("[OpenGL Debug MEDIUM] {0}", message);
         break;
 
         case GL_DEBUG_SEVERITY_LOW:
-            std::cout << "INFO: " << message << "\n";
+            WC_INFO("[OpenGL Debug LOW] {0}", message);
         break;
 
         case GL_DEBUG_SEVERITY_NOTIFICATION:
-            //std::cout << "NOTIFICATION: " << message << "\n";
-            
+            //WC_TRACE("[OpenGL Debug NOTIFICATION] {0}", message);
         break;
     }
 }

@@ -54,6 +54,9 @@
 #include <gl/IndexBuffer.h>
 #include <gl/Text.h>
 #include <gl/FrameBuffer.h>
+#include <gl/Vertex.hpp>
+#include <gl/Material.hpp>  
+#include <gl/Light.hpp>
 
 //Core file
 #include <wclibs/Core.hpp>
@@ -64,5 +67,7 @@
 //Sound
 #include <irrKlang/irrKlang.h>
 
+//Utilitiess
 #include <Utilitiess/Keyboard.hpp>
 #include <Utilitiess/Mouse.hpp>
+#include <Utilitiess/Log.h>

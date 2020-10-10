@@ -169,7 +169,7 @@ namespace gl {
             glBindVertexArray(0);
             return TextStatus::OK;
         }
-        void Draw(std::string text, glm::vec2 pos = { 0,0 }, float scale = 1.0f, glm::vec3 color = { 0,0,0 }, int activeTexture = 0) {
+        void Draw(const std::string& text, glm::vec2 pos = { 0,0 }, float scale = 1.0f, glm::vec3 color = { 0,0,0 }, int activeTexture = 0) {
             // activate corresponding render state	
             shader.use();
             shader.setVec3("textColor", color);
@@ -213,6 +213,6 @@ namespace gl {
         gl::Shader shader;
         gl::VertexBuffer TextVB;
 
-        std::map<char, Character> Characters;
+        std::unordered_map<char, Character> Characters;
     };
 }

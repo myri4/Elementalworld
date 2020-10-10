@@ -24,15 +24,15 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="common\Utilitiess\Log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\world\Chunk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Block.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\world\World.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\entityes\Entity.hpp">
@@ -134,9 +134,6 @@
     <ClInclude Include="common\Utilitiess\Lua.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer2D.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\Utilitiess\Window.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -146,13 +143,24 @@
     <ClInclude Include="common\Utilitiess\NonCopyable.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\gl\Material.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\gl\Light.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\gl\Vertex.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Utilitiess\Log.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\camera.lua" />
     <None Include="scripts\player.lua" />
     <None Include="scripts\skybox.lua" />
     <None Include="shaderpacks\default\core.fs" />
-    <None Include="shaderpacks\default\core.vs" />
     <None Include="scripts\grassblock.lua" />
     <None Include="shaderpacks\default\skybox.fs" />
     <None Include="shaderpacks\default\skybox.vs" />
@@ -161,5 +169,6 @@
     <None Include="shaderpacks\default\text.fs" />
     <None Include="shaderpacks\default\screenShader.fs" />
     <None Include="shaderpacks\default\screenShader.vs" />
+    <None Include="shaderpacks\default\core.vs" />
   </ItemGroup>
 </Project>
