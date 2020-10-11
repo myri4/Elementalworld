@@ -148,7 +148,7 @@ namespace wc {
 			mat.shininess = 32.0f;
 
 			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-			mainShader.Create("shaderpacks/default/core.vs", "shaderpacks/default/core.fs");
+			mainShader.Create("shaderpacks/default/core.glsl");
 			mainShader.use();
 			int samplers[MaxTextures];
 			for (int i = 0; i < MaxTextureUnits(); i++) samplers[i] = i;
@@ -158,7 +158,7 @@ namespace wc {
 			mainChunk.Create({ 0,0,0 });
 			grassBlock.Create("scripts/grassblock.lua");
 
-			textShader.Create("shaderpacks/default/text.vs", "shaderpacks/default/text.fs");
+			textShader.Create("shaderpacks/default/text.glsl");
 			TextRenderer.Create("assets/font/Minecraft.ttf", textShader, glm::ortho(0.0f, (float)window.getSize().x, 0.0f, (float)window.getSize().y));
 			mat.Apply(mainShader, "material");
 

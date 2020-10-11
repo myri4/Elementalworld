@@ -101,9 +101,6 @@
     <ClInclude Include="common\gl\Shaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\gl\Skybox.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\gl\Text.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -155,20 +152,19 @@
     <ClInclude Include="common\Utilitiess\Log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\gl\Skybox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\camera.lua" />
     <None Include="scripts\player.lua" />
     <None Include="scripts\skybox.lua" />
-    <None Include="shaderpacks\default\core.fs" />
     <None Include="scripts\grassblock.lua" />
-    <None Include="shaderpacks\default\skybox.fs" />
-    <None Include="shaderpacks\default\skybox.vs" />
     <None Include="config\window.lua" />
-    <None Include="shaderpacks\default\text.vs" />
-    <None Include="shaderpacks\default\text.fs" />
-    <None Include="shaderpacks\default\screenShader.fs" />
-    <None Include="shaderpacks\default\screenShader.vs" />
-    <None Include="shaderpacks\default\core.vs" />
+    <None Include="shaderpacks\default\core.glsl" />
+    <None Include="shaderpacks\default\skybox.glsl" />
+    <None Include="shaderpacks\default\text.glsl" />
+    <None Include="shaderpacks\default\screenShader.glsl" />
   </ItemGroup>
 </Project>

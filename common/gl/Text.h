@@ -29,14 +29,14 @@ namespace gl {
         Text() {
 
         }
-        Text(const char* fontFileLoc, const char* vs, const char* fs, glm::mat4 projection) {
-            Create(fontFileLoc, vs, fs, projection);
+        Text(const char* fontFileLoc, const char* shader, glm::mat4 projection) {
+            Create(fontFileLoc, shader, projection);
         }
         ~Text() {
 
         }
-        TextStatus Create(const char* fontFileLoc, const char* vs, const char* fs, glm::mat4 projection,int glyphs = 128) {
-            shader.Create(vs, fs);
+        TextStatus Create(const char* fontFileLoc, const char* Shader, glm::mat4 projection,int glyphs = 128) {
+            shader.Create(Shader);
             shader.use();
             shader.setMat4("projection", projection);
 

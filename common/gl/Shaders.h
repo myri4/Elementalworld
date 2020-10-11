@@ -58,14 +58,19 @@ public:
 				geometryCode = gShaderStream.str();
 			}
 		}
-		catch (std::ifstream::failure& e) {WC_ERROR("SHADER::FILE_NOT_SUCCESFULLY_READ"); }
+		catch (std::ifstream::failure& e) { return ShaderStatus::FILE_NOT_SUCCESFULLY_READ; }
 		// 1. compile shaders
 		uint32_t vertex = CompileShader(vertexCode.c_str(), "vertex");
 		uint32_t fragment = CompileShader(fragmentCode.c_str(), "fragment");
+		checkCompileErrors(vertex, "VERTEX");
+		checkCompileErrors(fragment, "FRAGMENT");
 		// if geometry shader is given, compile geometry shader
 		uint32_t geometry;
-		if (geometryPath != nullptr) 
+		if (geometryPath != nullptr) {
 			geometry = CompileShader(geometryCode.c_str(), "geometry");
+			checkCompileErrors(geometry, "geometry");
+		}
+
 		
 		// shader Program
 		m_RendererID = glCreateProgram();
@@ -81,6 +86,63 @@ public:
 		if (geometryPath != nullptr)
 			glDeleteShader(geometry);
 		return ShaderStatus::OK;
+		}
+		return ShaderStatus::OK;
+	}
+	ShaderStatus Create(const char* filepath) {
+		if (!m_RendererID) {
+			std::string line;
+			std::ifstream stream;
+			std::stringstream shaderStream[3];
+			enum class ShaderType {
+				NONE = -1, VERTEX, FRAGMENT, GEOMETRY
+			}type;
+			
+			// open files
+			stream.open(filepath);
+			if (stream.is_open()) {
+				while (std::getline(stream, line)) {
+					if (line.find("#shader") != std::string::npos || line.find("#type") != std::string::npos) {
+					     if (line.find("vertex") != std::string::npos)	 type = ShaderType::VERTEX;
+					else if (line.find("fragment") != std::string::npos) type = ShaderType::FRAGMENT;
+					else if (line.find("geometry") != std::string::npos) type = ShaderType::GEOMETRY;
+						
+					}
+					else 
+						shaderStream[(int)type] << line << '\n';
+				}
+			}
+			else
+				return ShaderStatus::FILE_NOT_SUCCESFULLY_READ;
+			stream.close();
+
+			std::string vertexCode;
+			std::string fragmentCode;
+			std::string geometryCode;
+			vertexCode =   shaderStream[(int)ShaderType::VERTEX].str();
+			fragmentCode = shaderStream[(int)ShaderType::FRAGMENT].str();
+			geometryCode = shaderStream[(int)ShaderType::GEOMETRY].str();
+
+			uint32_t vertex = CompileShader(vertexCode.c_str(), "vertex");
+			uint32_t fragment = CompileShader(fragmentCode.c_str(), "fragment");
+			uint32_t geometry;
+			if(!geometryCode.empty())geometry = CompileShader(geometryCode.c_str(), "geometry");
+
+			// shader Program
+			m_RendererID = glCreateProgram();
+			glAttachShader(m_RendererID, vertex);
+			glAttachShader(m_RendererID, fragment);
+			if (!geometryCode.empty())
+			glAttachShader(m_RendererID, geometry);
+			glLinkProgram(m_RendererID);
+			checkCompileErrors(m_RendererID, "PROGRAM");
+			// delete the shaders as they're linked into our program now and no longer necessery
+			glDeleteShader(vertex);
+			glDeleteShader(fragment);
+			if (!geometryCode.empty())
+			glDeleteShader(geometry);
+
+			return ShaderStatus::OK;
 		}
 		return ShaderStatus::OK;
 	}
@@ -214,36 +276,16 @@ private:
 		return 0;
 	}
 
-	std::unordered_map<GLenum, std::string> PreProcess(const std::string& source, const char* typeToken = "#type"){
-
-		std::unordered_map<GLenum, std::string> shaderSources;
-		size_t typeTokenLength = strlen(typeToken);
-		size_t pos = source.find(typeToken, 0); //Start of shader type declaration line
-		while (pos != std::string::npos){
-			size_t eol = source.find_first_of("\r\n", pos); //End of shader type declaration line
-			//HZ_CORE_ASSERT(eol != std::string::npos, "Syntax error");
-			size_t begin = pos + typeTokenLength + 1; //Start of shader type name (after "#type " keyword)
-			std::string type = source.substr(begin, eol - begin);
-			//HZ_CORE_ASSERT(ShaderTypeFromString(type), "Invalid shader type specified");
-
-			size_t nextLinePos = source.find_first_not_of("\r\n", eol); //Start of shader code after shader type declaration line
-			//HZ_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
-			pos = source.find(typeToken, nextLinePos); //Start of next shader type declaration line
-
-			shaderSources[ShaderTypeFromString(type.c_str())] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
-		}
-
-		return shaderSources;
-	}
-
 	uint32_t CompileShader(const char* code, const char* type) {
 		uint32_t shader;
 		shader = glCreateShader(ShaderTypeFromString(type));
 		glShaderSource(shader, 1, &code, nullptr);
 		glCompileShader(shader);
-		checkCompileErrors(shader, type);
 		return shader;
 	}
 	uint32_t m_RendererID = 0;
 };
+void HandleErrors(ShaderStatus func) {
+	if(func == ShaderStatus::FILE_NOT_SUCCESFULLY_READ) WC_ERROR("SHADER::FILE_NOT_SUCCESFULLY_READ");
+}
 }

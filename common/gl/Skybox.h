@@ -21,7 +21,10 @@ namespace gl {
         }
         void Create(const char* file) {
             wc::Lua skyboxState(file);
-            shader.Create(skyboxState.GetString("vertexPath"), skyboxState.GetString("fragmentPath"));
+            if(std::string(skyboxState.GetString("vertexPath")).empty() || std::string(skyboxState.GetString("vertexPath")).empty())
+                shader.Create(skyboxState.GetString("shaderPath"));
+            else
+                shader.Create(skyboxState.GetString("vertexPath"), skyboxState.GetString("fragmentPath"));
             float size = (float)skyboxState.GetNumber("skyboxSize");
 
             float vertices[] = {

@@ -228,14 +228,10 @@
     <None Include="scripts\grassblock.lua" />
     <None Include="scripts\player.lua" />
     <None Include="scripts\skybox.lua" />
-    <None Include="shaderpacks\default\core.fs" />
-    <None Include="shaderpacks\default\core.vs" />
-    <None Include="shaderpacks\default\screenShader.fs" />
-    <None Include="shaderpacks\default\screenShader.vs" />
-    <None Include="shaderpacks\default\skybox.fs" />
-    <None Include="shaderpacks\default\skybox.vs" />
-    <None Include="shaderpacks\default\text.fs" />
-    <None Include="shaderpacks\default\text.vs" />
+    <None Include="shaderpacks\default\core.glsl" />
+    <None Include="shaderpacks\default\screenShader.glsl" />
+    <None Include="shaderpacks\default\skybox.glsl" />
+    <None Include="shaderpacks\default\text.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
