@@ -166,5 +166,6 @@
     <None Include="shaderpacks\default\skybox.glsl" />
     <None Include="shaderpacks\default\text.glsl" />
     <None Include="shaderpacks\default\screenShader.glsl" />
+    <None Include="shaderpacks\default\Material.glsl" />
   </ItemGroup>
 </Project>

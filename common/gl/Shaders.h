@@ -149,90 +149,92 @@ public:
 	//void stringSource(const char*){}
 	// activate the shader
 	// ------------------------------------------------------------------------
-	void use()
+	void use() const
 	{
 		glUseProgram(m_RendererID);
 	}
-	void unUse()
+	void unUse() const
 	{
 		glUseProgram(0);
 	}
 	// utility uniform functions
 	// ------------------------------------------------------------------------
-	void setBool(const char* name, bool value)
+	void setBool(const char* name, bool value) const
 	{
 		glUniform1i(glGetUniformLocation(m_RendererID, name), (int)value);
 	}
 	// ------------------------------------------------------------------------
-	void setInt(const char* name, int value)
+	void setInt(const char* name, int value) const
 	{
 		glUniform1i(glGetUniformLocation(m_RendererID, name), value);
 	}
 	// ------------------------------------------------------------------------
-	void setFloat(const char* name, float value)
+	void setFloat(const char* name, float value) const
 	{
 		glUniform1f(glGetUniformLocation(m_RendererID, name), value);
 	}
 	// ------------------------------------------------------------------------
-	void setNum(const char* name, float value)
+	void setNum(const char* name, float value) const
 	{
 		glUniform1f(glGetUniformLocation(m_RendererID, name), value);
 	}
 	// ------------------------------------------------------------------------
-	void setNum(const char* name, int value)
+	void setNum(const char* name, int value) const
 	{
 		glUniform1i(glGetUniformLocation(m_RendererID, name), value);
 	}
 	// ------------------------------------------------------------------------
-	void setVec2(const char* name, const glm::vec2 &value)
+	void setVec2(const char* name, const glm::vec2 &value) const
 	{
 		glUniform2fv(glGetUniformLocation(m_RendererID, name), 1, glm::value_ptr(value));
 	}
-	void setVec2(const char* name, float x, float y)
+	void setVec2(const char* name, float x, float y) const
 	{
 		glUniform2f(glGetUniformLocation(m_RendererID, name), x, y);
 	}
 	// ------------------------------------------------------------------------
-	void setVec3(const char* name, const glm::vec3 &value)
+	void setVec3(const char* name, const glm::vec3 &value) const
 	{
 		glUniform3fv(glGetUniformLocation(m_RendererID, name), 1, glm::value_ptr(value));
 	}
-	void setVec3(const char* name, float x, float y, float z)
+	void setVec3(const char* name, float x, float y, float z) const
 	{
 		glUniform3f(glGetUniformLocation(m_RendererID, name), x, y, z);
 	}
 	// ------------------------------------------------------------------------
-	void setVec4(const char* name, const glm::vec4 &value)
+	void setVec4(const char* name, const glm::vec4 &value) const
 	{
 		glUniform4fv(glGetUniformLocation(m_RendererID, name), 1, glm::value_ptr(value));
 	}
-	void setVec4(const char* name, float x, float y, float z, float w)
+	void setVec4(const char* name, float x, float y, float z, float w) const
 	{
 		glUniform4f(glGetUniformLocation(m_RendererID, name), x, y, z, w);
 	}
 	// ------------------------------------------------------------------------
-	void setMat2(const char* name, const glm::mat2 &mat)
+	void setMat2(const char* name, const glm::mat2 &mat) const
 	{
 		glUniformMatrix2fv(glGetUniformLocation(m_RendererID, name), 1, GL_FALSE, glm::value_ptr(mat));
 	}
 	// ------------------------------------------------------------------------
-	void setMat3(const char* name, const glm::mat3 &mat)
+	void setMat3(const char* name, const glm::mat3 &mat) const
 	{
 		glUniformMatrix3fv(glGetUniformLocation(m_RendererID, name), 1, GL_FALSE, glm::value_ptr(mat));
 	}
 	// ------------------------------------------------------------------------
-	void setMat4(const char* name, const glm::mat4 &mat)
+	void setMat4(const char* name, const glm::mat4 &mat) const
 	{
 		glUniformMatrix4fv(glGetUniformLocation(m_RendererID, name), 1, GL_FALSE, glm::value_ptr(mat));
 	}
-	void SetArray(const char* name, size_t size, int arr[]) {
+	void SetArray(const char* name, size_t size, int arr[]) const
+	{
 		glUniform1iv(glGetUniformLocation(m_RendererID, name), size, arr);
 	}
 
-	void SetArray(const char* name, size_t size, float arr[]) {
+	void SetArray(const char* name, size_t size, float arr[]) const
+	{
 		glUniform1fv(glGetUniformLocation(m_RendererID, name), size, arr);
 	}
-	uint32_t GetRendererID() {return m_RendererID;}
+	uint32_t GetRendererID() const {return m_RendererID;}
 	// utility function for checking shader compilation/linking errors.
 	// ------------------------------------------------------------------------
 private:
@@ -259,11 +261,8 @@ private:
 			}
 		}
 	}
-	void Compile() {
 
-	}
-
-	uint32_t ShaderTypeFromString(const char* type)
+	uint32_t ShaderTypeFromString(const char* type) const
 	{
 		if (type == "vertex")
 			return GL_VERTEX_SHADER;

@@ -22,6 +22,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/noise.hpp>
 
 #include <stb_image/stb_image.h>
 
@@ -63,6 +64,7 @@
 
 //Lua
 #include <Utilitiess/Lua.hpp>
+#include <Utilitiess/State.h>
 
 //Sound
 #include <irrKlang/irrKlang.h>
@@ -71,3 +73,4 @@
 #include <Utilitiess/Keyboard.hpp>
 #include <Utilitiess/Mouse.hpp>
 #include <Utilitiess/Log.h>
+#include <gl/Material.hpp>

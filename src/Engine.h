@@ -1,11 +1,8 @@
 #pragma once
 #include <wclibs/pch.hpp>
-#include <Utilitiess/Lua.hpp>
-#include <Utilitiess/State.h>
 #include <gl/glErrors.h>
 #include "entityes/Player.h"
 #include "world/Chunk.h"
-#include <gl/Material.hpp>
 
 namespace wc {
 
@@ -24,7 +21,6 @@ namespace wc {
 		gl::Skybox mainSkybox;
 		gl::Shader mainShader;
 		gl::VertexBuffer chunkMeshBuffer;
-		gl::Material mat;
 		
 
 		gl::Text TextRenderer;
@@ -43,7 +39,7 @@ namespace wc {
 			bool vsync = 0;
 
 			uint32_t frameRateLimit = 0;
-			uint32_t style = sf::Style::Default;
+			uint8_t style = sf::Style::Default;
 
 			fullScreen = windowScript.GetBool("fullscreen");
 			if (fullScreen == true) {
@@ -98,9 +94,6 @@ namespace wc {
 			else
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))  mainChunk.IndexCount++;
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))mainChunk.IndexCount--;
-
 			if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::R)) glDisable(GL_CULL_FACE);
 			else glEnable(GL_CULL_FACE);
 
@@ -142,16 +135,12 @@ namespace wc {
 			glFrontFace(GL_CW);
 
 			//SoundEngine->play2D("assets/sounds/Alan Walker - The Spectre_wJnBTPUQS5A_youtube.mp3");
-			mat.ambient = glm::vec3(0.5f, 0.5f, 0.5f);
-			mat.diffuse = glm::vec3(0.5f, 0.5f, 0.5f);
-			mat.specular = glm::vec3(0.5f, 0.5f, 0.5f);
-			mat.shininess = 32.0f;
 
 			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			mainShader.Create("shaderpacks/default/core.glsl");
 			mainShader.use();
 			int samplers[MaxTextures];
-			for (int i = 0; i < MaxTextureUnits(); i++) samplers[i] = i;
+			for (int i = 0; i <= MaxTextureUnits(); i++) samplers[i] = i;
 			mainShader.SetArray("u_Textures", MaxTextureUnits(), samplers);
 
 			mainSkybox.Create("scripts/skybox.lua");
@@ -159,11 +148,9 @@ namespace wc {
 			grassBlock.Create("scripts/grassblock.lua");
 
 			textShader.Create("shaderpacks/default/text.glsl");
-			TextRenderer.Create("assets/font/Minecraft.ttf", textShader, glm::ortho(0.0f, (float)window.getSize().x, 0.0f, (float)window.getSize().y));
-			mat.Apply(mainShader, "material");
+			TextRenderer.Create("assets/font/Minecraft.ttf", textShader);
 
 			p.InitPlayer({ 0,0,0 });
-			
 		}
 
 		//----------------------------------------------------------------------------------------------------------------------
@@ -180,23 +167,18 @@ namespace wc {
 			mainShader.setMat4("projection", p.projection);
 
 			// camera/view transformation
-			mainShader.setMat4("view", p.view);
-
-			// pass them to the shaders (3 different ways)
-			mainShader.setMat4("view", p.view);
-			mainShader.setMat4("projection", p.projection);
+			mainShader.setMat4("view", p.view);		
 
 			mainChunk.Draw(mainShader);
 
-			//mainSkybox.Draw(glm::mat4(glm::mat3(p.camera.GetViewMatrix())), p.projection);
+			mainSkybox.Draw(glm::mat4(glm::mat3(p.camera.GetViewMatrix())), p.projection);
 			deltaTime = deltaTimer.restart().asSeconds();
 
 			glDisable(GL_DEPTH_TEST);
-			TextRenderer.Draw(std::to_string(FPS), { 25.0f, 700.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
-			TextRenderer.Draw("X: " + std::to_string(p.Position.x) + " Y: " + std::to_string(p.Position.y) + " Z: " + std::to_string(p.Position.z), { 25.0f, 660.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
+			TextRenderer.Draw(std::to_string(FPS), glm::vec2((float)window.getSize().x, (float)window.getSize().y) , { 25.0f, 700.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
+			TextRenderer.Draw("X: " + std::to_string(p.Position.x) + " Y: " + std::to_string(p.Position.y) + " Z: " + std::to_string(p.Position.z), glm::vec2((float)window.getSize().x, (float)window.getSize().y), { 25.0f, 660.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
 			glEnable(GL_DEPTH_TEST);
 			window.display();
-
 		}
 
 	public:
@@ -213,7 +195,6 @@ namespace wc {
 				// Input handler
 				OnInput();
 
-
 				//Get the framerate
 				frameCount++;
 				if (frameTimer.getElapsedTime().asSeconds() > 1) {
@@ -224,5 +205,5 @@ namespace wc {
 				}
 			}
 		}
-	};//Qe805145
+	};
 }

@@ -29,16 +29,14 @@ namespace gl {
         Text() {
 
         }
-        Text(const char* fontFileLoc, const char* shader, glm::mat4 projection) {
-            Create(fontFileLoc, shader, projection);
+        Text(const char* fontFileLoc, const char* shader) {
+            Create(fontFileLoc, shader);
         }
         ~Text() {
 
         }
-        TextStatus Create(const char* fontFileLoc, const char* Shader, glm::mat4 projection,int glyphs = 128) {
+        TextStatus Create(const char* fontFileLoc, const char* Shader, int glyphs = 128) {
             shader.Create(Shader);
-            shader.use();
-            shader.setMat4("projection", projection);
 
             // FreeType
             // --------
@@ -102,10 +100,8 @@ namespace gl {
             glBindVertexArray(0);
             return TextStatus::OK;
         }
-        TextStatus Create(const char* fontFileLoc, const gl::Shader& Shader, glm::mat4 projection, int glyphs = 128) {
+        TextStatus Create(const char* fontFileLoc, const gl::Shader& Shader, int glyphs = 128) {
             this->shader = Shader;
-            shader.use();
-            shader.setMat4("projection", projection);
 
             // FreeType
             // --------
@@ -169,15 +165,17 @@ namespace gl {
             glBindVertexArray(0);
             return TextStatus::OK;
         }
-        void Draw(const std::string& text, glm::vec2 pos = { 0,0 }, float scale = 1.0f, glm::vec3 color = { 0,0,0 }, int activeTexture = 0) {
+        void Draw(const std::string& text, const glm::vec2& windowSize, glm::vec2 pos = { 0,0 }, float scale = 1.0f, glm::vec3 color = { 0,0,0 }, int activeTexture = 0) {
             // activate corresponding render state	
+            glm::mat4 projection = glm::ortho(0.0f, windowSize.x, 0.0f, windowSize.y);
             shader.use();
+            shader.setMat4("projection", projection);
             shader.setVec3("textColor", color);
             glActiveTexture(GL_TEXTURE0 + activeTexture);
             TextVB.Bind();
 
             // iterate through all characters
-            for (auto c : text){
+            for (auto& c : text){
                 Character ch = Characters[c];
 
                 float xpos = pos.x + ch.Bearing.x * scale;

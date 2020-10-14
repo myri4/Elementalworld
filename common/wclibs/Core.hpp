@@ -59,6 +59,8 @@ template<typename T>
 using Scope = std::unique_ptr<T>;
 
 //OpenGL Memory Buffer Variables
+static const size_t chunkSize = 32;
+
 static const size_t MaxFaceCount = 1000;
 static const size_t MaxVertexCount = MaxFaceCount * 4;
 static const size_t MaxIndexCount = MaxFaceCount * 6;
