@@ -24,6 +24,19 @@ namespace gl {
             glm::ivec2   Bearing;   // Offset from baseline to left/top of glyph
             uint32_t Advance;       // Horizontal offset to advance to next glyph
         };
+
+        class Font {
+        public:
+
+            std::unordered_map<char, Character> Characters;
+            Font() {
+
+            }
+            ~Font() {
+            
+            }
+        };
+
     class Text {
     public:
         Text() {

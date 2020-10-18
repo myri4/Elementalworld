@@ -13,12 +13,15 @@ public:
 	Material(const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3& specular, const float& shininess) : ambient(ambient), diffuse(diffuse), specular(specular), shininess(shininess) {}
 	~Material() {}
 
-	void Apply(gl::Shader& shader, const std::string& value) {
+	void Apply(const gl::Shader &shader, const std::string& value) {
 		shader.use();
 		shader.setVec3(std::string(value + ".ambient").c_str(), ambient);
 		shader.setVec3(std::string(value + ".diffuse").c_str(), diffuse);
 		shader.setVec3(std::string(value + ".specular").c_str(), specular);
 		shader.setFloat(std::string(value + ".shininess").c_str(), shininess);
+	}
+	void LoadMaterialFrom(const char* fileName) {
+
 	}
 };
 }

@@ -21,11 +21,11 @@ namespace wc{
 class Camera{
 public:
 	// camera Attributes
-	glm::vec3 Position = { 0,0,0 };
+	glm::vec3 Position = glm::vec3(0.0f);
 	glm::vec3 Front = { 0.0f, 0.0f, -1.0f };
 	glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::vec3 Right;
-	glm::vec3 WorldUp;
+	glm::vec3 Right = glm::vec3(0.0f);
+	glm::vec3 WorldUp = glm::vec3(0.0f, 1.0f, 0.0f);
 	// euler Angles
 	float Yaw = 0.0f;
 	float Pitch = 0.0f;
@@ -38,7 +38,7 @@ public:
 	Camera() {
 	
 	}
-	void Create(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = 0, float pitch = 0) {
+	void Create(glm::vec3 position = glm::vec3(0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = 0, float pitch = 0) {
 		Position = position;
 		WorldUp = up;
 		Yaw = yaw;

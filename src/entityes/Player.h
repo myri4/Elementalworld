@@ -8,7 +8,6 @@ private:
 public:
 	Camera camera;
 
-	glm::mat4 view;
 	glm::mat4 projection;
 	Player() {
 
@@ -39,13 +38,13 @@ public:
 	void UpdatePlayer(const glm::vec2& windsize, const bool& CenterMouse, const float& deltaTime) {
 
 		camera.UpdateCameraAngles(windsize, CenterMouse);
-
-		view = camera.GetViewMatrix(); 
+ 
 		projection = glm::perspective(glm::radians(camera.Zoom), windsize.x / windsize.y, 0.1f, 100.0f);
 
 		Position = camera.Position;
-
 	}
+	glm::mat4 GetView() {return camera.GetViewMatrix();}
+
 
 };
 class ServerPlayer : public Entity {

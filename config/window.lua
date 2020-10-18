@@ -1,4 +1,4 @@
-screenWidth = 1200
+screenWidth = 960
 screenHeight = 720
 framerateLimit = 0
 antialiasingLevel = 4

@@ -155,6 +155,9 @@
     <ClInclude Include="common\gl\Skybox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\world\World.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\camera.lua" />
@@ -166,6 +169,5 @@
     <None Include="shaderpacks\default\skybox.glsl" />
     <None Include="shaderpacks\default\text.glsl" />
     <None Include="shaderpacks\default\screenShader.glsl" />
-    <None Include="shaderpacks\default\Material.glsl" />
   </ItemGroup>
 </Project>

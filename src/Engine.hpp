@@ -16,12 +16,12 @@ namespace wc {
 
 		wc::Player p;
 
-		Chunk mainChunk;
+		std::array<Chunk, 10> chunks;
 
 		gl::Skybox mainSkybox;
 		gl::Shader mainShader;
 		gl::VertexBuffer chunkMeshBuffer;
-		
+
 
 		gl::Text TextRenderer;
 		gl::Shader textShader;
@@ -89,7 +89,7 @@ namespace wc {
 		void OnInput() override {
 
 			p.UpdatePlayerInput(deltaTime);
-			if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::F)) 
+			if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::F))
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			else
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -110,7 +110,7 @@ namespace wc {
 			loadFromFile("config/window.lua");
 			window.setActive();
 			if (!gladLoadGL()) WC_ERROR("Failed to initialize GLAD");
-			
+
 
 			// OpenGL state
 			EnableGLDebuging();
@@ -134,6 +134,8 @@ namespace wc {
 			glCullFace(GL_BACK);
 			glFrontFace(GL_CW);
 
+
+
 			//SoundEngine->play2D("assets/sounds/Alan Walker - The Spectre_wJnBTPUQS5A_youtube.mp3");
 
 			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -144,8 +146,13 @@ namespace wc {
 			mainShader.SetArray("u_Textures", MaxTextureUnits(), samplers);
 
 			mainSkybox.Create("scripts/skybox.lua");
-			mainChunk.Create({ 0,0,0 });
+			CreateChunks();
 			grassBlock.Create("scripts/grassblock.lua");
+			grassBlock.material.ambient = glm::vec3(1.0f, 1.0f, 1.0f);
+			grassBlock.material.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+			grassBlock.material.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+			grassBlock.material.shininess = 32.0f;
+			grassBlock.SendMaterialToShader(mainShader, "material");
 
 			textShader.Create("shaderpacks/default/text.glsl");
 			TextRenderer.Create("assets/font/Minecraft.ttf", textShader);
@@ -153,6 +160,15 @@ namespace wc {
 			p.InitPlayer({ 0,0,0 });
 		}
 
+		void DrawChunks() {
+			for (int i = 0; i < chunks.size(); i++)
+				chunks[i].Draw(mainShader);
+		}
+
+		void CreateChunks() {
+			for (int i = 0; i < chunks.size(); i++)	chunks[i].Create({ 0,0,i });
+		}
+		
 		//----------------------------------------------------------------------------------------------------------------------
 
 		void OnUpdate() override {
@@ -167,11 +183,11 @@ namespace wc {
 			mainShader.setMat4("projection", p.projection);
 
 			// camera/view transformation
-			mainShader.setMat4("view", p.view);		
+			mainShader.setMat4("view", p.GetView());		
 
-			mainChunk.Draw(mainShader);
+			DrawChunks();
 
-			mainSkybox.Draw(glm::mat4(glm::mat3(p.camera.GetViewMatrix())), p.projection);
+			//mainSkybox.Draw(glm::mat4(glm::mat3(p.GetView())), p.projection);
 			deltaTime = deltaTimer.restart().asSeconds();
 
 			glDisable(GL_DEPTH_TEST);

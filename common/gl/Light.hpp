@@ -2,29 +2,25 @@
 #include <gl/Shaders.h>
 
 namespace gl {
-	class Light {
-	public:
-		glm::vec4 vector;
+    class Light {
+    public:
+        glm::vec4 vector;
 
-		glm::vec3 ambient;
-		glm::vec3 diffuse;
-		glm::vec3 specular;
+        float constant;
+        float linear;
+        float quadratic;
 
-		float constant;
-		float linear;
-		float quadratic;
+        float strenght;
 
-		glm::vec3 color;
-		Light() {}
-		Light(const Light& light) : ambient(light.ambient), diffuse(light.diffuse), specular(light.specular) {}
-		Light(const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3& specular, const float& constant, const float& linear) : ambient(ambient), diffuse(diffuse), specular(specular){}
-		~Light() {}
+        glm::vec3 color;
 
-		void Apply(gl::Shader& shader, const std::string& value) {
-			shader.use();
-			shader.setVec3(std::string(value + ".ambient").c_str(), ambient);
-			shader.setVec3(std::string(value + ".diffuse").c_str(), diffuse);
-			shader.setVec3(std::string(value + ".specular").c_str(), specular);
-		}
-	};
+        void Apply(const gl::Shader &shader, const std::string& value) {
+            shader.use();
+            shader.setFloat(std::string(value + ".constant").c_str(), constant);
+            shader.setFloat(std::string(value + ".linear").c_str(), linear);
+            shader.setFloat(std::string(value + ".quadratic").c_str(), quadratic);
+            shader.setFloat(std::string(value + ".strenght").c_str(), strenght);
+            shader.setVec3(std::string(value + ".strenght").c_str(), color);
+        }
+    };
 }

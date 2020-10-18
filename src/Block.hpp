@@ -10,6 +10,7 @@ public:
 	uint32_t id;
 	bool isCollidable;
 	gl::Texture blockTexture[6];
+	gl::Material material;
 
 	Block(const char* file) {Create(file);}
 	Block() {}
@@ -24,6 +25,7 @@ public:
 		blockTexture[BACK_TEXTURE].load(blockState.GetString("Back"));
 		blockTexture[BOTTOM_TEXTURE].load(blockState.GetString("Bottom"));
 	}
+	void SendMaterialToShader(const gl::Shader &shader, const std::string& materialUnif) {material.Apply(shader, materialUnif);}
 private:
 
 };

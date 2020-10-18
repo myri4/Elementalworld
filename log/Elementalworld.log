@@ -1,3 +1,12 @@
-[10/14/20 11:43:24][info] Elementalworld: Created chunk at X:0.0 Y:0.0 Z:0.0
-[10/14/20 11:43:24][warning] Elementalworld: [OpenGL Debug MEDIUM] Program/shader state performance warning: Vertex shader in program 3 is being recompiled based on GL state.
-[10/14/20 11:43:24][warning] Elementalworld: [OpenGL Debug MEDIUM] Program/shader state performance warning: Vertex shader in program 9 is being recompiled based on GL state.
+[10/18/20 09:39:56][info] Elementalworld: Created chunk at X:0.0 Y:0.0 Z:0.0
+[10/18/20 09:39:56][info] Elementalworld: Created chunk at X:0.0 Y:0.0 Z:1.0
+[10/18/20 09:39:57][info] Elementalworld: Created chunk at X:0.0 Y:0.0 Z:2.0
+[10/18/20 09:39:57][info] Elementalworld: Created chunk at X:0.0 Y:0.0 Z:3.0
+[10/18/20 09:39:57][info] Elementalworld: Created chunk at X:0.0 Y:0.0 Z:4.0
+[10/18/20 09:39:57][info] Elementalworld: Created chunk at X:0.0 Y:0.0 Z:5.0
+[10/18/20 09:39:57][info] Elementalworld: Created chunk at X:0.0 Y:0.0 Z:6.0
+[10/18/20 09:39:57][info] Elementalworld: Created chunk at X:0.0 Y:0.0 Z:7.0
+[10/18/20 09:39:57][info] Elementalworld: Created chunk at X:0.0 Y:0.0 Z:8.0
+[10/18/20 09:39:57][info] Elementalworld: Created chunk at X:0.0 Y:0.0 Z:9.0
+[10/18/20 09:39:57][warning] Elementalworld: [OpenGL Debug MEDIUM] Program/shader state performance warning: Vertex shader in program 3 is being recompiled based on GL state.
+[10/18/20 09:39:57][warning] Elementalworld: [OpenGL Debug MEDIUM] Program/shader state performance warning: Vertex shader in program 9 is being recompiled based on GL state.
