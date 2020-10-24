@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <map>
+#include <unordered_map>
 
 #include <glm/glm.hpp>
 #include <glad/glad.h>
@@ -15,7 +15,7 @@ namespace gl {
             Character() {
 
             }
-            Character(uint32_t TextureID, glm::ivec2 Size, glm::ivec2 Bearing, uint32_t Advance) : TextureID(TextureID), Size(Size), Bearing(Bearing), Advance(Advance) {}
+            Character(const uint32_t& TextureID, const glm::ivec2& Size, const glm::ivec2& Bearing, const uint32_t& Advance) : TextureID(TextureID), Size(Size), Bearing(Bearing), Advance(Advance) {}
             ~Character() {
 
             }
@@ -23,18 +23,6 @@ namespace gl {
             glm::ivec2   Size;      // Size of glyph
             glm::ivec2   Bearing;   // Offset from baseline to left/top of glyph
             uint32_t Advance;       // Horizontal offset to advance to next glyph
-        };
-
-        class Font {
-        public:
-
-            std::unordered_map<char, Character> Characters;
-            Font() {
-
-            }
-            ~Font() {
-            
-            }
         };
 
     class Text {
@@ -48,7 +36,7 @@ namespace gl {
         ~Text() {
 
         }
-        TextStatus Create(const char* fontFileLoc, const char* Shader, int glyphs = 128) {
+        TextStatus Create(const char* fontFileLoc, const char* Shader, const int& glyphs = 128) {
             shader.Create(Shader);
 
             // FreeType
@@ -113,7 +101,7 @@ namespace gl {
             glBindVertexArray(0);
             return TextStatus::OK;
         }
-        TextStatus Create(const char* fontFileLoc, const gl::Shader& Shader, int glyphs = 128) {
+        TextStatus Create(const char* fontFileLoc, const gl::Shader& Shader, const int& glyphs = 128) {
             this->shader = Shader;
 
             // FreeType
@@ -178,6 +166,7 @@ namespace gl {
             glBindVertexArray(0);
             return TextStatus::OK;
         }
+
         void Draw(const std::string& text, const glm::vec2& windowSize, glm::vec2 pos = { 0,0 }, float scale = 1.0f, glm::vec3 color = { 0,0,0 }, int activeTexture = 0) {
             // activate corresponding render state	
             glm::mat4 projection = glm::ortho(0.0f, windowSize.x, 0.0f, windowSize.y);

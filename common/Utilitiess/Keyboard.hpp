@@ -1,6 +1,8 @@
 #pragma once
+
 #include "../wclibs/Core.hpp"
-namespace ew{
+
+namespace wc{
     namespace Keyboard {
 
 	enum class Key {

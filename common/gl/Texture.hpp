@@ -10,9 +10,7 @@ namespace gl{
 class Texture{
 public:
 	Texture() {}
-	enum class TextureStatus {
-			OK, COULD_NOT_OPEN_TEXTURE_FILE
-	};
+	enum class TextureStatus { OK, COULD_NOT_OPEN_TEXTURE_FILE };
 	Texture(const char* path) { load(path); }
 
 	TextureStatus load(const char* path) {
@@ -59,15 +57,15 @@ public:
 	
 	~Texture() {glDeleteTextures(1, &m_RendererID);}
 
-	void SetData(const char* data) {
+	void SetData(const char* data, const int& x, const int& y) {
 		
 		if (data) {
 			Bind();
-			glTexSubImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			glTexSubImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		}
 	}
 
-	void Bind(uint32_t ActiveTexture = 0) {
+	void Bind(const uint32_t& ActiveTexture = 0) {
 		glActiveTexture(GL_TEXTURE0 + ActiveTexture);
 		glBindTexture(GL_TEXTURE_2D, m_RendererID);
 	}
@@ -83,7 +81,7 @@ public:
 			glm::vec2(((coords.x + 1) * sprSize.x) / width, (coords.y * sprSize.y) / height)
 		};
 	}
-	int width = 0, height = 0;
+		int width = 0, height = 0;
 private:
 	uint32_t m_RendererID = 0;	
 };

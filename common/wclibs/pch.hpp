@@ -50,7 +50,7 @@
 #include <gl/Camera.hpp>
 #include <gl/Shaders.hpp>
 #include <gl/Texture.hpp>
-#include <gl/VertexArray.hpp>
+#include <gl/VertexBuffer.hpp>
 #include <gl/Skybox.hpp>
 #include <gl/IndexBuffer.hpp>
 #include <gl/Text.hpp>

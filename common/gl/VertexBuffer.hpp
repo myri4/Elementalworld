@@ -8,7 +8,7 @@ namespace gl {
     class VertexBuffer {
     public:
         VertexBuffer() {}
-        VertexBuffer(const void* data, uint32_t size, uint32_t mode = GL_STATIC_DRAW) { Create(data, size, mode); }
+        VertexBuffer(const void* data, const uint32_t& size, const uint32_t& mode = GL_STATIC_DRAW) { Create(data, size, mode); }
         ~VertexBuffer() { Destroy(); }
 
         void Bind() {
@@ -19,7 +19,7 @@ namespace gl {
         }
         void Unbind() { glBindVertexArray(0); }
 
-        void Create(const void* data, uint32_t size, uint32_t mode = GL_STATIC_DRAW) {
+        void Create(const void* data, const uint32_t& size, const uint32_t& mode = GL_STATIC_DRAW) {
             if (!VAO){
             glGenVertexArrays(1, &VAO);
             glGenBuffers(1, &VBO);
@@ -31,7 +31,7 @@ namespace gl {
             }
         }
 
-        void Reload(const void* data, uint32_t size, uint32_t offset = 0) {
+        void Reload(const void* data, const uint32_t& size, const uint32_t& offset = 0) {
             BindVBO();
             glBufferSubData(GL_ARRAY_BUFFER, offset, size, &data);
         }
@@ -50,9 +50,9 @@ namespace gl {
             return VBO;
         }
     private:
-        uint32_t VAO, VBO;
+        uint32_t VAO = 0, VBO = 0;
     };
-    void VertexAttribPointer(uint32_t index, int size, int stride, const void* pointer, uint32_t type = GL_FLOAT, bool normalized = false) {
+    void VertexAttribPointer(const uint32_t& index, const int& size, const int& stride, const void* pointer, const uint32_t& type = GL_FLOAT, const bool& normalized = false) {
         glEnableVertexAttribArray(index);
         glVertexAttribPointer(index, size, type, normalized, stride, pointer);
     }

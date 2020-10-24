@@ -21,13 +21,13 @@ public:
 
 	}
 	void UpdatePlayerInput(const float& deltaTime) {
-		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::W))      camera.Move(Camera_Movement::FORWARD, deltaTime);
-		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::S))      camera.Move(Camera_Movement::BACKWARD, deltaTime);
-		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::A))      camera.Move(Camera_Movement::LEFT, deltaTime);
-		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::D))      camera.Move(Camera_Movement::RIGHT, deltaTime);
-		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::Space))  camera.Move(Camera_Movement::UP, deltaTime);
-		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::LShift)) camera.Move(Camera_Movement::DOWN, deltaTime);
-		if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::C)) { camera.Zoom = 10; camera.MouseSensitivity = 18; }
+		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::W))      camera.Move(Camera_Movement::FORWARD, deltaTime);
+		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::S))      camera.Move(Camera_Movement::BACKWARD, deltaTime);
+		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::A))      camera.Move(Camera_Movement::LEFT, deltaTime);
+		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::D))      camera.Move(Camera_Movement::RIGHT, deltaTime);
+		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::Space))  camera.Move(Camera_Movement::UP, deltaTime);
+		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::LShift)) camera.Move(Camera_Movement::DOWN, deltaTime);
+		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::C)) { camera.Zoom = 10; camera.MouseSensitivity = 18; }
 		else {
 			camera.MouseSensitivity = 5;
 			camera.Zoom = 90;

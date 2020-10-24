@@ -84,19 +84,19 @@ namespace wc {
 		void OnInput() override {
 
 			p.UpdatePlayerInput(deltaTime);
-			if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::F))
+			if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::F))
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			else
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-			if (ew::Keyboard::isButtonPressed(ew::Keyboard::Key::R)) glDisable(GL_CULL_FACE);
+			if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::R)) glDisable(GL_CULL_FACE);
 			else glEnable(GL_CULL_FACE);
 
 			if (!window.hasFocus()) CenterMouse = false;
 			else  CenterMouse = true;
 
-			if (CenterMouse) ew::Mouse::ShowMouse(false);
-			else ew::Mouse::ShowMouse(true);
+			if (CenterMouse) wc::Mouse::ShowMouse(false);
+			else wc::Mouse::ShowMouse(true);
 
 		}
 

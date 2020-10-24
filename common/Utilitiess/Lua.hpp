@@ -45,25 +45,13 @@ namespace wc {
 			if (lua_isstring(L, -1)) 
 				return lua_tostring(L, -1);
 		}
-		//auto GetValue(const char* value) {
-		//	lua_getglobal(L, value);
-		//
-		//	if (lua_isstring(L, -1))
-		//		return lua_tostring(L, -1);
-		//	if (lua_isboolean(L, -1))
- 		//		return lua_toboolean(L, -1);
-		//	if (lua_isnumber(L, -1))
-		//		return (float)lua_tonumber(L, -1);
-		//
-		//
-		//}
 		void Close() {
 			lua_close(L);
 		}
 		~Lua() {
 			Close();
 		}
-		bool CheckLua(int32_t r) {
+		bool CheckLua(const int32_t& r) {
 		if (r != LUA_OK) return false;
 		else return true;
 		}

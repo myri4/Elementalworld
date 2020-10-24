@@ -3,7 +3,7 @@
 #include <wclibs/Core.hpp>
 #include <glm/glm.hpp>
 
-namespace ew{
+namespace wc{
 namespace Mouse {
 void SetMousePosition(int x, int y) {
 

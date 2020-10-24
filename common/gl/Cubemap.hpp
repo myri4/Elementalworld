@@ -9,11 +9,9 @@ namespace gl {
 	class Cubemap{
 	public:
         Cubemap() {}
-		Cubemap(std::array<const char*, 6> faces) {Create(faces);}
-        ~Cubemap() {
-            glDeleteTextures(1, &m_RendererID);
-        }
-        void Create(std::array<const char*, 6> faces) {
+		Cubemap(const std::array<const char*, 6>& faces) {Create(faces);}
+        ~Cubemap() {glDeleteTextures(1, &m_RendererID);}
+        void Create(const std::array<const char*, 6>& faces) {
         int32_t width, height, nrChannels;
             glGenTextures(1, &m_RendererID);
             glBindTexture(GL_TEXTURE_CUBE_MAP, m_RendererID);
@@ -28,11 +26,11 @@ namespace gl {
                 
                     stbi_image_free(data);
             }
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
         }
         void Bind() {
             glBindTexture(GL_TEXTURE_CUBE_MAP, m_RendererID);

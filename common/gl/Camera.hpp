@@ -25,7 +25,7 @@ public:
 	glm::vec3 Front = glm::vec3(0.0f, 0.0f, -1.0f);
 	glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 Right = glm::vec3(0.0f);
-	glm::vec3 WorldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 WorldUp = glm::vec3(0.0f, 0.0f, 0.0f);
 	// euler Angles
 	float Yaw = 0.0f;
 	float Pitch = 0.0f;
@@ -38,7 +38,7 @@ public:
 	Camera() {
 	
 	}
-	void Create(glm::vec3 position = glm::vec3(0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = 0, float pitch = 0) {
+	void Create(const glm::vec3& position = glm::vec3(0.0f), const glm::vec3& up = glm::vec3(0.0f, 1.0f, 0.0f), const float& yaw = 0, const float& pitch = 0) {
 		Position = position;
 		WorldUp = up;
 		Yaw = yaw;
@@ -60,11 +60,11 @@ public:
 		if (direction == Camera_Movement::DOWN)	    Position.y -= velocity;
 	}
 
-	void UpdateCameraAngles(glm::vec2 windowpos, bool centerMouse = true, bool invertMouse = false) {
+	void UpdateCameraAngles(const glm::vec2& windowpos, const bool& centerMouse = true, const bool& invertMouse = false) {
 
 		int32_t xt, yt;
 		
-		glm::vec2 pos = ew::Mouse::GetMousePos();
+		glm::vec2 pos = wc::Mouse::GetMousePos();
 
 		xt = windowpos.x + 400;
 		yt = windowpos.y + 300;
@@ -89,7 +89,7 @@ public:
 		// update Front, Right and Up Vectors using the updated Euler angles
 			if (centerMouse) {
 				updateCameraVectors();
-				ew::Mouse::SetMousePosition(xt, yt);
+				wc::Mouse::SetMousePosition(xt, yt);
 			}
 	}
 private:

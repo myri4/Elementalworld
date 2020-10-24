@@ -3,7 +3,7 @@
 #include <glad/glad.h>
 #include <gl/IndexBuffer.hpp>
 #include <gl/Cubemap.hpp>
-#include <gl/VertexArray.hpp>
+#include <gl/VertexBuffer.hpp>
 #include <Utilitiess/Lua.hpp>
 
 namespace gl {
