@@ -78,7 +78,7 @@ namespace wc {
 			// camera/view transformation
 			worldShader.setMat4("view", p.GetView());
 			Draw();
-			//skybox.Draw(glm::mat4(glm::mat3(p.GetView())), p.projection);
+			skybox.Draw(glm::mat4(glm::mat3(p.GetView())), p.projection);
 		}
 
 	private:
@@ -104,7 +104,7 @@ namespace wc {
 		}
 
 		void LoadEnivoirment() {
-
+			skybox.Create("scripts/skybox.lua");
 		}
 		gl::Shader worldShader;
 		gl::Skybox skybox;

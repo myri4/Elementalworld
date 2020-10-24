@@ -13,12 +13,8 @@ namespace gl {
         Skybox() {
 
         }
-        Skybox(const char* file) {
-            Create(file);
-        }
-        ~Skybox() {
-            skyboxArray.Destroy();
-        }
+        Skybox(const char* file) {Create(file);}
+        ~Skybox() {skyboxArray.Destroy();}
         void Create(const char* file) {
             wc::Lua skyboxState(file);
             if(std::string(skyboxState.GetString("vertexPath")).empty() || std::string(skyboxState.GetString("vertexPath")).empty())
@@ -70,13 +66,13 @@ namespace gl {
             gl::VertexAttribPointer(0, 3, 3 * sizeof(float), (void*)0);
             skyboxArray.Unbind();
 
-            std::vector<const char*> faces;
-            faces.push_back(skyboxState.GetString("right"));
-            faces.push_back(skyboxState.GetString("left"));
-            faces.push_back(skyboxState.GetString("top"));
-            faces.push_back(skyboxState.GetString("bottom"));
-            faces.push_back(skyboxState.GetString("front"));
-            faces.push_back(skyboxState.GetString("back"));
+            std::array<const char*, 6> faces;
+            faces[0] = skyboxState.GetString("right");
+            faces[1] = skyboxState.GetString("left");
+            faces[2] = skyboxState.GetString("top");
+            faces[3] = skyboxState.GetString("bottom");
+            faces[4] = skyboxState.GetString("front");
+            faces[5] = skyboxState.GetString("back");
             skyboxTexture.Create(faces);
 
             uint32_t indices[36];
