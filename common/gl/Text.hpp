@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 #include <glad/glad.h>
-#include <gl/Shaders.h>
+#include <gl/Shaders.hpp>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 

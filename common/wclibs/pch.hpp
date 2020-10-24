@@ -47,14 +47,14 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 
 //Custom libraries
-#include <gl/Camera.h>
-#include <gl/Shaders.h>
-#include <gl/Texture.h>
-#include <gl/VertexArray.h>
-#include <gl/Skybox.h>
-#include <gl/IndexBuffer.h>
-#include <gl/Text.h>
-#include <gl/FrameBuffer.h>
+#include <gl/Camera.hpp>
+#include <gl/Shaders.hpp>
+#include <gl/Texture.hpp>
+#include <gl/VertexArray.hpp>
+#include <gl/Skybox.hpp>
+#include <gl/IndexBuffer.hpp>
+#include <gl/Text.hpp>
+#include <gl/FrameBuffer.hpp>
 #include <gl/Vertex.hpp>
 #include <gl/Material.hpp>  
 #include <gl/Light.hpp>
@@ -64,7 +64,7 @@
 
 //Lua
 #include <Utilitiess/Lua.hpp>
-#include <Utilitiess/State.h>
+#include <Utilitiess/State.hpp>
 
 //Sound
 #include <irrKlang/irrKlang.h>
@@ -72,5 +72,4 @@
 //Utilitiess
 #include <Utilitiess/Keyboard.hpp>
 #include <Utilitiess/Mouse.hpp>
-#include <Utilitiess/Log.h>
-#include <gl/Material.hpp>
+#include <Utilitiess/Log.hpp>

@@ -1,27 +1,22 @@
 #pragma once
 #include <wclibs/pch.hpp>
-#include <gl/glErrors.h>
-#include "entityes/Player.h"
-#include "world/Chunk.h"
+#include <gl/glErrors.hpp>
+#include "entityes/Player.hpp"
+#include "world/World.hpp"
 
 namespace wc {
 
 	class GameEngine : public Engine {
 	private:
 		sf::RenderWindow window;
-		uint32_t frameCount, FPS;
-		sf::Clock frameTimer, deltaTimer;
-		bool CenterMouse;
-		float deltaTime;
+		sf::Clock deltaTimer;
+		bool CenterMouse = true;
+		float deltaTime = 0.0f;
 
 		wc::Player p;
 
-		std::array<Chunk, 10> chunks;
-
-		gl::Skybox mainSkybox;
-		gl::Shader mainShader;
-		gl::VertexBuffer chunkMeshBuffer;
-
+		std::array<Chunk, 3> chunks;
+		wc::World world;
 
 		gl::Text TextRenderer;
 		gl::Shader textShader;
@@ -139,34 +134,14 @@ namespace wc {
 			//SoundEngine->play2D("assets/sounds/Alan Walker - The Spectre_wJnBTPUQS5A_youtube.mp3");
 
 			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-			mainShader.Create("shaderpacks/default/core.glsl");
-			mainShader.use();
-			int samplers[MaxTextures];
-			for (int i = 0; i <= MaxTextureUnits(); i++) samplers[i] = i;
-			mainShader.SetArray("u_Textures", MaxTextureUnits(), samplers);
-
-			mainSkybox.Create("scripts/skybox.lua");
-			CreateChunks();
-			grassBlock.Create("scripts/grassblock.lua");
-			grassBlock.material.ambient = glm::vec3(1.0f, 1.0f, 1.0f);
-			grassBlock.material.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
-			grassBlock.material.specular = glm::vec3(1.0f, 1.0f, 1.0f);
-			grassBlock.material.shininess = 32.0f;
-			grassBlock.SendMaterialToShader(mainShader, "material");
+			
+			world.Create();
 
 			textShader.Create("shaderpacks/default/text.glsl");
 			TextRenderer.Create("assets/font/Minecraft.ttf", textShader);
 
+
 			p.InitPlayer({ 0,0,0 });
-		}
-
-		void DrawChunks() {
-			for (int i = 0; i < chunks.size(); i++)
-				chunks[i].Draw(mainShader);
-		}
-
-		void CreateChunks() {
-			for (int i = 0; i < chunks.size(); i++)	chunks[i].Create({ 0,0,i });
 		}
 		
 		//----------------------------------------------------------------------------------------------------------------------
@@ -175,23 +150,12 @@ namespace wc {
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			p.UpdatePlayer({ window.getPosition().x, window.getPosition().y }, CenterMouse, deltaTime);
 
-			// activate shader
-			mainShader.use();
-			mainShader.setVec3("viewPos", p.Position);
+			world.Update(p);
 
-			// pass projection matrix to shader (note that in this case it could change every frame)
-			mainShader.setMat4("projection", p.projection);
-
-			// camera/view transformation
-			mainShader.setMat4("view", p.GetView());		
-
-			DrawChunks();
-
-			//mainSkybox.Draw(glm::mat4(glm::mat3(p.GetView())), p.projection);
 			deltaTime = deltaTimer.restart().asSeconds();
 
 			glDisable(GL_DEPTH_TEST);
-			TextRenderer.Draw(std::to_string(FPS), glm::vec2((float)window.getSize().x, (float)window.getSize().y) , { 25.0f, 700.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
+			TextRenderer.Draw(std::to_string(1 / deltaTime), glm::vec2((float)window.getSize().x, (float)window.getSize().y) , { 25.0f, 700.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
 			TextRenderer.Draw("X: " + std::to_string(p.Position.x) + " Y: " + std::to_string(p.Position.y) + " Z: " + std::to_string(p.Position.z), glm::vec2((float)window.getSize().x, (float)window.getSize().y), { 25.0f, 660.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
 			glEnable(GL_DEPTH_TEST);
 			window.display();
@@ -210,15 +174,6 @@ namespace wc {
 				OnEvent();
 				// Input handler
 				OnInput();
-
-				//Get the framerate
-				frameCount++;
-				if (frameTimer.getElapsedTime().asSeconds() > 1) {
-					uint32_t secs = frameTimer.getElapsedTime().asSeconds();
-					FPS = frameCount / secs;
-					frameCount = 0;
-					frameTimer.restart();
-				}
 			}
 		}
 	};

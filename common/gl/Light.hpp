@@ -1,5 +1,5 @@
 #pragma once
-#include <gl/Shaders.h>
+#include <gl/Shaders.hpp>
 
 namespace gl {
     class Light {

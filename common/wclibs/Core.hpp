@@ -61,16 +61,9 @@ using Scope = std::unique_ptr<T>;
 //OpenGL Memory Buffer Variables
 static const size_t chunkSize = 32;
 
-static const size_t MaxFaceCount = 1000;
+static const size_t MaxFaceCount = 100;
 static const size_t MaxVertexCount = MaxFaceCount * 4;
 static const size_t MaxIndexCount = MaxFaceCount * 6;
-static const size_t MaxTextures = 64;
-
-static const size_t MaxTextureUnits() {
-	static int MaxTextureImageUnits = 0;
-	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &MaxTextureImageUnits);
-	return MaxTextureImageUnits;
-}
 
 typedef signed char        int8_t;
 typedef short              int16_t;

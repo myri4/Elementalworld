@@ -6,7 +6,7 @@ extern "C" {
 #include <lua/luaconf.h>
 #include <lua/lualib.h>
 }
-#include <Utilitiess/Log.h>
+#include <Utilitiess/Log.hpp>
 
 namespace wc {
 	

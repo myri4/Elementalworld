@@ -1,9 +1,9 @@
 #pragma once
 
 #include <glad/glad.h>
-#include <gl/IndexBuffer.h>
-#include <gl/Cubemap.h>
-#include <gl/VertexArray.h>
+#include <gl/IndexBuffer.hpp>
+#include <gl/Cubemap.hpp>
+#include <gl/VertexArray.hpp>
 #include <Utilitiess/Lua.hpp>
 
 namespace gl {

@@ -2,11 +2,9 @@
 #version 330 core
 layout (location = 0) in vec3 a_Pos;
 layout (location = 1) in vec2 a_TexCoord;
-layout (location = 2) in float a_TexIndex;
-layout (location = 3) in vec3 a_Normal;
+layout (location = 2) in vec3 a_Normal;
 
 out vec2 v_TexCoords;
-out float v_TexIndex;
 out vec3 v_Normal;
 out vec3 v_FragPos;
 
@@ -19,7 +17,6 @@ void main()
 {
 	gl_Position = projection * view * model * vec4(a_Pos, 1.0);
 	v_TexCoords = a_TexCoord;
-	v_TexIndex = a_TexIndex;
 	v_Normal = a_Normal;
 	v_FragPos = vec3(model * vec4(a_Pos, 1.0));
 }
@@ -31,7 +28,6 @@ void main()
 layout (location = 0) out vec4 Result;
 
 in vec2 v_TexCoords;
-in float v_TexIndex;
 in vec3 v_Normal;
 in vec3 v_FragPos;
 
@@ -56,7 +52,7 @@ struct Material {
 };
 
 uniform vec3 viewPos;
-uniform sampler2D u_Textures[32];
+uniform sampler2D u_Texture;
 uniform float gamma = 2.2;
 uniform bool blinn = true;
 uniform bool attenuation = true;
@@ -119,7 +115,7 @@ void main()
     ll.quadratic = 0.032f;
     ll.strenght = 0.5f;
 
-    vec4 texColor = texture(u_Textures[int(v_TexIndex)], v_TexCoords);// * minimalLight;
+    vec4 texColor = texture(u_Texture, v_TexCoords);// * minimalLight;
 
     //texColor += vec4(CalculateLight(ll, material, normalize(v_Normal), normalize(viewPos - v_FragPos), blinn, attenuation), 1.0f);
 

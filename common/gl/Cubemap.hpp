@@ -1,10 +1,9 @@
 #pragma once
 
 #include <glad/glad.h>
-#include <string>
 #include <vector>
 #include <stb_image/stb_image.h>
-#include <Utilitiess/Log.h>
+#include <Utilitiess/Log.hpp>
 
 namespace gl {
 	class Cubemap{
@@ -29,11 +28,11 @@ namespace gl {
                 
                     stbi_image_free(data);
             }
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_REPEAT);
         }
         void Bind() {
             glBindTexture(GL_TEXTURE_CUBE_MAP, m_RendererID);
@@ -43,6 +42,6 @@ namespace gl {
         }
         uint32_t GetRendererID() { return this->m_RendererID; }
 	private:
-        uint32_t m_RendererID;
+        uint32_t m_RendererID = 0;
 	};
  }
