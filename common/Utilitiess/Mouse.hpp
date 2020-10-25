@@ -5,7 +5,7 @@
 
 namespace wc{
 namespace Mouse {
-void SetMousePosition(int x, int y) {
+void SetMousePosition(const int& x, const int& y) {
 
 #ifdef _WIN32
 	SetCursorPos(x, y);
@@ -13,15 +13,7 @@ void SetMousePosition(int x, int y) {
 
 }
 
-void SetMousePosition(float x, float y) {
-
-#ifdef _WIN32
-	SetCursorPos(x, y);
-#endif
-
-}
-
-void SetMousePosition(glm::vec2 pos) {
+void SetMousePosition(const glm::ivec2& pos) {
 
 #ifdef _WIN32
 	SetCursorPos(pos.x, pos.y);
@@ -35,14 +27,13 @@ glm::vec2 GetMousePos() {
 	POINT p;
 	GetCursorPos(&p);
 	return { p.x,p.y };
-
 #else
 
 	return { 0, 0 };
 #endif // _WIN32
 }
 
-void ShowMouse(bool show) {
+void ShowMouse(const bool& show) {
 
 #ifdef _WIN32
 	ShowCursor(show);

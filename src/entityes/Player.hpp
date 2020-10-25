@@ -8,6 +8,7 @@ class Player : public Entity{
 private:
 public:
 	Camera camera;
+	float Near = 0.1f, Far = 100.0f;
 
 	glm::mat4 projection = glm::mat4(0.0f);
 	Player() {
@@ -45,7 +46,7 @@ public:
 
 		camera.UpdateCameraAngles(windsize, CenterMouse);
  
-		projection = glm::perspective(glm::radians(camera.Zoom), windsize.x / windsize.y, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(camera.Zoom), windsize.x / windsize.y, Near, Far);
 
 		Position = camera.Position;
 	}

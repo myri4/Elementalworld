@@ -39,7 +39,7 @@ public:
 		}
 		else
 		{
-			uint32_t white = 0xffffffff;
+			uint8_t white = 0xffffffff;
 			glBindTexture(GL_TEXTURE_2D, m_RendererID);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &white);
 			glGenerateMipmap(GL_TEXTURE_2D);

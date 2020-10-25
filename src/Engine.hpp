@@ -52,11 +52,7 @@ namespace wc {
 			frameRateLimit = windowScript.GetNumber("framerateLimit");
 			vsync = windowScript.GetBool("vsync");
 
-			int32_t nrComponents, imgWidth, imgHeight;
-			stbi_set_flip_vertically_on_load(false);
-
 			window.create(sf::VideoMode(width, height), "Elementalworld", style, sf::ContextSettings(24, 0, windowScript.GetNumber("antialiasingLevel"), windowScript.GetNumber("majorVersion"), windowScript.GetNumber("minorVersion")));
-			window.setIcon(imgWidth, imgHeight, stbi_load(windowScript.GetString("iconPath"), &imgWidth, &imgHeight, &nrComponents, 0));
 			window.setFramerateLimit(frameRateLimit);
 			window.setVerticalSyncEnabled(vsync);
 

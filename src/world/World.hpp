@@ -5,20 +5,6 @@
 #include "../entityes/Player.hpp"
 
 namespace wc {
-		
-	int to1D(const glm::vec3& pos) {
-		return (pos.z * chunkSize * chunkSize) + (pos.y * chunkSize) + pos.x;
-	}
-	glm::vec3 to3D(const int& idx) {
-		int i = idx;
-		int z = i / (chunkSize * chunkSize);
-		i -= (z * chunkSize * chunkSize);
-		int y = i / chunkSize;
-		int x = i % chunkSize;
-		return glm::vec3(x, y, z);
-	}
-
-
 
 	struct NoiseOptions {
 		int octaves;
@@ -28,14 +14,12 @@ namespace wc {
 		float offset;
 	};
 
-	float getNoiseFor(const glm::vec2& pos, const glm::vec2& chunkPosition, const NoiseOptions& options, const int& seed = 0) {
+	float getNoiseFor(const glm::vec2& pos, const glm::vec2& chunkPosition, const NoiseOptions& options, const int& seed = 10) {
 		int voxelX = pos.x + chunkPosition.x * chunkSize;
 		int voxelZ = pos.y + chunkPosition.y * chunkSize;
 
 		float value = 0.0f;
 		value = glm::simplex(glm::vec3(voxelX / 32.0f, voxelZ / 32.0f, seed));
-
-		//for (int i = 0; i < options.octaves; i++) {}
 
 		value = (value + 1) / 2;
 
@@ -46,8 +30,8 @@ namespace wc {
 	public:
 		gl::Texture blockAtlas;
 		std::unordered_map<int, Block> blockData;
-		std::unordered_map<int, int> worldff;
 		std::array<Chunk, 3> world;
+		gl::IndexBuffer chunkIndexBuffer;
 		
 		World(){
 		
@@ -56,34 +40,29 @@ namespace wc {
 
 		}
 
-		int dd = to1D(glm::vec3(31,31,31));
-
 		void Create() {
 			worldShader.Create("shaderpacks/default/core.glsl");
 			worldShader.use();
 			worldShader.setInt("u_Texture", 0);
 
-			//glm::ivec3 ins = glm::ivec3(0.0f);
-			//worldff[ins] = 1;
-
-
 			LoadBlocks();
 			LoadEnivoirment();
+			SetUpIndexBuffer();
+
+			WC_INFO("Sizeof chunk in bytes: {0}", sizeof(Chunk));
 
 			skybox.Create("scripts/skybox.lua");
 			for (int i = 0; i < world.size(); i++) {
-				world[i].Create(glm::vec3(i, 0, 0));
+				world[i].Create(i);
 		
 				for (uint8_t z = 0; z < chunkSize; z++) 
 					for (uint8_t x = 0; x < chunkSize; x++) {
-						int heightMap = getNoiseFor(glm::vec2(x, z), glm::vec2(world[i].chunkPosition.x, world[i].chunkPosition.z), worldNoiseOptions);
+						int heightMap = getNoiseFor(glm::vec2(x, z), glm::vec2(to3D(world[i].chunkPosition).x, to3D(world[i].chunkPosition).z), worldNoiseOptions);
 						for (int y = 0; y < chunkSize; y++)
-							if ((int)world[i].chunkPosition.y * chunkSize + y == heightMap) { setBlock(glm::vec3(x, y, z), 1, i); }
+							if ((int)to3D(world[i].chunkPosition).y * chunkSize + y == heightMap) { setBlock(glm::vec3(x, y, z), 1, i); }
 					}
 					UpdateWorldMesh(i);
 			}
-			WC_INFO("To 3D got X:{0} Y:{1} Z:{2}", to3D(dd).x, to3D(dd).y, to3D(dd).z);
-			WC_INFO("To 1D got : {0}", to1D({31,31,31}));
 		}
 
 		void Update(Player &p) {
@@ -104,27 +83,44 @@ namespace wc {
 
 	private:
 
+		void SetUpIndexBuffer() {
+			uint32_t indices[MaxIndexCount];
+			uint32_t iOffset = 0;
+			for (uint32_t i = 0; i < MaxIndexCount; i += 6) {
+			 indices[i + 0] = 0 + iOffset;
+			 indices[i + 1] = 1 + iOffset;
+			 indices[i + 2] = 2 + iOffset;
+
+			 indices[i + 3] = 2 + iOffset;
+			 indices[i + 4] = 3 + iOffset;
+			 indices[i + 5] = 0 + iOffset;
+
+			 iOffset += 4;
+			}
+			chunkIndexBuffer.Create(indices, sizeof(indices));
+		}
+
 		void setBlock(const glm::vec3& pos, const int& block, const int& chunk) { // TEMP:
 			if (pos.x > chunkSize || pos.y > chunkSize || pos.z > chunkSize) return;
 			int x = pos.x;
 			int y = pos.y;
 			int z = pos.z;
-			world[chunk].chunkData[x][y][z] = block;
+			world[chunk].chunkData[to1D(glm::vec3(x, y, z))] = block;
 		}
 
 		void Draw() {
 			for (uint32_t i = 0; i < world.size(); i++) {
-				if (world[i].chunkMeshBuffer.GetVAO() == 0 || world[i].chunkIndexBuffer.GetEBO() == 0) return;
+				if (world[i].chunkMeshBuffer.GetVAO() == 0 || chunkIndexBuffer.GetEBO() == 0) return;
 				// calculate the model matrix for each object and pass it to shader before drawing
-				worldShader.use();
-				worldShader.setMat4("model", glm::translate(glm::mat4(1.0f), world[i].chunkPosition * glm::vec3(chunkSize)));
+				worldShader.setMat4("model", glm::translate(glm::mat4(1.0f), to3D(world[i].chunkPosition) * glm::vec3(chunkSize)));
+				//std::async(std::launch::async, UpdateWorldMesh);
 				UpdateWorldMesh(i);
 			}
 		}
 
 		void Flush(const int& chunk) {
+			chunkIndexBuffer.Bind();
 			world[chunk].chunkMeshBuffer.Bind();
-			world[chunk].chunkIndexBuffer.Bind();
 			glDrawElements(GL_TRIANGLES, world[chunk].IndexCount, GL_UNSIGNED_INT, nullptr);
 
 			world[chunk].IndexCount = 0;
@@ -137,16 +133,16 @@ namespace wc {
 					for (uint8_t z = 0; z < chunkSize; z++)
 						for (uint8_t x = 0; x < chunkSize; x++)
 						{
-							if (world[chunk].chunkData[x][y][z] > 0)
+							if (world[chunk].chunkData[to1D(glm::vec3(x, y, z))] > 0)
 							{
 								//Positive
-								if (y + 1 < chunkSize) if (world[chunk].chunkData[x][y + 1][z] == 0) addFace(TOP_FACE,   glm::vec3(x, y, z), glm::vec3( 0.0f, 1.0f, 0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::TOP], chunk); else {};
-								if (z + 1 < chunkSize) if (world[chunk].chunkData[x][y][z + 1] == 0) addFace(FRONT_FACE, glm::vec3(x, y, z), glm::vec3( 0.0f, 0.0f, 1.0f), blockData[1].TexCoords[(int)BlockTexture::FRONT], chunk); else {};
-								if (x + 1 < chunkSize) if (world[chunk].chunkData[x + 1][y][z] == 0) addFace(RIGHT_FACE, glm::vec3(x, y, z), glm::vec3( 1.0f, 0.0f, 0.0f), blockData[1].TexCoords[(int)BlockTexture::RIGHT], chunk); else {};
+								if (y + 1 < chunkSize) if (world[chunk].chunkData[to1D(glm::vec3(x, y + 1, z))] == 0) addFace(TOP_FACE,   glm::vec3(x, y, z), glm::vec3( 0.0f, 1.0f, 0.0f), blockData[world[chunk].chunkData[to1D(glm::vec3(x, y, z))]].TexCoords[(int)BlockTexture::TOP], chunk); else {};
+								if (z + 1 < chunkSize) if (world[chunk].chunkData[to1D(glm::vec3(x, y, z + 1))] == 0) addFace(FRONT_FACE, glm::vec3(x, y, z), glm::vec3( 0.0f, 0.0f, 1.0f), blockData[world[chunk].chunkData[to1D(glm::vec3(x, y, z))]].TexCoords[(int)BlockTexture::FRONT], chunk); else {};
+								if (x + 1 < chunkSize) if (world[chunk].chunkData[to1D(glm::vec3(x + 1, y, z))] == 0) addFace(RIGHT_FACE, glm::vec3(x, y, z), glm::vec3( 1.0f, 0.0f, 0.0f), blockData[world[chunk].chunkData[to1D(glm::vec3(x, y, z))]].TexCoords[(int)BlockTexture::RIGHT], chunk); else {};
 								//Negative	   																																		 
-								if (y - 1 > 0)		   if (world[chunk].chunkData[x][y - 1][z] == 0) addFace(BOTTOM_FACE,glm::vec3(x, y, z), glm::vec3( 0.0f,-1.0f, 0.0f), blockData[1].TexCoords[(int)BlockTexture::BOTTOM], chunk); else {};
-								if (z - 1 > 0)		   if (world[chunk].chunkData[x][y][z - 1] == 0) addFace(BACK_FACE,	 glm::vec3(x, y, z), glm::vec3( 0.0f, 0.0f,-1.0f), blockData[1].TexCoords[(int)BlockTexture::BACK], chunk); else {};
-								if (x - 1 > 0)		   if (world[chunk].chunkData[x - 1][y][z] == 0) addFace(LEFT_FACE,  glm::vec3(x, y, z), glm::vec3(-1.0f, 0.0f, 0.0f), blockData[1].TexCoords[(int)BlockTexture::LEFT], chunk); else {};
+								if (y - 1 > 0)		   if (world[chunk].chunkData[to1D(glm::vec3(x, y - 1, z))] == 0) addFace(BOTTOM_FACE,glm::vec3(x, y, z), glm::vec3( 0.0f,-1.0f, 0.0f), blockData[world[chunk].chunkData[to1D(glm::vec3(x, y, z))]].TexCoords[(int)BlockTexture::BOTTOM], chunk); else {};
+								if (z - 1 > 0)		   if (world[chunk].chunkData[to1D(glm::vec3(x, y, z - 1))] == 0) addFace(BACK_FACE,  glm::vec3(x, y, z), glm::vec3( 0.0f, 0.0f,-1.0f), blockData[world[chunk].chunkData[to1D(glm::vec3(x, y, z))]].TexCoords[(int)BlockTexture::BACK], chunk); else {};
+								if (x - 1 > 0)		   if (world[chunk].chunkData[to1D(glm::vec3(x - 1, y, z))] == 0) addFace(LEFT_FACE,  glm::vec3(x, y, z), glm::vec3(-1.0f, 0.0f, 0.0f), blockData[world[chunk].chunkData[to1D(glm::vec3(x, y, z))]].TexCoords[(int)BlockTexture::LEFT], chunk); else {};
 							}
 						}
 				EndBatch(chunk);
@@ -176,10 +172,16 @@ namespace wc {
 			blockData.reserve(3);
 			blockAtlas.load("assets/textures/block/blockAtlas.png");
 
-			AddBlock("scripts/grassblock.lua");
+			AddBlock("scripts/grassblock.lua", { 
+				glm::vec2(0, 1),
+				glm::vec2(1, 0),
+				glm::vec2(0, 0),
+				glm::vec2(0, 0),
+				glm::vec2(0, 0),
+				glm::vec2(0, 0)});
 		}
 
-		void AddBlock(const char* script) {
+		void AddBlock(const char* script, const std::array<glm::vec2, 6>& texCoords) {
 			Block block;
 			block.Create(script);
 			block.material.ambient = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -187,12 +189,12 @@ namespace wc {
 			block.material.specular = glm::vec3(1.0f, 1.0f, 1.0f);
 			block.material.shininess = 32.0f;
 			block.SendMaterialToShader(worldShader, "material");
-			block.TexCoords[(int)BlockTexture::TOP] = {0, 1};
-			block.TexCoords[(int)BlockTexture::BOTTOM] = { 1, 0 };
-			block.TexCoords[(int)BlockTexture::LEFT] = { 0, 0 };
-			block.TexCoords[(int)BlockTexture::RIGHT] = { 0, 0 };
-			block.TexCoords[(int)BlockTexture::FRONT] = { 0, 0 };
-			block.TexCoords[(int)BlockTexture::BACK] = { 0, 0 };
+			block.TexCoords[(int)BlockTexture::TOP] = texCoords[(int)BlockTexture::TOP];
+			block.TexCoords[(int)BlockTexture::BOTTOM] = texCoords[(int)BlockTexture::BOTTOM];
+			block.TexCoords[(int)BlockTexture::LEFT] = texCoords[(int)BlockTexture::LEFT];
+			block.TexCoords[(int)BlockTexture::RIGHT] = texCoords[(int)BlockTexture::RIGHT];
+			block.TexCoords[(int)BlockTexture::FRONT] = texCoords[(int)BlockTexture::FRONT];
+			block.TexCoords[(int)BlockTexture::BACK] = texCoords[(int)BlockTexture::BACK];
 			blockData[block.id] = block;
 		}
 

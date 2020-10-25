@@ -2,61 +2,33 @@
 
 #include <gl/VertexBuffer.hpp>
 #include <gl/Vertex.hpp>
-#include <gl/IndexBuffer.hpp>
 #include <glm/glm.hpp>
-#include <wclibs/Core.hpp>
 #include <array>
-#include "Block.hpp"
+
+//OpenGL Memory Buffer Variables
+static const size_t chunkSize = 32;
+
+static const size_t MaxFaceCount = 125;
+static const size_t MaxVertexCount = MaxFaceCount * 4;
+static const size_t MaxIndexCount = MaxFaceCount * 6;
 
 namespace wc {
-
-using Face = std::array < glm::vec3, 4 >;
-
-Face BACK_FACE = {
-	glm::vec3(-blockSize,  blockSize, -blockSize), // top-left
-	glm::vec3(-blockSize, -blockSize, -blockSize), // Bottom-left  
-	glm::vec3( blockSize, -blockSize, -blockSize), // bottom-right 
-	glm::vec3( blockSize,  blockSize, -blockSize), // top-right
-};
-Face FRONT_FACE = {
-	glm::vec3( blockSize,  blockSize,  blockSize), // top-right
-	glm::vec3( blockSize, -blockSize,  blockSize), // bottom-right        
-	glm::vec3(-blockSize, -blockSize,  blockSize), // bottom-left
-	glm::vec3(-blockSize,  blockSize,  blockSize)  // top-left   
-};
-Face LEFT_FACE = {
-	glm::vec3(-blockSize,  blockSize,  blockSize),  // top-right
-	glm::vec3(-blockSize, -blockSize,  blockSize),  // bottom-right
-	glm::vec3(-blockSize, -blockSize, -blockSize),  // bottom-left 
-	glm::vec3(-blockSize,  blockSize, -blockSize)   // top-left   
-};
-Face RIGHT_FACE = {
-	 glm::vec3(blockSize,  blockSize, -blockSize),  // top-right      
-	 glm::vec3(blockSize, -blockSize, -blockSize),  // bottom-right          
-	 glm::vec3(blockSize, -blockSize,  blockSize),  // bottom-left
-	 glm::vec3(blockSize,  blockSize,  blockSize)   // top-left
-};
-Face BOTTOM_FACE = {
-	glm::vec3(-blockSize, -blockSize, -blockSize),  // top-right 
-	glm::vec3(-blockSize, -blockSize,  blockSize),  // bottom-right
-	glm::vec3( blockSize, -blockSize,  blockSize),  // bottom-left
-	glm::vec3( blockSize, -blockSize, -blockSize)   // top-left  
-};
-Face TOP_FACE = {
-	glm::vec3( blockSize,  blockSize, -blockSize), // top-right
-	glm::vec3( blockSize,  blockSize,  blockSize), // bottom-right                 
-	glm::vec3(-blockSize,  blockSize,  blockSize), // bottom-left  
-	glm::vec3(-blockSize,  blockSize, -blockSize)  // top-left 
-};
-
+int to1D(const glm::vec3& pos) { return (pos.z * chunkSize * chunkSize) + (pos.y * chunkSize) + pos.x; }
+glm::vec3 to3D(const int& idx) {
+	int i = idx;
+	int z = i / (chunkSize * chunkSize);
+	i -= (z * chunkSize * chunkSize);
+	int y = i / chunkSize;
+	int x = i % chunkSize;
+	return glm::vec3(x, y, z);
+}
 class Chunk {
 public: // Variables
-	glm::vec3 chunkPosition = { 0,0,0 };
-	int8_t chunkData[chunkSize][chunkSize][chunkSize];
+	int32_t chunkPosition = 0;
+	int8_t chunkData[chunkSize * chunkSize * chunkSize];
 	bool used = false;
 
 	gl::VertexBuffer chunkMeshBuffer;
-	gl::IndexBuffer chunkIndexBuffer;
 	gl::Vertex chunkMesh[MaxVertexCount];
 
 	uint32_t IndexCount = 0;
@@ -67,30 +39,20 @@ public: // Functions
 	Chunk(const glm::vec3& pos) { Create(pos); }
 	~Chunk() {}
 	void Create(const glm::vec3& pos) {
-		chunkPosition = pos;
+		chunkPosition = to1D(pos);
 		//Configuring the vertex array
-		chunkMeshBuffer.Create(nullptr, sizeof(chunkMesh), GL_DYNAMIC_DRAW);
+		chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
 		gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
 		gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
 		gl::VertexAttribPointer(2, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Normal));    // Normal attribute
-
-		//Generating index buffer
-		uint32_t indices[MaxIndexCount];
-		uint32_t iOffset = 0;
-		for (uint32_t i = 0; i < MaxIndexCount; i += 6) {
-			indices[i + 0] = 0 + iOffset;
-			indices[i + 1] = 1 + iOffset;
-			indices[i + 2] = 2 + iOffset;
-
-			indices[i + 3] = 2 + iOffset;
-			indices[i + 4] = 3 + iOffset;
-			indices[i + 5] = 0 + iOffset;
-
-			iOffset += 4;
-		}
-		chunkIndexBuffer.Create(indices, sizeof(indices));
-
-		WC_INFO("Created chunk at X:{0} Y:{1} Z:{2}", pos.x, pos.y, pos.z);
+	}
+	void Create(const int32_t& pos) {
+		chunkPosition = pos;
+		//Configuring the vertex array
+		chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
+		gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
+		gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
+		gl::VertexAttribPointer(2, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Normal));    // Normal attribute
 	}
 };
 }
