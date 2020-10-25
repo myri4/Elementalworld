@@ -28,7 +28,7 @@ namespace wc {
 		//----------------------------------------------------------------------------------------
 		void loadFromFile(const char* file) {
 			Lua windowScript(file);
-			float width, height;
+			int width, height;
 
 			bool fullScreen = 0;
 			bool vsync = 0;

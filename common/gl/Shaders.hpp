@@ -125,7 +125,7 @@ public:
 
 			uint32_t vertex = CompileShader(vertexCode.c_str(), "vertex");
 			uint32_t fragment = CompileShader(fragmentCode.c_str(), "fragment");
-			uint32_t geometry;
+			uint32_t geometry = 0;
 			if(!geometryCode.empty())geometry = CompileShader(geometryCode.c_str(), "geometry");
 
 			// shader Program

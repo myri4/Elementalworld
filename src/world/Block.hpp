@@ -1,14 +1,16 @@
 #pragma once
 
-#include <wclibs/pch.hpp>
-   
+#include <Utilitiess/Lua.hpp>
+#include <gl/Material.hpp>
+
 namespace wc{
-enum BlockType { Fluid, Solid, Air, Leave };
-enum BlockTexture{TOP_TEXTURE, LEFT_TEXTURE, RIGHT_TEXTURE, FRONT_TEXTURE, BACK_TEXTURE, BOTTOM_TEXTURE};
+enum class BlockType { Fluid, Solid, Air, Leave };
+enum class BlockTexture { TOP, LEFT, RIGHT, FRONT, BACK, BOTTOM };
+static const float blockSize = 0.5f;
 class Block{
 public:
-	uint32_t id;
-	bool isCollidable;
+	uint32_t id = 0;
+	bool isCollidable = true;
 	//gl::Texture blockTexture[6];
 	glm::vec2 TexCoords[6];
 	gl::Material material;

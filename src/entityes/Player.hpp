@@ -9,7 +9,7 @@ private:
 public:
 	Camera camera;
 
-	glm::mat4 projection;
+	glm::mat4 projection = glm::mat4(0.0f);
 	Player() {
 
 	}

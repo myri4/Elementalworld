@@ -1,15 +1,24 @@
 #pragma once
 
 #include "Chunk.hpp"
+#include "Block.hpp"
 #include "../entityes/Player.hpp"
 
 namespace wc {
 		
-	Block grassBlock;
+	int to1D(const glm::vec3& pos) {
+		return (pos.z * chunkSize * chunkSize) + (pos.y * chunkSize) + pos.x;
+	}
+	glm::vec3 to3D(const int& idx) {
+		int i = idx;
+		int z = i / (chunkSize * chunkSize);
+		i -= (z * chunkSize * chunkSize);
+		int y = i / chunkSize;
+		int x = i % chunkSize;
+		return glm::vec3(x, y, z);
+	}
 
-	std::vector<Block> blockData;
 
-	gl::Texture blockAtlas;
 
 	struct NoiseOptions {
 		int octaves;
@@ -33,15 +42,11 @@ namespace wc {
 		return value *= 5;
 	}
 
-	void AddBlock() {
-		Block block;
-		block.Create("scripts/grassblock.lua");
-		blockData.push_back(block);
-	}
-
 	class World : public NonCopyable {
 	public:
-		//std::unordered_map<glm::vec3, Chunk> world;
+		gl::Texture blockAtlas;
+		std::unordered_map<int, Block> blockData;
+		std::unordered_map<int, int> worldff;
 		std::array<Chunk, 3> world;
 		
 		World(){
@@ -51,10 +56,15 @@ namespace wc {
 
 		}
 
+		int dd = to1D(glm::vec3(31,31,31));
+
 		void Create() {
 			worldShader.Create("shaderpacks/default/core.glsl");
 			worldShader.use();
 			worldShader.setInt("u_Texture", 0);
+
+			//glm::ivec3 ins = glm::ivec3(0.0f);
+			//worldff[ins] = 1;
 
 
 			LoadBlocks();
@@ -72,6 +82,8 @@ namespace wc {
 					}
 					UpdateWorldMesh(i);
 			}
+			WC_INFO("To 3D got X:{0} Y:{1} Z:{2}", to3D(dd).x, to3D(dd).y, to3D(dd).z);
+			WC_INFO("To 1D got : {0}", to1D({31,31,31}));
 		}
 
 		void Update(Player &p) {
@@ -101,7 +113,7 @@ namespace wc {
 		}
 
 		void Draw() {
-			for (int i = 0; i < world.size(); i++) {
+			for (uint32_t i = 0; i < world.size(); i++) {
 				if (world[i].chunkMeshBuffer.GetVAO() == 0 || world[i].chunkIndexBuffer.GetEBO() == 0) return;
 				// calculate the model matrix for each object and pass it to shader before drawing
 				worldShader.use();
@@ -125,15 +137,16 @@ namespace wc {
 					for (uint8_t z = 0; z < chunkSize; z++)
 						for (uint8_t x = 0; x < chunkSize; x++)
 						{
-							if (world[chunk].chunkData[x][y][z] > 0) {
+							if (world[chunk].chunkData[x][y][z] > 0)
+							{
 								//Positive
-								if (world[chunk].chunkData[x + 1][y][z] == 0) addFace(RIGHT_FACE, glm::vec3(x, y, z), glm::vec3(1.0f, 0.0f, 0.0f), grassBlock.TexCoords[RIGHT_TEXTURE], chunk);
-								if (world[chunk].chunkData[x][y + 1][z] == 0) addFace(TOP_FACE, glm::vec3(x, y, z), glm::vec3(0.0f, 1.0f, 0.0f), grassBlock.TexCoords[TOP_TEXTURE], chunk);
-								if (world[chunk].chunkData[x][y][z + 1] == 0) addFace(FRONT_FACE, glm::vec3(x, y, z), glm::vec3(0.0f, 0.0f, 1.0f), grassBlock.TexCoords[FRONT_TEXTURE], chunk);
-								//Negative
-								if (x - 1 > 0 and world[chunk].chunkData[x - 1][y][z] == 0) addFace(LEFT_FACE, glm::vec3(x, y, z), glm::vec3(-1.0f, 0.0f, 0.0f), grassBlock.TexCoords[LEFT_TEXTURE], chunk);
-								if (y - 1 > 0 and world[chunk].chunkData[x][y - 1][z] == 0) addFace(BOTTOM_FACE, glm::vec3(x, y, z), glm::vec3(0.0f, -1.0f, 0.0f), grassBlock.TexCoords[BOTTOM_TEXTURE], chunk);
-								if (z - 1 > 0 and world[chunk].chunkData[x][y][z - 1] == 0) addFace(BACK_FACE, glm::vec3(x, y, z), glm::vec3(0.0f, 0.0f, -1.0f), grassBlock.TexCoords[BACK_TEXTURE], chunk);
+								if (y + 1 < chunkSize) if (world[chunk].chunkData[x][y + 1][z] == 0) addFace(TOP_FACE,   glm::vec3(x, y, z), glm::vec3( 0.0f, 1.0f, 0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::TOP], chunk); else {};
+								if (z + 1 < chunkSize) if (world[chunk].chunkData[x][y][z + 1] == 0) addFace(FRONT_FACE, glm::vec3(x, y, z), glm::vec3( 0.0f, 0.0f, 1.0f), blockData[1].TexCoords[(int)BlockTexture::FRONT], chunk); else {};
+								if (x + 1 < chunkSize) if (world[chunk].chunkData[x + 1][y][z] == 0) addFace(RIGHT_FACE, glm::vec3(x, y, z), glm::vec3( 1.0f, 0.0f, 0.0f), blockData[1].TexCoords[(int)BlockTexture::RIGHT], chunk); else {};
+								//Negative	   																																		 
+								if (y - 1 > 0)		   if (world[chunk].chunkData[x][y - 1][z] == 0) addFace(BOTTOM_FACE,glm::vec3(x, y, z), glm::vec3( 0.0f,-1.0f, 0.0f), blockData[1].TexCoords[(int)BlockTexture::BOTTOM], chunk); else {};
+								if (z - 1 > 0)		   if (world[chunk].chunkData[x][y][z - 1] == 0) addFace(BACK_FACE,	 glm::vec3(x, y, z), glm::vec3( 0.0f, 0.0f,-1.0f), blockData[1].TexCoords[(int)BlockTexture::BACK], chunk); else {};
+								if (x - 1 > 0)		   if (world[chunk].chunkData[x - 1][y][z] == 0) addFace(LEFT_FACE,  glm::vec3(x, y, z), glm::vec3(-1.0f, 0.0f, 0.0f), blockData[1].TexCoords[(int)BlockTexture::LEFT], chunk); else {};
 							}
 						}
 				EndBatch(chunk);
@@ -160,19 +173,27 @@ namespace wc {
 		void EndBatch(const int& chunk) { world[chunk].chunkMeshBuffer.Update(0, sizeof(world[chunk].chunkMesh), world[chunk].chunkMesh); }
 
 		void LoadBlocks() {
+			blockData.reserve(3);
 			blockAtlas.load("assets/textures/block/blockAtlas.png");
-			grassBlock.Create("scripts/grassblock.lua");
-			grassBlock.material.ambient = glm::vec3(1.0f, 1.0f, 1.0f);
-			grassBlock.material.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
-			grassBlock.material.specular = glm::vec3(1.0f, 1.0f, 1.0f);
-			grassBlock.material.shininess = 32.0f;
-			grassBlock.SendMaterialToShader(worldShader, "material");
-			grassBlock.TexCoords[TOP_TEXTURE] = {0, 1};
-			grassBlock.TexCoords[BOTTOM_TEXTURE] = { 1, 0 };
-			grassBlock.TexCoords[LEFT_TEXTURE] = { 0, 0 };
-			grassBlock.TexCoords[RIGHT_TEXTURE] = { 0, 0 };
-			grassBlock.TexCoords[FRONT_TEXTURE] = { 0, 0 };
-			grassBlock.TexCoords[BACK_TEXTURE] = { 0, 0 };
+
+			AddBlock("scripts/grassblock.lua");
+		}
+
+		void AddBlock(const char* script) {
+			Block block;
+			block.Create(script);
+			block.material.ambient = glm::vec3(1.0f, 1.0f, 1.0f);
+			block.material.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+			block.material.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+			block.material.shininess = 32.0f;
+			block.SendMaterialToShader(worldShader, "material");
+			block.TexCoords[(int)BlockTexture::TOP] = {0, 1};
+			block.TexCoords[(int)BlockTexture::BOTTOM] = { 1, 0 };
+			block.TexCoords[(int)BlockTexture::LEFT] = { 0, 0 };
+			block.TexCoords[(int)BlockTexture::RIGHT] = { 0, 0 };
+			block.TexCoords[(int)BlockTexture::FRONT] = { 0, 0 };
+			block.TexCoords[(int)BlockTexture::BACK] = { 0, 0 };
+			blockData[block.id] = block;
 		}
 
 		void LoadEnivoirment() {

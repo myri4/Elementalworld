@@ -42,22 +42,12 @@ public:
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_RendererID);
         glBlitFramebuffer(0, 0, x, y, 0, 0, x, y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
-    void Bind() {
-        glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
-    }
-    void unbind() {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-    void BindTexture() {
-        glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);	// use the color attachment texture as the texture of the quad plane
-    }
-    unsigned int GetRendererID() {
-        return m_RendererID;
-    }
-    unsigned int GetColorAttachment() {
-        return m_ColorAttachment;
-    }
+    void Bind() {glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);}
+    void unbind() {glBindFramebuffer(GL_FRAMEBUFFER, 0);}
+    void BindTexture() {glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);	/* use the color attachment texture as the texture of the quad plane */}
+    unsigned int GetRendererID() {return m_RendererID;}
+    unsigned int GetColorAttachment() {return m_ColorAttachment;}
 private:
-    unsigned int m_RendererID, m_ColorAttachment;
+    unsigned int m_RendererID = 0, m_ColorAttachment = 0;
 };
 }

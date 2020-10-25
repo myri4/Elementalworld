@@ -1,12 +1,14 @@
 #pragma once
 
-#include <wclibs/pch.hpp>
-
+#include <gl/VertexBuffer.hpp>
+#include <gl/Vertex.hpp>
+#include <gl/IndexBuffer.hpp>
+#include <glm/glm.hpp>
+#include <wclibs/Core.hpp>
+#include <array>
 #include "Block.hpp"
 
 namespace wc {
-
-static const float blockSize = 0.5f;
 
 using Face = std::array < glm::vec3, 4 >;
 

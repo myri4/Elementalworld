@@ -15,15 +15,13 @@ namespace gl {
         void Create(const uint32_t* data, uint32_t size, uint32_t mode = GL_STATIC_DRAW) {
             if (!EBO){
                 glGenBuffers(1, &EBO);
-            Bind();
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, mode);
-            Unbind();
+                Bind();
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, mode);
+                Unbind();
             }
         }
-        uint32_t GetEBO() {
-            return EBO;
-        }
+        uint32_t GetEBO() {return EBO;}
     private:
-        uint32_t EBO;
+        uint32_t EBO = 0;
     };
 }

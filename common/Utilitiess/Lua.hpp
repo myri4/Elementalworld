@@ -44,6 +44,7 @@ namespace wc {
 			lua_getglobal(L, value);
 			if (lua_isstring(L, -1)) 
 				return lua_tostring(L, -1);
+			return "";
 		}
 		void Close() {
 			lua_close(L);
@@ -61,7 +62,7 @@ namespace wc {
 		}
 
 	private:
-		lua_State* L;
+		lua_State* L = nullptr;
 	};
 
 }

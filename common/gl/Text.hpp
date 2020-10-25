@@ -19,10 +19,10 @@ namespace gl {
             ~Character() {
 
             }
-            uint32_t TextureID;     // ID handle of the glyph texture
-            glm::ivec2   Size;      // Size of glyph
-            glm::ivec2   Bearing;   // Offset from baseline to left/top of glyph
-            uint32_t Advance;       // Horizontal offset to advance to next glyph
+            uint32_t TextureID = 0;     // ID handle of the glyph texture
+            glm::ivec2   Size = glm::ivec2(0);      // Size of glyph
+            glm::ivec2   Bearing = glm::ivec2(0);   // Offset from baseline to left/top of glyph
+            uint32_t Advance = 0;       // Horizontal offset to advance to next glyph
         };
 
     class Text {
