@@ -1,7 +1,6 @@
 #pragma once
 #include <wclibs/pch.hpp>
 #include <gl/glErrors.hpp>
-#include "entityes/Player.hpp"
 #include "world/World.hpp"
 
 namespace wc {
@@ -13,13 +12,14 @@ namespace wc {
 		bool CenterMouse = true;
 		float deltaTime = 0.0f;
 
-		wc::Player p;
+		enum class MenuState { 
+			MainMenu,
+			SinglePlayerWorldSelection,
+		};
 
-		std::array<Chunk, 3> chunks;
 		wc::World world;
 
 		gl::Text TextRenderer;
-		gl::Shader textShader;
 
 
 		irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
@@ -79,7 +79,7 @@ namespace wc {
 		//----------------------------------------------------------------------------------------
 		void OnInput() override {
 
-			p.UpdatePlayerInput(deltaTime);
+			world.OnEvent(deltaTime);
 			if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::F))
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			else
@@ -125,34 +125,28 @@ namespace wc {
 			glCullFace(GL_BACK);
 			glFrontFace(GL_CW);
 
-
-
 			//SoundEngine->play2D("assets/sounds/Alan Walker - The Spectre_wJnBTPUQS5A_youtube.mp3");
 
 			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			
 			world.Create();
 
-			textShader.Create("shaderpacks/default/text.glsl");
-			TextRenderer.Create("assets/font/Minecraft.ttf", textShader);
+			TextRenderer.Create("assets/font/Minecraft.ttf", "shaderpacks/default/text.glsl");
 
-
-			p.InitPlayer({ 0,0,0 });
 		}
 		
 		//----------------------------------------------------------------------------------------------------------------------
 
 		void OnUpdate() override {
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-			p.UpdatePlayer({ window.getPosition().x, window.getPosition().y }, CenterMouse, deltaTime);
 
-			world.Update(p);
+			world.Update(window, CenterMouse, deltaTime);
 
 			deltaTime = deltaTimer.restart().asSeconds();
 
 			glDisable(GL_DEPTH_TEST);
 			TextRenderer.Draw(std::to_string(1 / deltaTime), glm::vec2((float)window.getSize().x, (float)window.getSize().y) , { 25.0f, 700.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
-			TextRenderer.Draw("X: " + std::to_string(p.Position.x) + " Y: " + std::to_string(p.Position.y) + " Z: " + std::to_string(p.Position.z), glm::vec2((float)window.getSize().x, (float)window.getSize().y), { 25.0f, 660.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
+			TextRenderer.Draw("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), glm::vec2((float)window.getSize().x, (float)window.getSize().y), { 25.0f, 660.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
 			glEnable(GL_DEPTH_TEST);
 			window.display();
 		}

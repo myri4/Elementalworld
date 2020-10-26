@@ -6,26 +6,28 @@
 #include <array>
 
 //OpenGL Memory Buffer Variables
-static const size_t chunkSize = 32;
+static const size_t chunkSize = 16;
 
-static const size_t MaxFaceCount = 125;
+static const size_t MaxFaceCount = 1500;
 static const size_t MaxVertexCount = MaxFaceCount * 4;
 static const size_t MaxIndexCount = MaxFaceCount * 6;
 
 namespace wc {
+
 int to1D(const glm::vec3& pos) { return (pos.z * chunkSize * chunkSize) + (pos.y * chunkSize) + pos.x; }
-glm::vec3 to3D(const int& idx) {
+glm::vec3 to3D(const int& idx, const glm::ivec3& size = glm::vec3(chunkSize)) {
 	int i = idx;
-	int z = i / (chunkSize * chunkSize);
-	i -= (z * chunkSize * chunkSize);
-	int y = i / chunkSize;
-	int x = i % chunkSize;
+	int z = i / (size.x * size.y);
+	i -= (z * size.x * size.y);
+	int y = i / size.x;
+	int x = i % size.x;
 	return glm::vec3(x, y, z);
 }
+
 class Chunk {
 public: // Variables
 	int32_t chunkPosition = 0;
-	int8_t chunkData[chunkSize * chunkSize * chunkSize];
+	int8_t chunkData[chunkSize][chunkSize][chunkSize];
 	bool used = false;
 
 	gl::VertexBuffer chunkMeshBuffer;

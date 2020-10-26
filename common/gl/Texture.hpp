@@ -73,7 +73,7 @@ public:
 	void unbind() { glBindTexture(GL_TEXTURE_2D, 0); }
 	uint32_t GetRendererID() { return m_RendererID; }
 
-	std::array<glm::vec2, 4> GetSpriteCoords(const glm::vec2& coords, const glm::vec2& sprSize) {
+	std::array<glm::vec2, 4> GetSpriteIndexCoords(const glm::vec2& coords, const glm::vec2& sprSize) {
 		return {
 			glm::vec2((coords.x * sprSize.x) / width, (coords.y * sprSize.y) / height),
 			glm::vec2((coords.x * sprSize.x) / width, ((coords.y + 1) * sprSize.y) / height),
@@ -81,6 +81,14 @@ public:
 			glm::vec2(((coords.x + 1) * sprSize.x) / width, (coords.y * sprSize.y) / height)
 		};
 	}
+	//std::array<glm::vec2, 4> GetSpriteCoords(const glm::vec2& start, const glm::vec2& end) {
+	//	return {
+	//		glm::vec2(start.x / width, start.y / height),
+	//		glm::vec2(start.x / width, start.y / height),
+	//		glm::vec2(start.x / width, start.y / height),
+	//		glm::vec2(start.x / width, start.y / height)
+	//	};
+	//}
 		int width = 0, height = 0;
 private:
 	uint32_t m_RendererID = 0;	

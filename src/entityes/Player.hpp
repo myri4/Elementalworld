@@ -8,7 +8,7 @@ class Player : public Entity{
 private:
 public:
 	Camera camera;
-	float Near = 0.1f, Far = 100.0f;
+	float Near = 0.1f, Far = 1100.0f;
 
 	glm::mat4 projection = glm::mat4(0.0f);
 	Player() {

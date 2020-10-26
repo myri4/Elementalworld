@@ -10,18 +10,17 @@ namespace gl {
 
 	class Skybox{
 	public:
-        Skybox() {
-
-        }
-        Skybox(const char* file) {Create(file);}
+        Skybox() {}
+        Skybox(const char* file, const float& playerFarPlane) {Create(file, playerFarPlane);}
         ~Skybox() {skyboxArray.Destroy();}
-        void Create(const char* file) {
+        void Create(const char* file, const float& playerFarPlane) {
             wc::Lua skyboxState(file);
             if(std::string(skyboxState.GetString("vertexPath")).empty() || std::string(skyboxState.GetString("vertexPath")).empty())
                 shader.Create(skyboxState.GetString("shaderPath"));
             else
                 shader.Create(skyboxState.GetString("vertexPath"), skyboxState.GetString("fragmentPath"));
-            float size = (float)skyboxState.GetNumber("skyboxSize");
+
+            float size = playerFarPlane / 2;
 
             float vertices[] = {
                 // positions         

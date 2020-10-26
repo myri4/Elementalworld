@@ -7,4 +7,3 @@ back =   "assets/skybox/back.jpg"
 vertexPath = ""
 fragmentPath = ""
 shaderPath = "shaderpacks/default/skybox.glsl"
-skyboxSize = 50.0

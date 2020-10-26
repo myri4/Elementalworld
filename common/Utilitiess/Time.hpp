@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <wclibs/Core.hpp>
+#include "Log.hpp"
 
 class Clock {
 public:
@@ -25,3 +26,19 @@ public:
 
 };
 
+class Timer {
+public:
+	std::chrono::time_point<std::chrono::steady_clock> start, end;
+	std::chrono::duration<float> duration;
+	Timer() {
+		start = std::chrono::high_resolution_clock::now();
+	}
+
+	~Timer() {
+		end = std::chrono::high_resolution_clock::now();
+		duration = end - start;
+
+		float dur = duration.count() * 1000.0f;
+		WC_INFO("This operation took {0}ms", dur);
+	}
+};
