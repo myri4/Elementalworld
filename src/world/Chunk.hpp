@@ -8,7 +8,7 @@
 //OpenGL Memory Buffer Variables
 static const size_t chunkSize = 16;
 
-static const size_t MaxFaceCount = 1500;
+static const size_t MaxFaceCount = chunkSize * chunkSize * 6;
 static const size_t MaxVertexCount = MaxFaceCount * 4;
 static const size_t MaxIndexCount = MaxFaceCount * 6;
 

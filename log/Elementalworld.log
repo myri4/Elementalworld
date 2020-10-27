@@ -1,4 +1,2 @@
-[10/25/20 21:51:23][info] Elementalworld: Sizeof chunk in bytes: 196120
-[10/25/20 21:51:24][info] Elementalworld: This operation took 0.0006ms
-[10/25/20 21:51:24][warning] Elementalworld: [OpenGL Debug MEDIUM] Program/shader state performance warning: Vertex shader in program 3 is being recompiled based on GL state.
-[10/25/20 21:51:24][warning] Elementalworld: [OpenGL Debug MEDIUM] Program/shader state performance warning: Vertex shader in program 9 is being recompiled based on GL state.
+[10/27/20 09:52:35][warning] Elementalworld: [OpenGL Debug MEDIUM] Program/shader state performance warning: Vertex shader in program 3 is being recompiled based on GL state.
+[10/27/20 09:52:35][warning] Elementalworld: [OpenGL Debug MEDIUM] Program/shader state performance warning: Vertex shader in program 9 is being recompiled based on GL state.
