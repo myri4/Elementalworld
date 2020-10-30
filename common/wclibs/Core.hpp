@@ -1,6 +1,4 @@
 #pragma once
-#include <memory>
-#include <glad/glad.h>
 
 #ifdef  _WIN32
 #include <Windows.h>
@@ -49,21 +47,3 @@
 #endif //  _RELEASE
 
 #endif //  _WIN32
-
-
-//Custom definitions
-template<typename T>
-using Ref = std::shared_ptr<T>;
-
-template<typename T>
-using Scope = std::unique_ptr<T>;
-
-typedef signed char        int8_t;
-typedef short              int16_t;
-typedef int                int32_t;
-typedef long long          int64_t;
-
-typedef unsigned char      uint8_t;
-typedef unsigned short     uint16_t;
-typedef unsigned int       uint32_t;
-typedef unsigned long long uint64_t;

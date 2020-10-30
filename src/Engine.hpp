@@ -102,7 +102,6 @@ namespace wc {
 			window.setActive();
 			if (!gladLoadGL()) WC_ERROR("Failed to initialize GLAD");
 
-
 			// OpenGL state
 			EnableGLDebuging();
 			// ------------

@@ -31,7 +31,7 @@ namespace wc {
 	class World : public NonCopyable {
 	public:
 		gl::Texture blockAtlas;
-		std::vector<Block> blockData;
+		std::unordered_map<int,Block> blockData;
 		std::array<Chunk, chunkSize* chunkSize* chunkSize> world;
 		gl::IndexBuffer chunkIndexBuffer;
 		Player p;
@@ -58,13 +58,10 @@ namespace wc {
 				for (uint8_t z = 0; z < chunkSize; z++)
 					for (uint8_t x = 0; x < chunkSize; x++) {
 						int heightMap = getNoiseFor(glm::vec2(x, z), glm::vec2(to3D(world[i].chunkPosition).x, to3D(world[i].chunkPosition).z), worldNoiseOptions);
-						for (int y = 0; y < chunkSize; y++)
+						for (int y = 0; y < chunkSize; y++) {
 							if ((int)to3D(world[i].chunkPosition).y * chunkSize + y == heightMap) { setBlock(glm::vec3(x, y, z), 1, i); }
+						}
 					}
-				//for (int8_t y = 0; y < chunkSize; y++)
-				//	for (int8_t z = 0; z < chunkSize; z++)
-				//		for (int8_t x = 0; x < chunkSize; x++)
-				//			setBlock(glm::vec3(x, y, z), 1, i);;
 				UpdateWorldMesh(i);
 			}
 			p.InitPlayer({ 8,50,0 });
@@ -84,7 +81,10 @@ namespace wc {
 			// camera/view transformation
 			worldShader.setMat4("view", p.GetView());
 			Draw();
-			skybox.Draw(glm::mat4(glm::mat3(p.GetView())), p.projection);
+			if (!Fog) 
+				skybox.Draw(glm::mat4(glm::mat3(p.GetView())), p.projection);
+
+			
 		}
 
 		void OnEvent(const float& deltaTime) {
@@ -104,18 +104,18 @@ namespace wc {
 		}
 
 		void SetUpIndexBuffer() {
-			uint32_t indices[MaxIndexCount];
-			uint32_t iOffset = 0;
-			for (uint32_t i = 0; i < MaxIndexCount; i += 6) {
-				indices[i + 0] = 0 + iOffset;
-				indices[i + 1] = 1 + iOffset;
-				indices[i + 2] = 2 + iOffset;
+			uint32_t indices[MaxFaceCount * 6];
+			uint32_t offset = 0;
+			for (uint32_t i = 0; i < MaxFaceCount * 6; i += 6) {
+				indices[i + 0] = 0 + offset;
+				indices[i + 1] = 1 + offset;
+				indices[i + 2] = 2 + offset;
 
-				indices[i + 3] = 2 + iOffset;
-				indices[i + 4] = 3 + iOffset;
-				indices[i + 5] = 0 + iOffset;
+				indices[i + 3] = 2 + offset;
+				indices[i + 4] = 3 + offset;
+				indices[i + 5] = 0 + offset;
 
-				iOffset += 4;
+				offset += 4;
 			}
 			chunkIndexBuffer.Create(indices, sizeof(indices));
 		}
@@ -129,42 +129,59 @@ namespace wc {
 		}
 
 		void Flush(const int& chunk) {
+			if (world[chunk].IndexCount == 0) return;
 			chunkIndexBuffer.Bind();
 			world[chunk].chunkMeshBuffer.Bind();
 			glDrawElements(GL_TRIANGLES, world[chunk].IndexCount, GL_UNSIGNED_INT, nullptr);
-
-			//world[chunk].IndexCount = 0;
 		}
 
 		void UpdateWorldMesh(const int& chunk) {
+			//for (uint32_t i = 0; i < MaxVertexCount; i++) world[chunk].chunkMesh[i] = gl::Vertex(glm::vec3(0.0f), glm::vec2(0.0f), glm::vec3(0.0f)); // Reseting the mesh
 			world[chunk].offset = 0; // BeginBatch();
 			for (int8_t y = 0; y < chunkSize; y++)
 				for (int8_t z = 0; z < chunkSize; z++)
 					for (int8_t x = 0; x < chunkSize; x++)
 					{
+						//if (y + 1 < chunkSize && z + 1 < chunkSize && x + 1 < chunkSize) {
 						if (world[chunk].chunkData[x][y][z] > 0)
 						{
 							//Positive
-							if (y + 1 < chunkSize) if (world[chunk].chunkData[x][y + 1][z] == 0) addFace(TOP_FACE, glm::vec3(x, y, z), glm::vec3(0.0f, 1.0f, 0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::TOP], chunk); else if (y + 1 > chunkSize) {     if (world[chunk + to1D({ 0,1,0 })].chunkData[x][0][z] == 0) addFace(TOP_FACE, glm::vec3(x, y, z),   glm::vec3( 0.0f,  1.0f,  0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::TOP], chunk); };
-							if (z + 1 < chunkSize) if (world[chunk].chunkData[x][y][z + 1] == 0) addFace(FRONT_FACE, glm::vec3(x, y, z), glm::vec3(0.0f, 0.0f, 1.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::FRONT], chunk); else if (z + 1 > chunkSize) { if (world[chunk + to1D({ 0,0,1 })].chunkData[x][y][0] == 0) addFace(FRONT_FACE, glm::vec3(x, y, z), glm::vec3( 0.0f,  0.0f,  1.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::FRONT], chunk); };
-							if (x + 1 < chunkSize) if (world[chunk].chunkData[x + 1][y][z] == 0) addFace(RIGHT_FACE, glm::vec3(x, y, z), glm::vec3(1.0f, 0.0f, 0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::RIGHT], chunk); else if (x + 1 > chunkSize) { if (world[chunk + to1D({ 1,0,0 })].chunkData[0][y][z] == 0) addFace(RIGHT_FACE, glm::vec3(x, y, z), glm::vec3( 1.0f,  0.0f,  0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::RIGHT], chunk); };
+							if (y + 1 < chunkSize) { if (world[chunk].chunkData[x][y + 1][z] == 0) addFace(TOP_FACE, glm::vec3(x, y, z), glm::vec3(0.0f, 1.0f, 0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::TOP], chunk); }
+							//else 
+							//	{if (chunk + to1D({ 0,1,0 }) < world.size()) if (world[chunk + to1D({ 0,1,0 })].chunkData[x][0][z] == 0) addFace(TOP_FACE,   glm::vec3(x, y, z), glm::vec3( 0.0f,  1.0f,  0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::TOP],   chunk);}
+							
+							if (z + 1 < chunkSize) { if (world[chunk].chunkData[x][y][z + 1] == 0) addFace(FRONT_FACE, glm::vec3(x, y, z), glm::vec3(0.0f, 0.0f, 1.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::FRONT], chunk); }
+							//else
+							//	{if (chunk + to1D({ 0,0,1 }) < world.size()) if(world[chunk + to1D({ 0,0,1 })].chunkData[x][y][0] == 0) addFace(FRONT_FACE, glm::vec3(x, y, z), glm::vec3( 0.0f,  0.0f,  1.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::FRONT], chunk);}
+							
+							if (x + 1 < chunkSize) { if (world[chunk].chunkData[x + 1][y][z] == 0) addFace(RIGHT_FACE, glm::vec3(x, y, z), glm::vec3(1.0f, 0.0f, 0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::RIGHT], chunk); }
+							//else
+							//	{if (chunk + to1D({ 1,0,0 }) < world.size()) if (world[chunk + to1D({ 1,0,0 })].chunkData[0][y][z] == 0) addFace(RIGHT_FACE, glm::vec3(x, y, z), glm::vec3( 1.0f,  0.0f,  0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::RIGHT], chunk);}
+							
 							//Negative	   																										 					  																						 
-							if (y - 1 > 0)		   if (world[chunk].chunkData[x][y - 1][z] == 0) addFace(BOTTOM_FACE, glm::vec3(x, y, z), glm::vec3(0.0f, -1.0f, 0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::BOTTOM], chunk); else if (y == 0) { if (world[chunk + to1D({ 0,1,0 })].chunkData[x][chunkSize][z] == 0) addFace(BOTTOM_FACE, glm::vec3(x, y, z),glm::vec3( 0.0f, -1.0f,  0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::BOTTOM], chunk); };
-							if (z - 1 > 0)		   if (world[chunk].chunkData[x][y][z - 1] == 0) addFace(BACK_FACE, glm::vec3(x, y, z), glm::vec3(0.0f, 0.0f, -1.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::BACK], chunk); else if (z == 0) {     if (world[chunk + to1D({ 0,0,1 })].chunkData[x][y][chunkSize] == 0) addFace(BACK_FACE, glm::vec3(x, y, z),  glm::vec3( 0.0f,  0.0f, -1.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::BACK], chunk); };
-							if (x - 1 > 0)		   if (world[chunk].chunkData[x - 1][y][z] == 0) addFace(LEFT_FACE, glm::vec3(x, y, z), glm::vec3(-1.0f, 0.0f, 0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::LEFT], chunk); else if (x == 0) {     if (world[chunk + to1D({ 1,0,0 })].chunkData[chunkSize][x][z] == 0) addFace(LEFT_FACE, glm::vec3(x, y, z),  glm::vec3(-1.0f,  0.0f,  0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::LEFT], chunk); };
-
+							if (y - 1 > 0) { if (world[chunk].chunkData[x][y - 1][z] == 0) addFace(BOTTOM_FACE, glm::vec3(x, y, z), glm::vec3(0.0f, -1.0f, 0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::BOTTOM], chunk); }
+							//else
+							//	{if (chunk - to1D({ 0,1,0 }) > 0) if (world[chunk - to1D({ 0,1,0 })].chunkData[x][chunkSize][z] == 0) addFace(BOTTOM_FACE,glm::vec3(x, y, z), glm::vec3( 0.0f, -1.0f,  0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::BOTTOM],chunk);}
+							
+							if (z - 1 > 0) { if (world[chunk].chunkData[x][y][z - 1] == 0) addFace(BACK_FACE, glm::vec3(x, y, z), glm::vec3(0.0f, 0.0f, -1.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::BACK], chunk);}
+							//else
+							//	{if (chunk - to1D({ 0,0,1 }) > 0) if (world[chunk - to1D({ 0,0,1 })].chunkData[x][y][chunkSize] == 0) addFace(BACK_FACE,  glm::vec3(x, y, z), glm::vec3( 0.0f,  0.0f, -1.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::BACK],  chunk);}
+							
+							if (x - 1 > 0) { if (world[chunk].chunkData[x - 1][y][z] == 0) addFace(LEFT_FACE, glm::vec3(x, y, z), glm::vec3(-1.0f, 0.0f, 0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::LEFT], chunk);}
+							//else
+							//	{if (chunk - to1D({ 1,0,0 }) > 0) if (world[chunk - to1D({ 1,0,0 })].chunkData[chunkSize][x][z] == 0) addFace(LEFT_FACE, glm::vec3(x, y, z), glm::vec3(-1.0f, 0.0f, 0.0f), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::LEFT], chunk);}
 						}
+						//}
 					}
 			world[chunk].chunkMeshBuffer.Update(0, sizeof(world[chunk].chunkMesh), world[chunk].chunkMesh); // EndBatch();
 			Flush(chunk);
-			//for (uint32_t i = 0; i < MaxVertexCount; i++) world[chunk].chunkMesh[i] = gl::Vertex(glm::vec3(0.0f), glm::vec2(0.0f), glm::vec3(0.0f)); // Reseting the mesh
 		}
 
 		void addFace(const Face& face, const glm::vec3& pos, const glm::vec3& Normal, const glm::vec2& Coords, const int& chunk) {
-			if (world[chunk].IndexCount >= MaxIndexCount) {
+			if (world[chunk].IndexCount >= MaxFaceCount * 6) {
 				world[chunk].chunkMeshBuffer.Update(0, sizeof(world[chunk].chunkMesh), world[chunk].chunkMesh); // EndBatch();
 				Flush(chunk);
-				WC_WARN("Memory overflow!");
+				WC_ERROR("Memory overflow!");
 				world[chunk].offset = 0;// BeginBatch();
 			}
 
@@ -205,8 +222,14 @@ namespace wc {
 		}
 
 		void LoadEnivoirment() {
+			glm::vec3 fogColor = glm::vec3(0.5f, 0.5f, 0.5f);
+			worldShader.setBool("fog", Fog);
+			worldShader.setVec3("fogColor", fogColor);
+			if (Fog)
+				glClearColor(fogColor.r, fogColor.g, fogColor.b, 1.0f);
 			skybox.Create("scripts/skybox.lua", p.Far);
 		}
+		bool Fog = true;
 		gl::Shader worldShader;
 		gl::Skybox skybox;
 		NoiseOptions worldNoiseOptions;

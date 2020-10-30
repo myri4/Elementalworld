@@ -1,0 +1,11 @@
+id = 2
+isCollidable = true
+fluid = false
+Name = "Grass block"
+Drop = "elementalworld:grass_block" 
+Top =    "assets/textures/block/grassblock_top.png"
+Left =   "assets/textures/block/grassblock_side.png"
+Right =  "assets/textures/block/grassblock_side.png"
+Front =  "assets/textures/block/grassblock_side.png"
+Back =   "assets/textures/block/grassblock_side.png"
+Bottom = "assets/textures/block/dirt.png"

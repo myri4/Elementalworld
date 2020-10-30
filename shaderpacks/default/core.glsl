@@ -7,18 +7,29 @@ layout (location = 2) in vec3 a_Normal;
 out vec2 v_TexCoords;
 out vec3 v_Normal;
 out vec3 v_FragPos;
+out float v_visibility;
+
+uniform const float density = 0.07;
+uniform const float gradient = 0.5;
 
 uniform mat4 model = mat4(1.0f);
-uniform mat4 view;
-uniform mat4 projection;
+uniform mat4 view = mat4(1.0f);
+uniform mat4 projection = mat4(1.0f);
+uniform bool fog = true;
 
 
-void main()
-{
+void main(){
+    vec4 PosRelativeToCam = view * model * vec4(a_Pos, 1.0);
 	gl_Position = projection * view * model * vec4(a_Pos, 1.0);
 	v_TexCoords = a_TexCoord;
 	v_Normal = a_Normal;
 	v_FragPos = vec3(model * vec4(a_Pos, 1.0));
+    if (fog){
+        float dist = length(PosRelativeToCam.xyz);
+        v_visibility = exp(-pow((dist * density), gradient));
+        v_visibility = clamp(v_visibility, 0.0f, 1.0f);
+    }
+
 }
 
 
@@ -30,6 +41,7 @@ layout (location = 0) out vec4 Result;
 in vec2 v_TexCoords;
 in vec3 v_Normal;
 in vec3 v_FragPos;
+in float v_visibility;
 
 
 struct Light {
@@ -57,12 +69,14 @@ uniform float gamma = 2.2;
 uniform bool blinn = true;
 uniform bool attenuation = true;
 uniform float minimalLight = 0.1f;
-uniform Material material;
-Light ll;
+uniform bool fog = true;
+uniform vec3 fogColor = vec3(0.5f);
+//uniform Material material;
+//Light ll;
 
-vec3 CalculateLight(Light light, Material material, vec3 normal, vec3 viewDir, bool blinn, bool atten){
+vec3 CalculateLight(Light light, Material mat, vec3 normal, vec3 viewDir, bool blinn, bool atten){
     // Ambient
-    vec3 Ambient = material.ambient * light.color;
+    vec3 Ambient = mat.ambient * light.color;
     
     // Diffuse
     vec3 lightDir;
@@ -71,7 +85,7 @@ vec3 CalculateLight(Light light, Material material, vec3 normal, vec3 viewDir, b
     else if (light.vector.w >= 1.0)
         lightDir = normalize(light.vector.xyz - v_FragPos);  
     float diff = max(dot(normal, lightDir), 0.0);
-    vec3 Diffuse = pow(light.color * (diff * material.diffuse), vec3(gamma));
+    vec3 Diffuse = pow(light.color * (diff * mat.diffuse), vec3(gamma));
 
     // Specular
     vec3 reflectDir = reflect(-lightDir, normal);   
@@ -80,14 +94,14 @@ vec3 CalculateLight(Light light, Material material, vec3 normal, vec3 viewDir, b
     if(!blinn)
     {
         vec3 halfwayDir = normalize(lightDir + viewDir);  
-        spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess);
+        spec = pow(max(dot(normal, halfwayDir), 0.0), mat.shininess);
     }
     else
     {
         vec3 reflectDir = reflect(-lightDir, normal);
-        spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess / 4);
+        spec = pow(max(dot(viewDir, reflectDir), 0.0), mat.shininess / 4);
     }
-    vec3 Specular = light.color * (spec * material.specular);
+    vec3 Specular = light.color * (spec * mat.specular);
     
     // Attenuation    
     if(atten){
@@ -108,18 +122,21 @@ vec3 CalculateLight(Light light, Material material, vec3 normal, vec3 viewDir, b
 
 void main()
 {
-    ll.vector = vec4(-0.2f, -1.0f, -0.3f, 1);
-    ll.color = vec3(1.0f, 1.0f, 1.0f);
-    ll.constant = 1.0f;
-    ll.linear = 0.09f;
-    ll.quadratic = 0.032f;
-    ll.strenght = 0.5f;
+    //ll.vector = vec4(-0.2f, -1.0f, -0.3f, 1);
+    //ll.color = vec3(1.0f, 1.0f, 1.0f);
+    //ll.constant = 1.0f;
+    //ll.linear = 0.09f;
+    //ll.quadratic = 0.032f;
+    //ll.strenght = 0.5f;
 
     vec4 texColor = texture(u_Texture, v_TexCoords);// * minimalLight;
+
 
     //texColor += vec4(CalculateLight(ll, material, normalize(v_Normal), normalize(viewPos - v_FragPos), blinn, attenuation), 1.0f);
 
     if(texColor.a < 0.1) discard;
-
-    Result = texColor;
+    if(fog)
+        Result = mix(vec4(fogColor, 1.0f), texColor, v_visibility);
+    else
+        Result = texColor;
 }

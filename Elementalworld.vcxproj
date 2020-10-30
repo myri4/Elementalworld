@@ -200,6 +200,7 @@
     <ClInclude Include="common\gl\Vertex.hpp" />
     <ClInclude Include="common\gl\VertexArray.h" />
     <ClInclude Include="common\gl\VertexBuffer.hpp" />
+    <ClInclude Include="common\Utilitiess\CustomDefs.hpp" />
     <ClInclude Include="common\Utilitiess\Keyboard.hpp" />
     <ClInclude Include="common\Utilitiess\Log.hpp" />
     <ClInclude Include="common\Utilitiess\Mouse.hpp" />
@@ -241,6 +242,7 @@
     <None Include="config\blocks.lua" />
     <None Include="config\window.lua" />
     <None Include="scripts\camera.lua" />
+    <None Include="scripts\dirt.lua" />
     <None Include="scripts\grassblock.lua" />
     <None Include="scripts\player.lua" />
     <None Include="scripts\skybox.lua" />

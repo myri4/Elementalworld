@@ -206,6 +206,9 @@
     <ClInclude Include="common\gl\VertexBuffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\Utilitiess\CustomDefs.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\camera.lua" />
@@ -218,5 +221,6 @@
     <None Include="shaderpacks\default\screenShader.glsl" />
     <None Include="config\blocks.lua" />
     <None Include="config\window.lua" />
+    <None Include="scripts\dirt.lua" />
   </ItemGroup>
 </Project>
