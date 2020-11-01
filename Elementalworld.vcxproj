@@ -173,7 +173,7 @@
   <ItemGroup>
     <ClCompile Include="src\cpplibs\glad.c" />
     <ClCompile Include="src\cpplibs\stb_image.cpp" />
-    <ClCompile Include="common\Utilitiess\Log.cpp" />
+    <ClCompile Include="common\Utils\Log.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -189,6 +189,7 @@
     <ClInclude Include="common\gl\IndexBuffer.hpp" />
     <ClInclude Include="common\gl\Light.hpp" />
     <ClInclude Include="common\gl\Material.hpp" />
+    <ClInclude Include="common\gl\Particle.hpp" />
     <ClInclude Include="common\gl\Shaders.h" />
     <ClInclude Include="common\gl\Shaders.hpp" />
     <ClInclude Include="common\gl\Skybox.h" />
@@ -200,17 +201,17 @@
     <ClInclude Include="common\gl\Vertex.hpp" />
     <ClInclude Include="common\gl\VertexArray.h" />
     <ClInclude Include="common\gl\VertexBuffer.hpp" />
-    <ClInclude Include="common\Utilitiess\CustomDefs.hpp" />
-    <ClInclude Include="common\Utilitiess\Keyboard.hpp" />
-    <ClInclude Include="common\Utilitiess\Log.hpp" />
-    <ClInclude Include="common\Utilitiess\Mouse.hpp" />
-    <ClInclude Include="common\Utilitiess\Random.hpp" />
+    <ClInclude Include="common\Utils\CustomDefs.hpp" />
+    <ClInclude Include="common\Utils\Keyboard.hpp" />
+    <ClInclude Include="common\Utils\Log.hpp" />
+    <ClInclude Include="common\Utils\Mouse.hpp" />
+    <ClInclude Include="common\Utils\Random.hpp" />
     <ClInclude Include="common\Utilitiess\State.h" />
-    <ClInclude Include="common\Utilitiess\State.hpp" />
-    <ClInclude Include="common\Utilitiess\Time.hpp" />
-    <ClInclude Include="common\Utilitiess\Window.hpp" />
+    <ClInclude Include="common\Utils\State.hpp" />
+    <ClInclude Include="common\Utils\Time.hpp" />
+    <ClInclude Include="common\Utils\Window.hpp" />
     <ClInclude Include="common\wclibs\Core.hpp" />
-    <ClInclude Include="common\Utilitiess\Lua.hpp" />
+    <ClInclude Include="common\Utils\Lua.hpp" />
     <ClInclude Include="common\wclibs\pch.hpp" />
     <ClInclude Include="gl\Camera.h" />
     <ClInclude Include="gl\Cubemap.h" />
@@ -222,7 +223,7 @@
     <ClInclude Include="gl\Text.h" />
     <ClInclude Include="gl\Texture.h" />
     <ClInclude Include="gl\VertexArray.h" />
-    <ClInclude Include="common\Utilitiess\NonCopyable.hpp" />
+    <ClInclude Include="common\Utils\NonCopyable.hpp" />
     <ClInclude Include="src\Block.h" />
     <ClInclude Include="src\entityes\playerSpec\Ray.hpp" />
     <ClInclude Include="src\world\Block.hpp" />

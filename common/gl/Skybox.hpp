@@ -4,7 +4,7 @@
 #include <gl/IndexBuffer.hpp>
 #include <gl/Cubemap.hpp>
 #include <gl/VertexBuffer.hpp>
-#include <Utilitiess/Lua.hpp>
+#include <Utils/Lua.hpp>
 
 namespace gl {
 

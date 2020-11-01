@@ -26,14 +26,11 @@ glm::vec3 to3D(const int& idx, const glm::ivec3& size = glm::vec3(chunkSize)) {
 class Chunk {
 public: // Variables
 	int32_t chunkPosition = 0;
+	uint32_t IndexCount = 0;
 	int8_t chunkData[chunkSize][chunkSize][chunkSize];
 	bool used = false;
 
 	gl::VertexBuffer chunkMeshBuffer;
-	gl::Vertex chunkMesh[MaxVertexCount];
-
-	uint32_t IndexCount = 0;
-	uint32_t offset = 0;
 
 public: // Functions 
 	Chunk() {}
@@ -45,7 +42,7 @@ public: // Functions
 		chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
 		gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
 		gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
-		gl::VertexAttribPointer(2, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Normal));    // Normal attribute
+		//gl::VertexAttribPointer(2, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Normal));    // Normal attribute
 	}
 	void Create(const int32_t& pos) {
 		chunkPosition = pos;
@@ -53,7 +50,7 @@ public: // Functions
 		chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
 		gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
 		gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
-		gl::VertexAttribPointer(2, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Normal));    // Normal attribute
+		//gl::VertexAttribPointer(2, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Normal));    // Normal attribute
 	}
 };
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
-#include <Utilitiess/NonCopyable.hpp>
+#include <Utils/NonCopyable.hpp>
 
 namespace wc {
 	class Entity : NonCopyable{		

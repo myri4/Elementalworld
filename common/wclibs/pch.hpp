@@ -62,13 +62,13 @@
 #include <wclibs/Core.hpp>
 
 //Lua
-#include <Utilitiess/Lua.hpp>
-#include <Utilitiess/State.hpp>
+#include <Utils/Lua.hpp>
 
 //Sound
 #include <irrKlang/irrKlang.h>
 
 //Utilitiess
-#include <Utilitiess/Keyboard.hpp>
-#include <Utilitiess/Mouse.hpp>
-#include <Utilitiess/Log.hpp>
+#include <Utils/State.hpp>
+#include <Utils/Keyboard.hpp>
+#include <Utils/Mouse.hpp>
+#include <Utils/Log.hpp>

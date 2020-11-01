@@ -2,10 +2,9 @@
 #version 330 core
 layout (location = 0) in vec3 a_Pos;
 layout (location = 1) in vec2 a_TexCoord;
-layout (location = 2) in vec3 a_Normal;
+//layout (location = 2) in vec3 a_Normal;
 
 out vec2 v_TexCoords;
-out vec3 v_Normal;
 out vec3 v_FragPos;
 out float v_visibility;
 
@@ -22,14 +21,12 @@ void main(){
     vec4 PosRelativeToCam = view * model * vec4(a_Pos, 1.0);
 	gl_Position = projection * view * model * vec4(a_Pos, 1.0);
 	v_TexCoords = a_TexCoord;
-	v_Normal = a_Normal;
 	v_FragPos = vec3(model * vec4(a_Pos, 1.0));
     if (fog){
         float dist = length(PosRelativeToCam.xyz);
         v_visibility = exp(-pow((dist * density), gradient));
         v_visibility = clamp(v_visibility, 0.0f, 1.0f);
     }
-
 }
 
 
@@ -39,7 +36,6 @@ void main(){
 layout (location = 0) out vec4 Result;
 
 in vec2 v_TexCoords;
-in vec3 v_Normal;
 in vec3 v_FragPos;
 in float v_visibility;
 
@@ -71,8 +67,9 @@ uniform bool attenuation = true;
 uniform float minimalLight = 0.1f;
 uniform bool fog = true;
 uniform vec3 fogColor = vec3(0.5f);
-//uniform Material material;
-//Light ll;
+Material material;
+Light ll;
+
 
 vec3 CalculateLight(Light light, Material mat, vec3 normal, vec3 viewDir, bool blinn, bool atten){
     // Ambient
@@ -122,17 +119,25 @@ vec3 CalculateLight(Light light, Material mat, vec3 normal, vec3 viewDir, bool b
 
 void main()
 {
-    //ll.vector = vec4(-0.2f, -1.0f, -0.3f, 1);
-    //ll.color = vec3(1.0f, 1.0f, 1.0f);
-    //ll.constant = 1.0f;
-    //ll.linear = 0.09f;
-    //ll.quadratic = 0.032f;
-    //ll.strenght = 0.5f;
+    ll.vector = vec4(32.0f, 32.0f, 32, 1);
+    ll.color = vec3(1.0f, 1.0f, 1.0f);
+    ll.constant = 1.0f;
+    ll.linear = 0.09f;
+    ll.quadratic = 0.032f;
+    ll.strenght = 1.5f;
+    material.ambient = vec3(1.0f, 1.0f, 1.0f);
+    material.diffuse = vec3(1.0f, 1.0f, 1.0f);
+    material.specular = vec3(1.0f, 1.0f, 1.0f);;
+    material.shininess = 32.0f;
 
-    vec4 texColor = texture(u_Texture, v_TexCoords);// * minimalLight;
+    //normalmap calculations
+    vec3 normal = vec3(0.5f, 0.5f, 1.0f);
+    normal = normalize(normal * 2.0 - 1.0); 
+
+    vec4 texColor = texture(u_Texture, v_TexCoords) * minimalLight;
 
 
-    //texColor += vec4(CalculateLight(ll, material, normalize(v_Normal), normalize(viewPos - v_FragPos), blinn, attenuation), 1.0f);
+    texColor += vec4(CalculateLight(ll, material, normalize(normal), normalize(viewPos - v_FragPos), blinn, attenuation), 1.0f);
 
     if(texColor.a < 0.1) discard;
     if(fog)

@@ -1,5 +1,5 @@
 #pragma once
-#include <Utilitiess/CustomDefs.hpp>
+#include <Utils/CustomDefs.hpp>
 // This ignores all warnings raised inside External headers
 #pragma warning(push, 0)
 #include <spdlog/spdlog.h>

@@ -3,7 +3,7 @@
 #include <glad/glad.h>
 #include <vector>
 #include <stb_image/stb_image.h>
-#include <Utilitiess/Log.hpp>
+#include <Utils/Log.hpp>
 
 namespace gl {
 	class Cubemap{

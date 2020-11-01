@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Utilitiess/Lua.hpp>
+#include <Utils/Lua.hpp>
 #include <gl/Material.hpp>
 
 namespace wc{
