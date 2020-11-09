@@ -101,7 +101,6 @@ namespace wc {
 			loadFromFile("config/window.lua");
 			window.setActive();
 			if (!gladLoadGL()) WC_ERROR("Failed to initialize GLAD");
-
 			// OpenGL state
 			EnableGLDebuging();
 			// ------------
@@ -146,6 +145,14 @@ namespace wc {
 			glDisable(GL_DEPTH_TEST);
 			TextRenderer.Draw(std::to_string((int)(1 / deltaTime)), glm::vec2((float)window.getSize().x, (float)window.getSize().y) , { 25.0f, 700.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
 			TextRenderer.Draw("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), glm::vec2((float)window.getSize().x, (float)window.getSize().y), { 25.0f, 660.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
+			TextRenderer.Draw("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), glm::vec2((float)window.getSize().x, (float)window.getSize().y), { 25.0f, 620.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
+			//TextRenderer.Draw(
+			//"ChunkX: " + std::to_string(GetChunkPos(world.p.Position.x)) +
+			//" ChunkY: " + std::to_string(GetChunkPos(world.p.Position.y)) +
+			//" ChunkZ: " + std::to_string(GetChunkPos(world.p.Position.z))
+			//	,
+			//	
+			//glm::vec2((float)window.getSize().x, (float)window.getSize().y), { 25.0f, 620.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
 			glEnable(GL_DEPTH_TEST);
 			window.display();
 		}

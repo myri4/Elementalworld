@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Utils/Lua.hpp>
+#include <sol/sol.hpp>
 #include <gl/Material.hpp>
 
 namespace wc{
@@ -47,8 +48,8 @@ Face BOTTOM_FACE = {
 };
 
 Face TOP_FACE = {
-	glm::vec3(blockSize,  blockSize, -blockSize), // top-right
-	glm::vec3(blockSize,  blockSize,  blockSize), // bottom-right                 
+	glm::vec3( blockSize,  blockSize, -blockSize), // top-right
+	glm::vec3( blockSize,  blockSize,  blockSize), // bottom-right                 
 	glm::vec3(-blockSize,  blockSize,  blockSize), // bottom-left  
 	glm::vec3(-blockSize,  blockSize, -blockSize)  // top-left 
 };
@@ -64,6 +65,8 @@ public:
 	Block() {}
 	void Create(const char* file) {
 		wc::Lua blockState(file);
+		sol::state luaScript;
+		luaScript.script_file(file);
 		id = blockState.GetNumber("id");
 		isCollidable = blockState.GetBool("isCollidable");
 		//blockTexture[TOP_TEXTURE].load(blockState.GetString("Top"));

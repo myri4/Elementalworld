@@ -2,29 +2,28 @@
 #version 330 core
 layout (location = 0) in vec3 a_Pos;
 layout (location = 1) in vec2 a_TexCoord;
-//layout (location = 2) in vec3 a_Normal;
 
 out vec2 v_TexCoords;
 out vec3 v_FragPos;
 out float v_visibility;
 
-uniform const float density = 0.07;
-uniform const float gradient = 0.5;
+uniform const float u_Density = 0.07;
+uniform const float u_Gradient = 0.5;
 
-uniform mat4 model = mat4(1.0f);
-uniform mat4 view = mat4(1.0f);
-uniform mat4 projection = mat4(1.0f);
-uniform bool fog = true;
+uniform mat4 u_Model = mat4(1.0f);
+uniform mat4 u_View = mat4(1.0f);
+uniform mat4 u_Projection = mat4(1.0f);
+uniform bool u_Fog = true;
 
 
 void main(){
-    vec4 PosRelativeToCam = view * model * vec4(a_Pos, 1.0);
-	gl_Position = projection * view * model * vec4(a_Pos, 1.0);
+    vec4 PosRelativeToCam = u_View * u_Model * vec4(a_Pos, 1.0);
+	gl_Position = u_Projection * u_View * u_Model * vec4(a_Pos, 1.0);
 	v_TexCoords = a_TexCoord;
-	v_FragPos = vec3(model * vec4(a_Pos, 1.0));
-    if (fog){
+	v_FragPos = vec3(u_Model * vec4(a_Pos, 1.0));
+    if (u_Fog){
         float dist = length(PosRelativeToCam.xyz);
-        v_visibility = exp(-pow((dist * density), gradient));
+        v_visibility = exp(-pow((dist * u_Density), u_Gradient));
         v_visibility = clamp(v_visibility, 0.0f, 1.0f);
     }
 }
@@ -67,7 +66,7 @@ uniform bool attenuation = true;
 uniform float minimalLight = 0.1f;
 uniform bool fog = true;
 uniform vec3 fogColor = vec3(0.5f);
-Material material;
+uniform Material material;
 Light ll;
 
 
@@ -119,25 +118,21 @@ vec3 CalculateLight(Light light, Material mat, vec3 normal, vec3 viewDir, bool b
 
 void main()
 {
-    ll.vector = vec4(32.0f, 32.0f, 32, 1);
+    ll.vector = vec4(viewPos, 1);
     ll.color = vec3(1.0f, 1.0f, 1.0f);
     ll.constant = 1.0f;
     ll.linear = 0.09f;
     ll.quadratic = 0.032f;
-    ll.strenght = 1.5f;
-    material.ambient = vec3(1.0f, 1.0f, 1.0f);
-    material.diffuse = vec3(1.0f, 1.0f, 1.0f);
-    material.specular = vec3(1.0f, 1.0f, 1.0f);;
-    material.shininess = 32.0f;
+    ll.strenght = 0.1f;
 
     //normalmap calculations
     vec3 normal = vec3(0.5f, 0.5f, 1.0f);
     normal = normalize(normal * 2.0 - 1.0); 
 
-    vec4 texColor = texture(u_Texture, v_TexCoords) * minimalLight;
+    vec4 texColor = texture(u_Texture, v_TexCoords);// * minimalLight;
 
 
-    texColor += vec4(CalculateLight(ll, material, normalize(normal), normalize(viewPos - v_FragPos), blinn, attenuation), 1.0f);
+    //texColor += vec4(CalculateLight(ll, material, normalize(normal), normalize(viewPos - v_FragPos), blinn, attenuation), 1.0f);
 
     if(texColor.a < 0.1) discard;
     if(fog)

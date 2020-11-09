@@ -6,21 +6,18 @@
 namespace wc{
 class Player : public Entity{
 private:
+	void Update() override {
+
+	}
 public:
 	Camera camera;
 	float Near = 0.1f, Far = 1100.0f;
 
 	glm::mat4 projection = glm::mat4(0.0f);
-	Player() {
+	Player() {}
 
-	}
 
-	~Player() override{
-
-	}
-	void Update() override {
-
-	}
+	~Player() override{}
 	void UpdatePlayerInput(const float& deltaTime) {
 		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::W))      camera.Move(Camera_Movement::FORWARD, deltaTime);
 		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::S))      camera.Move(Camera_Movement::BACKWARD, deltaTime);
@@ -32,11 +29,6 @@ public:
 		else {
 			camera.MouseSensitivity = 5;
 			camera.Zoom = 90;
-		}
-		Ray ray(camera);
-
-		for (; ray.getLength() < 8; ray.Step()) {
-
 		}
 	}
 	void InitPlayer(const glm::vec3& Position) {
@@ -51,7 +43,6 @@ public:
 		Position = camera.Position;
 	}
 	glm::mat4 GetView() {return camera.GetViewMatrix();}
-
 
 };
 class ServerPlayer : public Entity {

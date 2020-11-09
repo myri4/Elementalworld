@@ -8,11 +8,10 @@
 //OpenGL Memory Buffer Variables
 static const size_t chunkSize = 16;
 
-static const size_t MaxFaceCount = chunkSize * chunkSize * 8;
+static const size_t MaxFaceCount = chunkSize * chunkSize * 6;
 static const size_t MaxVertexCount = MaxFaceCount * 4;
 
 namespace wc {
-
 int to1D(const glm::vec3& pos) { return (pos.z * chunkSize * chunkSize) + (pos.y * chunkSize) + pos.x; }
 glm::vec3 to3D(const int& idx, const glm::ivec3& size = glm::vec3(chunkSize)) {
 	int i = idx;
@@ -34,23 +33,16 @@ public: // Variables
 
 public: // Functions 
 	Chunk() {}
-	Chunk(const glm::vec3& pos) { Create(pos); }
+	Chunk(const int32_t& pos) { Create(pos); }
 	~Chunk() {}
-	void Create(const glm::vec3& pos) {
-		chunkPosition = to1D(pos);
-		//Configuring the vertex array
-		chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
-		gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
-		gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
-		//gl::VertexAttribPointer(2, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Normal));    // Normal attribute
-	}
 	void Create(const int32_t& pos) {
 		chunkPosition = pos;
 		//Configuring the vertex array
 		chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
 		gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
 		gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
-		//gl::VertexAttribPointer(2, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Normal));    // Normal attribute
 	}
+
+	glm::vec3 getPosition() { return to3D(chunkPosition);}
 };
 }

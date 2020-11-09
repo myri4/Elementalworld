@@ -1,0 +1,11 @@
+id = 3
+isCollidable = true
+fluid = false
+Name = "Stone block"
+Drop = "elementalworld:dirt" 
+Top =    "assets/textures/block/dirt.png"
+Left =   "assets/textures/block/dirt.png"
+Right =  "assets/textures/block/dirt.png"
+Front =  "assets/textures/block/dirt.png"
+Back =   "assets/textures/block/dirt.png"
+Bottom = "assets/textures/block/dirt.png"

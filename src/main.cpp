@@ -1,9 +1,7 @@
 ﻿#include "Engine.hpp"
 
-wc::GameEngine* engine = new wc::GameEngine;
-
 int main() {
+	wc::GameEngine* engine = new wc::GameEngine;
 	wc::Log::Init();
 	engine->Start();
-	delete engine;
 }

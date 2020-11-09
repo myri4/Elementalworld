@@ -9,27 +9,24 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/compatibility.hpp>
 #include <vector>
 
+
+namespace gl {
 struct ParticleProps
 {
-	glm::vec3 Position;
-	glm::vec3 Velocity, VelocityVariation;
-	glm::vec4 ColorBegin, ColorEnd;
-	float SizeBegin, SizeEnd, SizeVariation;
+	glm::vec3 Position = glm::vec3(0.0f);
+	glm::vec3 Velocity = glm::vec3(1.0f), VelocityVariation = glm::vec3(1.0f);
+	glm::vec4 ColorBegin = glm::vec4(1.0f), ColorEnd = glm::vec4(1.0f);
+	float SizeBegin = 1.0f, SizeEnd = 0.0f, SizeVariation = 1.0f;
 	float LifeTime = 1.0f;
 };
 
 
 class ParticleEffect {
-	ParticleEffect() {
-		m_ParticlePool.resize(1000);
-	}
-	~ParticleEffect() {
-
-	}
+public:
+	ParticleEffect() {}
 
 	void OnUpdate(const float& deltaTime) {
 		for (auto & particle : m_ParticlePool)
@@ -48,14 +45,14 @@ class ParticleEffect {
 			particle.Rotation += 0.01f * deltaTime;
 		}
 	}
-	void Render() {
+	void Render(const glm::mat4& proj) {
 		if (!m_QuadVA.GetVAO())
 		{
 			float vertices[] = {
-				 -0.5f, -0.5f, 0.0f,
-				  0.5f, -0.5f, 0.0f,
-				  0.5f,  0.5f, 0.0f,
-				 -0.5f,  0.5f, 0.0f
+				 -0.5f,  0.5f,  0.0f,
+				 -0.5f, -0.5f,  0.0f,
+				  0.5f, -0.5f,  0.0f,
+				  0.5f,  0.5f,  0.0f,
 			};
 
 			m_QuadVA.Create(vertices, sizeof(vertices)); // TODO
@@ -65,15 +62,11 @@ class ParticleEffect {
 
 			gl::IndexBuffer quadIB(indices, sizeof(indices));
 
-			m_ParticleShader.Create("");
-			m_ParticleShaderViewProj = glGetUniformLocation(m_ParticleShader.GetRendererID(), "u_ViewProj");
-			m_ParticleShaderTransform = glGetUniformLocation(m_ParticleShader.GetRendererID(), "u_Transform");
-			m_ParticleShaderColor = glGetUniformLocation(m_ParticleShader.GetRendererID(), "u_Color");
+			m_ParticleShader.Create("shaderpacks/default/particleShader.glsl");
 		}
 
 		m_ParticleShader.use();
-		//glUniformMatrix4fv(m_ParticleShaderViewProj, 1, GL_FALSE, glm::value_ptr(camera.GetViewProjectionMatrix()));
-		//m_ParticleShader.setMat4();
+		m_ParticleShader.setMat4("u_Projection", proj);
 
 		for (auto& particle : m_ParticlePool)
 		{
@@ -82,64 +75,59 @@ class ParticleEffect {
 			// Fade away particles
 			float life = particle.LifeRemaining / particle.LifeTime;
 			glm::vec4 color = glm::lerp(particle.ColorEnd, particle.ColorBegin, life);
-			//color.a = color.a * life;
 
 			float size = glm::lerp(particle.SizeEnd, particle.SizeBegin, life);
 
 			// Render
-			glm::mat4 transform = glm::translate(glm::mat4(1.0f), { particle.Position.x, particle.Position.y, 0.0f })
-				* glm::rotate(glm::mat4(1.0f), particle.Rotation, { 0.0f, 0.0f, 1.0f })
-				* glm::scale(glm::mat4(1.0f), { size, size, 1.0f });
-			glUniformMatrix4fv(m_ParticleShaderTransform, 1, GL_FALSE, glm::value_ptr(transform));
-			glUniform4fv(m_ParticleShaderColor, 1, glm::value_ptr(color));
+			glm::mat4 transform = glm::translate(glm::mat4(1.0f), particle.Position) * glm::rotate(glm::mat4(1.0f), particle.Rotation, { 0.0f, 0.0f, 1.0f }) * glm::scale(glm::mat4(1.0f), glm::vec3(size));
+			m_ParticleShader.setMat4("u_Model", transform);
+			m_ParticleShader.setVec4("u_Color",color);
 			m_QuadVA.Bind();
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 		}
 	}
 
 	void Emit(const ParticleProps& particleProps) {
-		Particle& particle = m_ParticlePool[m_PoolIndex];
-		particle.Active = true;
-		particle.Position = particleProps.Position;
-		particle.Rotation = Random::Float() * 2.0f * glm::pi<float>();
+		m_ParticlePool[m_PoolIndex].Active = true;
+		m_ParticlePool[m_PoolIndex].Position = particleProps.Position;
+		m_ParticlePool[m_PoolIndex].Rotation = Random::Float() * 2.0f * glm::pi<float>();
 
 		// Velocity
-		particle.Velocity = particleProps.Velocity;
-		particle.Velocity.x += particleProps.VelocityVariation.x * (Random::Float() - 0.5f);
-		particle.Velocity.y += particleProps.VelocityVariation.y * (Random::Float() - 0.5f);
-		particle.Velocity.z += particleProps.VelocityVariation.z * (Random::Float() - 0.5f);
+		m_ParticlePool[m_PoolIndex].Velocity = particleProps.Velocity;
+		m_ParticlePool[m_PoolIndex].Velocity.x += particleProps.VelocityVariation.x * (Random::Float() - 0.5f);
+		m_ParticlePool[m_PoolIndex].Velocity.y += particleProps.VelocityVariation.y * (Random::Float() - 0.5f);
+		m_ParticlePool[m_PoolIndex].Velocity.z += particleProps.VelocityVariation.z * (Random::Float() - 0.5f);
 
 		// Color
-		particle.ColorBegin = particleProps.ColorBegin;
-		particle.ColorEnd = particleProps.ColorEnd;
-
-		particle.LifeTime = particleProps.LifeTime;
-		particle.LifeRemaining = particleProps.LifeTime;
-		particle.SizeBegin = particleProps.SizeBegin + particleProps.SizeVariation * (Random::Float() - 0.5f);
-		particle.SizeEnd = particleProps.SizeEnd;
+		m_ParticlePool[m_PoolIndex].ColorBegin = particleProps.ColorBegin;
+		m_ParticlePool[m_PoolIndex].ColorEnd = particleProps.ColorEnd;
+		
+		m_ParticlePool[m_PoolIndex].LifeTime = particleProps.LifeTime;
+		//m_ParticlePool[m_PoolIndex].LifeRemaining = particleProps.LifeTime;
+		m_ParticlePool[m_PoolIndex].SizeBegin = particleProps.SizeBegin + particleProps.SizeVariation * (Random::Float() - 0.5f);
+		m_ParticlePool[m_PoolIndex].SizeEnd = particleProps.SizeEnd;
 
 		m_PoolIndex = --m_PoolIndex % m_ParticlePool.size();
 	}
 
 private:	
-struct Particle
-{
-	glm::vec3 Position;
-	glm::vec3 Velocity;
-	glm::vec4 ColorBegin, ColorEnd;
-	float Rotation = 0.0f;
-	float SizeBegin, SizeEnd;
-
-	float LifeTime = 1.0f;
-	float LifeRemaining = 0.0f;
-
-	bool Active = false;
+	struct Particle
+	{
+		glm::vec3 Position = glm::vec3(0.0f);
+		glm::vec3 Velocity = glm::vec3(1.0f);
+		glm::vec4 ColorBegin = glm::vec4(1.0f), ColorEnd = glm::vec4(1.0f);
+		float Rotation = 0.0f;
+		float SizeBegin = 1.0f, SizeEnd = 0.0f;
+	
+		float LifeTime = 1.0f;
+		float LifeRemaining = 0.0f;
+	
+		bool Active = false;
+	};
+	std::array<Particle, 1000> m_ParticlePool;
+	uint32_t m_PoolIndex = 999;
+	
+	gl::VertexBuffer m_QuadVA;
+	gl::Shader m_ParticleShader;
 };
-std::vector<Particle> m_ParticlePool;
-uint32_t m_PoolIndex = 999;
-
-gl::VertexBuffer m_QuadVA;
-gl::Shader m_ParticleShader;
-int m_ParticleShaderViewProj, m_ParticleShaderTransform, m_ParticleShaderColor;
-
-};
+}

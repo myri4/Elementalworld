@@ -209,9 +209,6 @@
     <ClInclude Include="common\Utils\Time.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\Utils\Window.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\camera.lua" />
@@ -225,5 +222,7 @@
     <None Include="config\blocks.lua" />
     <None Include="config\window.lua" />
     <None Include="scripts\dirt.lua" />
+    <None Include="shaderpacks\default\particleShader.glsl" />
+    <None Include="scripts\stone.lua" />
   </ItemGroup>
 </Project>

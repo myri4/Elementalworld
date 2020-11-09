@@ -209,7 +209,6 @@
     <ClInclude Include="common\Utilitiess\State.h" />
     <ClInclude Include="common\Utils\State.hpp" />
     <ClInclude Include="common\Utils\Time.hpp" />
-    <ClInclude Include="common\Utils\Window.hpp" />
     <ClInclude Include="common\wclibs\Core.hpp" />
     <ClInclude Include="common\Utils\Lua.hpp" />
     <ClInclude Include="common\wclibs\pch.hpp" />
@@ -247,7 +246,9 @@
     <None Include="scripts\grassblock.lua" />
     <None Include="scripts\player.lua" />
     <None Include="scripts\skybox.lua" />
+    <None Include="scripts\stone.lua" />
     <None Include="shaderpacks\default\core.glsl" />
+    <None Include="shaderpacks\default\particleShader.glsl" />
     <None Include="shaderpacks\default\screenShader.glsl" />
     <None Include="shaderpacks\default\skybox.glsl" />
     <None Include="shaderpacks\default\text.glsl" />
