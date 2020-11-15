@@ -12,17 +12,11 @@ namespace wc {
 		bool CenterMouse = true;
 		float deltaTime = 0.0f;
 
-		enum class MenuState { 
-			MainMenu,
-			SinglePlayerWorldSelection,
-		};
-
 		wc::World world;
 
 		gl::Text TextRenderer;
 
-
-		irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
+		//irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
 
 
 		//----------------------------------------------------------------------------------------
@@ -62,7 +56,6 @@ namespace wc {
 		void OnEvent() override {
 			sf::Event windowEvents;
 			while (window.pollEvent(windowEvents)) {
-
 				if (windowEvents.type == windowEvents.Closed)window.close();
 				if (windowEvents.type == sf::Event::Resized) {
 					glViewport(0, 0, window.getSize().x, window.getSize().y);
@@ -101,6 +94,7 @@ namespace wc {
 			loadFromFile("config/window.lua");
 			window.setActive();
 			if (!gladLoadGL()) WC_ERROR("Failed to initialize GLAD");
+
 			// OpenGL state
 			EnableGLDebuging();
 			// ------------

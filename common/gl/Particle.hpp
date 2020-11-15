@@ -4,7 +4,7 @@
 #include <Utils/Random.hpp>
 
 #include <gl/Shaders.hpp>
-#include <gl/VertexBuffer.hpp>
+#include <gl/Vertex.hpp>
 #include <gl/IndexBuffer.hpp>
 
 #include <glm/glm.hpp>
@@ -82,7 +82,7 @@ public:
 			glm::mat4 transform = glm::translate(glm::mat4(1.0f), particle.Position) * glm::rotate(glm::mat4(1.0f), particle.Rotation, { 0.0f, 0.0f, 1.0f }) * glm::scale(glm::mat4(1.0f), glm::vec3(size));
 			m_ParticleShader.setMat4("u_Model", transform);
 			m_ParticleShader.setVec4("u_Color",color);
-			m_QuadVA.Bind();
+			m_QuadVA.BindVAO();
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 		}
 	}

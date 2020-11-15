@@ -1,6 +1,6 @@
 id = 2
 isCollidable = true
-fluid = false
+ConnectionType = "CONNECT_DEFAULT"
 Name = "Dirt block"
 Drop = "elementalworld:dirt" 
 Top =    "assets/textures/block/dirt.png"

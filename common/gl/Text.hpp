@@ -174,7 +174,7 @@ namespace gl {
             shader.setMat4("projection", projection);
             shader.setVec3("textColor", color);
             glActiveTexture(GL_TEXTURE0 + activeTexture);
-            TextVB.Bind();
+            TextVB.BindVAO();
 
             // iterate through all characters
             for (auto& c : text){

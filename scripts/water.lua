@@ -1,11 +1,11 @@
-id = 1
-isCollidable = true
-ConnectionType = "CONNECT_DEFAULT"
-Name = "Dirt"
-Drop = "elementalworld:dirt" 
+id = 5
+isCollidable = false
+ConnectionType = "FLUID_CONNECT"
+Name = "Water block"
+Drop = "elementalworld:none" 
 Top =    "assets/textures/block/dirt.png"
 Left =   "assets/textures/block/dirt.png"
 Right =  "assets/textures/block/dirt.png"
 Front =  "assets/textures/block/dirt.png"
-Back =   "assets/textures/block/dirt.png" 
+Back =   "assets/textures/block/dirt.png"
 Bottom = "assets/textures/block/dirt.png"

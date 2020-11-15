@@ -2,8 +2,8 @@
 
 #include <glad/glad.h>
 #include <gl/IndexBuffer.hpp>
-#include <gl/Cubemap.hpp>
-#include <gl/VertexBuffer.hpp>
+#include <gl/Texture.hpp>
+#include <gl/Vertex.hpp>
 #include <Utils/Lua.hpp>
 
 namespace gl {
@@ -61,7 +61,7 @@ namespace gl {
                  size, -size,  size
             };
             skyboxArray.Create(&vertices, sizeof(vertices), GL_STATIC_DRAW);
-            skyboxArray.Bind();
+            skyboxArray.BindVAO();
             gl::VertexAttribPointer(0, 3, 3 * sizeof(float), (void*)0);
             skyboxArray.Unbind();
 
@@ -96,7 +96,7 @@ namespace gl {
             shader.setMat4("view", view);
             shader.setMat4("projection", projection);
             // skybox cube
-            skyboxArray.Bind();
+            skyboxArray.BindVAO();
             skyboxTexture.Bind();
             skyboxIndicies.Bind();
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);

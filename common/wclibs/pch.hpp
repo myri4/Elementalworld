@@ -1,11 +1,10 @@
-#pragma once
-
+#ifndef PCH_HPP
+#define PCH_HPP
 
 #include <iostream>
-#include <algorithm>
-#include <cmath>
+//#include <algorithm>
 #include <ctime>
-#include <math.h>
+//#include <math.h>
 #include <future>
 #include <thread>
 #include <memory>
@@ -14,7 +13,7 @@
 #include <string>
 #include <vector>
 #include <ostream>
-#include <map>
+#include <unordered_map>
 #include <sstream>
 #include <array>
 
@@ -23,38 +22,26 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/noise.hpp>
 
-#include <stb_image/stb_image.h>
-
 #include <SFML/Config.hpp>
 #include <SFML/GpuPreference.hpp>
 
 //OpenGL
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
+//#include <GLFW/glfw3.h>
 
-//window
-#include <SFML/Window/Clipboard.hpp>
-#include <SFML/Window/ContextSettings.hpp>
+//SFML Stuff
 #include <SFML/Window/Event.hpp>
-#include <SFML/Window/Keyboard.hpp>
-#include <SFML/Window/VideoMode.hpp>
-#include <SFML/Window/Window.hpp>
-#include <SFML/Window/WindowHandle.hpp>
-#include <SFML/Window/WindowStyle.hpp>
-
-//Graphics
 #include <SFML/Graphics/RenderWindow.hpp>
 
 //Custom libraries
 #include <gl/Camera.hpp>
 #include <gl/Shaders.hpp>
 #include <gl/Texture.hpp>
-#include <gl/VertexBuffer.hpp>
+#include <gl/Vertex.hpp>
 #include <gl/Skybox.hpp>
 #include <gl/IndexBuffer.hpp>
 #include <gl/Text.hpp>
 #include <gl/FrameBuffer.hpp>
-#include <gl/Vertex.hpp>
 #include <gl/Material.hpp>  
 #include <gl/Light.hpp>
 
@@ -72,3 +59,5 @@
 #include <Utils/Keyboard.hpp>
 #include <Utils/Mouse.hpp>
 #include <Utils/Log.hpp>
+
+#endif

@@ -5,7 +5,7 @@
 #include <gl/Material.hpp>
 
 namespace wc{
-enum class BlockType { Fluid, Solid, Air, Leave };
+enum class ConnectionType { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT};
 enum class BlockTexture { TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK };
 
 static const float blockSize = 0.5f;
@@ -60,15 +60,20 @@ public:
 	bool isCollidable = true;
 	glm::vec2 TexCoords[6];
 	gl::Material material;
+	ConnectionType blockConnectionType = ConnectionType::CONNECT_DEFAULT;
 
 	Block(const char* file) {Create(file);}
 	Block() {}
 	void Create(const char* file) {
 		wc::Lua blockState(file);
-		sol::state luaScript;
-		luaScript.script_file(file);
+		//sol::state luaScript;
+		//luaScript.script_file(file);
 		id = blockState.GetNumber("id");
 		isCollidable = blockState.GetBool("isCollidable");
+		std::string conType = blockState.GetString("ConnectionType");
+		if (conType == "CONNECT_DEFAULT") blockConnectionType = ConnectionType::CONNECT_DEFAULT;
+		if (conType == "FLUID_CONNECT") blockConnectionType = ConnectionType::FLUID_CONNECT;
+		if (conType == "NO_CONNECT") blockConnectionType = ConnectionType::NO_CONNECT;
 		//blockTexture[TOP_TEXTURE].load(blockState.GetString("Top"));
 		//blockTexture[LEFT_TEXTURE].load(blockState.GetString("Left"));
 		//blockTexture[RIGHT_TEXTURE].load(blockState.GetString("Right"));

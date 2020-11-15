@@ -122,9 +122,6 @@
     <ClInclude Include="common\gl\Light.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\gl\Vertex.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\Utilitiess\Log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -135,9 +132,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\gl\Camera.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\Cubemap.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\gl\FrameBuffer.hpp">
@@ -176,9 +170,6 @@
     <ClInclude Include="src\world\Block.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\gl\VertexBuffer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\gl\Particle.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -209,13 +200,21 @@
     <ClInclude Include="common\Utils\Time.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\GUI\Renderer2D.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\GUI\Button.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\gl\Vertex.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\camera.lua" />
     <None Include="scripts\player.lua" />
     <None Include="scripts\skybox.lua" />
     <None Include="scripts\grassblock.lua" />
-    <None Include="shaderpacks\default\core.glsl" />
     <None Include="shaderpacks\default\skybox.glsl" />
     <None Include="shaderpacks\default\text.glsl" />
     <None Include="shaderpacks\default\screenShader.glsl" />
@@ -224,5 +223,9 @@
     <None Include="scripts\dirt.lua" />
     <None Include="shaderpacks\default\particleShader.glsl" />
     <None Include="scripts\stone.lua" />
+    <None Include="scripts\sand.lua" />
+    <None Include="shaderpacks\default\fluidShader.glsl" />
+    <None Include="scripts\water.lua" />
+    <None Include="shaderpacks\default\chunkShader.glsl" />
   </ItemGroup>
 </Project>

@@ -180,7 +180,6 @@
     <ClInclude Include="common\gl\Camera.h" />
     <ClInclude Include="common\gl\Camera.hpp" />
     <ClInclude Include="common\gl\Cubemap.h" />
-    <ClInclude Include="common\gl\Cubemap.hpp" />
     <ClInclude Include="common\gl\FrameBuffer.h" />
     <ClInclude Include="common\gl\FrameBuffer.hpp" />
     <ClInclude Include="common\gl\glErrors.h" />
@@ -198,9 +197,10 @@
     <ClInclude Include="common\gl\Text.hpp" />
     <ClInclude Include="common\gl\Texture.h" />
     <ClInclude Include="common\gl\Texture.hpp" />
-    <ClInclude Include="common\gl\Vertex.hpp" />
     <ClInclude Include="common\gl\VertexArray.h" />
-    <ClInclude Include="common\gl\VertexBuffer.hpp" />
+    <ClInclude Include="common\gl\Vertex.hpp" />
+    <ClInclude Include="common\GUI\Button.hpp" />
+    <ClInclude Include="common\GUI\Renderer2D.hpp" />
     <ClInclude Include="common\Utils\CustomDefs.hpp" />
     <ClInclude Include="common\Utils\Keyboard.hpp" />
     <ClInclude Include="common\Utils\Log.hpp" />
@@ -245,13 +245,16 @@
     <None Include="scripts\dirt.lua" />
     <None Include="scripts\grassblock.lua" />
     <None Include="scripts\player.lua" />
+    <None Include="scripts\sand.lua" />
     <None Include="scripts\skybox.lua" />
     <None Include="scripts\stone.lua" />
-    <None Include="shaderpacks\default\core.glsl" />
+    <None Include="scripts\water.lua" />
+    <None Include="shaderpacks\default\chunkShader.glsl" />
     <None Include="shaderpacks\default\particleShader.glsl" />
     <None Include="shaderpacks\default\screenShader.glsl" />
     <None Include="shaderpacks\default\skybox.glsl" />
     <None Include="shaderpacks\default\text.glsl" />
+    <None Include="shaderpacks\default\fluidShader.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

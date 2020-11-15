@@ -1,29 +1,25 @@
 #type vertex
 #version 330 core
-layout (location = 0) in vec2 aPos;
-layout (location = 1) in vec2 aTexCoords;
+layout (location = 0) in vec2 a_Pos;
+layout (location = 1) in vec2 a_TexCoords;
 
-out vec2 TexCoords;
+out vec2 v_TexCoords;
 
 void main()
 {
-    TexCoords = aTexCoords;
-    gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0); 
+    v_TexCoords = a_TexCoords;
+    gl_Position = vec4(a_Pos, 0.0, 1.0); 
 }  
 
 #type fragment
 #version 330 core
-out vec4 Result;
+layout (location = 0) out vec4 Result;
 
-in vec2 TexCoords;
+in vec2 v_TexCoords;
 
 uniform sampler2D screenTexture;
 
-const float offset = 1.0 / 300.0;  
-
 void main()
 {
-   // if(gl_FragCoord.y < 360)
-  //  Result = vec4(vec3(1.0 - texture(screenTexture, TexCoords)), 1.0);
-     Result = texture(screenTexture, TexCoords);
+    Result = vec4(1,1,3,1);
 }

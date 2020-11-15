@@ -7,7 +7,7 @@ out vec2 v_TexCoords;
 out vec3 v_FragPos;
 out float v_visibility;
 
-uniform const float u_Density = 0.07;
+uniform const float u_Density = 0.017;
 uniform const float u_Gradient = 0.5;
 
 uniform mat4 u_Model = mat4(1.0f);
@@ -129,7 +129,7 @@ void main()
     vec3 normal = vec3(0.5f, 0.5f, 1.0f);
     normal = normalize(normal * 2.0 - 1.0); 
 
-    vec4 texColor = texture(u_Texture, v_TexCoords);// * minimalLight;
+    vec4 texColor = texture(u_Texture, vec2(v_TexCoords));// * minimalLight;
 
 
     //texColor += vec4(CalculateLight(ll, material, normalize(normal), normalize(viewPos - v_FragPos), blinn, attenuation), 1.0f);
