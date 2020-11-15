@@ -13,20 +13,20 @@ namespace gl {
         VertexBuffer(const void* data, const GLsizeiptr& size, const GLenum& mode = GL_STATIC_DRAW) { Create(data, size, mode); }
         ~VertexBuffer() { Destroy(); }
 
-        void BindVAO() {
-            glBindVertexArray(VAO);
-        }
-        void BindVBO() {
+        //void BindVAO() {
+        //    glBindVertexArray(VAO);
+        //}
+        void Bind() {
             glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
         }
         void Unbind() { glBindVertexArray(0); }
 
         void Create(const void* data, const GLsizeiptr& size, const GLenum& mode = GL_STATIC_DRAW) {
-            if (!VAO || !m_RendererID){
-                glGenVertexArrays(1, &VAO);
+            //if(!VAO) glGenVertexArrays(1, &VAO);
+            if (!m_RendererID){
                 glGenBuffers(1, &m_RendererID);
 
-                glBindVertexArray(VAO);
+                //glBindVertexArray(VAO);
                 glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
 
                 glBufferData(GL_ARRAY_BUFFER, size, data, mode);
@@ -34,7 +34,7 @@ namespace gl {
         }
 
         void Destroy() {
-            glDeleteVertexArrays(1, &VAO);
+            //glDeleteVertexArrays(1, &VAO);
             glDeleteBuffers(1, &m_RendererID);
         }
 
@@ -44,15 +44,15 @@ namespace gl {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
 
-        uint32_t GetVAO() {
-            return VAO;
-        }
+       //uint32_t GetVAO() {
+       //    return VAO;
+       //}
 
         uint32_t GetVBO() {
             return m_RendererID;
         }
     private:
-        uint32_t VAO = 0, m_RendererID = 0;
+        uint32_t m_RendererID = 0; // VAO = 0
     };
 
     class VertexArray {

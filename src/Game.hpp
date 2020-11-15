@@ -12,46 +12,12 @@ namespace wc {
 		bool CenterMouse = true;
 		float deltaTime = 0.0f;
 
-		wc::World world;
+		wc::Singleplayer world;
 
 		gl::Text TextRenderer;
 
 		//irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
 
-
-		//----------------------------------------------------------------------------------------
-		void loadFromFile(const char* file) {
-			Lua windowScript(file);
-			int width, height;
-
-			bool fullScreen = 0;
-			bool vsync = 0;
-
-			uint32_t frameRateLimit = 0;
-			uint8_t style = sf::Style::Default;
-
-			fullScreen = windowScript.GetBool("fullscreen");
-			if (fullScreen == true) {
-				style = sf::Style::Fullscreen;
-				width = sf::VideoMode::getDesktopMode().width;
-				height = sf::VideoMode::getDesktopMode().height;
-			}
-			else {
-				style = sf::Style::Default;
-				width = (float)windowScript.GetNumber("screenWidth");
-				height = (float)windowScript.GetNumber("screenHeight");
-			}
-
-
-			frameRateLimit = windowScript.GetNumber("framerateLimit");
-			vsync = windowScript.GetBool("vsync");
-
-			window.create(sf::VideoMode(width, height), "Elementalworld", style, sf::ContextSettings(24, 0, windowScript.GetNumber("antialiasingLevel"), windowScript.GetNumber("majorVersion"), windowScript.GetNumber("minorVersion")));
-			window.setFramerateLimit(frameRateLimit);
-			window.setVerticalSyncEnabled(vsync);
-
-
-		}
 		//----------------------------------------------------------------------------------------
 		void OnEvent() override {
 			sf::Event windowEvents;
@@ -91,7 +57,35 @@ namespace wc {
 
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() override {
-			loadFromFile("config/window.lua");
+			Lua windowScript("config/window.lua");
+			int width = 0, height = 0;
+
+			bool fullScreen = 0;
+			bool vsync = 0;
+
+			uint32_t frameRateLimit = 0;
+			uint8_t style = sf::Style::Default;
+
+			fullScreen = windowScript.GetBool("fullscreen");
+			if (fullScreen == true) {
+				style = sf::Style::Fullscreen;
+				width = sf::VideoMode::getDesktopMode().width;
+				height = sf::VideoMode::getDesktopMode().height;
+			}
+			else {
+				style = sf::Style::Default;
+				width = windowScript.GetNumber("screenWidth");
+				height = windowScript.GetNumber("screenHeight");
+			}
+
+
+			frameRateLimit = windowScript.GetNumber("framerateLimit");
+			vsync = windowScript.GetBool("vsync");
+
+			window.create(sf::VideoMode(width, height), "Elementalworld", style, sf::ContextSettings(24, 0, windowScript.GetNumber("antialiasingLevel"), windowScript.GetNumber("majorVersion"), windowScript.GetNumber("minorVersion")));
+			window.setFramerateLimit(frameRateLimit);
+			window.setVerticalSyncEnabled(vsync);
+
 			window.setActive();
 			if (!gladLoadGL()) WC_ERROR("Failed to initialize GLAD");
 
@@ -124,7 +118,6 @@ namespace wc {
 			world.Create();
 
 			TextRenderer.Create("assets/font/Minecraft.ttf", "shaderpacks/default/text.glsl");
-
 		}
 		
 		//----------------------------------------------------------------------------------------------------------------------
@@ -150,21 +143,10 @@ namespace wc {
 			glEnable(GL_DEPTH_TEST);
 			window.display();
 		}
+		void OnDelete() override {
+		}
 
 	public:
 		GameEngine() {}
-		~GameEngine() {}
-
-		void Start() override {
-			OnCreate();
-			while (GetEngineStatus() == EngineStatus::OK) {
-				//Game Events
-				OnUpdate();
-				// Events
-				OnEvent();
-				// Input handler
-				OnInput();
-			}
-		}
 	};
 }

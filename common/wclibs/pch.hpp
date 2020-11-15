@@ -6,7 +6,7 @@
 #include <ctime>
 //#include <math.h>
 #include <future>
-#include <thread>
+//#include <thread>
 #include <memory>
 
 #include <fstream>

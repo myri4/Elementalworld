@@ -8,15 +8,11 @@ enum class FrameBufferStatus {
 
 class FrameBuffer {
 public:
-    FrameBuffer() {
+    FrameBuffer() {}
+    FrameBuffer(uint32_t width, uint32_t height) { Create(width, height); }
 
-    }
-    FrameBuffer(unsigned int width, unsigned int height) { Create(width, height); }
-
-    ~FrameBuffer() {
-        glDeleteFramebuffers(1, &m_RendererID);
-    }
-    FrameBufferStatus Create(unsigned int width, unsigned int height) {
+    ~FrameBuffer() {glDeleteFramebuffers(1, &m_RendererID);}
+    FrameBufferStatus Create(uint32_t width, uint32_t height) {
         if (!m_RendererID) {
             glGenFramebuffers(1, &m_RendererID);
             glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);

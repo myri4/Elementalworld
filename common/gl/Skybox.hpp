@@ -12,7 +12,7 @@ namespace gl {
 	public:
         Skybox() {}
         Skybox(const char* file, const float& playerFarPlane) {Create(file, playerFarPlane);}
-        ~Skybox() {skyboxArray.Destroy();}
+        ~Skybox() { skyboxVertexBuffer.Destroy();}
         void Create(const char* file, const float& playerFarPlane) {
             wc::Lua skyboxState(file);
             if(std::string(skyboxState.GetString("vertexPath")).empty() || std::string(skyboxState.GetString("vertexPath")).empty())
@@ -60,10 +60,12 @@ namespace gl {
                  size, -size, -size,
                  size, -size,  size
             };
-            skyboxArray.Create(&vertices, sizeof(vertices), GL_STATIC_DRAW);
-            skyboxArray.BindVAO();
+            skyBoxArray.Create();
+            skyBoxArray.Bind();
+            skyboxVertexBuffer.Create(&vertices, sizeof(vertices), GL_STATIC_DRAW);
             gl::VertexAttribPointer(0, 3, 3 * sizeof(float), (void*)0);
-            skyboxArray.Unbind();
+            skyboxVertexBuffer.Unbind();
+            skyBoxArray.unind();
 
             std::array<const char*, 6> faces;
             faces[0] = skyboxState.GetString("right");
@@ -96,19 +98,20 @@ namespace gl {
             shader.setMat4("view", view);
             shader.setMat4("projection", projection);
             // skybox cube
-            skyboxArray.BindVAO();
+            skyBoxArray.Bind();
             skyboxTexture.Bind();
             skyboxIndicies.Bind();
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
             glDepthFunc(GL_LESS); // set depth function back to default
             skyboxIndicies.Unbind();
-            skyboxArray.Unbind();
+            skyboxVertexBuffer.Unbind();
         }
 
         Shader shader;
 	private:
-        gl::Cubemap skyboxTexture;
-        VertexBuffer skyboxArray;
+        Cubemap skyboxTexture;
+        VertexBuffer skyboxVertexBuffer;
+        VertexArray skyBoxArray;
         IndexBuffer skyboxIndicies;
 	};
 }

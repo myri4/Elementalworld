@@ -95,6 +95,8 @@ namespace gl {
 
             // configure VAO/VBO for texture quads
             // -----------------------------------
+            TextVA.Create();
+            TextVA.Bind();
             TextVB.Create(nullptr, sizeof(float) * 6 * 4, GL_DYNAMIC_DRAW);
             gl::VertexAttribPointer(0, 4, 4 * sizeof(float), 0);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -160,6 +162,8 @@ namespace gl {
 
             // configure VAO/VBO for texture quads
             // -----------------------------------
+            TextVA.Create();
+            TextVA.Bind();
             TextVB.Create(nullptr, sizeof(float) * 6 * 4, GL_DYNAMIC_DRAW);
             gl::VertexAttribPointer(0, 4, 4 * sizeof(float), 0);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -174,7 +178,7 @@ namespace gl {
             shader.setMat4("projection", projection);
             shader.setVec3("textColor", color);
             glActiveTexture(GL_TEXTURE0 + activeTexture);
-            TextVB.BindVAO();
+            TextVA.Bind();
 
             // iterate through all characters
             for (auto& c : text){
@@ -212,6 +216,7 @@ namespace gl {
     private:
         gl::Shader shader;
         gl::VertexBuffer TextVB;
+        gl::VertexArray TextVA;
 
         std::unordered_map<char, Character> Characters;
     };

@@ -46,7 +46,7 @@ public:
 		}
 	}
 	void Render(const glm::mat4& proj) {
-		if (!m_QuadVA.GetVAO())
+		//if (!m_QuadVA.GetVAO())
 		{
 			float vertices[] = {
 				 -0.5f,  0.5f,  0.0f,
@@ -82,7 +82,7 @@ public:
 			glm::mat4 transform = glm::translate(glm::mat4(1.0f), particle.Position) * glm::rotate(glm::mat4(1.0f), particle.Rotation, { 0.0f, 0.0f, 1.0f }) * glm::scale(glm::mat4(1.0f), glm::vec3(size));
 			m_ParticleShader.setMat4("u_Model", transform);
 			m_ParticleShader.setVec4("u_Color",color);
-			m_QuadVA.BindVAO();
+			//m_QuadVA.BindVAO();
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 		}
 	}

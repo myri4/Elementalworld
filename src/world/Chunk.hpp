@@ -7,7 +7,7 @@
 //OpenGL Memory Buffer Variables
 static const size_t chunkSize = 16;
 
-static const size_t MaxFaceCount = chunkSize * chunkSize * 6;
+static const size_t MaxFaceCount = chunkSize * chunkSize * 7;
 static const size_t MaxVertexCount = MaxFaceCount * 4;
 
 namespace wc {
@@ -30,9 +30,13 @@ public: // Variables
 	int32_t chunkPosition = 0;
 	int8_t chunkData[chunkSize][chunkSize][chunkSize];
 	bool used = false;
+	bool generated = false;
 
 	gl::VertexBuffer chunkMeshBuffer;
+	gl::VertexArray chunkMeshArray;
+
 	gl::VertexBuffer chunkFluidMeshBuffer;
+	gl::VertexArray chunkFluidMeshArray;
 
 public: // Functions 
 	Chunk() {}
@@ -41,10 +45,14 @@ public: // Functions
 	void Create(const int32_t& pos) {
 		chunkPosition = pos;
 		//Configuring the vertex array
+		chunkFluidMeshArray.Create();
+		chunkFluidMeshArray.Bind();
 		chunkFluidMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
 		gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
 		gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
-		
+
+		chunkMeshArray.Create();
+		chunkMeshArray.Bind();
 		chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
 		gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
 		gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute

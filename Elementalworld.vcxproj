@@ -227,7 +227,7 @@
     <ClInclude Include="src\entityes\playerSpec\Ray.hpp" />
     <ClInclude Include="src\world\Block.hpp" />
     <ClInclude Include="src\Engine.h" />
-    <ClInclude Include="src\Engine.hpp" />
+    <ClInclude Include="src\Game.hpp" />
     <ClInclude Include="src\entityes\Entity.hpp" />
     <ClInclude Include="src\entityes\Player.hpp" />
     <ClInclude Include="common\Utilitiess\Log.h" />
@@ -241,7 +241,7 @@
   <ItemGroup>
     <None Include="config\blocks.lua" />
     <None Include="config\window.lua" />
-    <None Include="scripts\camera.lua" />
+    <None Include="scripts\glass.lua" />
     <None Include="scripts\dirt.lua" />
     <None Include="scripts\grassblock.lua" />
     <None Include="scripts\player.lua" />
