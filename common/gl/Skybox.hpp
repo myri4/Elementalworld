@@ -4,7 +4,8 @@
 #include <gl/IndexBuffer.hpp>
 #include <gl/Texture.hpp>
 #include <gl/Vertex.hpp>
-#include <Utils/Lua.hpp>
+#include <lua/lua.hpp>
+#include <sol/sol.hpp>
 
 namespace gl {
 
@@ -14,11 +15,16 @@ namespace gl {
         Skybox(const char* file, const float& playerFarPlane) {Create(file, playerFarPlane);}
         ~Skybox() { skyboxVertexBuffer.Destroy();}
         void Create(const char* file, const float& playerFarPlane) {
-            wc::Lua skyboxState(file);
-            if(std::string(skyboxState.GetString("vertexPath")).empty() || std::string(skyboxState.GetString("vertexPath")).empty())
-                shader.Create(skyboxState.GetString("shaderPath"));
-            else
-                shader.Create(skyboxState.GetString("vertexPath"), skyboxState.GetString("fragmentPath"));
+            sol::state skyboxState;
+            skyboxState.script_file(file);
+            if (skyboxState["vertexPath"].valid() && skyboxState["fragmentPath"].valid()) {
+                std::string vpath = skyboxState["vertexPath"], fpath = skyboxState["fragmentPath"];
+                shader.Create(vpath.c_str(), fpath.c_str());
+            }
+            else if (skyboxState["shaderPath"].valid()) {
+                std::string path = skyboxState["shaderPath"];
+                shader.Create(path.c_str());
+            }
 
             float size = playerFarPlane / 2;
 
@@ -62,18 +68,25 @@ namespace gl {
             };
             skyBoxArray.Create();
             skyBoxArray.Bind();
-            skyboxVertexBuffer.Create(&vertices, sizeof(vertices), GL_STATIC_DRAW);
+            skyboxVertexBuffer.Create(vertices, sizeof(vertices), GL_STATIC_DRAW);
             gl::VertexAttribPointer(0, 3, 3 * sizeof(float), (void*)0);
-            skyboxVertexBuffer.Unbind();
-            skyBoxArray.unind();
 
             std::array<const char*, 6> faces;
-            faces[0] = skyboxState.GetString("right");
-            faces[1] = skyboxState.GetString("left");
-            faces[2] = skyboxState.GetString("top");
-            faces[3] = skyboxState.GetString("bottom");
-            faces[4] = skyboxState.GetString("front");
-            faces[5] = skyboxState.GetString("back");
+            std::array<std::string, 6> sfaces;
+
+            sfaces[0] = skyboxState["right"];
+            sfaces[1] = skyboxState["left"];
+            sfaces[2] = skyboxState["top"];
+            sfaces[3] = skyboxState["bottom"];
+            sfaces[4] = skyboxState["front"];
+            sfaces[5] = skyboxState["back"];
+
+            faces[0] = sfaces[0].c_str();
+            faces[1] = sfaces[1].c_str();
+            faces[2] = sfaces[2].c_str();
+            faces[3] = sfaces[3].c_str();
+            faces[4] = sfaces[4].c_str();
+            faces[5] = sfaces[5].c_str();
             skyboxTexture.Create(faces);
 
             uint32_t indices[36];

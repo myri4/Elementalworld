@@ -1,11 +1,11 @@
 #ifndef PCH_HPP
 #define PCH_HPP
 
-#include <iostream>
+//#include <iostream>
 //#include <algorithm>
-#include <ctime>
+//#include <ctime>
 //#include <math.h>
-#include <future>
+//#include <future>
 //#include <thread>
 #include <memory>
 
@@ -34,7 +34,6 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 
 //Custom libraries
-#include <gl/Camera.hpp>
 #include <gl/Shaders.hpp>
 #include <gl/Texture.hpp>
 #include <gl/Vertex.hpp>
@@ -44,17 +43,19 @@
 #include <gl/FrameBuffer.hpp>
 #include <gl/Material.hpp>  
 #include <gl/Light.hpp>
+#include <Maths/Camera.hpp>
 
 //Core file
 #include <wclibs/Core.hpp>
 
 //Lua
-#include <Utils/Lua.hpp>
+#include <lua/lua.hpp>
+#include <sol/sol.hpp>
 
 //Sound
 #include <irrKlang/irrKlang.h>
 
-//Utilitiess
+//Util
 #include <Utils/State.hpp>
 #include <Utils/Keyboard.hpp>
 #include <Utils/Mouse.hpp>

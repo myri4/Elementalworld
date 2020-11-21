@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Utils/Lua.hpp>
+#include <lua/lua.hpp>
 #include <sol/sol.hpp>
 #include <gl/Material.hpp>
 
@@ -65,12 +65,13 @@ public:
 	Block(const char* file) {Create(file);}
 	Block() {}
 	void Create(const char* file) {
-		wc::Lua blockState(file);
-		//sol::state luaScript;
-		//luaScript.script_file(file);
-		id = blockState.GetNumber("id");
-		isCollidable = blockState.GetBool("isCollidable");
-		std::string conType = blockState.GetString("ConnectionType");
+		std::string conType;
+		sol::state blockState;
+		blockState.script_file(file);
+		if (blockState["id"].valid()) id = blockState["id"];
+		if (blockState["isCollidable"].valid()) isCollidable = blockState["isCollidable"];
+		if (blockState["ConnectionType"].valid()) conType = blockState["ConnectionType"];
+
 		if (conType == "CONNECT_DEFAULT") blockConnectionType = ConnectionType::CONNECT_DEFAULT;
 		if (conType == "FLUID_CONNECT") blockConnectionType = ConnectionType::FLUID_CONNECT;
 		if (conType == "NO_CONNECT") blockConnectionType = ConnectionType::NO_CONNECT;

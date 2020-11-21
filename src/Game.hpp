@@ -57,7 +57,8 @@ namespace wc {
 
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() override {
-			Lua windowScript("config/window.lua");
+			sol::state windowScript;
+			windowScript.script_file("config/window.lua");
 			int width = 0, height = 0;
 
 			bool fullScreen = 0;
@@ -66,7 +67,7 @@ namespace wc {
 			uint32_t frameRateLimit = 0;
 			uint8_t style = sf::Style::Default;
 
-			fullScreen = windowScript.GetBool("fullscreen");
+			fullScreen = windowScript["fullscreen"];
 			if (fullScreen == true) {
 				style = sf::Style::Fullscreen;
 				width = sf::VideoMode::getDesktopMode().width;
@@ -74,15 +75,15 @@ namespace wc {
 			}
 			else {
 				style = sf::Style::Default;
-				width = windowScript.GetNumber("screenWidth");
-				height = windowScript.GetNumber("screenHeight");
+				width = windowScript["screenWidth"];
+				height = windowScript["screenHeight"];
 			}
 
 
-			frameRateLimit = windowScript.GetNumber("framerateLimit");
-			vsync = windowScript.GetBool("vsync");
+			frameRateLimit = windowScript["framerateLimit"];
+			vsync = windowScript["vsync"];
 
-			window.create(sf::VideoMode(width, height), "Elementalworld", style, sf::ContextSettings(24, 0, windowScript.GetNumber("antialiasingLevel"), windowScript.GetNumber("majorVersion"), windowScript.GetNumber("minorVersion")));
+			window.create(sf::VideoMode(width, height), "Elementalworld", style, sf::ContextSettings(24, 0, windowScript["antialiasingLevel"]));
 			window.setFramerateLimit(frameRateLimit);
 			window.setVerticalSyncEnabled(vsync);
 
@@ -115,35 +116,37 @@ namespace wc {
 
 			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			
-			world.Create();
-
 			TextRenderer.Create("assets/font/Minecraft.ttf", "shaderpacks/default/text.glsl");
+
+			world.Create();
 		}
-		
-		//----------------------------------------------------------------------------------------------------------------------
 
 		void OnUpdate() override {
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-			world.Update(window, CenterMouse, deltaTime);
-
 			deltaTime = deltaTimer.restart().asSeconds();
 
-			glDisable(GL_DEPTH_TEST);
-			TextRenderer.Draw(std::to_string((int)(1 / deltaTime)), glm::vec2((float)window.getSize().x, (float)window.getSize().y) , { 25.0f, 700.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
-			TextRenderer.Draw("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), glm::vec2((float)window.getSize().x, (float)window.getSize().y), { 25.0f, 660.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
-			TextRenderer.Draw("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), glm::vec2((float)window.getSize().x, (float)window.getSize().y), { 25.0f, 620.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
+			glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+			world.Update(GetWindowPos(), GetWindowSize(), CenterMouse, deltaTime);
+
+			TextRenderer.Draw(std::to_string((int)(1 / deltaTime)), GetWindowSize(), { 25.0f, 700.0f });
+			TextRenderer.Draw("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), GetWindowSize(), { 25.0f, 660.0f });
+			TextRenderer.Draw("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), GetWindowSize(), { 25.0f, 580.0f });
 			//TextRenderer.Draw(
 			//"ChunkX: " + std::to_string(GetChunkPos(world.p.Position.x)) +
 			//" ChunkY: " + std::to_string(GetChunkPos(world.p.Position.y)) +
-			//" ChunkZ: " + std::to_string(GetChunkPos(world.p.Position.z))
-			//	,
-			//	
-			//glm::vec2((float)window.getSize().x, (float)window.getSize().y), { 25.0f, 620.0f }, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
-			glEnable(GL_DEPTH_TEST);
+			//" ChunkZ: " + std::to_string(GetChunkPos(world.p.Position.z)), GetWindowSize(), { 25.0f, 620.0f });
+
 			window.display();
 		}
-		void OnDelete() override {
+		void OnDelete() override {}
+
+		const glm::vec2& GetWindowPos() {
+			return { window.getPosition().x, window.getPosition().y };
+		}
+
+		const glm::vec2& GetWindowSize() {
+			return { window.getSize().x, window.getSize().y };
 		}
 
 	public:

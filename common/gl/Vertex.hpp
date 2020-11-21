@@ -13,20 +13,15 @@ namespace gl {
         VertexBuffer(const void* data, const GLsizeiptr& size, const GLenum& mode = GL_STATIC_DRAW) { Create(data, size, mode); }
         ~VertexBuffer() { Destroy(); }
 
-        //void BindVAO() {
-        //    glBindVertexArray(VAO);
-        //}
         void Bind() {
             glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
         }
         void Unbind() { glBindVertexArray(0); }
 
         void Create(const void* data, const GLsizeiptr& size, const GLenum& mode = GL_STATIC_DRAW) {
-            //if(!VAO) glGenVertexArrays(1, &VAO);
             if (!m_RendererID){
                 glGenBuffers(1, &m_RendererID);
 
-                //glBindVertexArray(VAO);
                 glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
 
                 glBufferData(GL_ARRAY_BUFFER, size, data, mode);
@@ -34,7 +29,6 @@ namespace gl {
         }
 
         void Destroy() {
-            //glDeleteVertexArrays(1, &VAO);
             glDeleteBuffers(1, &m_RendererID);
         }
 
@@ -44,11 +38,8 @@ namespace gl {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
 
-       //uint32_t GetVAO() {
-       //    return VAO;
-       //}
 
-        uint32_t GetVBO() {
+        uint32_t GetRendererID() {
             return m_RendererID;
         }
     private:

@@ -6,25 +6,23 @@
 namespace wc{
 class Player : public Entity{
 private:
-	void Update() override {
-
-	}
+	void Update() override {}
 public:
 	Camera camera;
-	float Near = 0.1f, Far = 1100.0f;
+	float Far = 1100.0f;
 
 	glm::mat4 projection = glm::mat4(0.0f);
 	Player() {}
 
-
 	~Player() override{}
 	void UpdatePlayerInput(const float& deltaTime) {
-		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::W))      camera.Move(Camera_Movement::FORWARD, deltaTime);
-		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::S))      camera.Move(Camera_Movement::BACKWARD, deltaTime);
-		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::A))      camera.Move(Camera_Movement::LEFT, deltaTime);
-		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::D))      camera.Move(Camera_Movement::RIGHT, deltaTime);
-		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::Space))  camera.Move(Camera_Movement::UP, deltaTime);
-		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::LShift)) camera.Move(Camera_Movement::DOWN, deltaTime);
+		float velocity = camera.MovementSpeed * deltaTime;
+		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::W))      camera.Position += camera.Front * velocity; // Front
+		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::S))      camera.Position -= camera.Front * velocity; // Back
+		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::A))      camera.Position -= camera.Right * velocity; // Left
+		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::D))      camera.Position += camera.Right * velocity; // Right
+		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::Space))  camera.Position.y += velocity;			  // Up
+		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::LShift)) camera.Position.y -= velocity;			  // Down
 		if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::C)) { camera.Zoom = 10; camera.MouseSensitivity = 18; }
 		else {
 			camera.MouseSensitivity = 5;
@@ -34,11 +32,11 @@ public:
 	void InitPlayer(const glm::vec3& Position) {
 		camera.Create(glm::vec3(Position));
 	}
-	void UpdatePlayer(const glm::vec2& windsize, const bool& CenterMouse, const float& deltaTime) {
+	void UpdatePlayer(const glm::vec2& windpos, const glm::vec2& windsize, const bool& CenterMouse, const float& deltaTime) {
 
-		camera.UpdateCameraAngles(windsize, CenterMouse);
+		camera.UpdateCameraAngles(windpos, windsize, CenterMouse);
  
-		projection = glm::perspective(glm::radians(camera.Zoom), windsize.x / windsize.y, Near, Far);
+		projection = glm::perspective(glm::radians(camera.Zoom), windsize.x / windsize.y, 0.1f, Far);
 
 		Position = camera.Position;
 	}

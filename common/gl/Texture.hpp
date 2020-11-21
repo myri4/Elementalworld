@@ -12,60 +12,44 @@ enum class TextureStatus { OK, COULD_NOT_OPEN_TEXTURE_FILE };
 class Texture{
 public:
 	Texture() {}
-	Texture(const char* path) { load(path); }
 
 	TextureStatus load(const char* path) {
+		int fwidth, fheight, fnrComponents;
+		auto* data = stbi_load(path, &fwidth, &fheight, &fnrComponents, 0);
+
+		if (data) Create(data, fwidth, fheight, fnrComponents);
+		else return TextureStatus::COULD_NOT_OPEN_TEXTURE_FILE;			
+
+		stbi_image_free(data);
+		
+		return TextureStatus::OK;
+	}
+
+	void Create(const void* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& NrComponents = 3, uint8_t mipMapLevel = 4) {
 		if (!m_RendererID) {
-			int nrComponents;
+			width = Width;
+			height = Height;
+			nrComponents = NrComponents;
 			glGenTextures(1, &m_RendererID);
+			glBindTexture(GL_TEXTURE_2D, m_RendererID);
+			glTexImage2D(GL_TEXTURE_2D, 0, GetFormat(), width, height, 0, GetFormat(), GL_UNSIGNED_BYTE, data);
+			glGenerateMipmap(GL_TEXTURE_2D);
 
-			auto* data = stbi_load(path, &width, &height, &nrComponents, 0);
-
-			if (data)
-			{
-				uint32_t format = 0;
-				if (nrComponents == 1) format = GL_RED;
-				else if (nrComponents == 3)	format = GL_RGB;
-				else if (nrComponents == 4) format = GL_RGBA;
-
-				glBindTexture(GL_TEXTURE_2D, m_RendererID);
-				glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-				glGenerateMipmap(GL_TEXTURE_2D);
-
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-				glBindTexture(GL_TEXTURE_2D, 0);
-				return TextureStatus::OK;
-			}
-			else
-			{
-				uint8_t white = 0xffffffff;
-				glBindTexture(GL_TEXTURE_2D, m_RendererID);
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &white);
-				glGenerateMipmap(GL_TEXTURE_2D);
-
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-				glBindTexture(GL_TEXTURE_2D, 0);
-				return TextureStatus::COULD_NOT_OPEN_TEXTURE_FILE;
-			}
-
-			stbi_image_free(data);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipMapLevel);
+			glBindTexture(GL_TEXTURE_2D, 0);			
 		}
-		else return TextureStatus::OK;
 	}
 	
 	~Texture() {glDeleteTextures(1, &m_RendererID);}
 
-	void SetData(const char* data, const int& x, const int& y) {
-		
-		if (data) {
+	void SetData(const void *data, const int& width, const int& height, const int& xoffset = 0, const int& yoffset = 0) {
+		if (m_RendererID){
 			Bind();
-			glTexSubImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			glTexSubImage2D(GL_TEXTURE_2D, 0, xoffset, yoffset, width, height, GetFormat(), GL_UNSIGNED_BYTE, data);
 		}
 	}
 
@@ -76,6 +60,7 @@ public:
 
 	void unbind() { glBindTexture(GL_TEXTURE_2D, 0); }
 	uint32_t GetRendererID() { return m_RendererID; }
+	const glm::vec2& GetSize() { return glm::vec2(width, height); }
 
 	std::array<glm::vec2, 4> GetSpriteIndexCoords(const glm::vec2& coords, const glm::vec2& sprSize) {
 		return {
@@ -93,8 +78,17 @@ public:
 	//		glm::vec2(((coords.x + 1) * sprSize.x) / width, (coords.y * sprSize.y) / height)
 	//	};
 	//}
-		int width = 0, height = 0;
 private:
+
+	uint32_t GetFormat() {
+		uint32_t format = 0;
+		if (nrComponents == 1) format = GL_RED;
+		else if (nrComponents == 3)	format = GL_RGB;
+		else if (nrComponents == 4) format = GL_RGBA;
+		return format;
+	}
+	uint8_t nrComponents = 3;
+	uint32_t width = 0, height = 0;
 	uint32_t m_RendererID = 0;	
 };
 
@@ -141,64 +135,45 @@ class TextureArray {
 public:
 	TextureArray() {}
 
-	void Create() {
+	void Create(uint32_t MaxTextureSize, const uint8_t& Width, const uint8_t& Height, const uint8_t& NrOfComp) {
+		m_MaxTextures = MaxTextureSize;
+		width = Width;
+		height = Height;
+		nrComponents = NrOfComp;
 		if (!m_RendererID) {
-			//glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_LEVEL, 4);
-
 			glGenTextures(1, &m_RendererID);
-			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID);
 
-			glTexStorage3D(GL_TEXTURE_2D_ARRAY,
-				5,                    //5 mipmaps
-				GL_RGBA,               //Internal format
-				width, height,           //width,height
-				256                   //Number of layers
-			);
+			glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GetFormat(), width, height, m_Textures, 0, GetFormat(), GL_UNSIGNED_BYTE, nullptr);
 
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
-			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			
-			glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_LEVEL, m_MaxTextures);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER,	GL_NEAREST_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER,	GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		}
 	}
 
 	~TextureArray() { glDeleteTextures(1, &m_RendererID); }
 
 	TextureStatus AddTexture(const char* filePath) {
-		int nrComponents = 0;
-		auto* data = stbi_load(filePath, &width, &height, &nrComponents, 0);
-		if (data) {
-			uint32_t format = 0;
-			if (nrComponents == 1) format = GL_RED;
-			else if (nrComponents == 3)	format = GL_RGB;
-			else if (nrComponents == 4) format = GL_RGBA;
+		if (m_Textures <= m_MaxTextures) {
+			int fnrComponents = 0, fwidth = 0, fheight = 0;
+			auto* data = stbi_load(filePath, &fwidth, &fheight, &fnrComponents, 0);
+			if (data) {
+				glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID);
+				glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, m_Textures, width, height, 1, GetFormat(), GL_UNSIGNED_BYTE, data);
 
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID);
-			glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-				0,                      //Mipmap number
-				0, 0, m_Textures, //xoffset, yoffset, zoffset
-				width, height, 1,          //width, height, depth
-				GL_RGBA,                 //format
-				GL_UNSIGNED_BYTE,       //type
-				data); //pointer to data
-			glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-			glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_LOD_BIAS, -1);
-			m_Textures++;
-			return TextureStatus::OK;
+				m_Textures++;
+				return TextureStatus::OK;
+			}
 		}
 	}
 
-	void Bind() {
-		glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID);
-	}
+	void Bind() { glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID);}
+	void unbind() { glBindTexture(GL_TEXTURE_2D_ARRAY, 0); }
 
 	std::array<glm::vec2, 4> GetSpriteIndexCoords(const glm::vec2& coords, const glm::vec2& sprSize) {
 		return {
@@ -209,12 +184,19 @@ public:
 		};
 	}
 
-	void unbind() { glBindTexture(GL_TEXTURE_2D_ARRAY, 0); }
 	uint32_t GetRendererID() { return m_RendererID; }
-	int width = 32, height = 32;
+	uint32_t width = 32, height = 32;
+	uint8_t nrComponents = 4;
 
 private:
+	uint32_t GetFormat() {
+		if (nrComponents == 1) return GL_RED;
+		else if (nrComponents == 3)	return GL_RGB;
+		else if (nrComponents == 4) return GL_RGBA;
+	}
+
 	uint32_t m_RendererID = 0;
-	uint32_t m_Textures = 0;
+	uint32_t m_Textures = 1;
+	uint32_t m_MaxTextures = 1;
 };
 }

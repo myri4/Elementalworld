@@ -131,9 +131,6 @@
     <ClInclude Include="src\world\World.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\gl\Camera.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\gl\FrameBuffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -179,9 +176,6 @@
     <ClInclude Include="common\Utils\Log.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\Utils\Lua.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\Utils\Mouse.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -209,6 +203,12 @@
     <ClInclude Include="src\Game.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\Maths\Frustum.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Maths\Camera.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\player.lua" />
@@ -217,7 +217,6 @@
     <None Include="shaderpacks\default\skybox.glsl" />
     <None Include="shaderpacks\default\text.glsl" />
     <None Include="shaderpacks\default\screenShader.glsl" />
-    <None Include="config\blocks.lua" />
     <None Include="config\window.lua" />
     <None Include="scripts\dirt.lua" />
     <None Include="shaderpacks\default\particleShader.glsl" />
@@ -227,5 +226,7 @@
     <None Include="scripts\water.lua" />
     <None Include="shaderpacks\default\chunkShader.glsl" />
     <None Include="scripts\glass.lua" />
+    <None Include="scripts\wood.lua" />
+    <None Include="scripts\worldGen.lua" />
   </ItemGroup>
 </Project>

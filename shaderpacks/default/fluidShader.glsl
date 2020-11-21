@@ -1,5 +1,5 @@
 #type vertex
-#version 330 core
+#version 460 core
 
 const float PI = 3.14159265358979323846264338327950288;
 
@@ -40,7 +40,7 @@ void main(){
 
 
 #type fragment
-#version 330 core 
+#version 460 core 
 
 layout (location = 0) out vec4 Result;
 

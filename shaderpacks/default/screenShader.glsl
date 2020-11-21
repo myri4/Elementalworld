@@ -21,5 +21,6 @@ uniform sampler2D screenTexture;
 
 void main()
 {
-    Result = vec4(1,1,3,1);
+    vec3 tex = texture(screenTexture, v_TexCoords).rgb;
+    Result = vec4(tex,1);
 }

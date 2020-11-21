@@ -1,5 +1,5 @@
 #type vertex
-#version 330 core
+#version 460 core
 layout (location = 0) in vec3 a_Pos;
 layout (location = 1) in vec2 a_TexCoord;
 
@@ -30,7 +30,7 @@ void main(){
 
 
 #type fragment
-#version 330 core 
+#version 460 core 
 
 layout (location = 0) out vec4 Result;
 
@@ -66,7 +66,7 @@ uniform bool attenuation = true;
 uniform float minimalLight = 0.1f;
 uniform bool fog = true;
 uniform vec3 fogColor = vec3(0.5f);
-uniform Material material;
+Material material;
 Light ll;
 
 
@@ -128,6 +128,11 @@ void main()
     //normalmap calculations
     vec3 normal = vec3(0.5f, 0.5f, 1.0f);
     normal = normalize(normal * 2.0 - 1.0); 
+
+    material.ambient = vec3(1.0f, 1.0f, 1.0f);
+	material.diffuse = vec3(1.0f, 2.0f, 1.0f);
+	material.specular = vec3(1.0f, 1.0f, 1.0f);
+	material.shininess = 0.0f;
 
     vec4 texColor = texture(u_Texture, vec2(v_TexCoords));// * minimalLight;
 

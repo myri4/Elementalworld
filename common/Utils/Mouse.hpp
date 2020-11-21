@@ -3,6 +3,10 @@
 #include <wclibs/Core.hpp>
 #include <glm/glm.hpp>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 namespace wc{
 namespace Mouse {
 void SetMousePosition(const int& x, const int& y) {

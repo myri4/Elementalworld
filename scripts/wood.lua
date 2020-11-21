@@ -1,0 +1,11 @@
+id = 7
+isCollidable = true
+ConnectionType = "CONNECT_DEFAULT"
+Name = "Wood block"
+Drop = "elementalworld:Wood" 
+Top =    "assets/textures/block/dirt.png"
+Left =   "assets/textures/block/dirt.png"
+Right =  "assets/textures/block/dirt.png"
+Front =  "assets/textures/block/dirt.png"
+Back =   "assets/textures/block/dirt.png"
+Bottom = "assets/textures/block/dirt.png"

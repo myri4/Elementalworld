@@ -12,13 +12,8 @@ namespace gl {
     enum class TextStatus : int {OK, COULD_NOT_INIT_FREETYPE_LIB, FAILED_TO_FIND_FONT, FAILED_TO_LOAD_FONT, FAILED_TO_LOAD_GLYPH};
         class Character {
         public:
-            Character() {
-
-            }
+            Character() {}
             Character(const uint32_t& TextureID, const glm::ivec2& Size, const glm::ivec2& Bearing, const uint32_t& Advance) : TextureID(TextureID), Size(Size), Bearing(Bearing), Advance(Advance) {}
-            ~Character() {
-
-            }
             uint32_t TextureID = 0;     // ID handle of the glyph texture
             glm::ivec2   Size = glm::ivec2(0);      // Size of glyph
             glm::ivec2   Bearing = glm::ivec2(0);   // Offset from baseline to left/top of glyph
@@ -27,15 +22,8 @@ namespace gl {
 
     class Text {
     public:
-        Text() {
-
-        }
-        Text(const char* fontFileLoc, const char* shader) {
-            Create(fontFileLoc, shader);
-        }
-        ~Text() {
-
-        }
+        Text() {}
+        Text(const char* fontFileLoc, const char* shader) { Create(fontFileLoc, shader); }
         TextStatus Create(const char* fontFileLoc, const char* Shader, const int& glyphs = 128) {
             shader.Create(Shader);
 
@@ -99,8 +87,6 @@ namespace gl {
             TextVA.Bind();
             TextVB.Create(nullptr, sizeof(float) * 6 * 4, GL_DYNAMIC_DRAW);
             gl::VertexAttribPointer(0, 4, 4 * sizeof(float), 0);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glBindVertexArray(0);
             return TextStatus::OK;
         }
         TextStatus Create(const char* fontFileLoc, const gl::Shader& Shader, const int& glyphs = 128) {
@@ -171,13 +157,12 @@ namespace gl {
             return TextStatus::OK;
         }
 
-        void Draw(const std::string& text, const glm::vec2& windowSize, glm::vec2 pos = { 0,0 }, float scale = 1.0f, glm::vec3 color = { 0,0,0 }, int activeTexture = 0) {
+        void Draw(const std::string& text, const glm::vec2& windowSize, glm::vec2 pos = { 0,0 }, float scale = 0.4f, glm::vec3 color = glm::vec3(0.5, 0.8f, 0.2f)) {
             // activate corresponding render state	
             glm::mat4 projection = glm::ortho(0.0f, windowSize.x, 0.0f, windowSize.y);
             shader.use();
             shader.setMat4("projection", projection);
             shader.setVec3("textColor", color);
-            glActiveTexture(GL_TEXTURE0 + activeTexture);
             TextVA.Bind();
 
             // iterate through all characters
@@ -210,8 +195,6 @@ namespace gl {
                 // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
                 pos.x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))
             }
-            glBindVertexArray(0);
-            glBindTexture(GL_TEXTURE_2D, 0);
         }
     private:
         gl::Shader shader;
