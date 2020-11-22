@@ -191,9 +191,6 @@
     <ClInclude Include="common\Utils\Time.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\GUI\Renderer2D.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\GUI\Button.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -228,5 +225,6 @@
     <None Include="scripts\glass.lua" />
     <None Include="scripts\wood.lua" />
     <None Include="scripts\worldGen.lua" />
+    <None Include="shaderpacks\default\shadows.glsl" />
   </ItemGroup>
 </Project>

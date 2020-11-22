@@ -26,7 +26,7 @@ glm::vec3 to3D(const int& idx, const glm::ivec3& size = glm::vec3(chunkSize)) {
 class Chunk {
 public: // Variables
 	uint32_t IndexCount = 0;
-	//uint32_t fIndexCount = 0;
+	uint32_t fIndexCount = 0;
 	int32_t chunkPos;
 	int8_t chunkData[chunkSize][chunkSize][chunkSize];
 	bool used = false;
@@ -36,8 +36,8 @@ public: // Variables
 	gl::VertexBuffer chunkMeshBuffer;
 	gl::VertexArray chunkMeshArray;
 
-	//gl::VertexBuffer chunkFluidMeshBuffer;
-	//gl::VertexArray chunkFluidMeshArray;
+	gl::VertexBuffer chunkFluidMeshBuffer;
+	gl::VertexArray chunkFluidMeshArray;
 
 public: // Functions 
 	Chunk() {}

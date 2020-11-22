@@ -1,19 +1,18 @@
 #pragma once
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
-namespace gl{
-enum class FrameBufferStatus {
-    OK, FRAMEBUFFER_NOT_COMPLETE
-};
+namespace gl {
+    enum class FrameBufferStatus {
+        OK, FRAMEBUFFERNOTCOMPLETE
+    };
 
-class FrameBuffer {
-public:
-    FrameBuffer() {}
-    FrameBuffer(uint32_t width, uint32_t height) { Create(width, height); }
+    class FrameBuffer {
+    public:
+        FrameBuffer() {}
 
-    ~FrameBuffer() {glDeleteFramebuffers(1, &m_RendererID);}
-    FrameBufferStatus Create(uint32_t width, uint32_t height) {
-        if (!m_RendererID) {
+        ~FrameBuffer() { glDeleteFramebuffers(1, &m_RendererID); }
+        FrameBufferStatus Create(uint32_t width, uint32_t height) {
             glGenFramebuffers(1, &m_RendererID);
             glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
 
@@ -23,6 +22,7 @@ public:
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ColorAttachment, 0);
 
             // create a renderbuffer object for depth and stencil attachment (we won't be sampling these)
@@ -33,22 +33,71 @@ public:
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
 
             // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
-            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)  return FrameBufferStatus::FRAMEBUFFER_NOT_COMPLETE;
+            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)  return FrameBufferStatus::FRAMEBUFFERNOTCOMPLETE;
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            return FrameBufferStatus::OK;
+        }
+        void Bind() {
+            glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+        }
+        void unbind() {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
-        return FrameBufferStatus::OK;
-    }
-    void Update(int x, int y) {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, m_RendererID);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_RendererID);
-        glBlitFramebuffer(0, 0, x, y, 0, 0, x, y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    }
-    void Bind() { glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID); }
-    void unbind() {glBindFramebuffer(GL_FRAMEBUFFER, 0);}
-    void BindTexture() {glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);	/* use the color attachment texture as the texture of the quad plane */}
-    uint32_t GetRendererID() {return m_RendererID;}
-    uint32_t GetColorAttachment() {return m_ColorAttachment;}
-private:
-    uint32_t m_RendererID = 0, m_ColorAttachment = 0;
-};
+        void BindTexture() {
+            glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);	// use the color attachment texture as the texture of the quad plane
+        }
+        uint32_t GetRendererID() {
+            return m_RendererID;
+        }
+        uint32_t GetColorAttachment() {
+            return m_ColorAttachment;
+        }
+    private:
+        uint32_t m_RendererID, m_ColorAttachment;
+    };
+
+    class ShadowMap {
+    public:
+        ShadowMap() {
+
+        }
+
+        ~ShadowMap() { glDeleteFramebuffers(1, &m_RendererID); }
+        FrameBufferStatus Create(uint32_t width, uint32_t height) {
+            glGenFramebuffers(1, &m_RendererID);
+
+            glGenTextures(1, &m_ColorAttachment);
+            glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            // attach depth texture as FBO's depth buffer
+            glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_ColorAttachment, 0);
+            glDrawBuffer(GL_NONE);
+            glReadBuffer(GL_NONE);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            return FrameBufferStatus::OK;
+        }
+        void Bind() {
+            glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+        }
+        void unbind() {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
+        void BindTexture() {
+            glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);	// use the color attachment texture as the texture of the quad plane
+        }
+        uint32_t GetRendererID() {
+            return m_RendererID;
+        }
+        uint32_t GetColorAttachment() {
+            return m_ColorAttachment;
+        }
+    private:
+        uint32_t m_RendererID, m_ColorAttachment;
+    };
 }

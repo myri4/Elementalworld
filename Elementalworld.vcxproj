@@ -200,7 +200,6 @@
     <ClInclude Include="common\gl\VertexArray.h" />
     <ClInclude Include="common\gl\Vertex.hpp" />
     <ClInclude Include="common\GUI\Button.hpp" />
-    <ClInclude Include="common\GUI\Renderer2D.hpp" />
     <ClInclude Include="common\Maths\Frustum.hpp" />
     <ClInclude Include="common\Utils\CustomDefs.hpp" />
     <ClInclude Include="common\Utils\Keyboard.hpp" />
@@ -253,6 +252,7 @@
     <None Include="shaderpacks\default\chunkShader.glsl" />
     <None Include="shaderpacks\default\particleShader.glsl" />
     <None Include="shaderpacks\default\screenShader.glsl" />
+    <None Include="shaderpacks\default\shadows.glsl" />
     <None Include="shaderpacks\default\skybox.glsl" />
     <None Include="shaderpacks\default\text.glsl" />
     <None Include="shaderpacks\default\fluidShader.glsl" />

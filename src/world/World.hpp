@@ -24,7 +24,7 @@ namespace wc {
 
 			float value = 0.0f;
 			for (int i = 0; i < octaves; i++) {
-				value = glm::simplex(glm::vec3(voxelX / smoothnes + seed, voxelZ / smoothnes + seed, seed));
+				value = glm::perlin(glm::vec3(voxelX / smoothnes + seed, voxelZ / smoothnes + seed, seed));
 			}
 			value = (value + 1) / 2;
 			value *= 32 + 32;
@@ -35,6 +35,7 @@ namespace wc {
 	class Singleplayer : public NonCopyable {
 	public:
 		Player p;
+		glm::vec4 screenColor = glm::vec4(1.0f);
 
 		Singleplayer() {}
 		~Singleplayer() {}
@@ -44,9 +45,9 @@ namespace wc {
 			worldShader.use();
 			worldShader.setInt("u_Texture", 0);
 
-			//fluidShader.Create("shaderpacks/default/fluidShader.glsl");
-			//fluidShader.use();
-			//fluidShader.setInt("u_Texture", 0);
+			fluidShader.Create("shaderpacks/default/fluidShader.glsl");
+			fluidShader.use();
+			fluidShader.setInt("u_Texture", 0);
 
 			LoadBlocks();
 			LoadEnivoirment();
@@ -70,15 +71,16 @@ namespace wc {
 			for (int i = 0; i < world.size(); i++) {
 				world[i].chunkPos = i;
 				//Configuring the vertex array
-				//world[i].chunkFluidMeshArray.Create();
-				//world[i].chunkFluidMeshArray.Bind();
-				//world[i].chunkFluidMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
-				//gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
-				//gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
-
+				world[i].chunkFluidMeshArray.Create();
 				world[i].chunkMeshArray.Create();
+
 				world[i].chunkMeshArray.Bind();
 				world[i].chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
+				gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
+				gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
+
+				world[i].chunkFluidMeshArray.Bind();
+				world[i].chunkFluidMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
 				gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
 				gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
 			}
@@ -97,6 +99,24 @@ namespace wc {
 
 				world[i].canBeUpdated = false;
 			}
+			blockAtlas.Bind();
+			worldIndexBuffer.Bind(); // Binding the index buffer
+
+			fluidShader.use();
+			// pass projection matrix to shader (note that in this case it could change every frame)
+			fluidShader.setMat4("u_Projection", p.projection);
+			
+			// camera/view transformation
+			fluidShader.setMat4("u_View", p.GetView());			
+				for (uint16_t i = 0; i < world.size(); i++) {
+						if (world[i].fIndexCount > 0) {
+							world[i].chunkFluidMeshArray.Bind();
+							world[i].chunkFluidMeshBuffer.Bind();
+							glm::vec3 pos = to3D(world[i].chunkPos) * glm::vec3(chunkSize);
+							fluidShader.setMat4("u_Model", glm::translate(glm::mat4(1.0f), pos)); // calculate the model matrix for each object and pass it to shader before drawing
+							//glDrawElements(GL_TRIANGLES, world[i].fIndexCount, GL_UNSIGNED_INT, nullptr); // Drawing fluids
+						}							
+				}
 
 			// activate shader
 			worldShader.use();
@@ -104,43 +124,21 @@ namespace wc {
 
 			// pass projection matrix to shader (note that in this case it could change every frame)
 			worldShader.setMat4("u_Projection", p.projection);
-			blockAtlas.Bind();
 
 			// camera/view transformation
 			worldShader.setMat4("u_View", p.GetView());
-			worldIndexBuffer.Bind(); // Binding the index buffer
-			for (uint16_t i = 0; i < world.size(); i++) {
-				if (!world[i].IndexCount == 0) {
-					world[i].chunkMeshArray.Bind();
-					world[i].chunkMeshBuffer.Bind();
-					glm::vec3 pos = to3D(world[i].chunkPos) * glm::vec3(chunkSize);
-					worldShader.setMat4("u_Model", glm::translate(glm::mat4(1.0f), pos)); // calculate the model matrix for each object and pass it to shader before drawing
-					glDrawElements(GL_TRIANGLES, world[i].IndexCount, GL_UNSIGNED_INT, nullptr); // Drawing the cubes
+				for (uint16_t i = 0; i < world.size(); i++) {
+					if (world[i].IndexCount > 0) {
+						world[i].chunkMeshArray.Bind();
+						world[i].chunkMeshBuffer.Bind();
+						glm::vec3 pos = to3D(world[i].chunkPos) * glm::vec3(chunkSize);
+						worldShader.setMat4("u_Model", glm::translate(glm::mat4(1.0f), pos)); // calculate the model matrix for each object and pass it to shader before drawing
+						glDrawElements(GL_TRIANGLES, world[i].IndexCount, GL_UNSIGNED_INT, nullptr); // Drawing the cubes
+					}
 				}
+				if ((int)p.camera.Position.y < water_level) screenColor = glm::vec4(1, 1, 7, 1);
+				else screenColor = glm::vec4(1.0f);
 
-
-			}
-
-			//fluidShader.use();
-			//// pass projection matrix to shader (note that in this case it could change every frame)
-			//fluidShader.setMat4("u_Projection", p.projection);
-			//
-			//// camera/view transformation
-			//fluidShader.setMat4("u_View", p.GetView());
-			//
-			//	worldIndexBuffer.Bind(); // Binding the index buffer
-			//	for (uint16_t i = 0; i < world.size(); i++) {
-			//			if (!world[i].fIndexCount <= 0) {
-			//				glm::vec3 pos = to3D(i) * glm::vec3(chunkSize);
-			//				fluidShader.setMat4("u_Model", glm::translate(glm::mat4(1.0f), pos)); // calculate the model matrix for each object and pass it to shader before drawing
-			//				world[i].chunkFluidMeshArray.Bind();
-			//				world[i].chunkFluidMeshBuffer.Bind();
-			//				glDisable(GL_CULL_FACE);
-			//				glDrawElements(GL_TRIANGLES, world[i].fIndexCount, GL_UNSIGNED_INT, nullptr); // Drawing fluids
-			//				glEnable(GL_CULL_FACE);	
-			//			}
-			//							
-			//	}
 			// Checking if the fog is enabled, if not draw the skybox
 			if (!Fog) skybox.Draw(glm::mat4(glm::mat3(p.GetView())), p.projection);
 		}
@@ -177,7 +175,6 @@ namespace wc {
 
 		void GenerateChunkTerrain(const int& chunk) {
 			if (!world[chunk].generated) {
-				Noise worldNoise;
 				for (uint8_t z = 0; z < chunkSize; z++)
 					for (uint8_t x = 0; x < chunkSize; x++) {
 						int heightMap = worldNoise.getNoiseFor(glm::vec2(x, z), glm::vec2(to3D(world[chunk].chunkPos).x - 2, to3D(world[chunk].chunkPos).z));
@@ -215,7 +212,7 @@ namespace wc {
 			int chunk1 = to1D({ GetChunkPos(pos.x) ,GetChunkPos(pos.y) ,GetChunkPos(pos.z) });
 			if (chunk1 >= world.size()) return;
 			if (chunk1 < 0) return;
-			int8_t chunk = GetChunkID(chunk1);
+			int8_t chunk = chunk1;
 			int8_t x = pos.x; x = x % chunkSize;
 			int8_t y = pos.y; y = y % chunkSize;
 			int8_t z = pos.z; z = z % chunkSize;
@@ -244,8 +241,8 @@ namespace wc {
 			uint32_t offset = 0;
 			world[chunk].IndexCount = 0;
 			//Updating the fluid mesh
-			//world[chunk].fIndexCount = 0;
-			//uint32_t fOffset = 0;
+			world[chunk].fIndexCount = 0;
+			uint32_t fOffset = 0;
 
 			gl::Vertex worldMesh[MaxVertexCount];
 			gl::Vertex worldFluidMesh[MaxVertexCount];
@@ -411,6 +408,7 @@ namespace wc {
 								}
 							}
 						}
+
 						if (makeFace({ x,y,z }, chunk, ConnectionType::FLUID_CONNECT)) // Can make a fluid face
 						{
 							int block = world[chunk].chunkData[x][y][z];
@@ -428,12 +426,15 @@ namespace wc {
 						}
 					}
 			worldIndexBuffer.Bind();
+			if (world[chunk].fIndexCount > 0) {
+				world[chunk].chunkFluidMeshArray.Bind(); 
+				world[chunk].chunkFluidMeshBuffer.Update(0, sizeof(worldFluidMesh), worldFluidMesh); 
+			}
 			if (world[chunk].IndexCount > 0) {
 				world[chunk].chunkMeshArray.Bind();
 				world[chunk].chunkMeshBuffer.Update(0, sizeof(worldMesh), &worldMesh);
 			}
 
-			//if (world[chunk].fIndexCount > 0) { world[chunk].chunkFluidMeshArray.Bind(); world[chunk].chunkFluidMeshBuffer.Update(0, sizeof(worldFluidMesh), &worldFluidMesh); }		
 		}
 
 		void addFace(const Face& face, const glm::vec3& pos, const glm::vec2& Coords, uint32_t& IndexCount, uint32_t& offset, gl::Vertex* mesh) {
@@ -554,12 +555,13 @@ namespace wc {
 		gl::Skybox skybox;
 
 		gl::Shader worldShader;
-		//gl::Shader fluidShader;
+		gl::Shader fluidShader;
 
 		gl::Texture blockAtlas;
 		gl::IndexBuffer worldIndexBuffer;
 		std::unordered_map<int, Block> blockData;
-		std::array<Chunk, chunkSize* chunkSize * chunkSize> world;
+		std::array<Chunk, chunkSize * chunkSize * chunkSize> world;
+		Noise worldNoise;
 		//wc::ViewFrustum frustum;
 	};
 }

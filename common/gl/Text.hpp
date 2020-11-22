@@ -23,7 +23,6 @@ namespace gl {
     class Text {
     public:
         Text() {}
-        Text(const char* fontFileLoc, const char* shader) { Create(fontFileLoc, shader); }
         TextStatus Create(const char* fontFileLoc, const char* Shader, const int& glyphs = 128) {
             shader.Create(Shader);
 
@@ -114,7 +113,7 @@ namespace gl {
                 glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
                 // load first 128 characters of ASCII set
-                for (unsigned char c = 0; c < glyphs; c++)
+                for (uint8_t c = 0; c < glyphs; c++)
                 {
                     // Load character glyph 
                     if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
@@ -135,9 +134,10 @@ namespace gl {
                         texture,
                         glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
                         glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-                        static_cast<unsigned int>(face->glyph->advance.x)
+                        static_cast<uint32_t>(face->glyph->advance.x)
                     };
-                    Characters.insert(std::pair<char, Character>(c, character));
+                    //Characters.insert(std::pair<char, Character>(c, character));
+                    Characters[c] = character;
                 }
                 glBindTexture(GL_TEXTURE_2D, 0);
             }
@@ -201,6 +201,12 @@ namespace gl {
         gl::VertexBuffer TextVB;
         gl::VertexArray TextVA;
 
+        std::unordered_map<char, Character> Characters;
+    };
+    struct Font {
+        void LoadChar() {
+
+        }
         std::unordered_map<char, Character> Characters;
     };
 }
