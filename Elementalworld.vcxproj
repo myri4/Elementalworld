@@ -249,6 +249,7 @@
     <None Include="scripts\water.lua" />
     <None Include="scripts\wood.lua" />
     <None Include="scripts\worldGen.lua" />
+    <None Include="shaderpacks\default\2DRendererShader.glsl" />
     <None Include="shaderpacks\default\chunkShader.glsl" />
     <None Include="shaderpacks\default\particleShader.glsl" />
     <None Include="shaderpacks\default\screenShader.glsl" />

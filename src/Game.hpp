@@ -7,7 +7,7 @@ namespace wc {
 
 	class GameEngine : public Engine {
 	private:
-		sf::RenderWindow window;
+		sf::Window window;
 		sf::Clock deltaTimer;
 		bool CenterMouse = false;
 		float deltaTime = 0.0f;
@@ -140,7 +140,7 @@ namespace wc {
 			scrQuadA.Bind();
 			gl::VertexAttribPointer(0, 2, sizeof(float) * 4, (void*)0);
 			gl::VertexAttribPointer(1, 2, sizeof(float) * 4, (void*)(2 * sizeof(float)));
-			
+
 			TextRenderer.Create("assets/font/Minecraft.ttf", "shaderpacks/default/text.glsl");
 
 			world.Create();

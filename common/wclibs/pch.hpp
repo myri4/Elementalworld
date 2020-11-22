@@ -31,7 +31,7 @@
 
 //SFML Stuff
 #include <SFML/Window/Event.hpp>
-#include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Window/Window.hpp>
 
 //Custom libraries
 #include <gl/Shaders.hpp>

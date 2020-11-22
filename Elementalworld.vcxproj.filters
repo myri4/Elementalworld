@@ -226,5 +226,6 @@
     <None Include="scripts\wood.lua" />
     <None Include="scripts\worldGen.lua" />
     <None Include="shaderpacks\default\shadows.glsl" />
+    <None Include="shaderpacks\default\2DRendererShader.glsl" />
   </ItemGroup>
 </Project>
