@@ -155,18 +155,18 @@ namespace wc {
 			world.Update(GetWindowPos(), GetWindowSize(), CenterMouse, deltaTime);
 
 			glDisable(GL_DEPTH_TEST);
-			//screen.unbind();
+			screen.unbind();
 			// clear all relevant buffers
-			//glClear(GL_COLOR_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT);
 
-			//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			//screenShader.use();
-			//screenShader.setVec4("screenColor", world.screenColor);
-			//scrQuad.Bind();
-			//scrQuadA.Bind();
-			//screen.BindTexture();	// use the color attachment texture as the texture of the quad plane
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			screenShader.use();
+			screenShader.setVec4("screenColor", world.screenColor);
+			scrQuad.Bind();
+			scrQuadA.Bind();
+			screen.BindTexture();	// use the color attachment texture as the texture of the quad plane
 
-			//glDrawArrays(GL_TRIANGLES, 0, 6);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
 			TextRenderer.Draw(std::to_string((int)(1 / deltaTime)), GetWindowSize(), { 25.0f, GetWindowSize().y - 20 });
 			TextRenderer.Draw("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), GetWindowSize(), { 25.0f, GetWindowSize().y - 60 });
 			TextRenderer.Draw("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), GetWindowSize(), { 25.0f, GetWindowSize().y - 100 });
