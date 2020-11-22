@@ -148,7 +148,7 @@ namespace wc {
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnUpdate() override {
 			deltaTime = deltaTimer.restart().asSeconds();
-			//screen.Bind();
+			screen.Bind();
 			glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
