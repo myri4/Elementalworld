@@ -3,7 +3,7 @@
 
 #pragma comment(lib, "liblua54.a")
 #pragma comment(lib, "freetype.lib")
-//#pragma comment(lib, "glfw3.lib")
+#pragma comment(lib, "glfw3.lib")
 #pragma comment(lib, "irrKlang.lib")
 
 #ifdef _WIN32
@@ -22,13 +22,4 @@
 #pragma comment(lib, "odbccp32.lib")
 
 #endif // _WIN32
-#ifdef _DEBUG
-#pragma comment(lib, "sfml-window-d.lib")
-#pragma comment(lib, "sfml-system-d.lib")
-
-#else
-#pragma comment(lib, "sfml-window.lib")
-#pragma comment(lib, "sfml-system.lib")
-#endif //  _RELEASE
-
 #endif

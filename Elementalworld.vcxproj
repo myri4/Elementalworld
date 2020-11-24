@@ -209,6 +209,7 @@
     <ClInclude Include="common\Utilitiess\State.h" />
     <ClInclude Include="common\Utils\State.hpp" />
     <ClInclude Include="common\Utils\Time.hpp" />
+    <ClInclude Include="common\Utils\Window.hpp" />
     <ClInclude Include="common\wclibs\Core.hpp" />
     <ClInclude Include="common\wclibs\pch.hpp" />
     <ClInclude Include="gl\Camera.h" />

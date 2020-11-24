@@ -15,13 +15,13 @@ using Face = std::array < glm::vec3, 4 >;
 Face BACK_FACE = {
 	glm::vec3(-blockSize,  blockSize, -blockSize), // top-left
 	glm::vec3(-blockSize, -blockSize, -blockSize), // Bottom-left  
-	glm::vec3(blockSize, -blockSize, -blockSize), // bottom-right 
-	glm::vec3(blockSize,  blockSize, -blockSize), // top-right
+	glm::vec3( blockSize, -blockSize, -blockSize), // bottom-right 
+	glm::vec3( blockSize,  blockSize, -blockSize), // top-right
 };
 
 Face FRONT_FACE = {
-	glm::vec3(blockSize,  blockSize,  blockSize), // top-right
-	glm::vec3(blockSize, -blockSize,  blockSize), // bottom-right        
+	glm::vec3( blockSize,  blockSize,  blockSize), // top-right
+	glm::vec3( blockSize, -blockSize,  blockSize), // bottom-right        
 	glm::vec3(-blockSize, -blockSize,  blockSize), // bottom-left
 	glm::vec3(-blockSize,  blockSize,  blockSize)  // top-left   
 };
@@ -43,8 +43,8 @@ Face RIGHT_FACE = {
 Face BOTTOM_FACE = {
 	glm::vec3(-blockSize, -blockSize, -blockSize),  // top-right 
 	glm::vec3(-blockSize, -blockSize,  blockSize),  // bottom-right
-	glm::vec3(blockSize, -blockSize,  blockSize),  // bottom-left
-	glm::vec3(blockSize, -blockSize, -blockSize)   // top-left  
+	glm::vec3( blockSize, -blockSize,  blockSize),  // bottom-left
+	glm::vec3( blockSize, -blockSize, -blockSize)   // top-left  
 };
 
 Face TOP_FACE = {

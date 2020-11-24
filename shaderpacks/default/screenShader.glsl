@@ -47,11 +47,11 @@ vec3 GetKernelEffect(float kernel[9]){
 void main()
 {    
     float kernel[9] = float[](
-    1.0 / 16, 2.0 / 16, 1.0 / 16,
-    2.0 / 16, 4.0 / 16, 2.0 / 16,
-    1.0 / 16, 2.0 / 16, 1.0 / 16  
+        1, 1, 1,
+        1, -8, 1,
+        1, 1, 1
     );
 
-    Result = texture(screenTexture, v_TexCoords) * screenColor;
+    Result = texture(screenTexture, v_TexCoords);
 
 }

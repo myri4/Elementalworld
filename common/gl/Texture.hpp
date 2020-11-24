@@ -70,12 +70,12 @@ public:
 			glm::vec2(((coords.x + 1) * sprSize.x) / width, (coords.y * sprSize.y) / height)
 		};
 	}
-	//std::array<glm::vec2, 4> GetSpriteIndexCoords(const glm::vec2& coords, const glm::vec2& sprSize) {
+	//std::array<glm::vec2, 4> GetSpriteIndexCoords(const glm::vec2& startpos, const glm::vec2& endpos) {
 	//	return {
-	//		glm::vec2((coords.x * sprSize.x) / width, (coords.y * sprSize.y) / height),
-	//		glm::vec2((coords.x * sprSize.x) / width, ((coords.y + 1) * sprSize.y) / height),
-	//		glm::vec2(((coords.x + 1) * sprSize.x) / width, ((coords.y + 1) * sprSize.y) / height),
-	//		glm::vec2(((coords.x + 1) * sprSize.x) / width, (coords.y * sprSize.y) / height)
+	//		
+	//		
+	//		
+	//		
 	//	};
 	//}
 private:
