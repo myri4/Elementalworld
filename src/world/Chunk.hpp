@@ -2,7 +2,7 @@
 #define CHUNK_HPP
 
 #include <gl/Vertex.hpp>
-#include <array>
+#include <Utils/CustomDefs.hpp>
 
 //OpenGL Memory Buffer Variables
 static const size_t chunkSize = 16;
@@ -22,13 +22,11 @@ glm::vec3 to3D(const int& idx, const glm::ivec3& size = glm::vec3(chunkSize)) {
 	return glm::vec3(x, y, z);
 }
 
-
 class Chunk {
 public: // Variables
 	uint32_t IndexCount = 0;
-	uint32_t fIndexCount = 0;
-	int32_t chunkPos;
-	int8_t chunkData[chunkSize][chunkSize][chunkSize];
+	ChunkPos chunkPos = 0;
+	BlockID chunkData[chunkSize][chunkSize][chunkSize];
 	bool used = false;
 	bool generated = false;
 	bool canBeUpdated = true;
@@ -36,13 +34,12 @@ public: // Variables
 	gl::VertexBuffer chunkMeshBuffer;
 	gl::VertexArray chunkMeshArray;
 
-	gl::VertexBuffer chunkFluidMeshBuffer;
-	gl::VertexArray chunkFluidMeshArray;
-
 public: // Functions 
 	Chunk() {}
 	~Chunk() {}
 };
 }
+
+
 
 #endif

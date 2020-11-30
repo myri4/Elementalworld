@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TEXTURE_HPP
+#define TEXTURE_HPP
 #include <glad/glad.h>
 #include <stb_image/stb_image.h>
 #include <glm/glm.hpp>
@@ -44,13 +45,17 @@ public:
 		}
 	}
 	
-	~Texture() {glDeleteTextures(1, &m_RendererID);}
+	~Texture() { glDeleteTextures(1, &m_RendererID); }
 
 	void SetData(const void *data, const int& width, const int& height, const int& xoffset = 0, const int& yoffset = 0) {
 		if (m_RendererID){
 			Bind();
 			glTexSubImage2D(GL_TEXTURE_2D, 0, xoffset, yoffset, width, height, GetFormat(), GL_UNSIGNED_BYTE, data);
 		}
+	}
+
+	void Destroy() {
+
 	}
 
 	void Bind(const uint32_t& ActiveTexture = 0) {
@@ -70,14 +75,6 @@ public:
 			glm::vec2(((coords.x + 1) * sprSize.x) / width, (coords.y * sprSize.y) / height)
 		};
 	}
-	//std::array<glm::vec2, 4> GetSpriteIndexCoords(const glm::vec2& startpos, const glm::vec2& endpos) {
-	//	return {
-	//		
-	//		
-	//		
-	//		
-	//	};
-	//}
 private:
 
 	uint32_t GetFormat() {
@@ -99,22 +96,19 @@ public:
 	~Cubemap() { glDeleteTextures(1, &m_RendererID); }
 	void Create(const std::array<const char*, 6>& faces) {
 		if (!m_RendererID) {
-			int32_t width, height, nrChannels;
+			int32_t width, height;
 			glGenTextures(1, &m_RendererID);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, m_RendererID);
 
 			for (uint32_t i = 0; i < faces.size(); i++) {
-				auto* data = stbi_load(faces[i], &width, &height, &nrChannels, 0);
-				if (data)
-					glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-
-				else
-					WC_ERROR("Cubemap texture failed to load at path: {0}", faces[i]);
+				auto* data = stbi_load(faces[i], &width, &height, &nrComponents, 0);
+				if (data) glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GetFormat(), width, height, 0, GetFormat(), GL_UNSIGNED_BYTE, data);
+				else WC_ERROR("Cubemap texture failed to load at path: {0}", faces[i]);
 
 				stbi_image_free(data);
 			}
-			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -128,7 +122,15 @@ public:
 	}
 	uint32_t GetRendererID() { return this->m_RendererID; }
 private:
+	uint32_t GetFormat() {
+		uint32_t format = 0;
+		if (nrComponents == 1) format = GL_RED;
+		else if (nrComponents == 3)	format = GL_RGB;
+		else if (nrComponents == 4) format = GL_RGBA;
+		return format;
+	}
 	uint32_t m_RendererID = 0;
+	int32_t nrComponents = 1;
 };
 
 class TextureArray {
@@ -200,3 +202,4 @@ private:
 	uint32_t m_MaxTextures = 1;
 };
 }
+#endif

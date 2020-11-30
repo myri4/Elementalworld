@@ -10,7 +10,6 @@ namespace wc {
 	class GameEngine : public Engine {
 	private:
 		Window window;
-		int width = 0, height = 0;
 
 		Clock deltaTimer;
 		float deltaTime = 0.0f;
@@ -78,15 +77,18 @@ namespace wc {
 			glm::vec2 startPos(0.0f, 0.0f);
 			glm::vec2 endPos(200.0f, 60.0f);
 
-			float ycor = 1.0f;
-			float xcor = 1.0f;
+			float excord = 200.0f / 200.0f;
+			float eycord = 1.0f;
+
+			float sxcord = 0.0f;
+			float sycord = 0.0f;
 
 			float vertices[] = {
 				// positions  // texture coords
-				 pos.x + size.x,  pos.y + size.y, xcor, 0.0f,   // top right
-				 pos.x + size.x,  pos.y,          xcor, ycor,   // bottom right
-				 pos.x,			  pos.y,          0.0f, ycor,   // bottom left
-				 pos.x,			  pos.y + size.y, 0.0f, 0.0f,   // top left 
+				 pos.x + size.x,  pos.y + size.y, excord, sycord,   // top right
+				 pos.x + size.x,  pos.y,          excord, eycord,   // bottom right
+				 pos.x,			  pos.y,          sxcord, eycord,   // bottom left
+				 pos.x,			  pos.y + size.y, sxcord, sycord,   // top left 
 			};
 
 			glm::vec2 TexCoords[] = {
@@ -105,14 +107,16 @@ namespace wc {
 			quadShader.Create("shaderpacks/default/2DRendererShader.glsl");
 		}
 
-		std::array<glm::vec2, 4> GetSpriteIndexCoords(const glm::vec2& sprSize) {
-			return {
-				glm::vec2(sprSize.x / 200, (0 * sprSize.y) / 60),
-				glm::vec2(sprSize.x / 200, ((0 + 1) * sprSize.y) / 60),
-				glm::vec2(((0 + 1) * sprSize.x) / 200, ((0 + 1) * sprSize.y) / 60),
-				glm::vec2(((0 + 1) * sprSize.x) / 200, (0 * sprSize.y) / 60)
-			};
-		}
+		int width = 200, height = 60;
+
+		//std::array<glm::vec2, 4> GetSpriteIndexCoords(const glm::vec2& startPos, const glm::vec2& endPos) {
+		//	return {
+		//		glm::vec2((coords.x * sprSize.x) / width, (coords.y * sprSize.y) / height),
+		//		glm::vec2((coords.x * sprSize.x) / width, ((coords.y + 1) * sprSize.y) / height),
+		//		glm::vec2(((coords.x + 1) * sprSize.x) / width, ((coords.y + 1) * sprSize.y) / height),
+		//		glm::vec2(((coords.x + 1) * sprSize.x) / width, (coords.y * sprSize.y) / height)
+		//	};
+		//}
 
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnUpdate() override {
@@ -152,9 +156,7 @@ namespace wc {
 
 	class GameEngine : public Engine {
 	private:
-		//GLFWwindow* window;
 		wc::Window window;
-		int width = 0, height = 0;
 
 		wc::Clock deltaTimer;
 		bool CenterMouse = false;
@@ -173,9 +175,7 @@ namespace wc {
 		//irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
 
 		//----------------------------------------------------------------------------------------------------------------------
-		void OnEvent() override {
-
-		}
+		void OnEvent() override {}
 		//----------------------------------------------------------------------------------------------------------------------
 		EngineStatus GetEngineStatus() override {
 
@@ -187,17 +187,15 @@ namespace wc {
 		void OnInput() override {
 
 			world.OnEvent(deltaTime);
-			if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::F))
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			else
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::F)) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 			if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::R)) glDisable(GL_CULL_FACE);
 			else glEnable(GL_CULL_FACE);
 
 			if (!window.hasFocus()) CenterMouse = false;
 			else  CenterMouse = true;
-
+			
 			if (CenterMouse) wc::Mouse::ShowMouse(false);
 			else wc::Mouse::ShowMouse(true);
 
@@ -232,7 +230,7 @@ namespace wc {
 
 			//SoundEngine->play2D("assets/sounds/Alan Walker - The Spectre_wJnBTPUQS5A_youtube.mp3");
 
-			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+			window.setClearColor(glm::vec4(0.0f));
 
 			screenShader.Create("shaderpacks/default/screenShader.glsl");
 			screen.Create(window.GetSize().x, window.GetSize().y);
@@ -263,14 +261,14 @@ namespace wc {
 			deltaTime = deltaTimer.restart();
 			screen.Bind();
 			glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			window.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			world.Update(window.GetPos(), window.GetSize(), CenterMouse, deltaTime);
 
 			glDisable(GL_DEPTH_TEST);
 			screen.unbind();
 			// clear all relevant buffers
-			glClear(GL_COLOR_BUFFER_BIT);
+			window.clear();
 
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			screenShader.use();

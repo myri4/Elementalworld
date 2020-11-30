@@ -192,7 +192,7 @@
     <ClInclude Include="common\gl\Shaders.h" />
     <ClInclude Include="common\gl\Shaders.hpp" />
     <ClInclude Include="common\gl\Skybox.h" />
-    <ClInclude Include="common\gl\Skybox.hpp" />
+    <ClInclude Include="common\wclibs\Skybox.hpp" />
     <ClInclude Include="common\gl\Text.h" />
     <ClInclude Include="common\gl\Text.hpp" />
     <ClInclude Include="common\gl\Texture.h" />
@@ -201,6 +201,7 @@
     <ClInclude Include="common\gl\Vertex.hpp" />
     <ClInclude Include="common\GUI\Button.hpp" />
     <ClInclude Include="common\Maths\Frustum.hpp" />
+    <ClInclude Include="common\Maths\Noise.hpp" />
     <ClInclude Include="common\Utils\CustomDefs.hpp" />
     <ClInclude Include="common\Utils\Keyboard.hpp" />
     <ClInclude Include="common\Utils\Log.hpp" />
@@ -225,6 +226,7 @@
     <ClInclude Include="common\Utils\NonCopyable.hpp" />
     <ClInclude Include="src\Block.h" />
     <ClInclude Include="src\entityes\playerSpec\Ray.hpp" />
+    <ClInclude Include="src\world\Biome.hpp" />
     <ClInclude Include="src\world\Block.hpp" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\Game.hpp" />
@@ -240,6 +242,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="config\window.lua" />
+    <None Include="scripts\forest.lua" />
     <None Include="scripts\glass.lua" />
     <None Include="scripts\dirt.lua" />
     <None Include="scripts\grassblock.lua" />

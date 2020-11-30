@@ -3,14 +3,13 @@
 #include <lua/lua.hpp>
 #include <sol/sol.hpp>
 #include <gl/Material.hpp>
+#include <Utils/CustomDefs.hpp>
 
 namespace wc{
 enum class ConnectionType { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT};
 enum class BlockTexture { TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK };
 
 static const float blockSize = 0.5f;
-
-using Face = std::array < glm::vec3, 4 >;
 
 Face BACK_FACE = {
 	glm::vec3(-blockSize,  blockSize, -blockSize), // top-left
@@ -56,7 +55,7 @@ Face TOP_FACE = {
 
 class Block{
 public:
-	uint32_t id = 0;
+	BlockID id = 0;
 	bool isCollidable = true;
 	glm::vec2 TexCoords[6];
 	gl::Material material;

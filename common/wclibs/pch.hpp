@@ -27,12 +27,12 @@
 #include <gl/Shaders.hpp>
 #include <gl/Texture.hpp>
 #include <gl/Vertex.hpp>
-#include <gl/Skybox.hpp>
 #include <gl/IndexBuffer.hpp>
 #include <gl/Text.hpp>
 #include <gl/FrameBuffer.hpp>
 #include <gl/Material.hpp>  
 #include <gl/Light.hpp>
+#include "Skybox.hpp"
 
 #include <Maths/Camera.hpp>
 

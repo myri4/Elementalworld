@@ -13,9 +13,7 @@ namespace gl {
         VertexBuffer(const void* data, const GLsizeiptr& size, const GLenum& mode = GL_STATIC_DRAW) { Create(data, size, mode); }
         ~VertexBuffer() { Destroy(); }
 
-        void Bind() {
-            glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-        }
+        void Bind() { glBindBuffer(GL_ARRAY_BUFFER, m_RendererID); }
         void Unbind() { glBindVertexArray(0); }
 
         void Create(const void* data, const GLsizeiptr& size, const GLenum& mode = GL_STATIC_DRAW) {
@@ -28,53 +26,38 @@ namespace gl {
             }
         }
 
-        void Destroy() {
-            glDeleteBuffers(1, &m_RendererID);
-        }
+        void Destroy() { glDeleteBuffers(1, &m_RendererID); }
 
         void Update(const GLintptr& offset, const GLsizeiptr& size, const void *data) {
-            glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-            glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            if (m_RendererID) {
+                glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+                glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+            }
         }
 
-
-        uint32_t GetRendererID() {
-            return m_RendererID;
-        }
+        uint32_t GetRendererID() { return m_RendererID; }
     private:
-        uint32_t m_RendererID = 0; // VAO = 0
+        uint32_t m_RendererID = 0;
     };
 
     class VertexArray {
     public:
-        VertexArray() {
+        VertexArray() {}
+        ~VertexArray(){ glDeleteVertexArrays(1, &m_RendererID); }
 
-        }
-        ~VertexArray(){
-            glDeleteVertexArrays(1, &m_RendererID);
-        }
-
-        void Create() {
-            if(!m_RendererID) glGenVertexArrays(1, &m_RendererID);
-        }
+        void Create() { if(!m_RendererID) glGenVertexArrays(1, &m_RendererID); }
 
         void VertexAttribPointer(const uint32_t& index, const int& size, const GLsizei& stride, const void* pointer, const GLenum& type = GL_FLOAT, const bool& normalized = false) {
             glEnableVertexAttribArray(index);
             glVertexAttribPointer(index, size, type, normalized, stride, pointer);
         }
 
-        void Bind() {
-            glBindVertexArray(m_RendererID);
-        }
+        void Bind() { glBindVertexArray(m_RendererID); }
 
-        void unind() {
-            glBindVertexArray(0);
-        }
+        void unind() { glBindVertexArray(0); }
 
-        uint32_t GetRendererID() {
-            return m_RendererID;
-        }
+        uint32_t GetRendererID() { return m_RendererID; }
     private:
         uint32_t m_RendererID = 0;
     };

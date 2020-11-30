@@ -1,15 +1,15 @@
 #ifndef WINDOW_HPP
 #define WINDOW_HPP
+
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <lua/lua.hpp>
 #include <sol/sol.hpp>
 
 namespace wc {
-	void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-	{
-		glViewport(0, 0, width, height);
-	}
+	void framebuffer_size_callback(GLFWwindow* window, int width, int height){glViewport(0, 0, width, height);}
+
 	class Window {
 	public:
 		Window() {}
@@ -30,9 +30,9 @@ namespace wc {
 			glfwWindowHint(GLFW_REFRESH_RATE, windowScript["framerateLimit"]);
 
 			window = glfwCreateWindow(windowScript["screenWidth"], windowScript["screenHeight"], title, mode, nullptr);
-
+			bool vsync = windowScript["vsync"];
 			glfwMakeContextCurrent(window);
-			glfwSwapInterval(windowScript["vsync"]);
+			if (!vsync)glfwSwapInterval(0);
 			glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 		}
 
@@ -41,8 +41,22 @@ namespace wc {
 		}
 
 		void display() {
-			glfwSwapBuffers(window);
-			glfwPollEvents();
+			float currentTime = glfwGetTime();
+			
+			if (currentTime - lastFrame >= 1.0 / framerateLimit || framerateLimit == 0)
+			{
+				lastFrame = currentTime;
+				glfwSwapBuffers(window);
+			}
+				glfwPollEvents();
+		}
+
+		void clear(const GLbitfield& mask = GL_COLOR_BUFFER_BIT) {
+			glClear(mask);
+		}
+
+		void setClearColor(const glm::vec4& color) {
+			glClearColor(color.r, color.g, color.b, color.a);
 		}
 
 		const glm::vec2& GetPos() {
@@ -72,8 +86,13 @@ namespace wc {
 		void setActive() {
 			glfwMakeContextCurrent(window);
 		}
-	private:
 
+		void setFramerateLimit(const int& limit) {
+			framerateLimit = limit;
+		}
+	private:
+		float lastFrame = 0.0f;
+		int framerateLimit = 0;
 		GLFWwindow* window;
 	};
 

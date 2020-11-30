@@ -9,11 +9,14 @@ public:
 	~Ray() {}
 
 	void Step(const float& Yaw, const float& Pitch, const float& step = 0.5f) {
-		float yaw = glm::radians(Yaw);
+		float yaw = glm::radians(Yaw + 90.0f);
 		float pitch = glm::radians(Pitch);
-		m_rayEnd.x -= std::sin(yaw) * step;
-		m_rayEnd.z -= std::cos(yaw) * step;
-		m_rayEnd.y -= std::tan(pitch) * step;
+
+		auto& p = m_rayEnd;
+
+		p.x -= glm::cos(yaw) * step;
+		p.z -= glm::sin(yaw) * step;
+		p.y -= glm::tan(pitch) * step;
 	}
 
 	void SetStartPos(const glm::vec3& startPos) { m_rayStart = startPos; }

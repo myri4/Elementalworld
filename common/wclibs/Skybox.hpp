@@ -91,7 +91,7 @@ namespace gl {
 
             uint32_t indices[36];
             uint32_t offset = 0;
-            for (int i = 0; i < 36; i += 6) {
+            for (int8_t i = 0; i < 36; i += 6) {
                 indices[i + 0] = 0 + offset;
                 indices[i + 1] = 1 + offset;
                 indices[i + 2] = 2 + offset;
@@ -105,11 +105,12 @@ namespace gl {
             skyboxIndicies.Create(indices, sizeof(indices));
         }
 
-        void Draw(const glm::mat4& view, const glm::mat4& projection){
+        void Draw(const glm::mat4& view, const glm::mat4& projection, const float& deltaTime){
             glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
             shader.use();
             shader.setMat4("view", view);
             shader.setMat4("projection", projection);
+            shader.setMat4("model", glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
             // skybox cube
             skyBoxArray.Bind();
             skyboxTexture.Bind();
@@ -122,6 +123,8 @@ namespace gl {
 
         Shader shader;
 	private:
+        float rotateSpeed = 1.0f;
+        float angle = 0.0f;
         Cubemap skyboxTexture;
         VertexBuffer skyboxVertexBuffer;
         VertexArray skyBoxArray;

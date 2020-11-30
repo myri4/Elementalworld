@@ -19,8 +19,15 @@ in vec2 v_TexCoords;
 
 uniform sampler2D screenTexture;
 uniform vec4 screenColor = vec4(1.0f);
-    const float offset = 1.0 / 300.0;  
-    vec2 offsets[9] = vec2[](
+
+const float contrast = 0.0;
+
+
+vec3 GetKernelEffect(float kernel[9]){
+
+        const float offset = 1.0 / 300.0;    
+        
+        vec2 offsets[9] = vec2[](
         vec2(-offset,  offset), // top-left
         vec2( 0.0f,    offset), // top-center
         vec2( offset,  offset), // top-right
@@ -31,8 +38,6 @@ uniform vec4 screenColor = vec4(1.0f);
         vec2( 0.0f,   -offset), // bottom-center
         vec2( offset, -offset)  // bottom-right    
     );
-
-vec3 GetKernelEffect(float kernel[9]){
     vec3 sampleTex[9];
     for(int i = 0; i < 9; i++)
     {
@@ -44,14 +49,15 @@ vec3 GetKernelEffect(float kernel[9]){
 
     return col;
 }
+
 void main()
 {    
     float kernel[9] = float[](
-        1, 1, 1,
+        1,  1, 1,
         1, -8, 1,
-        1, 1, 1
+        1,  1, 1
     );
 
     Result = texture(screenTexture, v_TexCoords);
-
+    Result.rgb = (Result.rgb - 0.5f) * (1.0f + contrast) + 0.5f;
 }

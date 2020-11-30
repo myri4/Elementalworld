@@ -10,44 +10,20 @@
 #include <Utils/Time.hpp>
 #include <gl/Particle.hpp>
 #include <Maths/Frustum.hpp>
+#include <Maths/Noise.hpp>
 
 namespace wc {
-
-	struct Noise {
-		int8_t octaves = 5;
-		float smoothnes = 90.0f;
-		int16_t seed = 10;
-		float getNoiseFor(const glm::vec2& pos, const glm::vec2& chunkPosition)
-		{
-			int voxelX = pos.x + chunkPosition.x * chunkSize;
-			int voxelZ = pos.y + chunkPosition.y * chunkSize;
-
-			float value = 0.0f;
-			for (int i = 0; i < octaves; i++) {
-				value = glm::perlin(glm::vec3(voxelX / smoothnes + seed, voxelZ / smoothnes + seed, seed));
-			}
-			value = (value + 1) / 2;
-			value *= 32 + 32;
-			return value;
-		}
-	};
-
+	
 	class Singleplayer : public NonCopyable {
 	public:
 		Player p;
 		glm::vec4 screenColor = glm::vec4(1.0f);
 
 		Singleplayer() {}
-		~Singleplayer() {}
 
 		void Create() {
 			worldShader.Create("shaderpacks/default/chunkShader.glsl");
-			worldShader.use();
-			worldShader.setInt("u_Texture", 0);
-
 			fluidShader.Create("shaderpacks/default/fluidShader.glsl");
-			fluidShader.use();
-			fluidShader.setInt("u_Texture", 0);
 
 			LoadBlocks();
 			LoadEnivoirment();
@@ -66,68 +42,44 @@ namespace wc {
 			}
 			worldIndexBuffer.Create(indices, sizeof(indices));
 
+			p.InitPlayer({ chunkSize * chunkSize / 2 + chunkSize,chunkSize * 4,chunkSize * chunkSize / 2 });
 
-			p.InitPlayer({ chunkSize * chunkSize / 2,chunkSize * 4,chunkSize * chunkSize / 2});
-			for (int i = 0; i < world.size(); i++) {
+			for (ChunkID i = 0; i < world.size(); i++) {
 				world[i].chunkPos = i;
 				//Configuring the vertex array
-				world[i].chunkFluidMeshArray.Create();
 				world[i].chunkMeshArray.Create();
-
 				world[i].chunkMeshArray.Bind();
 				world[i].chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
 				gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
-				gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
-
-				world[i].chunkFluidMeshArray.Bind();
-				world[i].chunkFluidMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
-				gl::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
-				gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
+				gl::VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute				
 			}
 		}
 
 		void Update(const glm::vec2& windpos, const glm::vec2& windsize, const bool& CenterMouse, const float& deltaTime) {
 			p.UpdatePlayer(windpos, windsize, CenterMouse, deltaTime);
 
-			for (int i = 0; i < world.size(); i++) {
-				uint8_t chunkHalf = chunkSize / 2;
-				glm::vec3 currChunkPos = to3D(world[i].chunkPos);
-				if (currChunkPos.x > GetChunkPos(p.Position.x) - chunkHalf);// to3D(world[i].chunkPos).x <= GetChunkPos(p.Position.x) + chunkHalf
-				if (currChunkPos.y > GetChunkPos(p.Position.y) - chunkHalf);
-				if (currChunkPos.z > GetChunkPos(p.Position.z) - chunkHalf);
-				if (world[i].canBeUpdated) UpdateMesh(i);
-
-				world[i].canBeUpdated = false;
-			}
 			blockAtlas.Bind();
 			worldIndexBuffer.Bind(); // Binding the index buffer
-
-			fluidShader.use();
-			// pass projection matrix to shader (note that in this case it could change every frame)
-			fluidShader.setMat4("u_Projection", p.projection);
-			
-			// camera/view transformation
-			fluidShader.setMat4("u_View", p.GetView());			
-				for (uint16_t i = 0; i < world.size(); i++) {
-						if (world[i].fIndexCount > 0) {
-							world[i].chunkFluidMeshArray.Bind();
-							world[i].chunkFluidMeshBuffer.Bind();
-							glm::vec3 pos = to3D(world[i].chunkPos) * glm::vec3(chunkSize);
-							fluidShader.setMat4("u_Model", glm::translate(glm::mat4(1.0f), pos)); // calculate the model matrix for each object and pass it to shader before drawing
-							//glDrawElements(GL_TRIANGLES, world[i].fIndexCount, GL_UNSIGNED_INT, nullptr); // Drawing fluids
-						}							
-				}
 
 			// activate shader
 			worldShader.use();
 			worldShader.setVec3("viewPos", p.Position);
 
 			// pass projection matrix to shader (note that in this case it could change every frame)
-			worldShader.setMat4("u_Projection", p.projection);
+			worldShader.setMat4("u_Projection", p.projection);			
 
 			// camera/view transformation
 			worldShader.setMat4("u_View", p.GetView());
-				for (uint16_t i = 0; i < world.size(); i++) {
+				for (ChunkID i = 0; i < world.size(); i++) {
+
+					uint8_t chunkHalf = chunkSize / 2;
+					glm::vec3 currChunkPos = to3D(world[i].chunkPos);
+
+					//if (currChunkPos.x <= GetChunkPos(p.Position.x) - chunkHalf) {world[i].chunkPos = to1D(currChunkPos.x + 1, currChunkPos.y, currChunkPos.z);}
+					//if (!to3D(world[i].chunkPos).x <= GetChunkPos(p.Position.x) + chunkHalf) {
+					//	world[i].chunkPos = to1D(GetChunkPos(p.Position.x) - chunkHalf, currChunkPos.y, currChunkPos.z);
+					//}
+
 					if (world[i].IndexCount > 0) {
 						world[i].chunkMeshArray.Bind();
 						world[i].chunkMeshBuffer.Bind();
@@ -135,49 +87,46 @@ namespace wc {
 						worldShader.setMat4("u_Model", glm::translate(glm::mat4(1.0f), pos)); // calculate the model matrix for each object and pass it to shader before drawing
 						glDrawElements(GL_TRIANGLES, world[i].IndexCount, GL_UNSIGNED_INT, nullptr); // Drawing the cubes
 					}
-				}
-				if ((int)p.camera.Position.y < water_level) screenColor = glm::vec4(1, 1, 7, 1);
-				else screenColor = glm::vec4(1.0f);
 
-			// Checking if the fog is enabled, if not draw the skybox
-			if (!Fog) skybox.Draw(glm::mat4(glm::mat3(p.GetView())), p.projection);
+					// Updating the chunk`s mesh
+					if (world[i].canBeUpdated) {
+						UpdateMesh(i);
+						world[i].canBeUpdated = false;
+					}
+				}
+
+				skybox.Draw(glm::mat4(glm::mat3(p.GetView())), p.projection, deltaTime);
 		}
 
 		void OnEvent(const float& deltaTime) {
-			p.UpdatePlayerInput(deltaTime);
-
-			if (wc::Mouse::isButtonPressed() == wc::Mouse::MouseButton::LBUTTON || wc::Mouse::isButtonPressed() == wc::Mouse::MouseButton::RBUTTON) {
-				glm::vec3 m_rayLastPoint = glm::vec3(0.0f);
-				Ray ray(p.camera.Position);
-				for (; ray.getLength() < 8 * 7; ray.Step(p.camera.Yaw, p.camera.Pitch)) {
-					if (wc::Mouse::isButtonPressed() == wc::Mouse::MouseButton::LBUTTON) {
-						int chunk = to1D({ GetChunkPos(ray.getEnd().x) ,GetChunkPos(ray.getEnd().y) ,GetChunkPos(ray.getEnd().z) });
-						setBlock(ray.getEnd(), 0);
-						m_rayLastPoint = ray.getEnd();
-						break;
-					}
-					if (wc::Mouse::isButtonPressed() == wc::Mouse::MouseButton::RBUTTON) {
-						int chunk = to1D({ GetChunkPos(ray.getEnd().x) ,GetChunkPos(ray.getEnd().y) ,GetChunkPos(ray.getEnd().z) });
-						setBlock(ray.getEnd(), 6);
-						break;
-					}
-					m_rayLastPoint = ray.getEnd();
-				}
-			}
+			p.UpdatePlayerInput(deltaTime);						
 		}
 
 	private:
 
-		int GetChunkID(int32_t pos) {
-			for (int8_t i = 0; i < world.size(); i++)
+		void UpdateTime() {
+			glm::vec3 nightVoidColor;
+			glm::vec3 nightSkyColor;
+
+			glm::vec3 dayVoidColor;
+			glm::vec3 daySkyColor;
+
+
+		}
+
+		//Chunk managing
+
+		ChunkID GetChunkID(const ChunkPos& pos) {
+			for (uint16_t i = 0; i < world.size(); i++)
 				if (world[i].chunkPos == pos) return i;
 		}
 
-		void GenerateChunkTerrain(const int& chunk) {
+		void GenerateChunkTerrain(const ChunkID& chunk) {
 			if (!world[chunk].generated) {
 				for (uint8_t z = 0; z < chunkSize; z++)
 					for (uint8_t x = 0; x < chunkSize; x++) {
-						int heightMap = worldNoise.getNoiseFor(glm::vec2(x, z), glm::vec2(to3D(world[chunk].chunkPos).x - 2, to3D(world[chunk].chunkPos).z));
+						int heightMap = worldNoise.getNoiseFor(glm::vec2(x, z), glm::vec2(to3D(world[chunk].chunkPos).x - 2, to3D(world[chunk].chunkPos).z), chunkSize);
+						//int heightMap = chunkSize;
 						for (uint8_t y = 0; y < chunkSize; y++) {
 							if ((int)to3D(world[chunk].chunkPos).y * chunkSize + y == heightMap) { setBlock(glm::vec3(x, y, z), 1, chunk); }
 							if ((int)to3D(world[chunk].chunkPos).y * chunkSize + y == heightMap && (int)to3D(world[chunk].chunkPos).y * chunkSize + y <= water_level - rand() % 3) { setBlock(glm::vec3(x, y, z), 4, chunk); }
@@ -188,9 +137,9 @@ namespace wc {
 					}
 				world[chunk].generated = true;
 			}
-		}
+		}		
 
-		void setBlock(const glm::vec3& pos, const int& block, const int16_t& chunk) {
+		void setBlock(const glm::vec3& pos, const BlockID& block, const ChunkID& chunk) {
 			if (chunk >= world.size()) return;
 			if (chunk < 0) return;
 			int8_t x = pos.x; x = x % chunkSize;
@@ -208,14 +157,15 @@ namespace wc {
 			if (chunk + to1D({ 0,0,1 }) < world.size()) if (z == chunkSize - 1) { world[chunk + to1D({ 0,0,1 })].canBeUpdated = true; }
 		}
 		
-		void setBlock(const glm::vec3& pos, const int& block) {
-			int chunk1 = to1D({ GetChunkPos(pos.x) ,GetChunkPos(pos.y) ,GetChunkPos(pos.z) });
-			if (chunk1 >= world.size()) return;
-			if (chunk1 < 0) return;
-			int8_t chunk = chunk1;
-			int8_t x = pos.x; x = x % chunkSize;
-			int8_t y = pos.y; y = y % chunkSize;
-			int8_t z = pos.z; z = z % chunkSize;
+		void setBlock(const glm::vec3& pos, const BlockID& block) {
+			int chunkPos = to1D({ GetChunkPos(pos.x), GetChunkPos(pos.y), GetChunkPos(pos.z) });
+			int chunk = chunkPos;
+			if (chunk >= world.size()) return;
+			if (chunk < 0) return;
+
+			int x = pos.x; x = x % chunkSize;
+			int y = pos.y; y = y % chunkSize;
+			int z = pos.z; z = z % chunkSize;
 			world[chunk].chunkData[x][y][z] = block;
 			world[chunk].canBeUpdated = true;
 
@@ -227,10 +177,28 @@ namespace wc {
 			if (chunk + to1D({ 0,1,0 }) < world.size()) if (y == chunkSize - 1) { world[chunk + to1D({ 0,1,0 })].canBeUpdated = true; }
 			if (chunk + to1D({ 0,0,1 }) < world.size()) if (z == chunkSize - 1) { world[chunk + to1D({ 0,0,1 })].canBeUpdated = true; }
 		}
+		
+		int GetBlock(const glm::vec3& pos) {
+			int chunk = to1D({ GetChunkPos(pos.x) ,GetChunkPos(pos.y) ,GetChunkPos(pos.z) });
+			//if (chunk >= world.size()) return;
+			//if (chunk < 0) return;
+			int8_t x = pos.x; x = x % chunkSize;
+			int8_t y = pos.y; y = y % chunkSize;
+			int8_t z = pos.z; z = z % chunkSize;
+			return world[chunk].chunkData[x][y][z];
+		}
 
-		void UpdateMesh(const int& chunk) {
+		glm::vec3 toBlockPos(const glm::vec3& pos){
+			int8_t x = pos.x; x = x % chunkSize;
+			int8_t y = pos.y; y = y % chunkSize;
+			int8_t z = pos.z; z = z % chunkSize;
+
+			return {x,y,z};
+		}
+
+		void UpdateMesh(const ChunkID& chunk) {
 			if (chunk >= world.size()) return;
-			if (chunk < 0) return;
+			if (chunk < 0) return;			
 
 			if (world[chunk].generated == false) GenerateChunkTerrain(chunk);
 
@@ -240,9 +208,6 @@ namespace wc {
 
 			uint32_t offset = 0;
 			world[chunk].IndexCount = 0;
-			//Updating the fluid mesh
-			world[chunk].fIndexCount = 0;
-			uint32_t fOffset = 0;
 
 			gl::Vertex worldMesh[MaxVertexCount];
 			gl::Vertex worldFluidMesh[MaxVertexCount];
@@ -426,10 +391,6 @@ namespace wc {
 						}
 					}
 			worldIndexBuffer.Bind();
-			if (world[chunk].fIndexCount > 0) {
-				world[chunk].chunkFluidMeshArray.Bind(); 
-				world[chunk].chunkFluidMeshBuffer.Update(0, sizeof(worldFluidMesh), worldFluidMesh); 
-			}
 			if (world[chunk].IndexCount > 0) {
 				world[chunk].chunkMeshArray.Bind();
 				world[chunk].chunkMeshBuffer.Update(0, sizeof(worldMesh), &worldMesh);
@@ -448,21 +409,21 @@ namespace wc {
 			offset += 4;
 		}
 
-		bool makeFace(const glm::vec3& pos, const int& chunk, ConnectionType type) {
+		bool makeFace(const glm::vec3& pos, const ChunkID& chunkID, ConnectionType type) {
 			if (pos.x >= chunkSize || pos.y >= chunkSize || pos.z >= chunkSize) return false;
 			if (pos.x < 0 || pos.y < 0 || pos.z < 0) return false;
-			if (chunk >= world.size()) return false;
-			if (chunk < 0) return false;
-			int x = pos.x;
-			int y = pos.y;
-			int z = pos.z;
-			int block = world[chunk].chunkData[x][y][z];
+			if (chunkID >= world.size()) return false;
+			if (chunkID < 0) return false;
+			int16_t x = pos.x;
+			int16_t y = pos.y;
+			int16_t z = pos.z;
+			BlockID block = world[chunkID].chunkData[x][y][z];
 			if (block > 0 && blockData[block].blockConnectionType == type) return true;
 			return false;
 		} // @TODO
 
-		int GetChunkPos(const int& pos) {
-			int i = pos;
+		ChunkPos GetChunkPos(const ChunkPos& pos) {
+			ChunkPos i = pos;
 			int junk = 0;
 			if (i % chunkSize != 0) { junk = i % chunkSize; i = i - junk; return i / chunkSize; }
 			else { return i / chunkSize; }
@@ -542,15 +503,13 @@ namespace wc {
 		}
 
 		void LoadEnivoirment() {
-			glm::vec3 fogColor = glm::vec3(0.5f, 0.5f, 0.5f);
-			worldShader.use();
-			worldShader.setBool("fog", Fog);
-			worldShader.setVec3("fogColor", fogColor);
-			if (Fog) glClearColor(fogColor.r, fogColor.g, fogColor.b, 1.0f);
 			skybox.Create("scripts/skybox.lua", p.Far);
 		}
 
-		bool Fog = false;
+		void ResetChunk(const ChunkID& chunkID) {
+
+		}
+
 		int8_t water_level = 32;
 		gl::Skybox skybox;
 
