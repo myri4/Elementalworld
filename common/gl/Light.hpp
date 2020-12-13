@@ -1,9 +1,9 @@
-#pragma once
+#ifndef LIGHT_HPP
+#define LIGHT_HPP
 #include <gl/Shaders.hpp>
 
 namespace gl {
-    class Light {
-    public:
+    struct Light {
         glm::vec4 vector;
 
         float constant;
@@ -12,8 +12,6 @@ namespace gl {
 
         float strenght;
 
-        glm::vec3 color;
-
         void Apply(const gl::Shader &shader, const std::string& value) {
             shader.use();
             shader.setVec4(std::string(value + ".vector").c_str(), vector);
@@ -21,7 +19,7 @@ namespace gl {
             shader.setFloat(std::string(value + ".linear").c_str(), linear);
             shader.setFloat(std::string(value + ".quadratic").c_str(), quadratic);
             shader.setFloat(std::string(value + ".strenght").c_str(), strenght);
-            shader.setVec3(std::string(value + ".color").c_str(), color);
         }
     };
 }
+#endif

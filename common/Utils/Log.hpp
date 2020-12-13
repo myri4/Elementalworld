@@ -24,5 +24,5 @@ namespace wc {
 #define WC_TRACE(...)         ::wc::Log::GetLogger()->trace(__VA_ARGS__)
 #define WC_INFO(...)          ::wc::Log::GetLogger()->info(__VA_ARGS__)
 #define WC_WARN(...)          ::wc::Log::GetLogger()->warn(__VA_ARGS__)
-#define WC_ERROR(...)         ::wc::Log::GetLogger()->error(__VA_ARGS__)
-#define WC_CRITICAL(...)      ::wc::Log::GetLogger()->critical(__VA_ARGS__)
+#define WC_ERROR(...)         ::wc::Log::GetLogger()->error(__VA_ARGS__); __debugbreak
+#define WC_CRITICAL(...)      ::wc::Log::GetLogger()->critical(__VA_ARGS__); __debugbreak

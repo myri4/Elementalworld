@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SKY_HPP
+#define SKY_HPP
 
 #include <glad/glad.h>
 #include <gl/IndexBuffer.hpp>
@@ -69,7 +70,7 @@ namespace gl {
             skyBoxArray.Create();
             skyBoxArray.Bind();
             skyboxVertexBuffer.Create(vertices, sizeof(vertices), GL_STATIC_DRAW);
-            gl::VertexAttribPointer(0, 3, 3 * sizeof(float), (void*)0);
+            skyBoxArray.VertexAttribPointer(0, 3, 3 * sizeof(float), (void*)0);
 
             std::array<const char*, 6> faces;
             std::array<std::string, 6> sfaces;
@@ -110,7 +111,6 @@ namespace gl {
             shader.use();
             shader.setMat4("view", view);
             shader.setMat4("projection", projection);
-            shader.setMat4("model", glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
             // skybox cube
             skyBoxArray.Bind();
             skyboxTexture.Bind();
@@ -131,3 +131,4 @@ namespace gl {
         IndexBuffer skyboxIndicies;
 	};
 }
+#endif

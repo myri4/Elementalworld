@@ -15,12 +15,11 @@ void main(){
 #type fragment
 #version 330 core
 
-out vec4 Result;
 in vec2 v_texCoords;
 
 uniform sampler2D u_Texture;
 
 void main()
 {
-    Result = texture(u_Texture, v_texCoords);
+    gl_FragColor = texture(u_Texture, v_texCoords);
 }

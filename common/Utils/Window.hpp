@@ -28,6 +28,7 @@ namespace wc {
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 			glfwWindowHint(GLFW_SAMPLES, windowScript["antialiasingLevel"]);
 			glfwWindowHint(GLFW_REFRESH_RATE, windowScript["framerateLimit"]);
+			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 			window = glfwCreateWindow(windowScript["screenWidth"], windowScript["screenHeight"], title, mode, nullptr);
 			bool vsync = windowScript["vsync"];

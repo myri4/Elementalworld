@@ -1,7 +1,8 @@
-﻿#include "Game.hpp"
+﻿#include "Application.hpp"
+
+wc::Application engine;
 
 int main() {
-	wc::GameEngine* engine = new wc::GameEngine;
 	wc::Log::Init();
-	engine->Start();
+	engine.Start();
 }

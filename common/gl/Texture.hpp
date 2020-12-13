@@ -8,22 +8,21 @@
 #include <Utils/Log.hpp>
 
 namespace gl{
-	
-enum class TextureStatus { OK, COULD_NOT_OPEN_TEXTURE_FILE };
+
 class Texture{
 public:
 	Texture() {}
+	~Texture() { Destroy(); }
 
-	TextureStatus load(const char* path) {
+	void load(const char* path) {
 		int fwidth, fheight, fnrComponents;
 		auto* data = stbi_load(path, &fwidth, &fheight, &fnrComponents, 0);
 
 		if (data) Create(data, fwidth, fheight, fnrComponents);
-		else return TextureStatus::COULD_NOT_OPEN_TEXTURE_FILE;			
+		else WC_ERROR("Could not open file location at path {0}!", path);			
 
 		stbi_image_free(data);
-		
-		return TextureStatus::OK;
+
 	}
 
 	void Create(const void* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& NrComponents = 3, uint8_t mipMapLevel = 4) {
@@ -45,7 +44,6 @@ public:
 		}
 	}
 	
-	~Texture() { glDeleteTextures(1, &m_RendererID); }
 
 	void SetData(const void *data, const int& width, const int& height, const int& xoffset = 0, const int& yoffset = 0) {
 		if (m_RendererID){
@@ -55,7 +53,7 @@ public:
 	}
 
 	void Destroy() {
-
+		glDeleteTextures(1, &m_RendererID);
 	}
 
 	void Bind(const uint32_t& ActiveTexture = 0) {
@@ -160,7 +158,7 @@ public:
 
 	~TextureArray() { glDeleteTextures(1, &m_RendererID); }
 
-	TextureStatus AddTexture(const char* filePath) {
+	void AddTexture(const char* filePath) {
 		if (m_Textures <= m_MaxTextures) {
 			int fnrComponents = 0, fwidth = 0, fheight = 0;
 			auto* data = stbi_load(filePath, &fwidth, &fheight, &fnrComponents, 0);
@@ -169,22 +167,12 @@ public:
 				glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, m_Textures, width, height, 1, GetFormat(), GL_UNSIGNED_BYTE, data);
 
 				m_Textures++;
-				return TextureStatus::OK;
 			}
 		}
 	}
 
 	void Bind() { glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID);}
 	void unbind() { glBindTexture(GL_TEXTURE_2D_ARRAY, 0); }
-
-	std::array<glm::vec2, 4> GetSpriteIndexCoords(const glm::vec2& coords, const glm::vec2& sprSize) {
-		return {
-			glm::vec2((coords.x * sprSize.x) / width, (coords.y * sprSize.y) / height),
-			glm::vec2((coords.x * sprSize.x) / width, ((coords.y + 1) * sprSize.y) / height),
-			glm::vec2(((coords.x + 1) * sprSize.x) / width, ((coords.y + 1) * sprSize.y) / height),
-			glm::vec2(((coords.x + 1) * sprSize.x) / width, (coords.y * sprSize.y) / height)
-		};
-	}
 
 	uint32_t GetRendererID() { return m_RendererID; }
 	uint32_t width = 32, height = 32;

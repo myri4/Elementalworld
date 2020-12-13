@@ -7,6 +7,18 @@
 
 namespace wc {
 
+	class Quad {
+	private:
+		glm::vec2 size;
+		glm::vec2 pos;
+		glm::vec2 startPos;
+		glm::vec2 endPos;
+	public:
+		void SetSize(const glm::vec2& size) {this->size = size; }
+		void SetPos(const glm::vec2& pos) { this->pos = pos; }
+		void SetSpriteRect(const glm::vec2& startPos, const glm::vec2& endPos) { this->startPos = startPos; this->endPos = endPos;	}
+	};
+
 	class GameEngine : public Engine {
 	private:
 		Window window;
@@ -21,12 +33,8 @@ namespace wc {
 		gl::Shader quadShader;
 		gl::IndexBuffer quadEBO;
 
-		//irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
-
 		//----------------------------------------------------------------------------------------------------------------------
-		void OnEvent() override {
-			
-		}
+		void OnEvent() override {}
 		//----------------------------------------------------------------------------------------------------------------------
 		EngineStatus GetEngineStatus() override {
 
@@ -35,14 +43,7 @@ namespace wc {
 			return EngineStatus::FAIL;
 		}
 		//----------------------------------------------------------------------------------------------------------------------
-		void OnInput() override {
-
-			if (Keyboard::isButtonPressed(Keyboard::Key::F)) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-			if (Keyboard::isButtonPressed(Keyboard::Key::R)) glDisable(GL_CULL_FACE);
-			else glEnable(GL_CULL_FACE);
-		}
+		void OnInput() override {}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() override {
 			window.Create("config/window.lua", "Elementalworld");
@@ -55,33 +56,23 @@ namespace wc {
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-			//Anti aliasing
-			glEnable(GL_MULTISAMPLE);
-
-			//Depth testing
-			glEnable(GL_DEPTH_TEST);
-
-			//Face culling
-			glEnable(GL_CULL_FACE);
-			glCullFace(GL_BACK);
-			glFrontFace(GL_CW);
-
 			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			
 			TextRenderer.Create("assets/font/Minecraft.ttf", "shaderpacks/default/text.glsl");
 			guiTex.load("assets/textures/misc/widgets.png");
 			quadVAO.Create();
 			quadVAO.Bind();
+			int width = 200, height = 60;
 			glm::vec2 size = glm::vec2(200.0f, 60.0f);
 			glm::vec2 pos = glm::vec2(150, 50);
 			glm::vec2 startPos(0.0f, 0.0f);
 			glm::vec2 endPos(200.0f, 60.0f);
 
-			float excord = 200.0f / 200.0f;
-			float eycord = 1.0f;
+			float excord = endPos.x / width ;
+			float eycord = endPos.y / height;
 
-			float sxcord = 0.0f;
-			float sycord = 0.0f;
+			float sxcord = startPos.x / width;
+			float sycord = startPos.y / height;
 
 			float vertices[] = {
 				// positions  // texture coords
@@ -102,12 +93,11 @@ namespace wc {
 			uint32_t indicies[] = { 0, 1, 2, 2, 3, 0 };
 			quadEBO.Create(indicies, sizeof(indicies));
 			quadVBO.Create(vertices, sizeof(vertices));
-			gl::VertexAttribPointer(0, 2, 4 * sizeof(float), (void*)0);
-			gl::VertexAttribPointer(1, 2, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+			quadVAO.VertexAttribPointer(0, 2, 4 * sizeof(float), (void*)0);
+			quadVAO.VertexAttribPointer(1, 2, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 			quadShader.Create("shaderpacks/default/2DRendererShader.glsl");
 		}
 
-		int width = 200, height = 60;
 
 		//std::array<glm::vec2, 4> GetSpriteIndexCoords(const glm::vec2& startPos, const glm::vec2& endPos) {
 		//	return {
@@ -121,10 +111,8 @@ namespace wc {
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnUpdate() override {
 			deltaTime = deltaTimer.restart();
-			glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT);
 
-			glDisable(GL_DEPTH_TEST);
 			TextRenderer.Draw("FPS: " + std::to_string((int)(1 / deltaTime)), window.GetSize(), { 25.0f, window.GetSize().y - 20 });
 
 			glm::mat4 proj = glm::ortho(0.0f, window.GetSize().x, 0.0f, window.GetSize().y, -0.5f, 0.5f);
@@ -154,7 +142,7 @@ namespace wc {
 
 namespace wc {
 
-	class GameEngine : public Engine {
+	class Application : public Engine {
 	private:
 		wc::Window window;
 
@@ -164,7 +152,6 @@ namespace wc {
 
 		gl::VertexBuffer scrQuad;
 		gl::VertexArray scrQuadA;
-		gl::ShadowMap shadowMap;
 		gl::FrameBuffer screen;
 		gl::Shader screenShader;
 
@@ -218,19 +205,13 @@ namespace wc {
 			//Depth testing
 			glEnable(GL_DEPTH_TEST);
 
-			//Stencil Test
-			glEnable(GL_STENCIL_TEST);
-			glStencilMask(0xFF); // each bit is written to the stencil buffer as is
-			glStencilMask(0x00); // each bit ends up as 0 in the stencil buffer (disabling writes)
-			//glStencilFunc(GL_EQUAL, 1, 0xFF);
-
 			glEnable(GL_CULL_FACE);
 			glCullFace(GL_BACK);
 			glFrontFace(GL_CW);
 
 			//SoundEngine->play2D("assets/sounds/Alan Walker - The Spectre_wJnBTPUQS5A_youtube.mp3");
 
-			window.setClearColor(glm::vec4(0.0f));
+			window.setClearColor(glm::vec4(0.1f, 3.5f, 5.0f, 1.0f));
 
 			screenShader.Create("shaderpacks/default/screenShader.glsl");
 			screen.Create(window.GetSize().x, window.GetSize().y);
@@ -249,8 +230,8 @@ namespace wc {
 			scrQuad.Create(quadVertices, sizeof(quadVertices));
 			scrQuadA.Create();
 			scrQuadA.Bind();
-			gl::VertexAttribPointer(0, 2, sizeof(float) * 4, (void*)0);
-			gl::VertexAttribPointer(1, 2, sizeof(float) * 4, (void*)(2 * sizeof(float)));
+			scrQuadA.VertexAttribPointer(0, 2, sizeof(float) * 4, (void*)0);
+			scrQuadA.VertexAttribPointer(1, 2, sizeof(float) * 4, (void*)(2 * sizeof(float)));
 
 			TextRenderer.Create("assets/font/Minecraft.ttf", "shaderpacks/default/text.glsl");
 
@@ -271,16 +252,19 @@ namespace wc {
 			window.clear();
 
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			screenShader.use();
-			screenShader.setVec4("screenColor", world.screenColor);
+			screenShader.use();			
 			scrQuad.Bind();
 			scrQuadA.Bind();
 			screen.BindTexture();	// use the color attachment texture as the texture of the quad plane
 
 			glDrawArrays(GL_TRIANGLES, 0, 6);
-			TextRenderer.Draw(std::to_string((int)(1 / deltaTime)), window.GetSize(), { 25.0f, window.GetSize().y - 20 });
+			TextRenderer.Draw("FPS: " + std::to_string((int)(1 / deltaTime)), window.GetSize(), { 25.0f, window.GetSize().y - 20 });
 			TextRenderer.Draw("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), window.GetSize(), { 25.0f, window.GetSize().y - 60 });
 			TextRenderer.Draw("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), window.GetSize(), { 25.0f, window.GetSize().y - 100 });
+			TextRenderer.Draw("ChunkX: " + std::to_string(world.GetChunkPos(world.p.Position.x)) + 
+				" ChunkY: " + std::to_string(world.GetChunkPos(world.p.Position.y)) + 
+				" ChunkZ: " + std::to_string(world.GetChunkPos(world.p.Position.z)), 
+				window.GetSize(), { 25.0f, window.GetSize().y - 140 });
 			window.display();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
@@ -289,7 +273,7 @@ namespace wc {
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 	public:
-		GameEngine() {}
+		Application() {}
 	};
 }
 #endif

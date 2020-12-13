@@ -1,31 +1,22 @@
 #type vertex
 #version 330 core
-layout (location = 0) in vec2 a_Pos;
-layout (location = 1) in vec2 a_TexCoords;
+layout (location = 0) in vec3 a_Pos;
 
 out vec2 v_TexCoords;
 
 uniform mat4 lightSpaceMatrix;
-uniform mat4 model;
+uniform mat4 u_Model;
 
 void main()
 {
-    gl_Position = vec4(a_Pos, 0.0, 1.0); 
-    v_TexCoords = a_TexCoords;
+    gl_Position = lightSpaceMatrix * u_Model * vec4(a_Pos, 1.0); 
 }  
 
 #type fragment
 #version 330 core
-layout (location = 0) out vec4 Result;
-
-in vec2 v_TexCoords;
-
-uniform sampler2D depthMap;
 
 void main()
 {
-
-    float depthValue = texture(depthMap, v_TexCoords).r;
-    Result = vec4(vec3(depthValue), 1.0);
+ gl_FragDepth = gl_FragCoord.z;
 
 }

@@ -1,18 +1,18 @@
-#pragma once
+#ifndef FRAMEBUFFER_HPP
+#define FRAMEBUFFER_HPP
+
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <Utils/Log.hpp>
 
 namespace gl {
-    enum class FrameBufferStatus {
-        OK, FRAMEBUFFERNOTCOMPLETE
-    };
 
     class FrameBuffer {
     public:
         FrameBuffer() {}
 
-        ~FrameBuffer() { glDeleteFramebuffers(1, &m_RendererID); }
-        FrameBufferStatus Create(uint32_t width, uint32_t height) {
+        ~FrameBuffer() { Destroy(); }
+        virtual void Create(uint32_t width, uint32_t height) {
             glGenFramebuffers(1, &m_RendererID);
             glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
 
@@ -33,37 +33,27 @@ namespace gl {
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
 
             // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
-            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)  return FrameBufferStatus::FRAMEBUFFERNOTCOMPLETE;
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            return FrameBufferStatus::OK;
-        }
-        void Bind() {
-            glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
-        }
-        void unbind() {
+            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) WC_ERROR("Framebuffer not complete!");
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
-        void BindTexture() {
-            glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);	// use the color attachment texture as the texture of the quad plane
-        }
-        uint32_t GetRendererID() {
-            return m_RendererID;
-        }
-        uint32_t GetColorAttachment() {
-            return m_ColorAttachment;
-        }
-    private:
-        uint32_t m_RendererID, m_ColorAttachment;
+        void Destroy() { glDeleteFramebuffers(1, &m_RendererID); }
+
+        void Bind() { glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID); }
+
+        void unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+
+        void BindTexture() { glBindTexture(GL_TEXTURE_2D, m_ColorAttachment); } // use the color attachment texture as the texture of the quad plane
+
+        uint32_t GetRendererID() { return m_RendererID; }
+
+        uint32_t GetColorAttachment() { return m_ColorAttachment; }
+    protected:
+        uint32_t m_RendererID = 0, m_ColorAttachment = 0;
     };
 
-    class ShadowMap {
+    class ShadowMap : FrameBuffer {
     public:
-        ShadowMap() {
-
-        }
-
-        ~ShadowMap() { glDeleteFramebuffers(1, &m_RendererID); }
-        FrameBufferStatus Create(uint32_t width, uint32_t height) {
+        void Create(uint32_t width, uint32_t height) override {
             glGenFramebuffers(1, &m_RendererID);
 
             glGenTextures(1, &m_ColorAttachment);
@@ -74,30 +64,15 @@ namespace gl {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
             // attach depth texture as FBO's depth buffer
             glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_ColorAttachment, 0);
             glDrawBuffer(GL_NONE);
             glReadBuffer(GL_NONE);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            return FrameBufferStatus::OK;
-        }
-        void Bind() {
-            glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
-        }
-        void unbind() {
+            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) WC_ERROR("Framebuffer not complete!");
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
-        void BindTexture() {
-            glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);	// use the color attachment texture as the texture of the quad plane
-        }
-        uint32_t GetRendererID() {
-            return m_RendererID;
-        }
-        uint32_t GetColorAttachment() {
-            return m_ColorAttachment;
-        }
-    private:
-        uint32_t m_RendererID, m_ColorAttachment;
     };
 }
+#endif

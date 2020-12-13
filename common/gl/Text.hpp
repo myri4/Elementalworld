@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TEXT_HPP
+#define TEXT_HPP
 #include <string>
 #include <unordered_map>
 
@@ -9,7 +10,6 @@
 #include FT_FREETYPE_H
 
 namespace gl {
-    enum class TextStatus : int {OK, COULD_NOT_INIT_FREETYPE_LIB, FAILED_TO_FIND_FONT, FAILED_TO_LOAD_FONT, FAILED_TO_LOAD_GLYPH};
         class Character {
         public:
             Character() {}
@@ -23,23 +23,23 @@ namespace gl {
     class Text {
     public:
         Text() {}
-        TextStatus Create(const char* fontFileLoc, const char* Shader, const int& glyphs = 128) {
+        void Create(const char* fontFileLoc, const char* Shader, const int& glyphs = 128) {
             shader.Create(Shader);
 
             // FreeType
             // --------
             FT_Library ft;
             // All functions return a value different than 0 whenever an error occurred
-            if (FT_Init_FreeType(&ft)) return TextStatus::COULD_NOT_INIT_FREETYPE_LIB;
+            if (FT_Init_FreeType(&ft)) WC_ERROR("Could not init freetype library!");
             
 
             // find path to font
-            if (fontFileLoc == "") return TextStatus::FAILED_TO_FIND_FONT;
+            if (fontFileLoc == "") WC_ERROR("Could not find font file location!");
             
 
             // load font as face
             FT_Face face;
-            if (FT_New_Face(ft, fontFileLoc, 0, &face)) return TextStatus::FAILED_TO_LOAD_FONT;
+            if (FT_New_Face(ft, fontFileLoc, 0, &face)) { WC_ERROR("Failed to load font!"); }
             else {
                 // set size to load glyphs as
                 FT_Set_Pixel_Sizes(face, 0, 48);
@@ -52,7 +52,7 @@ namespace gl {
                 {
                     // Load character glyph 
                     if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-                        return TextStatus::FAILED_TO_LOAD_GLYPH;
+                        WC_ERROR("Failed to load glyph!");
                     }
                     // generate texture
                     uint32_t texture;
@@ -85,26 +85,25 @@ namespace gl {
             TextVA.Create();
             TextVA.Bind();
             TextVB.Create(nullptr, sizeof(float) * 6 * 4, GL_DYNAMIC_DRAW);
-            gl::VertexAttribPointer(0, 4, 4 * sizeof(float), 0);
-            return TextStatus::OK;
+            TextVA.VertexAttribPointer(0, 4, 4 * sizeof(float), 0);
         }
-        TextStatus Create(const char* fontFileLoc, const gl::Shader& Shader, const int& glyphs = 128) {
+        void Create(const char* fontFileLoc, const gl::Shader& Shader, const int& glyphs = 128) {
             this->shader = Shader;
 
             // FreeType
             // --------
             FT_Library ft;
             // All functions return a value different than 0 whenever an error occurred
-            if (FT_Init_FreeType(&ft)) return TextStatus::COULD_NOT_INIT_FREETYPE_LIB;
+            if (FT_Init_FreeType(&ft)) WC_ERROR("Could not init freetype library!");
 
 
             // find path to font
-            if (fontFileLoc == "") return TextStatus::FAILED_TO_FIND_FONT;
+            if (fontFileLoc == "") WC_ERROR("Could not find font file location!");
 
 
             // load font as face
             FT_Face face;
-            if (FT_New_Face(ft, fontFileLoc, 0, &face)) return TextStatus::FAILED_TO_LOAD_FONT;
+            if (FT_New_Face(ft, fontFileLoc, 0, &face)) { WC_ERROR("Failed to load font!"); }
             else {
                 // set size to load glyphs as
                 FT_Set_Pixel_Sizes(face, 0, 48);
@@ -117,7 +116,7 @@ namespace gl {
                 {
                     // Load character glyph 
                     if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-                        return TextStatus::FAILED_TO_LOAD_GLYPH;
+                        WC_ERROR("Failed to load glyph!");
                     }
                     // generate texture
                     uint32_t texture;
@@ -151,10 +150,7 @@ namespace gl {
             TextVA.Create();
             TextVA.Bind();
             TextVB.Create(nullptr, sizeof(float) * 6 * 4, GL_DYNAMIC_DRAW);
-            gl::VertexAttribPointer(0, 4, 4 * sizeof(float), 0);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glBindVertexArray(0);
-            return TextStatus::OK;
+            TextVA.VertexAttribPointer(0, 4, 4 * sizeof(float), 0);
         }
 
         void Draw(const std::string& text, const glm::vec2& windowSize, glm::vec2 pos = { 0,0 }, float scale = 0.4f, glm::vec3 color = glm::vec3(0.5, 0.8f, 0.2f)) {
@@ -189,7 +185,6 @@ namespace gl {
                 // update content of VBO memory
                 TextVB.Update(0, sizeof(vertices), vertices);
 
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
                 // render quad
                 glDrawArrays(GL_TRIANGLES, 0, 6);
                 // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
@@ -203,10 +198,5 @@ namespace gl {
 
         std::unordered_map<char, Character> Characters;
     };
-    struct Font {
-        void LoadChar() {
-
-        }
-        std::unordered_map<char, Character> Characters;
-    };
 }
+#endif

@@ -188,7 +188,6 @@
     <ClInclude Include="common\gl\IndexBuffer.hpp" />
     <ClInclude Include="common\gl\Light.hpp" />
     <ClInclude Include="common\gl\Material.hpp" />
-    <ClInclude Include="common\gl\Particle.hpp" />
     <ClInclude Include="common\gl\Shaders.h" />
     <ClInclude Include="common\gl\Shaders.hpp" />
     <ClInclude Include="common\gl\Skybox.h" />
@@ -229,7 +228,7 @@
     <ClInclude Include="src\world\Biome.hpp" />
     <ClInclude Include="src\world\Block.hpp" />
     <ClInclude Include="src\Engine.h" />
-    <ClInclude Include="src\Game.hpp" />
+    <ClInclude Include="src\Application.hpp" />
     <ClInclude Include="src\entityes\Entity.hpp" />
     <ClInclude Include="src\entityes\Player.hpp" />
     <ClInclude Include="common\Utilitiess\Log.h" />
@@ -242,6 +241,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="config\window.lua" />
+    <None Include="scripts\blocks.lua" />
     <None Include="scripts\forest.lua" />
     <None Include="scripts\glass.lua" />
     <None Include="scripts\dirt.lua" />
@@ -249,6 +249,7 @@
     <None Include="scripts\player.lua" />
     <None Include="scripts\sand.lua" />
     <None Include="scripts\skybox.lua" />
+    <None Include="scripts\snow.lua" />
     <None Include="scripts\stone.lua" />
     <None Include="scripts\water.lua" />
     <None Include="scripts\wood.lua" />

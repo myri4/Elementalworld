@@ -40,9 +40,7 @@ void main(){
 
 
 #type fragment
-#version 460 core 
-
-layout (location = 0) out vec4 Result;
+#version 460 core
 
 in vec2 v_TexCoords;
 uniform sampler2D u_Texture;
@@ -53,5 +51,5 @@ void main()
 
     if(texColor.a <= 0) discard;
        
-    Result = texColor;
+    gl_FragColor = texColor;
 }

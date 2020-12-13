@@ -202,7 +202,11 @@ namespace wc{
         if (key == Key::F14) if (GetAsyncKeyState(VK_F14)) return true;
         if (key == Key::F15) if (GetAsyncKeyState(VK_F15)) return true;
            
-           
+        if (key == Key::Up) if (GetAsyncKeyState(VK_UP)) return true;
+        if (key == Key::Down) if (GetAsyncKeyState(VK_DOWN)) return true;
+
+        if (key == Key::Left) if (GetAsyncKeyState(VK_LEFT)) return true;
+        if (key == Key::Right) if (GetAsyncKeyState(VK_RIGHT)) return true;
 
 
 #endif // _WIN32

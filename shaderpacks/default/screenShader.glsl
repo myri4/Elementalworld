@@ -13,15 +13,16 @@ void main()
 
 #type fragment
 #version 330 core
-layout (location = 0) out vec4 Result;
 
 in vec2 v_TexCoords;
 
 uniform sampler2D screenTexture;
-uniform vec4 screenColor = vec4(1.0f);
 
-const float contrast = 0.0;
+uniform float contrast;
 
+uniform bool hdr = true;
+uniform float exposure = 1.0f;
+uniform float gamma = 1.2;
 
 vec3 GetKernelEffect(float kernel[9]){
 
@@ -58,6 +59,20 @@ void main()
         1,  1, 1
     );
 
-    Result = texture(screenTexture, v_TexCoords);
-    Result.rgb = (Result.rgb - 0.5f) * (1.0f + contrast) + 0.5f;
+    vec3 hdrColor = texture(screenTexture, v_TexCoords).rgb;
+    vec3 result;
+    if(hdr)
+    {
+        // exposure
+        result = vec3(1.0) - exp(-hdrColor * exposure);
+        // also gamma correct while we're at it       
+        result = pow(result, vec3(1.0 / gamma));
+    }
+    else
+    {
+        result = pow(hdrColor, vec3(1.0 / gamma));
+    }
+    result = (result - 0.5f) * (1.0f + contrast) + 0.5f;
+
+    gl_FragColor = vec4(result, 1.0f);
 }

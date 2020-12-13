@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SHADERS_HPP
+#define SHADERS_HPP
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -11,17 +12,15 @@
 
 
 namespace gl{
-	enum class ShaderStatus {
-		OK, FILE_NOT_SUCCESFULLY_READ
-	};
 class Shader{
 public:
 	// constructor generates the shader on the fly
 	// ------------------------------------------------------------------------
 	
-	Shader (){}
-	Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr){Create(vertexPath, fragmentPath, geometryPath);}
-	ShaderStatus Create(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr) {
+	Shader () {}
+	~Shader() { Destroy(); }
+	Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr){ Create(vertexPath, fragmentPath, geometryPath); }
+	void Create(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr) {
 		if (!m_RendererID) {			
 		// 1. retrieve the vertex/fragment source code from filePath
 		std::string vertexCode;
@@ -58,7 +57,7 @@ public:
 				geometryCode = gShaderStream.str();
 			}
 		}
-		catch (std::ifstream::failure& e) { return ShaderStatus::FILE_NOT_SUCCESFULLY_READ; }
+		catch (std::ifstream::failure& e) { WC_ERROR("The shader was not found! Check your filepath!"); }
 		// 1. compile shaders
 		uint32_t vertex = CompileShader(vertexCode.c_str(), "vertex");
 		uint32_t fragment = CompileShader(fragmentCode.c_str(), "fragment");
@@ -85,11 +84,9 @@ public:
 		glDeleteShader(fragment);
 		if (geometryPath != nullptr)
 			glDeleteShader(geometry);
-		return ShaderStatus::OK;
 		}
-		return ShaderStatus::OK;
 	}
-	ShaderStatus Create(const char* filepath) {
+	void Create(const char* filepath) {
 		if (!m_RendererID) {
 			std::string line;
 			std::ifstream stream;
@@ -112,8 +109,7 @@ public:
 						shaderStream[(int)type] << line << '\n';
 				}
 			}
-			else
-				return ShaderStatus::FILE_NOT_SUCCESFULLY_READ;
+			else WC_ERROR("The shader was not parsed correctly! Check your filepath or your shader file!");
 			stream.close();
 
 			std::string vertexCode;
@@ -141,10 +137,7 @@ public:
 			glDeleteShader(fragment);
 			if (!geometryCode.empty())
 			glDeleteShader(geometry);
-
-			return ShaderStatus::OK;
 		}
-		return ShaderStatus::OK;
 	}
 	//void stringSource(const char*){}
 	// activate the shader
@@ -267,6 +260,8 @@ public:
 		glUniform1fv(loc, size, arr);
 	}
 	uint32_t GetRendererID() const {return m_RendererID;}
+
+	void Destroy() { glDeleteProgram(m_RendererID); }
 	// utility function for checking shader compilation/linking errors.
 	// ------------------------------------------------------------------------
 private:
@@ -329,7 +324,5 @@ private:
 		return shader;
 	}
 };
-void HandleErrors(ShaderStatus func) {
-	if(func == ShaderStatus::FILE_NOT_SUCCESFULLY_READ) WC_ERROR("SHADER::FILE_NOT_SUCCESFULLY_READ");
 }
-}
+#endif
