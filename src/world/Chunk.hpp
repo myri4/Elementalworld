@@ -25,7 +25,7 @@ glm::vec3 to3D(const int& idx, const glm::ivec3& size = glm::vec3(chunkSize)) {
 class Chunk {
 public: // Variables
 	uint32_t IndexCount = 0;
-	glm::vec3 chunkPos = glm::vec3(0);
+	glm::ivec3 chunkPos = glm::vec3(0);
 	BlockID chunkData[chunkSize][chunkSize][chunkSize] = {};
 	bool used = false;
 	bool generated = false;

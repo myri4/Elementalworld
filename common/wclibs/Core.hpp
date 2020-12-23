@@ -6,7 +6,6 @@
 #pragma comment(lib, "glfw3.lib")
 #pragma comment(lib, "irrKlang.lib")
 
-#ifdef _WIN32
 //Visual studio specific
 #pragma comment(lib, "kernel32.lib")
 #pragma comment(lib, "user32.lib")
@@ -21,5 +20,4 @@
 #pragma comment(lib, "odbc32.lib")
 #pragma comment(lib, "odbccp32.lib")
 
-#endif // _WIN32
 #endif

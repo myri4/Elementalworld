@@ -19,7 +19,7 @@ namespace wc {
 		void SetSpriteRect(const glm::vec2& startPos, const glm::vec2& endPos) { this->startPos = startPos; this->endPos = endPos;	}
 	};
 
-	class GameEngine : public Engine {
+	class Application : public Engine {
 	private:
 		Window window;
 
@@ -34,13 +34,11 @@ namespace wc {
 		gl::IndexBuffer quadEBO;
 
 		//----------------------------------------------------------------------------------------------------------------------
-		void OnEvent() override {}
-		//----------------------------------------------------------------------------------------------------------------------
-		EngineStatus GetEngineStatus() override {
+		bool IsEngineOK() override {
 
-			if (window.isOpen()) return EngineStatus::OK;
+			if (window.isOpen()) return true;
 
-			return EngineStatus::FAIL;
+			return false;
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnInput() override {}
@@ -131,7 +129,7 @@ namespace wc {
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 	public:
-		GameEngine() {}
+		Application() {}
 	};
 }
 #endif
@@ -160,15 +158,12 @@ namespace wc {
 		gl::Text TextRenderer;
 
 		//irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
-
 		//----------------------------------------------------------------------------------------------------------------------
-		void OnEvent() override {}
-		//----------------------------------------------------------------------------------------------------------------------
-		EngineStatus GetEngineStatus() override {
+		bool IsEngineOK() override {
 
-			if (window.isOpen()) return EngineStatus::OK;
+			if (window.isOpen()) return true;
 
-			return EngineStatus::FAIL;
+			return false;
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnInput() override {
@@ -209,22 +204,20 @@ namespace wc {
 			glCullFace(GL_BACK);
 			glFrontFace(GL_CW);
 
-			//SoundEngine->play2D("assets/sounds/Alan Walker - The Spectre_wJnBTPUQS5A_youtube.mp3");
-
 			window.setClearColor(glm::vec4(0.1f, 3.5f, 5.0f, 1.0f));
 
 			screenShader.Create("shaderpacks/default/screenShader.glsl");
 			screen.Create(window.GetSize().x, window.GetSize().y);
 
 			float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
-			// positions   // texCoords
-			-1.0f, -1.0f,  0.0f, 0.0f,
-			-1.0f,  1.0f,  0.0f, 1.0f,
-			 1.0f, -1.0f,  1.0f, 0.0f,
+				// positions   // texCoords
+				-1.0f, -1.0f,  0.0f, 0.0f,
+				-1.0f,  1.0f,  0.0f, 1.0f,
+				 1.0f, -1.0f,  1.0f, 0.0f,
 
-			 1.0f, -1.0f,  1.0f, 0.0f,
-			-1.0f,  1.0f,  0.0f, 1.0f,
-			 1.0f,  1.0f,  1.0f, 1.0f,
+				 1.0f, -1.0f,  1.0f, 0.0f,
+				-1.0f,  1.0f,  0.0f, 1.0f,
+				 1.0f,  1.0f,  1.0f, 1.0f,
 			};
 
 			scrQuad.Create(quadVertices, sizeof(quadVertices));
@@ -261,9 +254,10 @@ namespace wc {
 			TextRenderer.Draw("FPS: " + std::to_string((int)(1 / deltaTime)), window.GetSize(), { 25.0f, window.GetSize().y - 20 });
 			TextRenderer.Draw("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), window.GetSize(), { 25.0f, window.GetSize().y - 60 });
 			TextRenderer.Draw("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), window.GetSize(), { 25.0f, window.GetSize().y - 100 });
-			TextRenderer.Draw("ChunkX: " + std::to_string(world.GetChunkPos(world.p.Position.x)) + 
-				" ChunkY: " + std::to_string(world.GetChunkPos(world.p.Position.y)) + 
-				" ChunkZ: " + std::to_string(world.GetChunkPos(world.p.Position.z)), 
+			TextRenderer.Draw(
+				 "ChunkX: " + std::to_string(glm::floor(world.p.Position.x / chunkSize)) +
+				" ChunkY: " + std::to_string(glm::floor(world.p.Position.y / chunkSize)) +
+				" ChunkZ: " + std::to_string(glm::floor(world.p.Position.z / chunkSize)),
 				window.GetSize(), { 25.0f, window.GetSize().y - 140 });
 			window.display();
 		}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../wclibs/Core.hpp"
+#include <Windows.h>
 
 namespace wc{
     namespace Keyboard {

@@ -13,9 +13,8 @@ using Scope = std::unique_ptr<T>;
 
 //World defs
 using ChunkID = uint16_t; // This represents the chunk id in the chunk array
-using ChunkPos = int32_t; // This represents the chunk position in the 3D world
 
 using Face = std::array < glm::vec3, 4 >;
 
-using BlockID = uint8_t;
+using BlockID = int8_t;
 #endif

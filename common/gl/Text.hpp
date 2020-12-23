@@ -48,12 +48,11 @@ namespace gl {
                 glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
                 // load first 128 characters of ASCII set
-                for (unsigned char c = 0; c < glyphs; c++)
+                for (uint8_t c = 0; c < glyphs; c++)
                 {
                     // Load character glyph 
-                    if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-                        WC_ERROR("Failed to load glyph!");
-                    }
+                    if (FT_Load_Char(face, c, FT_LOAD_RENDER)) WC_ERROR("Failed to load glyph!");
+                    
                     // generate texture
                     uint32_t texture;
                     glGenTextures(1, &texture);
@@ -73,12 +72,10 @@ namespace gl {
                     };
                     Characters.insert(std::pair<char, Character>(c, character));
                 }
-                glBindTexture(GL_TEXTURE_2D, 0);
             }
             // destroy FreeType once we're finished
             FT_Done_Face(face);
             FT_Done_FreeType(ft);
-
 
             // configure VAO/VBO for texture quads
             // -----------------------------------
@@ -87,6 +84,7 @@ namespace gl {
             TextVB.Create(nullptr, sizeof(float) * 6 * 4, GL_DYNAMIC_DRAW);
             TextVA.VertexAttribPointer(0, 4, 4 * sizeof(float), 0);
         }
+
         void Create(const char* fontFileLoc, const gl::Shader& Shader, const int& glyphs = 128) {
             this->shader = Shader;
 
@@ -96,10 +94,8 @@ namespace gl {
             // All functions return a value different than 0 whenever an error occurred
             if (FT_Init_FreeType(&ft)) WC_ERROR("Could not init freetype library!");
 
-
             // find path to font
             if (fontFileLoc == "") WC_ERROR("Could not find font file location!");
-
 
             // load font as face
             FT_Face face;
@@ -115,9 +111,8 @@ namespace gl {
                 for (uint8_t c = 0; c < glyphs; c++)
                 {
                     // Load character glyph 
-                    if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-                        WC_ERROR("Failed to load glyph!");
-                    }
+                    if (FT_Load_Char(face, c, FT_LOAD_RENDER)) WC_ERROR("Failed to load glyph!");
+                    
                     // generate texture
                     uint32_t texture;
                     glGenTextures(1, &texture);
@@ -138,7 +133,6 @@ namespace gl {
                     //Characters.insert(std::pair<char, Character>(c, character));
                     Characters[c] = character;
                 }
-                glBindTexture(GL_TEXTURE_2D, 0);
             }
             // destroy FreeType once we're finished
             FT_Done_Face(face);
