@@ -38,15 +38,15 @@ namespace gl {
         }
         void Destroy() { glDeleteFramebuffers(1, &m_RendererID); }
 
-        void Bind() { glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID); }
+        void Bind() const { glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID); }
 
-        void unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+        void unbind() const { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
-        void BindTexture() { glBindTexture(GL_TEXTURE_2D, m_ColorAttachment); } // use the color attachment texture as the texture of the quad plane
+        void BindTexture() const { glBindTexture(GL_TEXTURE_2D, m_ColorAttachment); } // use the color attachment texture as the texture of the quad plane
 
-        uint32_t GetRendererID() { return m_RendererID; }
+        uint32_t GetRendererID() const { return m_RendererID; }
 
-        uint32_t GetColorAttachment() { return m_ColorAttachment; }
+        uint32_t GetColorAttachment() const { return m_ColorAttachment; }
     protected:
         uint32_t m_RendererID = 0, m_ColorAttachment = 0;
     };
@@ -56,9 +56,10 @@ namespace gl {
         void Create(uint32_t width, uint32_t height) override {
             glGenFramebuffers(1, &m_RendererID);
 
+            // create depth texture
             glGenTextures(1, &m_ColorAttachment);
             glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -70,9 +71,18 @@ namespace gl {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_ColorAttachment, 0);
             glDrawBuffer(GL_NONE);
             glReadBuffer(GL_NONE);
-            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) WC_ERROR("Framebuffer not complete!");
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
+
+        void Bind() const { glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID); }
+
+        void unbind() const { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+
+        void BindTexture() const { glBindTexture(GL_TEXTURE_2D, m_ColorAttachment); } // use the color attachment texture as the texture of the quad plane
+
+        uint32_t GetRendererID() const { return m_RendererID; }
+
+        uint32_t GetColorAttachment() const { return m_ColorAttachment; }
     };
 }
 #endif

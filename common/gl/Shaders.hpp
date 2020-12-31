@@ -144,7 +144,9 @@ public:
 	// ------------------------------------------------------------------------
 	void use() const
 	{
-		glUseProgram(m_RendererID);
+		int id;
+		glGetIntegerv(GL_CURRENT_PROGRAM, &id);
+		if (id != m_RendererID)	glUseProgram(m_RendererID);
 	}
 	void unUse() const
 	{

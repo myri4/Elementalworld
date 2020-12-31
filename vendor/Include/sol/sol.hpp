@@ -34,8 +34,6 @@
 
 // beginning of sol/version.hpp
 
-#include <sol/config.hpp>
-
 #include <cstdint>
 
 #define SOL_VERSION_MAJOR 3

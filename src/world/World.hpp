@@ -11,19 +11,47 @@
 #include <Utils/Time.hpp>
 #include <Maths/Frustum.hpp>
 #include <Maths/Noise.hpp>
+#include <map>
 
 namespace wc {
 
 	class Singleplayer : public NonCopyable {
 	public:
 		Player p;
-		glm::vec4 screenColor = glm::vec4(1.0f);
 
 		Singleplayer() {}
 
 		void Create() {
 			worldShader.Create("shaderpacks/default/chunkShader.glsl");
-			LoadBlocks();
+			fluidShader.Create("shaderpacks/default/fluidShader.glsl");
+			sol::state noiseState;
+			noiseState.script_file("scripts/worldGen.lua");
+			worldNoise.lacunarity = noiseState["lacunarity"];
+			worldNoise.multiplier = noiseState["multiplier"];
+			worldNoise.octaves = noiseState["octaves"];
+			worldNoise.persistance = noiseState["persistance"];
+			worldNoise.scale = noiseState["scale"];
+			worldNoise.seed = noiseState["seed"];
+			LoadBlocks();			
+
+			p.InitPlayer({ chunkSize * chunkSize / 2 + chunkSize,chunkSize * 4,chunkSize * chunkSize / 2 });
+
+			for (ChunkID i = 0; i < world.size(); i++) {
+				world[i].chunkPos = to3D(i);
+				//Configuring the vertex array
+				world[i].chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
+				world[i].chunkMeshArray.Create();
+				world[i].chunkMeshArray.VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
+				world[i].chunkMeshArray.VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
+
+				//Configuring the vertex array
+				world[i].chunkFluidBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
+				world[i].chunkFluidArray.Create();
+				world[i].chunkFluidArray.VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
+				world[i].chunkFluidArray.VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
+			}
+
+
 			uint32_t indices[MaxFaceCount * 6];
 			uint32_t ioffset = 0;
 			for (uint32_t i = 0; i < sizeof(indices) / sizeof(uint32_t); i += 6) {
@@ -37,29 +65,30 @@ namespace wc {
 
 				ioffset += 4;
 			}
-			worldIndexBuffer.Create(indices, sizeof(indices));			
-
-			p.InitPlayer({ chunkSize * chunkSize / 2 + chunkSize,chunkSize * 4,chunkSize * chunkSize / 2 });
-
-			for (ChunkID i = 0; i < world.size(); i++) {
-				world[i].chunkPos = to3D(i);
-				//Configuring the vertex array
-				world[i].chunkMeshArray.Create();
-				world[i].chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
-				world[i].chunkMeshArray.VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
-				world[i].chunkMeshArray.VertexAttribPointer(1, 2, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
-			}
+			worldIndexBuffer.Create(indices, sizeof(indices));
 		}
 
 		void Update(const glm::vec2& windpos, const glm::vec2& windsize, const bool& CenterMouse, const float& deltaTime) {
 			p.UpdatePlayer(windpos, windsize, CenterMouse, deltaTime);
 
-			blockAtlas.Bind();
-			worldIndexBuffer.Bind(); // Binding the index buffer
+			blockAtlas.Bind();			
+
+			// activate shader
+			fluidShader.use();
+			
+			// pass projection matrix to shader (note that in this case it could change every frame)
+			fluidShader.setMat4("u_Projection", p.projection);
+			
+			// camera/view transformation
+			fluidShader.setMat4("u_View", p.GetView());
+
+			if (waveTime < 1.3) waveTime += 0.0001; 
+			else waveTime = 0.0;
+			fluidShader.setFloat("waveTime", waveTime);
 
 			// activate shader
 			worldShader.use();
-			worldShader.setVec3("viewPos", p.Position);
+			worldShader.setVec3("viewPos", p.camera.Position);
 
 			// pass projection matrix to shader (note that in this case it could change every frame)
 			worldShader.setMat4("u_Projection", p.projection);
@@ -71,6 +100,24 @@ namespace wc {
 
 				uint8_t chunkHalf = chunkSize / 2;
 				glm::vec3 currChunkPos = world[i].chunkPos;
+				glm::vec3 pos = world[i].chunkPos * glm::vec3(chunkSize);
+
+				if (world[i].IndexCount > 0) {
+					worldShader.use();
+					world[i].chunkMeshArray.Bind();
+					worldShader.setMat4("u_Model", glm::translate(glm::mat4(1.0f), pos)); // calculate the model matrix for each object and pass it to shader before drawing
+					glDrawElements(GL_TRIANGLES, world[i].IndexCount, GL_UNSIGNED_INT, nullptr); // Drawing the cubes
+				}
+
+				if (world[i].fIndexCount > 0) {
+					world[i].chunkFluidArray.Bind();
+					fluidShader.use();
+					fluidShader.setVec3("chunkPos", pos);
+					fluidShader.setMat4("u_Model", glm::translate(glm::mat4(1.0f), (glm::vec3)pos)); // calculate the model matrix for each object and pass it to shader before drawing
+					glDisable(GL_CULL_FACE);
+					glDrawElements(GL_TRIANGLES, world[i].fIndexCount, GL_UNSIGNED_INT, nullptr); // Drawing the cubes
+					glEnable(GL_CULL_FACE);
+				}				
 
 				if (currChunkPos.x < glm::floor(p.Position.x / chunkSize) - chunkHalf) ResetChunk(i, glm::vec3(glm::floor(p.Position.x / chunkSize) + chunkHalf - 1, currChunkPos.y, currChunkPos.z));
 				if (currChunkPos.x > glm::floor(p.Position.x / chunkSize) + chunkHalf) ResetChunk(i, glm::vec3(glm::floor(p.Position.x / chunkSize) - chunkHalf + 1, currChunkPos.y, currChunkPos.z));
@@ -81,16 +128,9 @@ namespace wc {
 				if (currChunkPos.z > glm::floor(p.Position.z / chunkSize) + chunkHalf) ResetChunk(i, glm::vec3(currChunkPos.x, currChunkPos.y, glm::floor(p.Position.z / chunkSize) - chunkHalf + 1));
 				if (currChunkPos.z < glm::floor(p.Position.z / chunkSize) - chunkHalf) ResetChunk(i, glm::vec3(currChunkPos.x, currChunkPos.y, glm::floor(p.Position.z / chunkSize) + chunkHalf - 1));
 
-				if (world[i].IndexCount > 0) {
-					world[i].chunkMeshArray.Bind();
-					glm::ivec3 pos = world[i].chunkPos * glm::ivec3(chunkSize);
-					worldShader.setMat4("u_Model", glm::translate(glm::mat4(1.0f), (glm::vec3)pos)); // calculate the model matrix for each object and pass it to shader before drawing
-					glDrawElements(GL_TRIANGLES, world[i].IndexCount, GL_UNSIGNED_INT, nullptr); // Drawing the cubes
-				}
-
 				// Updating the chunk`s mesh
+				if (!world[i].generated) GenerateChunkTerrain(i);
 				if (world[i].canBeUpdated) {
-					if (world[i].generated == false) GenerateChunkTerrain(i);
 
 					UpdateMesh(i);
 					world[i].canBeUpdated = false;
@@ -98,14 +138,13 @@ namespace wc {
 			}
 		}
 
-		void OnEvent(const float& deltaTime) {
+		void OnInput(const float& deltaTime) {
 			p.UpdatePlayerInput(deltaTime);
 			if (wc::Mouse::isButtonPressed() == wc::Mouse::MouseButton::LBUTTON || wc::Mouse::isButtonPressed() == wc::Mouse::MouseButton::RBUTTON) {
 				glm::vec3 m_rayLastPos = glm::vec3(0.0f);
-				for (Ray ray(p.camera.Position); ray.getLength() < 4; ray.Step(p.camera.Yaw, p.camera.Pitch)) {				
+				for (Ray ray(p.Position); ray.getLength() < 4; ray.Step(p.camera.Yaw, p.camera.Pitch)) {				
 
-					if (getBlock(ray.getEnd()) > 0)
-						if (wc::Mouse::isButtonPressed() == wc::Mouse::MouseButton::LBUTTON) { setBlock(ray.getEnd(), 0); break; }
+					if (getBlock(ray.getEnd()) > 0)	if (wc::Mouse::isButtonPressed() == wc::Mouse::MouseButton::LBUTTON) { setBlock(ray.getEnd(), 0); break; }
 						else if (wc::Mouse::isButtonPressed() == wc::Mouse::MouseButton::RBUTTON) { setBlock(m_rayLastPos, p.ItemHolding); break; }
 					
 					m_rayLastPos = ray.getEnd();
@@ -113,6 +152,7 @@ namespace wc {
 			}
 		}
 
+		float waveTime = 1.3f;
 	private:
 
 		//Chunk managing
@@ -120,25 +160,30 @@ namespace wc {
 		void ResetChunk(const ChunkID& chunk, const glm::vec3& newChunkPos) {
 			world[chunk].chunkPos = newChunkPos;
 			world[chunk].generated = false;
-			world[chunk].canBeUpdated = true;
+			UpdateMesh(chunk);
 		}
 
 		void GenerateChunkTerrain(const ChunkID& chunk) {
 			if (!world[chunk].generated) {
+
+				int8_t water_level = 17;
+				int8_t snow_level = 1;
+				memset(&world[chunk].chunkData, 0, sizeof(world[chunk].chunkData));
 				for (uint8_t z = 0; z < chunkSize; z++)
 					for (uint8_t x = 0; x < chunkSize; x++) {
-						int heightMap = worldNoise.getNoiseFor(glm::vec2(x, z), glm::vec2(world[chunk].chunkPos.x, world[chunk].chunkPos.z), chunkSize);
+						int voxelX = x + world[chunk].chunkPos.x * chunkSize;
+						int voxelZ = z + world[chunk].chunkPos.z * chunkSize;
+						int heightMap = worldNoise.getNoiseFor(voxelX, voxelZ);
 						for (uint8_t y = 0; y < chunkSize; y++) {
 							int32_t pos = glm::floor(world[chunk].chunkPos.y * chunkSize + y);
-							setBlock(glm::vec3(x, y, z), 0, chunk);
 							if (pos == heightMap) { setBlock(glm::vec3(x, y, z), 1, chunk); }
 							if (pos == heightMap && pos <= water_level + 1 - rand() % 3) { setBlock(glm::vec3(x, y, z), 4, chunk); }
 							if (pos > heightMap && pos < water_level) { setBlock(glm::vec3(x, y, z), 5, chunk); }
 							if (pos < heightMap) { setBlock(glm::vec3(x, y, z), 2, chunk); }
 							if (pos < heightMap - rand() % 3) { setBlock(glm::vec3(x, y, z), 3, chunk); }
 							if (pos == heightMap && rand() % 100 > 98 && pos > water_level) setBlock(glm::vec3(x, y, z), 7, chunk);
-							if (pos == heightMap && pos > snow_level) { setBlock(glm::vec3(x, y + 1, z), 8, chunk); }
-							if (pos == heightMap && pos > snow_level - 1 + rand() % 5) { setBlock(glm::vec3(x, y + 1, z), 8, chunk); }
+							//if (pos == heightMap && pos >= snow_level) { setBlock(glm::vec3(x, y + 1, z), 8, chunk); }
+							//if (pos == heightMap && pos > snow_level - 1 + rand() % 5) { setBlock(glm::vec3(x, y + 1, z), 8, chunk); }
 						}
 					}
 				world[chunk].generated = true;
@@ -171,7 +216,7 @@ namespace wc {
 		void setBlock(const glm::ivec3& pos, const BlockID& block) {
 			int16_t chunk = getChunkID(getChunkPos(pos));
 
-			if (chunk < 0) { WC_ERROR("Cant find chunk!"); return; }
+			if (chunk < 0)  return; 
 			int8_t x = getBlockPos(pos).x;
 			int8_t y = getBlockPos(pos).y;
 			int8_t z = getBlockPos(pos).z;
@@ -192,7 +237,9 @@ namespace wc {
 			ChunkID chunk = chunkID;
 			if (chunk < world.size() && chunk > 0) {
 				uint32_t offset = 0;
+				uint32_t foffset = 0;
 				world[chunk].IndexCount = 0;
+				world[chunk].fIndexCount = 0;
 
 				gl::Vertex worldMesh[MaxVertexCount];
 				gl::Vertex worldFluidMesh[MaxVertexCount];
@@ -366,20 +413,25 @@ namespace wc {
 								if (y + 1 < chunkSize) {
 									BlockID checkBlock = world[chunk].chunkData[x][y + 1][z];
 									if (blockData[block].blockConnectionType != blockData[checkBlock].blockConnectionType)
-										addFace(TOP_FACE, glm::vec3(x, y, z), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::TOP], glm::vec3(0.0f, 1.0f, 0.0f), world[chunk].IndexCount, offset, worldMesh);
+										addFace(TOP_FACE, glm::vec3(x, y, z), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::TOP], glm::vec3(0.0f, 1.0f, 0.0f), world[chunk].fIndexCount, foffset, worldFluidMesh);
 								}
 								else if (chunk + to1D({ 0,1,0 }) < world.size()) {
 									BlockID checkBlock = world[chunk + to1D({ 0,1,0 })].chunkData[x][0][z];
 									if (blockData[block].blockConnectionType != blockData[checkBlock].blockConnectionType)
-										addFace(TOP_FACE, glm::vec3(x, y, z), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::TOP], glm::vec3(0.0f, 1.0f, 0.0f), world[chunk].IndexCount, offset, worldMesh);
+										addFace(TOP_FACE, glm::vec3(x, y, z), blockData[world[chunk].chunkData[x][y][z]].TexCoords[(int)BlockTexture::TOP], glm::vec3(0.0f, 1.0f, 0.0f), world[chunk].fIndexCount, foffset, worldFluidMesh);
 								}
 							}
 						}
 				worldIndexBuffer.Bind();
+
 				world[chunk].chunkMeshArray.Bind();
-				if (world[chunk].IndexCount > 0) {
-					world[chunk].chunkMeshBuffer.Update(0, sizeof(worldMesh), &worldMesh);
-				}
+				if (world[chunk].IndexCount > 0) world[chunk].chunkMeshBuffer.Update(0, sizeof(worldMesh), &worldMesh);
+
+				worldIndexBuffer.Bind();
+
+				world[chunk].chunkFluidArray.Bind();
+				if (world[chunk].fIndexCount > 0) world[chunk].chunkFluidBuffer.Update(0, sizeof(worldFluidMesh), &worldFluidMesh);
+				
 			}
 		}			
 
@@ -515,16 +567,15 @@ namespace wc {
 			blockData[block.id] = block;
 		}
 
-		int16_t getChunkID(const glm::ivec3& pos) {
-			for (uint16_t i = 0; i < world.size(); i++)
+		int16_t getChunkID(const glm::vec3& pos) {
+			for (ChunkID i = 0; i < world.size(); i++)
 				if (world[i].chunkPos == pos) return i;
+			WC_ERROR("Cant find chunk at location: X:{0} Y:{1}, Z:{2}", pos.x, pos.y, pos.z);
 			return -1;
 		}
 
-		int8_t water_level = 32;
-		int8_t snow_level = 64;
-
 		gl::Shader worldShader;
+		gl::Shader fluidShader;
 
 		gl::Texture blockAtlas;
 		gl::IndexBuffer worldIndexBuffer;

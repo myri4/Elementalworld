@@ -5,19 +5,16 @@
 
 struct Noise {
 	uint8_t octaves = 1;
-	float scale = 90.f;
-	float multiplier = 32.f;
-	float persistance = 0.5f;
-	float lacunarity = 2.f;
-	int16_t seed = 10;
-	float getNoiseFor(const glm::vec2& pos, const glm::vec2& chunkPosition, const uint8_t& chunkSize)
+	float scale = 0;
+	float multiplier = 0;
+	float persistance = 0;
+	float lacunarity = 0;
+	int16_t seed = 0;
+	float getNoiseFor(const int& voxelX, const int& voxelZ)
 	{
 		float amplitude = 1.0f;
 		float frequency = 1.0f;
 		float noiseValue = 0.0f;
-
-		int voxelX = pos.x + chunkPosition.x * chunkSize;
-		int voxelZ = pos.y + chunkPosition.y * chunkSize;
 
 		for (uint8_t i = 0; i < octaves; i++) {
 			float sampleX = voxelX / scale * frequency;
@@ -29,8 +26,7 @@ struct Noise {
 			frequency *= lacunarity;
 		}
 
-		noiseValue *= multiplier + multiplier;
-		return noiseValue;
+		return noiseValue * multiplier;
 	}
 };
 

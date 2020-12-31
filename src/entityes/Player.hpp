@@ -2,14 +2,18 @@
 #include "Entity.hpp"
 #include "playerSpec/Ray.hpp"
 #include <wclibs/pch.hpp>
+#include <Utils/Mouse.hpp>
 
 namespace wc{
 class Player : public Entity{
 private:
 	void Update() override {}
+
+	float MouseSensitivity = 5;
+	float MovementSpeed = 4;
+	float Far = 1100.0f;
 public:
 	Camera camera;
-	float Far = 1100.0f;
 	BlockID ItemHolding = 1;
 
 	glm::mat4 projection = glm::mat4(0.0f);
@@ -18,7 +22,7 @@ public:
 	~Player() override{}
 
 	void UpdatePlayerInput(const float& deltaTime) {
-		float velocity = camera.MovementSpeed * deltaTime;
+		float velocity = MovementSpeed * deltaTime;
 		if (Keyboard::isButtonPressed(Keyboard::Key::W)) { // Front
 			camera.Position.x += glm::cos(glm::radians(camera.Yaw)) * velocity;
 			camera.Position.z += glm::sin(glm::radians(camera.Yaw)) * velocity;
@@ -38,10 +42,10 @@ public:
 		}
 		if (Keyboard::isButtonPressed(Keyboard::Key::Space))  camera.Position.y += velocity;			  // Up
 		if (Keyboard::isButtonPressed(Keyboard::Key::LShift)) camera.Position.y -= velocity;			  // Down
-		if (Keyboard::isButtonPressed(Keyboard::Key::C)) { camera.Zoom = 10; camera.MouseSensitivity = 18; }
+		if (Keyboard::isButtonPressed(Keyboard::Key::C)) { camera.FOV = 10; MouseSensitivity = 18; }
 		else {
-			camera.MouseSensitivity = 5;
-			camera.Zoom = 90;
+			MouseSensitivity = 5;
+			camera.FOV = 90;
 		}
 
 		if (Keyboard::isButtonPressed(Keyboard::Key::Num1)) ItemHolding = 1;
@@ -61,20 +65,37 @@ public:
 
 	void UpdatePlayer(const glm::vec2& windpos, const glm::vec2& windsize, const bool& CenterMouse, const float& deltaTime) {
 
-		camera.UpdateCameraAngles(windpos, windsize, CenterMouse);
+		int16_t xt, yt;
+		
+		glm::vec2 pos = wc::Mouse::GetMousePos();
+		
+		xt = windpos.x + windsize.x / 2;
+		yt = windpos.y + windsize.y / 2;
+		
+		bool invertMouse = false;
+		if (invertMouse) camera.Yaw += (xt - pos.x) / MouseSensitivity;
+		else camera.Yaw -= (xt - pos.x) / MouseSensitivity;
+
+		camera.Pitch += (yt - pos.y) / MouseSensitivity;
+		
+		// make sure that when pitch is out of bounds, screen doesn't get flipped
+		if (camera.Pitch > 89.0f) camera.Pitch = 89.0f;
+		if (camera.Pitch < -89.0f)camera.Pitch = -89.0f;
+		
+		if (camera.Yaw > 360.0f) camera.Yaw = 0.0f;
+		if (camera.Yaw < 0.0f)	 camera.Yaw = 360.0f;
+
+		if (CenterMouse) {
+			camera.UpdateCameraAngles();
+			wc::Mouse::SetMousePosition(xt, yt);
+		}
  
-		projection = glm::perspective(glm::radians(camera.Zoom), windsize.x / windsize.y, 0.1f, Far);
+		projection = glm::perspective(glm::radians(camera.FOV), windsize.x / windsize.y, 0.1f, Far);
 
 		Position = camera.Position;
 	}
 
 	glm::mat4 GetView() {return camera.GetViewMatrix();}
-
-};
-class ServerPlayer : public Entity {
-private:
-
-public:
 
 };
 }

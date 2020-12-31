@@ -21,7 +21,6 @@ namespace gl {
                 glGenBuffers(1, &m_RendererID);
 
                 glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-
                 glBufferData(GL_ARRAY_BUFFER, size, data, mode);
             }
         }
@@ -48,8 +47,8 @@ namespace gl {
         void Create() { if(!m_RendererID) glGenVertexArrays(1, &m_RendererID); glBindVertexArray(m_RendererID); }
 
         void VertexAttribPointer(const uint32_t& index, const int& size, const GLsizei& stride, const void* pointer, const GLenum& type = GL_FLOAT, const bool& normalized = false) {
-            glEnableVertexAttribArray(index);
             glVertexAttribPointer(index, size, type, normalized, stride, pointer);
+            glEnableVertexAttribArray(index);
         }
 
         void Bind() const { glBindVertexArray(m_RendererID); }
