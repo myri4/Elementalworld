@@ -269,14 +269,14 @@ public:
 private:
 	uint32_t m_RendererID = 0;
 
-	mutable std::unordered_map<const char*, int> m_UniformCache;
+	mutable std::unordered_map<std::string, int> m_UniformCache;
 
-	int GetUnifLoc(const char* name) const
+	int GetUnifLoc(const std::string& name) const
 	{
 		if (m_UniformCache.find(name) != m_UniformCache.end())
 			return m_UniformCache[name];
 
-		int location = glGetUniformLocation(m_RendererID, name);
+		int location = glGetUniformLocation(m_RendererID, name.c_str());
 		m_UniformCache[name] = location;
 		return location;
 	}

@@ -223,6 +223,7 @@
     <ClInclude Include="gl\Texture.h" />
     <ClInclude Include="gl\VertexArray.h" />
     <ClInclude Include="common\Utils\NonCopyable.hpp" />
+    <ClInclude Include="common\GUI\Renderer2D.hpp" />
     <ClInclude Include="src\Block.h" />
     <ClInclude Include="src\entityes\playerSpec\Ray.hpp" />
     <ClInclude Include="src\world\Biome.hpp" />
@@ -241,12 +242,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="config\window.lua" />
+    <None Include="scripts\biomeTest.lua" />
     <None Include="scripts\blocks.lua" />
-    <None Include="scripts\forest.lua" />
     <None Include="scripts\glass.lua" />
     <None Include="scripts\dirt.lua" />
     <None Include="scripts\grassblock.lua" />
-    <None Include="scripts\player.lua" />
     <None Include="scripts\sand.lua" />
     <None Include="scripts\skybox.lua" />
     <None Include="scripts\snow.lua" />

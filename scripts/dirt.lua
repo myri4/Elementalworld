@@ -1,11 +1,10 @@
 id = 2
 isCollidable = true
 ConnectionType = "CONNECT_DEFAULT"
-Name = "Dirt block"
-Drop = "elementalworld:dirt" 
-Top =    "assets/textures/block/dirt.png"
-Left =   "assets/textures/block/dirt.png"
-Right =  "assets/textures/block/dirt.png"
-Front =  "assets/textures/block/dirt.png"
-Back =   "assets/textures/block/dirt.png"
-Bottom = "assets/textures/block/dirt.png"
+
+top =    "assets/textures/block/dirt.png"
+bottom = "assets/textures/block/dirt.png"
+front =  "assets/textures/block/dirt.png"
+back =   "assets/textures/block/dirt.png"
+left =   "assets/textures/block/dirt.png"
+right =  "assets/textures/block/dirt.png"

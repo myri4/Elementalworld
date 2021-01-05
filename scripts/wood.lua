@@ -1,11 +1,10 @@
 id = 7
 isCollidable = true
 ConnectionType = "CONNECT_DEFAULT"
-Name = "Wood block"
-Drop = "elementalworld:Wood" 
-Top =    "assets/textures/block/dirt.png"
-Left =   "assets/textures/block/dirt.png"
-Right =  "assets/textures/block/dirt.png"
-Front =  "assets/textures/block/dirt.png"
-Back =   "assets/textures/block/dirt.png"
-Bottom = "assets/textures/block/dirt.png"
+
+top =    "assets/textures/block/log_top.png"
+bottom = "assets/textures/block/log_top.png"
+front =  "assets/textures/block/log_side.png"
+back =   "assets/textures/block/log_side.png"
+left =   "assets/textures/block/log_side.png"
+right =  "assets/textures/block/log_side.png"

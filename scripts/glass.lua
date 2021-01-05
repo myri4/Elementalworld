@@ -1,11 +1,10 @@
 id = 6
 isCollidable = true
 ConnectionType = "NO_CONNECT"
-Name = "Glass block"
-Drop = "elementalworld:glass" 
-Top =    "assets/textures/block/dirt.png"
-Left =   "assets/textures/block/dirt.png"
-Right =  "assets/textures/block/dirt.png"
-Front =  "assets/textures/block/dirt.png"
-Back =   "assets/textures/block/dirt.png"
-Bottom = "assets/textures/block/dirt.png"
+
+top =    "assets/textures/block/glass.png"
+bottom = "assets/textures/block/glass.png"
+front =  "assets/textures/block/glass.png"
+back =   "assets/textures/block/glass.png"
+left =   "assets/textures/block/glass.png"
+right =  "assets/textures/block/glass.png"

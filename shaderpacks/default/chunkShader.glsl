@@ -1,10 +1,10 @@
 #type vertex
 #version 330 core
 layout (location = 0) in vec3 a_Pos;
-layout (location = 1) in vec2 a_TexCoord;
+layout (location = 1) in vec3 a_TexCoord;
 layout (location = 2) in vec3 a_Normal;
 
-out vec2 v_TexCoords;
+out vec3 v_TexCoords;
 out float v_visibility;
 out vec3 v_Normal;
 out vec3 v_FragPos;
@@ -35,14 +35,14 @@ void main()
 #type fragment
 #version 330 core 
 
-in vec2 v_TexCoords;
+in vec3 v_TexCoords;
 in vec3 v_Normal;
 in float v_visibility;
 in vec3 v_FragPos;
 
 uniform vec3 viewPos;
 
-uniform sampler2D u_Texture;
+uniform sampler2DArray u_Texture;
 uniform bool blinn = true;
 uniform bool gamma = true;
 uniform vec3 fogColor = vec3(0.1f, 3.5f, 5.0f);

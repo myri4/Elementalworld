@@ -7,9 +7,9 @@ const float waveLength = 1.0;
 const float waveAmplitude = 1.0;
 
 layout (location = 0) in vec3 a_Pos;
-layout (location = 1) in vec2 a_TexCoord;
+layout (location = 1) in vec3 a_TexCoord;
 
-out vec2 v_TexCoords;
+out vec3 v_TexCoords;
 
 uniform mat4 u_Model = mat4(1.0f);
 uniform mat4 u_View = mat4(1.0f);
@@ -43,8 +43,8 @@ void main(){
 #type fragment
 #version 460 core
 
-in vec2 v_TexCoords;
-uniform sampler2D u_Texture;
+in vec3 v_TexCoords;
+uniform sampler2DArray u_Texture;
 
 void main()
 {

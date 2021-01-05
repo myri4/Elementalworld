@@ -1,60 +1,39 @@
 #pragma once
 #include <wclibs/pch.hpp>
 #include <gl/glErrors.hpp>
+#include <GUI/Renderer2D.hpp>
 #define Game 1
 
 #if (Game == 0)
 
 namespace wc {
 
-	class Quad {
-	private:
-		glm::vec2 size;
-		glm::vec2 pos;
-		glm::vec2 startPos;
-		glm::vec2 endPos;
+	class AssetManager {
 	public:
-		void SetSize(const glm::vec2& size) {this->size = size; }
-		void SetPos(const glm::vec2& pos) { this->pos = pos; }
-		void SetSpriteRect(const glm::vec2& startPos, const glm::vec2& endPos) { this->startPos = startPos; this->endPos = endPos;	}
-		glm::vec2 GetSize() { return size; }
-		glm::vec2 GetPos() { return pos; }
-		glm::vec2 GetSpriteStart() { return startPos; }
-		glm::vec2 GetSpriteEnd() { return endPos; }
-	};
+		AssetManager() {}
+		void Create(const uint32_t& arraySize, const uint32_t& width, const uint32_t& height, const uint8_t& nrOfComponents = 4) { texArr.Create(arraySize, width, height, nrOfComponents); }
 
-	class Renderer2D {
+		uint32_t LoadTexture(const std::string& file)
+		{
+			if (m_TextureCache.find(file) != m_TextureCache.end()) return m_TextureCache[file];  // If this texture exist
+
+			uint32_t location = 0;
+
+			int fnrComponents = 0, fwidth = 0, fheight = 0;
+			auto* data = stbi_load(file.c_str(), &fwidth, &fheight, &fnrComponents, 0);
+			if (data) {
+				texArr.AddTexture(data);
+				location = texArr.GetGeneretedTextures() - 1;
+				m_TextureCache[file] = location;
+			}
+			else WC_ERROR("Cannot find file at location: {0}", file);
+			return location;
+		}
+
+		void Bind() { texArr.Bind(); }
 	private:
-		static gl::VertexBuffer rVBO;
-		static gl::VertexArray rVAO;
-		static gl::IndexBuffer rEBO;
-		static gl::Shader rShader;
-	public:
-		static void Create() {
-			uint32_t indicies[] = { 0, 1, 2, 2, 3, 0 };
-			rEBO.Create(indicies, sizeof(indicies));
-			rVAO.Create();
-			int maxSize = 1000; // bytes
-			rVBO.Create(nullptr, maxSize);
-			rVAO.VertexAttribPointer(0, 2, 4 * sizeof(float), (void*)0);
-			rVAO.VertexAttribPointer(1, 2, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-			rShader.Create("shaderpacks/default/2DRendererShader.glsl");
-		}
-
-		static void DrawQuad(Quad& quad, gl::Texture& tex) {
-			float vertices[] = {
-				// positions  // texture coords
-				quad.GetPos().x + quad.GetSize().x, quad.GetPos().y + quad.GetSize().y, quad.GetSpriteEnd().x /    tex.GetSize().x, quad.GetSpriteStart().y / tex.GetSize().y,   // top right
-				quad.GetPos().x + quad.GetSize().x, quad.GetPos().y,					 quad.GetSpriteEnd().x /   tex.GetSize().x, quad.GetSpriteEnd().y /   tex.GetSize().y,   // bottom right
-				quad.GetPos().x,					 quad.GetPos().y,					 quad.GetSpriteStart().x / tex.GetSize().x, quad.GetSpriteEnd().y /   tex.GetSize().y,   // bottom left
-				quad.GetPos().x,					 quad.GetPos().y + quad.GetSize().y, quad.GetSpriteStart().x / tex.GetSize().x, quad.GetSpriteStart().y / tex.GetSize().y,   // top left 
-			};
-			rVBO.Update(0, sizeof(vertices), vertices);
-		}
-
-		static void Draw() {
-			
-		}
+		std::unordered_map<std::string, int> m_TextureCache;
+		gl::TextureArray texArr;
 	};
 
 	class Application : public Engine {
@@ -66,10 +45,10 @@ namespace wc {
 
 		gl::Text TextRenderer;
 		gl::Texture tex;
-		gl::VertexBuffer quadVBO;
-		gl::VertexArray quadVAO;
-		gl::Shader quadShader;
-		gl::IndexBuffer quadEBO;
+		AssetManager texArr;
+
+		Renderer2D render;
+		Quad quad;
 
 		//----------------------------------------------------------------------------------------------------------------------
 		bool IsEngineOK() override {
@@ -78,6 +57,8 @@ namespace wc {
 
 			return false;
 		}
+		int loc = 0;
+		int loc2 = 0;
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnInput() override {}
 		//----------------------------------------------------------------------------------------------------------------------
@@ -95,27 +76,23 @@ namespace wc {
 			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			
 			TextRenderer.Create("assets/font/Minecraft.ttf", "shaderpacks/default/text.glsl");
-			tex.load("assets/textures/misc/widgets.png");
+			tex.load("assets/awesomeface.png");
 
-			Quad quad;
-			quad.SetSpriteRect(glm::vec2(0.0f, 0.0f), glm::vec2(200.0f, 60.0f));
-			quad.SetPos(glm::vec2(150, 50));
-			quad.SetSize(glm::vec2(200.0f, 60.0f));
+			quad.SetSpriteRect(glm::vec2(0.0f), glm::vec2(512));
+			quad.SetPos(glm::vec2(150, 200));
+			quad.SetSize(glm::vec2(128));
 
-			uint32_t indicies[] = { 0, 1, 2, 2, 3, 0 };
-			quadEBO.Create(indicies, sizeof(indicies));
-			quadVAO.Create();
-			float vertices[] = {
-				// positions  // texture coords
-				quad.GetPos().x + quad.GetSize().x, quad.GetPos().y + quad.GetSize().y, quad.GetSpriteEnd().x / tex.GetSize().x, quad.GetSpriteStart().y / tex.GetSize().y,   // top right
-				quad.GetPos().x + quad.GetSize().x, quad.GetPos().y,					 quad.GetSpriteEnd().x / tex.GetSize().x, quad.GetSpriteEnd().y / tex.GetSize().y,   // bottom right
-				quad.GetPos().x,					 quad.GetPos().y,					 quad.GetSpriteStart().x / tex.GetSize().x, quad.GetSpriteEnd().y / tex.GetSize().y,   // bottom left
-				quad.GetPos().x,					 quad.GetPos().y + quad.GetSize().y, quad.GetSpriteStart().x / tex.GetSize().x, quad.GetSpriteStart().y / tex.GetSize().y,   // top left 
-			};
-			quadVBO.Create(vertices, sizeof(vertices));
-			quadVAO.VertexAttribPointer(0, 2, 4 * sizeof(float), (void*)0);
-			quadVAO.VertexAttribPointer(1, 2, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-			quadShader.Create("shaderpacks/default/2DRendererShader.glsl");
+			int fnrComponents = 0, fwidth = 0, fheight = 0;
+			auto* data = stbi_load("assets/textures/block/glass.png", &fwidth, &fheight, &fnrComponents, 0);
+			texArr.Create(60, 32, 32);
+			loc = texArr.LoadTexture("assets/textures/block/gravel.png");
+			loc2 = texArr.LoadTexture("assets/textures/block/water.png");
+
+			tex.SetData(data, fwidth, fheight);
+
+			render.Create();
+			textPosX = 25.0f;
+			textPosY = 328.0f;
 		}
 
 		//----------------------------------------------------------------------------------------------------------------------
@@ -123,15 +100,16 @@ namespace wc {
 			deltaTime = deltaTimer.restart();
 			glClear(GL_COLOR_BUFFER_BIT);
 
-			TextRenderer.Draw("FPS: " + std::to_string((int)(1 / deltaTime)), window.GetSize(), { 25.0f, window.GetSize().y - 20 });
+			if (textPosX > 278.f) { textPosX = 150.0f; textPosY -= 20.0f; }
+			if (textPosX > 200.f) textPosY = 328;
+			textPosX += 25 * deltaTime;
 
+			TextRenderer.Draw("FPS: " + std::to_string((int)(1 / deltaTime)), window.GetSize(), { textPosX, textPosY });
+
+			texArr.Bind();
 			glm::mat4 proj = glm::ortho(0.0f, window.GetSize().x, 0.0f, window.GetSize().y, -0.5f, 0.5f);
-			quadShader.use();
-			quadShader.setMat4("proj", proj);
-			tex.Bind();
-			quadVAO.Bind();
-			quadEBO.Bind();
-			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+			render.DrawQuad(quad, tex, loc2);
+			render.Draw(proj);
 
 			window.display();
 		}
@@ -139,6 +117,8 @@ namespace wc {
 		void OnDelete() override {
 			glfwTerminate();
 		}
+		float textPosX;
+		float textPosY;
 		//----------------------------------------------------------------------------------------------------------------------
 	public:
 		Application() {}
@@ -263,14 +243,13 @@ namespace wc {
 			screen.BindTexture();	// use the color attachment texture as the texture of the quad plane
 
 			glDrawArrays(GL_TRIANGLES, 0, 6);
-			TextRenderer.Draw("FPS: " + std::to_string((int)(1 / deltaTime)), window.GetSize(), { 25.0f, window.GetSize().y - 20 });
+			TextRenderer.Draw("FPS: " + std::to_string((int)(1 / deltaTime)) + " Frametime: " + std::to_string(deltaTime), window.GetSize(), { 25.0f, window.GetSize().y - 20 });
 			TextRenderer.Draw("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), window.GetSize(), { 25.0f, window.GetSize().y - 60 });
 			TextRenderer.Draw("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), window.GetSize(), { 25.0f, window.GetSize().y - 100 });
 			TextRenderer.Draw(
 				 "ChunkX: " + std::to_string(glm::floor(world.p.Position.x / chunkSize)) +
 				" ChunkY: " + std::to_string(glm::floor(world.p.Position.y / chunkSize)) +
-				" ChunkZ: " + std::to_string(glm::floor(world.p.Position.z / chunkSize)) + 
-				" WaveTime: " + std::to_string(world.waveTime),
+				" ChunkZ: " + std::to_string(glm::floor(world.p.Position.z / chunkSize)),
 				window.GetSize(), { 25.0f, window.GetSize().y - 140 });
 			window.display();
 		}

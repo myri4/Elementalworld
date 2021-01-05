@@ -4,22 +4,24 @@
 #include "Block.hpp"
 #include <Utils/CustomDefs.hpp>
 #include <sol/sol.hpp>
+#include <Maths/Noise.hpp>
 
 namespace wc {
-
+	
 	class Biome {
 	public:
-		BlockID topBlock;
-		int16_t biomeValue;
 		Biome(){}
 		~Biome(){}
 		void Create(const char* file) {
 			sol::state luaState;
-			luaState.script_file(file);
+
+			luaState.open_libraries(sol::lib::base);
+			//luaState.script_file(file);
+		}
+		void IsBiome(const Noise& biomeNoise, const int& y) {
 
 		}
 	private:
-
 	};
 
 }

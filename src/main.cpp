@@ -1,6 +1,7 @@
 ﻿#include "Application.hpp"
 
-	wc::Application app;
+wc::Application app;
+
 int main() {
 	wc::Log::Init();
 	app.Start();

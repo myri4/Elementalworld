@@ -3,7 +3,7 @@
 #include <glad/glad.h>
 #include <Utils/Log.hpp>
 
-void GLAPIENTRY OpenGLDebugMessege(uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int length, const char* message, const void* userParam) {
+static void GLAPIENTRY OpenGLDebugMessege(uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int length, const char* message, const void* userParam) {
     switch (source)
     {
     //case GL_DEBUG_SOURCE_API:             WC_INFO("Source: API"); break;

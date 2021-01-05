@@ -212,9 +212,11 @@
     <ClInclude Include="src\Application.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\GUI\Renderer2D.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="scripts\player.lua" />
     <None Include="scripts\skybox.lua" />
     <None Include="scripts\grassblock.lua" />
     <None Include="shaderpacks\default\skybox.glsl" />
@@ -233,8 +235,8 @@
     <None Include="scripts\worldGen.lua" />
     <None Include="shaderpacks\default\shadows.glsl" />
     <None Include="shaderpacks\default\2DRendererShader.glsl" />
-    <None Include="scripts\forest.lua" />
     <None Include="scripts\blocks.lua" />
     <None Include="scripts\snow.lua" />
+    <None Include="scripts\biomeTest.lua" />
   </ItemGroup>
 </Project>
