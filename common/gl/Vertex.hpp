@@ -17,7 +17,7 @@ namespace gl {
         void Unbind() const { glBindVertexArray(0); }
 
         void Create(const void* data, const GLsizeiptr& size, const GLenum& mode = GL_STATIC_DRAW) {
-            if (!m_RendererID){
+            if (!m_RendererID) {
                 glGenBuffers(1, &m_RendererID);
 
                 glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
@@ -27,7 +27,7 @@ namespace gl {
 
         void Destroy() { glDeleteBuffers(1, &m_RendererID); }
 
-        void Update(const GLintptr& offset, const GLsizeiptr& size, const void *data) {
+        void Update(const GLintptr& offset, const GLsizeiptr& size, const void* data) {
             if (m_RendererID) {
                 glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
                 glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
@@ -44,7 +44,7 @@ namespace gl {
         VertexArray() {}
         ~VertexArray() { Destroy(); }
 
-        void Create() { if(!m_RendererID) glGenVertexArrays(1, &m_RendererID); glBindVertexArray(m_RendererID); }
+        void Create() { if (!m_RendererID) glGenVertexArrays(1, &m_RendererID); glBindVertexArray(m_RendererID); }
 
         void VertexAttribPointer(const uint32_t& index, const int& size, const GLsizei& stride, const void* pointer, const GLenum& type = GL_FLOAT, const bool& normalized = false) {
             glVertexAttribPointer(index, size, type, normalized, stride, pointer);
@@ -66,9 +66,10 @@ namespace gl {
         glm::vec3 Position = { 0,0,0 };
         glm::vec3 Normal = { 0,0,0 };
         glm::vec3 TexCoords = { 0,0,0 };
+        int type;
         Vertex() {}
         Vertex(const Vertex& vertex) : Position(vertex.Position), TexCoords(vertex.TexCoords), Normal(vertex.Normal) {}
-        Vertex(const glm::vec3& pos, const glm::vec3& texCoord, const glm::vec3& normal) : Position(pos), TexCoords(texCoord), Normal(normal) {}
+        Vertex(const glm::vec3& pos, const glm::vec3& texCoord, const glm::vec3& normal, const int& Type) : Position(pos), TexCoords(texCoord), Normal(normal), type(Type) {}
         ~Vertex() {}
     };
 }

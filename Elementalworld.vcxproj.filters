@@ -215,6 +215,12 @@
     <ClInclude Include="common\GUI\Renderer2D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\GUI\AssetManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\GUI\ParticleSystem.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\skybox.lua" />
@@ -227,7 +233,6 @@
     <None Include="shaderpacks\default\particleShader.glsl" />
     <None Include="scripts\stone.lua" />
     <None Include="scripts\sand.lua" />
-    <None Include="shaderpacks\default\fluidShader.glsl" />
     <None Include="scripts\water.lua" />
     <None Include="shaderpacks\default\chunkShader.glsl" />
     <None Include="scripts\glass.lua" />
@@ -238,5 +243,9 @@
     <None Include="scripts\blocks.lua" />
     <None Include="scripts\snow.lua" />
     <None Include="scripts\biomeTest.lua" />
+    <None Include="scripts\haybale.lua" />
+    <None Include="scripts\leaves.lua" />
+    <None Include="scripts\flower.lua" />
+    <None Include="scripts\coal.lua" />
   </ItemGroup>
 </Project>

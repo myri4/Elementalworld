@@ -1,15 +1,27 @@
 #pragma once
 
-#include <lua/lua.hpp>
-#include <sol/sol.hpp>
-#include <gl/Material.hpp>
 #include <Utils/CustomDefs.hpp>
 
 namespace wc{
-enum class ConnectionType { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT};
+enum class ConnectionType { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT, X_CONNECT};
 enum class BlockTexture { TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK };
 
 static const float blockSize = 0.5f;
+
+/*template<uint32_t Size>
+	class Model {
+	public:
+		int Size() const { return Size; }
+
+		gl::Vertex& operator[](size_t index) { if (!(index < Size))__debugbreak(); return data[index]; }
+		const gl::Vertex& operator[](size_t index) const { if (!(index < Size))__debugbreak(); return data[index]; }
+
+		gl::Vertex* data() { return data; }
+		const gl::Vertex* data() const { return data; }
+	private:
+		gl::Vertex data[Size];
+	};*/
+
 
 Face BACK_FACE = {
 	glm::vec3(-blockSize,  blockSize, -blockSize), // top-left
@@ -53,12 +65,40 @@ Face TOP_FACE = {
 	glm::vec3(-blockSize,  blockSize, -blockSize)  // top-left 
 };
 
+Face X_FACE1 = {
+	glm::vec3( blockSize,  blockSize, -blockSize),  // top-right      
+	glm::vec3( blockSize, -blockSize, -blockSize),  // bottom-right          
+	glm::vec3(-blockSize, -blockSize,  blockSize),  // bottom-left
+	glm::vec3(-blockSize,  blockSize,  blockSize)   // top-left
+};
+
+Face X_FACE2 = {
+	glm::vec3( blockSize,  blockSize,  blockSize),  // top-right
+	glm::vec3( blockSize, -blockSize,  blockSize),  // bottom-right
+	glm::vec3(-blockSize, -blockSize, -blockSize),  // bottom-left 
+	glm::vec3(-blockSize,  blockSize, -blockSize)   // top-left   
+};
+
+Face X_FACE3 = {
+	glm::vec3(-blockSize,  blockSize, -blockSize),  // top-right      
+	glm::vec3(-blockSize, -blockSize, -blockSize),  // bottom-right          
+	glm::vec3( blockSize, -blockSize,  blockSize),  // bottom-left
+	glm::vec3( blockSize,  blockSize,  blockSize)   // top-left
+};
+
+Face X_FACE4 = {
+	glm::vec3(-blockSize,  blockSize,  blockSize),  // top-right
+	glm::vec3(-blockSize, -blockSize,  blockSize),  // bottom-right
+	glm::vec3( blockSize, -blockSize, -blockSize),  // bottom-left 
+	glm::vec3( blockSize,  blockSize, -blockSize)   // top-left   
+};
+
 class Block{
 public:
 	BlockID id = 0;
 	bool isCollidable = true;
+	bool emitLight = false;
 	uint32_t texture[6] = {0};
-	gl::Material material;
 	ConnectionType blockConnectionType = ConnectionType::CONNECT_DEFAULT;
 
 	Block() {}

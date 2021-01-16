@@ -11,7 +11,7 @@ private:
 
 	float MouseSensitivity = 5;
 	float MovementSpeed = 4;
-	float Far = 1100.0f;
+	float Far = chunkSize * 15; // 1100
 public:
 	Camera camera;
 	BlockID ItemHolding = 1;
@@ -56,7 +56,7 @@ public:
 		if (Keyboard::isButtonPressed(Keyboard::Key::Num5)) ItemHolding = 5;
 		if (Keyboard::isButtonPressed(Keyboard::Key::Num6)) ItemHolding = 6;
 		if (Keyboard::isButtonPressed(Keyboard::Key::Num7)) ItemHolding = 7;
-		if (Keyboard::isButtonPressed(Keyboard::Key::Num8)) ItemHolding = 8;
+		if (Keyboard::isButtonPressed(Keyboard::Key::Num8)) ItemHolding = 11;
 	}
 
 	void InitPlayer(const glm::vec3& Position) {
