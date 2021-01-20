@@ -11,14 +11,14 @@
 
 namespace gl {
         class Character {
-        public:
-            Character() {}
-            Character(const uint32_t& TextureID, const glm::ivec2& Size, const glm::ivec2& Bearing, const uint32_t& Advance) : TextureID(TextureID), Size(Size), Bearing(Bearing), Advance(Advance) {}
-            uint32_t TextureID = 0;     // ID handle of the glyph texture
-            glm::ivec2   Size = glm::ivec2(0);      // Size of glyph
-            glm::ivec2   Bearing = glm::ivec2(0);   // Offset from baseline to left/top of glyph
-            uint32_t Advance = 0;       // Horizontal offset to advance to next glyph
-        };
+    public:
+        Character() {}
+        Character(const uint32_t& TextureID, const glm::ivec2& Size, const glm::ivec2& Bearing, const uint32_t& Advance) : TextureID(TextureID), Size(Size), Bearing(Bearing), Advance(Advance) {}
+        uint32_t TextureID = 0;     // ID handle of the glyph texture
+        glm::ivec2   Size = glm::ivec2(0);      // Size of glyph
+        glm::ivec2   Bearing = glm::ivec2(0);   // Offset from baseline to left/top of glyph
+        uint32_t Advance = 0;       // Horizontal offset to advance to next glyph
+    };
 
     class Text {
     public:

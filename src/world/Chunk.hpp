@@ -5,10 +5,11 @@
 #include <Utils/CustomDefs.hpp>
 
 //OpenGL Memory Buffer Variables
-static const size_t chunkSize = 16;
+//@Todo try with size_t 
+static const uint32_t chunkSize = 16;
 
-static const size_t MaxFaceCount = chunkSize * chunkSize * 6;
-static const size_t MaxVertexCount = MaxFaceCount * 4;
+static const uint32_t MaxFaceCount = chunkSize * chunkSize * 6;
+static const uint32_t MaxVertexCount = MaxFaceCount * 4;
 
 namespace wc {
 int to1D(const glm::vec3& pos) { return (pos.z * chunkSize * chunkSize) + (pos.y * chunkSize) + pos.x; }
@@ -30,6 +31,14 @@ public: // Variables
 	bool used = false;
 	bool generated = false;
 	bool canBeUpdated = true;
+
+	int16_t neighborXpos = -1;
+	int16_t neighborYpos = -1;
+	int16_t neighborZpos = -1;
+						   
+	int32_t neighborXneg = -1;
+	int32_t neighborYneg = -1;
+	int32_t neighborZneg = -1;
 
 	gl::VertexBuffer chunkMeshBuffer;
 	gl::VertexArray chunkMeshArray;

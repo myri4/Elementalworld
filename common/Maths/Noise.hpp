@@ -8,7 +8,7 @@ private:
     float getNoise(int n) const noexcept
     {
         n += seed;
-        n = (n << 13) ^ n;
+        n = (n << 15) ^ n;
         float newN = (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
 
         return 1.0 - ((float)newN / 1073741824.0);
@@ -27,17 +27,17 @@ private:
 
     float noise(const float x, const float z) const noexcept
     {
-        float floorX = glm::floor(x); // This is kinda a cheap way to floor a float integer.
+        float floorX = glm::floor(x);
         float floorZ = glm::floor(z);
 
         float s = getNoise(floorX, floorZ);
         float t = getNoise(floorX + 1, floorZ);
-        float u = getNoise(floorX, floorZ + 1); // Get the surrounding values to calculate the transition.
+        float u = getNoise(floorX, floorZ + 1); 
         float v = getNoise(floorX + 1, floorZ + 1);
 
-        float rec1 = lerp(s, t, x - floorX); // Interpolate between the values.
-        float rec2 = lerp(u, v, x - floorX); // Here we use x-floorX, to get 1st dimension. Don't mind the x-floorX thingie, it's part of the cosine formula.
-        float rec3 = lerp(rec1, rec2, z - floorZ); // Here we use y-floorZ, to get the 2nd dimension.
+        float rec1 = lerp(s, t, x - floorX);
+        float rec2 = lerp(u, v, x - floorX);
+        float rec3 = lerp(rec1, rec2, z - floorZ);
         return rec3;
     }
 public:
@@ -65,6 +65,16 @@ public:
 		}
 
 		return noiseValue * multiplier;
+	}
+
+	float get3DNoiseFor(const int& voxelX, const int& voxelY, const int& voxelZ)
+	{
+        float noiseX = noise(voxelY / scale, voxelZ / scale);
+        float noiseY = noise(voxelX / scale, voxelZ / scale);
+        float noiseZ = noise(voxelX / scale, voxelY / scale);
+
+        float abc = noiseX + noiseY + noiseZ;
+        return abc * multiplier / 6.f;
 	}
 };
 

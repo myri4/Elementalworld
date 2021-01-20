@@ -60,29 +60,40 @@ void main()
     v_visibility = clamp(v_visibility, 0.f, 1.f);    
 }
 
-//#type geome4try
+//#type geom4etry
 //#version 330 core
 //layout (triangles) in;
 //layout (triangle_strip, max_vertices = 3) out;
 //
-//in vec3 v_TexCoords[];
+//in  vec3 v_TexCoords[];
 //out vec3 g_TexCoords;
+//
+//float time;
+//
+//vec4 explode(vec4 position, vec3 normal)
+//{
+//    float magnitude = 2.0;
+//    vec3 direction = normal * ((sin(time) + 1.0) / 2.0) * magnitude; 
+//    return position + vec4(direction, 0.0);
+//}
 //
 //vec3 GetNormal()
 //{
-//   vec3 a = vec3(gl_in[0].gl_Position) - vec3(gl_in[1].gl_Position);
-//   vec3 b = vec3(gl_in[2].gl_Position) - vec3(gl_in[1].gl_Position);
-//   return normalize(cross(a, b));
-//} 
+//    vec3 a = vec3(gl_in[0].gl_Position) - vec3(gl_in[1].gl_Position);
+//    vec3 b = vec3(gl_in[2].gl_Position) - vec3(gl_in[1].gl_Position);
+//    return normalize(cross(a, b));
+//}
 //
-//void main(){
-//    gl_Position = gl_in[0].gl_Position;
+//void main() {    
+//    vec3 normal = GetNormal();
+//
+//    gl_Position = explode(gl_in[0].gl_Position, normal);
 //    g_TexCoords = v_TexCoords[0];
 //    EmitVertex();
-//    gl_Position = gl_in[1].gl_Position;
+//    gl_Position = explode(gl_in[1].gl_Position, normal);
 //    g_TexCoords = v_TexCoords[1];
 //    EmitVertex();
-//    gl_Position = gl_in[2].gl_Position;
+//    gl_Position = explode(gl_in[2].gl_Position, normal);
 //    g_TexCoords = v_TexCoords[2];
 //    EmitVertex();
 //    EndPrimitive();
@@ -93,7 +104,7 @@ void main()
 #version 330 core 
 
 in vec3 v_TexCoords;
-in vec3 v_Normal;
+in vec3 g_Normal;
 in float v_visibility;
 in vec3 v_FragPos;
 
@@ -134,7 +145,7 @@ vec4 CalculateLight(Material material, Light light){
     vec3 Ambient = material.ambient * light.ambient;
   	
     // Diffuse 
-    vec3 normal = normalize(v_Normal);
+    vec3 normal = normalize(g_Normal);
     vec3 lightDir;
 
     if(light.vector.w == 0.f) lightDir = normalize(-light.vector.xyz);
@@ -188,7 +199,7 @@ void main()
     mat.ambient = vec3(1.f);
 
     finalColor += CalculateLight(mat, lights);
-    //finalColor = vec4(v_Normal, 1);
+    //finalColor = vec4(g_Normal, 1);
     if(finalColor.a < 0.1) discard;
   
     gl_FragColor = mix(vec4(fogColor, 1.0f), finalColor, v_visibility);

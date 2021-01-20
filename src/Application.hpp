@@ -243,14 +243,14 @@ namespace wc {
 			screen.BindTexture();	// use the color attachment texture as the texture of the quad plane
 
 			glDrawArrays(GL_TRIANGLES, 0, 6);
-			TextRenderer.Draw("FPS: " + std::to_string((int)(1 / deltaTime)) + " Frametime: " + std::to_string(deltaTime), window.GetSize(), { 25.0f, window.GetSize().y - 20 });
-			TextRenderer.Draw("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), window.GetSize(), { 25.0f, window.GetSize().y - 60 });
-			TextRenderer.Draw("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), window.GetSize(), { 25.0f, window.GetSize().y - 100 });
-			TextRenderer.Draw(
-				 "ChunkX: " + std::to_string(glm::floor(world.p.Position.x / chunkSize)) +
-				" ChunkY: " + std::to_string(glm::floor(world.p.Position.y / chunkSize)) +
-				" ChunkZ: " + std::to_string(glm::floor(world.p.Position.z / chunkSize)),
-				window.GetSize(), { 25.0f, window.GetSize().y - 140 });
+			//TextRenderer.Draw("FPS: " + std::to_string((int)(1 / deltaTime)) + " Frametime: " + std::to_string(deltaTime), window.GetSize(), { 25.0f, window.GetSize().y - 20 });
+			//TextRenderer.Draw("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), window.GetSize(), { 25.0f, window.GetSize().y - 60 });
+			//TextRenderer.Draw("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), window.GetSize(), { 25.0f, window.GetSize().y - 100 });
+			//TextRenderer.Draw(
+			//	 "ChunkX: " + std::to_string(glm::floor(world.p.Position.x / chunkSize)) +
+			//	" ChunkY: " + std::to_string(glm::floor(world.p.Position.y / chunkSize)) +
+			//	" ChunkZ: " + std::to_string(glm::floor(world.p.Position.z / chunkSize)),
+			//	window.GetSize(), { 25.0f, window.GetSize().y - 140 });
 			window.display();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
