@@ -1,6 +1,6 @@
 #ifndef ASSETMANAGER_HPP
 #define ASSETMANAGER_HPP
-#include <gl/Texture.hpp>
+#include <gl/TextureArray.hpp>
 #include <glm/glm.hpp>
 
 namespace wc {

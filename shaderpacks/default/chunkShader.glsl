@@ -42,7 +42,7 @@ void main()
 {
     vec3 currentVertex = a_Pos;
 
-    if (a_Type > 1) currentVertex = vec3(a_Pos.x, a_Pos.y - 0.2f, a_Pos.z); // fluid
+    if (a_Type == 1) currentVertex = vec3(a_Pos.x, a_Pos.y - 0.2f, a_Pos.z); // fluid
 
     vec4 PosRelativeToCam = u_View * u_Model * vec4(currentVertex, 1.f);
     //currentVertex = applyDistortion(currentVertex);

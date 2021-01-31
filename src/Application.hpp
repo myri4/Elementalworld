@@ -2,132 +2,7 @@
 #include <wclibs/pch.hpp>
 #include <gl/glErrors.hpp>
 #include <GUI/Renderer2D.hpp>
-#define Game 1
-
-#if (Game == 0)
-
-namespace wc {
-
-	class AssetManager {
-	public:
-		AssetManager() {}
-		void Create(const uint32_t& arraySize, const uint32_t& width, const uint32_t& height, const uint8_t& nrOfComponents = 4) { texArr.Create(arraySize, width, height, nrOfComponents); }
-
-		uint32_t LoadTexture(const std::string& file)
-		{
-			if (m_TextureCache.find(file) != m_TextureCache.end()) return m_TextureCache[file];  // If this texture exist
-
-			uint32_t location = 0;
-
-			int fnrComponents = 0, fwidth = 0, fheight = 0;
-			auto* data = stbi_load(file.c_str(), &fwidth, &fheight, &fnrComponents, 0);
-			if (data) {
-				texArr.AddTexture(data);
-				location = texArr.GetGeneretedTextures() - 1;
-				m_TextureCache[file] = location;
-			}
-			else WC_ERROR("Cannot find file at location: {0}", file);
-			return location;
-		}
-
-		void Bind() { texArr.Bind(); }
-	private:
-		std::unordered_map<std::string, int> m_TextureCache;
-		gl::TextureArray texArr;
-	};
-
-	class Application : public Engine {
-	private:
-		Window window;
-
-		Clock deltaTimer;
-		float deltaTime = 0.0f;
-
-		gl::Text TextRenderer;
-		gl::Texture tex;
-		AssetManager texArr;
-
-		Renderer2D render;
-		Quad quad;
-
-		//----------------------------------------------------------------------------------------------------------------------
-		bool IsEngineOK() override {
-
-			if (window.isOpen()) return true;
-
-			return false;
-		}
-		int loc = 0;
-		int loc2 = 0;
-		//----------------------------------------------------------------------------------------------------------------------
-		void OnInput() override {}
-		//----------------------------------------------------------------------------------------------------------------------
-		void OnCreate() override {
-			window.Create("config/window.lua", "Elementalworld");
-
-			if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) WC_ERROR("Failed to initialize GLAD");
-
-			// OpenGL state
-			EnableGLDebuging();
-			// ------------
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-			
-			TextRenderer.Create("assets/font/Minecraft.ttf", "shaderpacks/default/text.glsl");
-			tex.load("assets/awesomeface.png");
-
-			quad.SetSpriteRect(glm::vec2(0.0f), glm::vec2(512));
-			quad.SetPos(glm::vec2(150, 200));
-			quad.SetSize(glm::vec2(128));
-
-			int fnrComponents = 0, fwidth = 0, fheight = 0;
-			auto* data = stbi_load("assets/textures/block/glass.png", &fwidth, &fheight, &fnrComponents, 0);
-			texArr.Create(60, 32, 32);
-			loc = texArr.LoadTexture("assets/textures/block/gravel.png");
-			loc2 = texArr.LoadTexture("assets/textures/block/water.png");
-
-			tex.SetData(data, fwidth, fheight);
-
-			render.Create();
-			textPosX = 25.0f;
-			textPosY = 328.0f;
-		}
-
-		//----------------------------------------------------------------------------------------------------------------------
-		void OnUpdate() override {
-			deltaTime = deltaTimer.restart();
-			glClear(GL_COLOR_BUFFER_BIT);
-
-			if (textPosX > 278.f) { textPosX = 150.0f; textPosY -= 20.0f; }
-			if (textPosX > 200.f) textPosY = 328;
-			textPosX += 25 * deltaTime;
-
-			TextRenderer.Draw("FPS: " + std::to_string((int)(1 / deltaTime)), window.GetSize(), { textPosX, textPosY });
-
-			texArr.Bind();
-			glm::mat4 proj = glm::ortho(0.0f, window.GetSize().x, 0.0f, window.GetSize().y, -0.5f, 0.5f);
-			render.DrawQuad(quad, tex, loc2);
-			render.Draw(proj);
-
-			window.display();
-		}
-		//----------------------------------------------------------------------------------------------------------------------
-		void OnDelete() override {
-			glfwTerminate();
-		}
-		float textPosX;
-		float textPosY;
-		//----------------------------------------------------------------------------------------------------------------------
-	public:
-		Application() {}
-	};
-}
-#endif
-
-#if (Game == 1)
-#pragma once
+#include <GUI/AssetManager.hpp>
 #include "world/World.hpp"
 
 namespace wc {
@@ -243,14 +118,14 @@ namespace wc {
 			screen.BindTexture();	// use the color attachment texture as the texture of the quad plane
 
 			glDrawArrays(GL_TRIANGLES, 0, 6);
-			//TextRenderer.Draw("FPS: " + std::to_string((int)(1 / deltaTime)) + " Frametime: " + std::to_string(deltaTime), window.GetSize(), { 25.0f, window.GetSize().y - 20 });
-			//TextRenderer.Draw("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), window.GetSize(), { 25.0f, window.GetSize().y - 60 });
-			//TextRenderer.Draw("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), window.GetSize(), { 25.0f, window.GetSize().y - 100 });
-			//TextRenderer.Draw(
-			//	 "ChunkX: " + std::to_string(glm::floor(world.p.Position.x / chunkSize)) +
-			//	" ChunkY: " + std::to_string(glm::floor(world.p.Position.y / chunkSize)) +
-			//	" ChunkZ: " + std::to_string(glm::floor(world.p.Position.z / chunkSize)),
-			//	window.GetSize(), { 25.0f, window.GetSize().y - 140 });
+			TextRenderer.Draw("FPS: " + std::to_string((int)(1 / deltaTime)) + " Frametime: " + std::to_string(deltaTime * 1000), window.GetSize(), { 25.0f, window.GetSize().y - 20 });
+			TextRenderer.Draw("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), window.GetSize(), { 25.0f, window.GetSize().y - 60 });
+			TextRenderer.Draw("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), window.GetSize(), { 25.0f, window.GetSize().y - 100 });
+			TextRenderer.Draw(
+				 "ChunkX: " + std::to_string(glm::floor(world.p.Position.x / chunkSize)) +
+				" ChunkY: " + std::to_string(glm::floor(world.p.Position.y / chunkSize)) +
+				" ChunkZ: " + std::to_string(glm::floor(world.p.Position.z / chunkSize)),
+				window.GetSize(), { 25.0f, window.GetSize().y - 140 });
 			window.display();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
@@ -262,4 +137,3 @@ namespace wc {
 		Application() {}
 	};
 }
-#endif

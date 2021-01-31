@@ -10,7 +10,7 @@
 #include FT_FREETYPE_H
 
 namespace gl {
-        class Character {
+    class Character {
     public:
         Character() {}
         Character(const uint32_t& TextureID, const glm::ivec2& Size, const glm::ivec2& Bearing, const uint32_t& Advance) : TextureID(TextureID), Size(Size), Bearing(Bearing), Advance(Advance) {}

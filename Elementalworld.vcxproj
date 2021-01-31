@@ -171,6 +171,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="common\gl\CubeMap.hpp" />
     <ClCompile Include="src\cpplibs\glad.c" />
     <ClCompile Include="src\cpplibs\stb_image.cpp" />
     <ClCompile Include="common\Utils\Log.cpp" />
@@ -178,6 +179,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\gl\Camera.h" />
+    <ClInclude Include="common\gl\TextureArray.hpp" />
     <ClInclude Include="common\GUI\AssetManager.hpp" />
     <ClInclude Include="common\GUI\ParticleSystem.hpp" />
     <ClInclude Include="common\Maths\Camera.hpp" />

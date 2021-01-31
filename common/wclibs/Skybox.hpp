@@ -3,7 +3,7 @@
 
 #include <glad/glad.h>
 #include <gl/IndexBuffer.hpp>
-#include <gl/Texture.hpp>
+#include <gl/CubeMap.hpp>
 #include <gl/Vertex.hpp>
 #include <lua/lua.hpp>
 #include <sol/sol.hpp>
@@ -72,7 +72,7 @@ namespace gl {
             skyboxVertexBuffer.Create(vertices, sizeof(vertices), GL_STATIC_DRAW);
             skyBoxArray.VertexAttribPointer(0, 3, 3 * sizeof(float), (void*)0);
 
-            std::array<const char*, 6> faces;
+            const char** faces;
             std::array<std::string, 6> sfaces;
 
             sfaces[0] = skyboxState["right"];

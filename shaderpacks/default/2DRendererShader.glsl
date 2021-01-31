@@ -2,10 +2,10 @@
 #version 330 core
 
 layout(location = 0) in vec2 a_Pos;
-layout(location = 1) in vec3 a_TexCoords;
+layout(location = 1) in vec2 a_TexCoords;
 
 uniform mat4 proj;
-out vec3 v_texCoords;
+out vec2 v_texCoords;
 
 void main(){
     v_texCoords = a_TexCoords;
@@ -15,9 +15,9 @@ void main(){
 #type fragment
 #version 330 core
 
-in vec3 v_texCoords;
+in vec2 v_texCoords;
 
-uniform sampler2DArray u_Texture;
+uniform sampler2D u_Texture;
 
 void main()
 {
