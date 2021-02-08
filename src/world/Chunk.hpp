@@ -2,7 +2,7 @@
 #define CHUNK_HPP
 
 #include <gl/Vertex.hpp>
-#include <Utils/CustomDefs.hpp>
+#include "Block.hpp"
 
 //OpenGL Memory Buffer Variables
 //@Todo try with size_t 
@@ -11,9 +11,11 @@ static const uint32_t chunkSize = 16;
 static const uint32_t MaxFaceCount = chunkSize * chunkSize * 6;
 static const uint32_t MaxVertexCount = MaxFaceCount * 4;
 
+typedef uint16_t ChunkID; // This represents the chunk id in the chunk array
+
 namespace wc {
-int to1D(const glm::vec3& pos) { return (pos.z * chunkSize * chunkSize) + (pos.y * chunkSize) + pos.x; }
-int to1D(const int& x, const int& y, const int& z) { return (z * chunkSize * chunkSize) + (y * chunkSize) + x; }
+//int to1D(const glm::vec3& pos) { return (pos.z * chunkSize * chunkSize) + (pos.y * chunkSize) + pos.x; }
+//int to1D(const int& x, const int& y, const int& z) { return (z * chunkSize * chunkSize) + (y * chunkSize) + x; }
 glm::vec3 to3D(const int& idx, const glm::ivec3& size = glm::vec3(chunkSize)) {
 	int i = idx;
 	int z = i / (size.x * size.y);

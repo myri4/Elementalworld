@@ -1,7 +1,7 @@
 #pragma once
 #include "NonCopyable.hpp"
 
-class Engine : NonCopyable {
+class Engine : public NonCopyable{
 public:
 	virtual ~Engine() = default;
 	virtual void OnCreate() {};

@@ -1,5 +1,5 @@
 #pragma once
-#include <Utils/CustomDefs.hpp>
+#include <memory>
 // This ignores all warnings raised inside External headers
 #pragma warning(push, 0)
 #include <spdlog/spdlog.h>
@@ -14,9 +14,9 @@ namespace wc {
 	public:
 		static void Init();
 
-		static Ref<spdlog::logger>& GetLogger() { return s_Logger; }
+		static std::shared_ptr<spdlog::logger>& GetLogger() { return s_Logger; }
 	private:
-		static Ref<spdlog::logger> s_Logger;
+		static std::shared_ptr<spdlog::logger> s_Logger;
 	};
 
 }

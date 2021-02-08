@@ -1,8 +1,6 @@
 #pragma once
 #include <wclibs/pch.hpp>
 #include <gl/glErrors.hpp>
-#include <GUI/Renderer2D.hpp>
-#include <GUI/AssetManager.hpp>
 #include "world/World.hpp"
 
 namespace wc {
@@ -22,7 +20,7 @@ namespace wc {
 
 		wc::Singleplayer world;
 
-		gl::Text TextRenderer;
+		Font font;
 
 		//irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
 		//----------------------------------------------------------------------------------------------------------------------
@@ -93,7 +91,14 @@ namespace wc {
 			scrQuadA.VertexAttribPointer(0, 2, sizeof(float) * 4, (void*)0);
 			scrQuadA.VertexAttribPointer(1, 2, sizeof(float) * 4, (void*)(2 * sizeof(float)));
 
-			TextRenderer.Create("assets/font/Minecraft.ttf", "shaderpacks/default/text.glsl");
+			font.Load("assets/font/Minecraft.ttf", 128);
+
+			Renderer2D::Init();
+
+			glm::mat4 proj = glm::ortho(0.0f, window.GetSize().x, 0.0f, window.GetSize().y);
+
+			Renderer2D::SetProjection(proj);
+			Renderer2D::SetTextProjection(proj);
 
 			world.Create();
 		}
@@ -118,14 +123,16 @@ namespace wc {
 			screen.BindTexture();	// use the color attachment texture as the texture of the quad plane
 
 			glDrawArrays(GL_TRIANGLES, 0, 6);
-			TextRenderer.Draw("FPS: " + std::to_string((int)(1 / deltaTime)) + " Frametime: " + std::to_string(deltaTime * 1000), window.GetSize(), { 25.0f, window.GetSize().y - 20 });
-			TextRenderer.Draw("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), window.GetSize(), { 25.0f, window.GetSize().y - 60 });
-			TextRenderer.Draw("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), window.GetSize(), { 25.0f, window.GetSize().y - 100 });
-			TextRenderer.Draw(
+			Renderer2D::DrawTexts("FPS: " + std::to_string((int)(1 / deltaTime)) + " Frametime: " + std::to_string(deltaTime * 1000), font, { 25.0f, window.GetSize().y - 20 });
+			Renderer2D::DrawTexts("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), font, { 25.0f, window.GetSize().y - 60 });
+			Renderer2D::DrawTexts("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), font, { 25.0f, window.GetSize().y - 100 });
+			Renderer2D::DrawTexts(
 				 "ChunkX: " + std::to_string(glm::floor(world.p.Position.x / chunkSize)) +
 				" ChunkY: " + std::to_string(glm::floor(world.p.Position.y / chunkSize)) +
-				" ChunkZ: " + std::to_string(glm::floor(world.p.Position.z / chunkSize)),
-				window.GetSize(), { 25.0f, window.GetSize().y - 140 });
+				" ChunkZ: " + std::to_string(glm::floor(world.p.Position.z / chunkSize)), font,{ 25.0f, window.GetSize().y - 140 });
+
+			Renderer2D::DrawQuad({ 0,200 }, { 200,-200 }, screen.GetRendererID());
+			Renderer2D::Flush();
 			window.display();
 		}
 		//----------------------------------------------------------------------------------------------------------------------

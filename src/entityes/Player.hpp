@@ -1,7 +1,6 @@
 #pragma once
 #include "Entity.hpp"
 #include "playerSpec/Ray.hpp"
-#include <wclibs/pch.hpp>
 #include <Utils/Mouse.hpp>
 
 namespace wc{

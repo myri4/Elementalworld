@@ -2,7 +2,6 @@
 #define BIOME_HPP
 
 #include "Block.hpp"
-#include <Utils/CustomDefs.hpp>
 #include <sol/sol.hpp>
 #include <Maths/Noise.hpp>
 

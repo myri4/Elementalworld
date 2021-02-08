@@ -28,11 +28,10 @@
 #include <gl/Texture.hpp>
 #include <gl/Vertex.hpp>
 #include <gl/IndexBuffer.hpp>
-#include <gl/Text.hpp>
 #include <gl/FrameBuffer.hpp>
 #include <gl/Material.hpp>  
 #include <gl/Light.hpp>
-#include "Skybox.hpp"
+//#include "Skybox.hpp"
 
 #include <Maths/Camera.hpp>
 
@@ -40,11 +39,10 @@
 #include <wclibs/Core.hpp>
 
 //Lua
-#include <lua/lua.hpp>
 #include <sol/sol.hpp>
 
 //Sound
-#include <irrKlang/irrKlang.h>
+//#include <irrKlang/irrKlang.h>
 
 //Util
 #include <Utils/State.hpp>
@@ -54,4 +52,7 @@
 #include <Utils/Window.hpp>
 #include <Utils/Time.hpp>
 
+// GUI
+#include <GUI/AssetManager.hpp>
+#include <GUI/Renderer2D.hpp>
 #endif

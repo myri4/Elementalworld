@@ -1,9 +1,8 @@
 #pragma once
 #include <glm/glm.hpp>
-#include <Utils/NonCopyable.hpp>
 
 namespace wc {
-	class Entity : NonCopyable{		
+	class Entity{		
 	public:
 		glm::vec3 Position = glm::vec3(0.0f);
 		//glm::vec3 Size = glm::vec3(1.0f);

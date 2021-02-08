@@ -1,7 +1,7 @@
 #ifndef NOISE_HPP
 #define NOISE_HPP
 
-#include <wclibs/pch.hpp>
+#include <glm/glm.hpp>
 
 struct Noise {
 private:

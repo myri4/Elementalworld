@@ -182,6 +182,7 @@
     <ClInclude Include="common\gl\TextureArray.hpp" />
     <ClInclude Include="common\GUI\AssetManager.hpp" />
     <ClInclude Include="common\GUI\ParticleSystem.hpp" />
+    <ClInclude Include="common\GUI\Renderer2D.hpp" />
     <ClInclude Include="common\Maths\Camera.hpp" />
     <ClInclude Include="common\gl\Cubemap.h" />
     <ClInclude Include="common\gl\FrameBuffer.h" />
@@ -197,15 +198,12 @@
     <ClInclude Include="common\gl\Skybox.h" />
     <ClInclude Include="common\wclibs\Skybox.hpp" />
     <ClInclude Include="common\gl\Text.h" />
-    <ClInclude Include="common\gl\Text.hpp" />
     <ClInclude Include="common\gl\Texture.h" />
     <ClInclude Include="common\gl\Texture.hpp" />
     <ClInclude Include="common\gl\VertexArray.h" />
     <ClInclude Include="common\gl\Vertex.hpp" />
-    <ClInclude Include="common\GUI\Button.hpp" />
     <ClInclude Include="common\Maths\Frustum.hpp" />
     <ClInclude Include="common\Maths\Noise.hpp" />
-    <ClInclude Include="common\Utils\CustomDefs.hpp" />
     <ClInclude Include="common\Utils\Keyboard.hpp" />
     <ClInclude Include="common\Utils\Log.hpp" />
     <ClInclude Include="common\Utils\Mouse.hpp" />
@@ -227,7 +225,6 @@
     <ClInclude Include="gl\Texture.h" />
     <ClInclude Include="gl\VertexArray.h" />
     <ClInclude Include="common\Utils\NonCopyable.hpp" />
-    <ClInclude Include="common\GUI\Renderer2D.hpp" />
     <ClInclude Include="src\Block.h" />
     <ClInclude Include="src\entityes\playerSpec\Ray.hpp" />
     <ClInclude Include="src\world\Biome.hpp" />
@@ -262,9 +259,9 @@
     <None Include="scripts\water.lua" />
     <None Include="scripts\wood.lua" />
     <None Include="scripts\worldGen.lua" />
-    <None Include="shaderpacks\default\2DRendererShader.glsl" />
     <None Include="shaderpacks\default\chunkShader.glsl" />
     <None Include="shaderpacks\default\particleShader.glsl" />
+    <None Include="shaderpacks\default\Renderer2D.glsl" />
     <None Include="shaderpacks\default\screenShader.glsl" />
     <None Include="shaderpacks\default\shadows.glsl" />
     <None Include="shaderpacks\default\skybox.glsl" />

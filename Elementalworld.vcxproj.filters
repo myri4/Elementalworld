@@ -146,9 +146,6 @@
     <ClInclude Include="common\gl\Shaders.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\gl\Text.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\gl\Texture.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -162,9 +159,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\world\Block.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Utils\CustomDefs.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\Utils\Keyboard.hpp">
@@ -186,9 +180,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\Utils\Time.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\GUI\Button.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\gl\Vertex.hpp">
@@ -215,9 +206,6 @@
     <ClInclude Include="src\Application.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\GUI\Renderer2D.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\GUI\AssetManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -225,6 +213,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\gl\TextureArray.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\GUI\Renderer2D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -245,7 +236,6 @@
     <None Include="scripts\wood.lua" />
     <None Include="scripts\worldGen.lua" />
     <None Include="shaderpacks\default\shadows.glsl" />
-    <None Include="shaderpacks\default\2DRendererShader.glsl" />
     <None Include="scripts\blocks.lua" />
     <None Include="scripts\snow.lua" />
     <None Include="scripts\biomeTest.lua" />
@@ -253,5 +243,6 @@
     <None Include="scripts\leaves.lua" />
     <None Include="scripts\flower.lua" />
     <None Include="scripts\coal.lua" />
+    <None Include="shaderpacks\default\Renderer2D.glsl" />
   </ItemGroup>
 </Project>

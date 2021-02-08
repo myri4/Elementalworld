@@ -1,12 +1,15 @@
-#pragma once
-
-#include <Utils/CustomDefs.hpp>
+#ifndef BLOCK_HPP
+#define BLOCK_HPP
 
 namespace wc{
+
 enum class ConnectionType { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT, X_CONNECT};
 enum class BlockTexture { TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK };
 
 static const float blockSize = 0.5f;
+
+using Face = std::array < glm::vec3, 4 >;
+typedef int8_t BlockID;
 
 /*template<uint32_t Size>
 	class Model {
@@ -104,3 +107,4 @@ public:
 	Block() {}
 };
 }
+#endif 
