@@ -30,6 +30,9 @@
     <ClCompile Include="common\gl\CubeMap.hpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="common\Maths\AssimpGLMHelpers.hpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\world\Chunk.h">
@@ -152,9 +155,6 @@
     <ClInclude Include="src\world\Chunk.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\entityes\playerSpec\Ray.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\entityes\Player.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -218,12 +218,23 @@
     <ClInclude Include="common\GUI\Renderer2D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\gl\Model.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Renderer\RendererCommands.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Renderer\Renderer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Maths\Ray.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\skybox.lua" />
     <None Include="scripts\grassblock.lua" />
     <None Include="shaderpacks\default\skybox.glsl" />
-    <None Include="shaderpacks\default\text.glsl" />
     <None Include="shaderpacks\default\screenShader.glsl" />
     <None Include="config\window.lua" />
     <None Include="scripts\dirt.lua" />
@@ -244,5 +255,6 @@
     <None Include="scripts\flower.lua" />
     <None Include="scripts\coal.lua" />
     <None Include="shaderpacks\default\Renderer2D.glsl" />
+    <None Include="shaderpacks\default\modelShader.glsl" />
   </ItemGroup>
 </Project>

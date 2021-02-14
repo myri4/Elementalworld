@@ -8,7 +8,7 @@
 #include <sol/sol.hpp>
 
 namespace wc {
-	void framebuffer_size_callback(GLFWwindow* window, int width, int height){glViewport(0, 0, width, height);}
+	void framebuffer_size_callback(GLFWwindow* window, int width, int height) { glViewport(0, 0, width, height); }
 
 	class Window {
 	public:
@@ -37,54 +37,46 @@ namespace wc {
 			glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 		}
 
-		void Destroy() {
+		void Destroy() const {
 			glfwDestroyWindow(window);
 		}
 
 		void display() {
 			float currentTime = glfwGetTime();
-			
+
 			if (currentTime - lastFrame >= 1.0 / framerateLimit || framerateLimit == 0)
 			{
 				lastFrame = currentTime;
 				glfwSwapBuffers(window);
 			}
-				glfwPollEvents();
+			glfwPollEvents();
 		}
 
-		void clear(const GLbitfield& mask = GL_COLOR_BUFFER_BIT) {
-			glClear(mask);
-		}
-
-		void setClearColor(const glm::vec4& color) {
-			glClearColor(color.r, color.g, color.b, color.a);
-		}
-
-		const glm::vec2& GetPos() {
+		const glm::vec2& GetPos() const {
 			int xpos, ypos;
 			glfwGetWindowPos(window, &xpos, &ypos);
 			return { xpos, ypos };
 		}
 
-		const glm::vec2& GetSize() {
+		const glm::vec2& GetSize() const {
 			int width, height;
 			glfwGetWindowSize(window, &width, &height);
 			return { width, height };
 		}
 
-		void close() {
+		void close() const {
 			glfwSetWindowShouldClose(window, true);
 		}
 
-		bool isOpen() {
+		bool isOpen() const {
 			return !glfwWindowShouldClose(window);
 		}
 
-		bool hasFocus() {
+		bool hasFocus() const {
 			return glfwGetWindowAttrib(window, GLFW_FOCUSED);
 		}
 
-		void setActive() {
+		void setActive() const {
 			glfwMakeContextCurrent(window);
 		}
 

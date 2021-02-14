@@ -1,10 +1,8 @@
 #ifndef RENDERER2D_HPP
 #define RENDERER2D_HPP
 #include <string>
-#include <unordered_map>
 
-#include <glm/glm.hpp>
-#include <glad/glad.h>
+#include <Renderer/Renderer.hpp>
 #include <gl/Shaders.hpp>
 #include <ft2build.h>
 #include <gl/IndexBuffer.hpp>
@@ -22,6 +20,7 @@ namespace wc {
 		glm::vec2 Position;
 		glm::vec3 TexCoords;
 		glm::vec4 Color;
+		int Type;
 	};
 
 	class Character {
@@ -91,27 +90,22 @@ namespace wc {
 
 	namespace Renderer2D {
 
-	static struct RendererData {
-		//Quad Rendering
-		uint32_t IndexCount = 0;
-		uint32_t TextureSlots[MaxTextures];
-		uint32_t byteOffset = 0;
-		uint8_t TextureSlotIndex = 1;
-		gl::Texture whiteTexture;
-		gl::VertexBuffer m_VBO;
-		gl::VertexArray m_VAO;
-		gl::IndexBuffer m_EBO;
-		gl::Shader m_Shader;
+		struct Data {
+			//Quad Rendering
+			uint32_t IndexCount = 0;
+			uint32_t TextureSlots[MaxTextures];
+			uint32_t byteOffset = 0;
+			uint8_t TextureSlotIndex = 1;
+			gl::Texture whiteTexture;
+			gl::VertexBuffer m_VBO;
+			gl::VertexArray m_VAO;
+			gl::IndexBuffer m_EBO;
+			gl::Shader m_Shader;
+		};
 
-		// Text Rendering
-		gl::Shader m_TextShader;
-		gl::VertexBuffer m_TextVBO;
-		gl::VertexArray  m_TextVAO;
-	};
+		Data m_Data;
 
-	static RendererData m_Data;
-
-	static void Init() {
+		void Init() {
 			// Quad Rendering
 			uint32_t indices[MaxQuadIndexCount];
 			uint32_t offset = 0;
@@ -131,9 +125,10 @@ namespace wc {
 			m_Data.m_EBO.Create(indices, sizeof(indices));
 			m_Data.m_VAO.Create();
 			m_Data.m_VBO.Create(nullptr, MaxQuadVertexCount * sizeof(Vertex2D), GL_DYNAMIC_DRAW);
-			m_Data.m_VAO.VertexAttribPointer(0, 2, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Position));
-			m_Data.m_VAO.VertexAttribPointer(1, 3, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, TexCoords));
-			m_Data.m_VAO.VertexAttribPointer(2, 4, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Color));
+			Renderer::VertexAttribPointer(0, 2, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Position));
+			Renderer::VertexAttribPointer(1, 3, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, TexCoords));
+			Renderer::VertexAttribPointer(2, 4, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Color));
+			Renderer::VertexAttribPointer(3, 1, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Type));
 			m_Data.m_Shader.Create("shaderpacks/default/Renderer2D.glsl");
 
 			int32_t samplers[MaxTextures];
@@ -146,27 +141,14 @@ namespace wc {
 			m_Data.TextureSlots[0] = m_Data.whiteTexture.GetRendererID();
 
 			for (uint8_t i = 1; i < MaxTextures; i++) m_Data.TextureSlots[i] = 0;
-
-			// Text Rendering
-			m_Data.m_TextShader.Create("shaderpacks/default/text.glsl");
-
-			m_Data.m_TextVAO.Create();
-			m_Data.m_TextVAO.Bind();
-			m_Data.m_TextVBO.Create(nullptr, sizeof(float) * 6 * 4, GL_DYNAMIC_DRAW);
-			m_Data.m_TextVAO.VertexAttribPointer(0, 4, 4 * sizeof(float), 0);
 		}
-	
-	static void SetProjection(const glm::mat4& proj) {
+
+		void SetProjection(const glm::mat4& proj) {
 			m_Data.m_Shader.use();
 			m_Data.m_Shader.setMat4("proj", proj);
-	}
-
-	static void SetTextProjection(const glm::mat4& proj) {
-			m_Data.m_TextShader.use();
-			m_Data.m_TextShader.setMat4("projection", proj);
 		}
 
-	static void Flush() {
+		void Flush() {
 			m_Data.m_Shader.use();
 
 			for (uint8_t i = 0; i < m_Data.TextureSlotIndex; i++) {
@@ -183,17 +165,17 @@ namespace wc {
 			glActiveTexture(GL_TEXTURE0);
 			m_Data.m_EBO.Unbind();
 		}
-	
-	static void DrawQuad(const glm::vec2& pos, const glm::vec2& size, glm::vec4 color = glm::vec4(1.f)) {
+
+		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, glm::vec4 color = glm::vec4(1.f)) {
 			if (m_Data.IndexCount >= MaxQuadIndexCount) Flush();
 
 			float textureIndex = 0.f;
 			float vertices[] = {
 				// positions                                                              texture coords
-				pos.x + size.x, pos.y + size.y,  1.f, 0.f, textureIndex, color.r, color.g, color.b, color.a,  // top right
-				pos.x + size.x, pos.y,			 1.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, // bottom right
-				pos.x,			pos.y,			 0.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, // bottom left
-				pos.x,			pos.y + size.y,  0.f, 0.f, textureIndex, color.r, color.g, color.b, color.a// top left 
+				pos.x + size.x, pos.y + size.y,  1.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top right
+				pos.x,			pos.y + size.y,  0.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top left 
+				pos.x,			pos.y,			 0.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // bottom left
+				pos.x + size.x, pos.y,			 1.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f  // bottom right
 			};
 
 			m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
@@ -201,46 +183,14 @@ namespace wc {
 			m_Data.IndexCount += 6;
 		}
 
-	static void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const gl::Texture& tex, const glm::vec2& textureStart, const glm::vec2& textureEnd, glm::vec4 color = glm::vec4(1.f)) {
+		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const gl::Texture& tex, const glm::vec2& textureStart, const glm::vec2& textureEnd, glm::vec4 color = glm::vec4(1.f)) {
 			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
 
 			float textureIndex = 0.f;
 			uint32_t texID = tex.GetRendererID();
 			for (uint8_t i = 1; i < m_Data.TextureSlotIndex; i++) {
 				if (m_Data.TextureSlots[i] == texID) {
-					textureIndex = (float)texID;
-					break;
-				}
-			}
-
-			if (textureIndex == 0.f) {
-				textureIndex = (float)m_Data.TextureSlotIndex;
-				m_Data.TextureSlots[m_Data.TextureSlotIndex] = texID;
-				m_Data.TextureSlotIndex++;
-			}
-
-
-			float vertices[] = {
-					// positions                                                              texture coords
-					pos.x + size.x, pos.y + size.y,  textureEnd.x   / tex.GetSize().x, textureStart.y / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a, // top right
-					pos.x + size.x, pos.y,			 textureEnd.x   / tex.GetSize().x, textureEnd.y   / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a, // bottom right
-					pos.x,			pos.y,			 textureStart.x / tex.GetSize().x, textureEnd.y   / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a, // bottom left
-					pos.x,			pos.y + size.y,  textureStart.x / tex.GetSize().x, textureStart.y / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a  // top left 
-			};
-
-			m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
-			m_Data.byteOffset += sizeof(vertices);
-			m_Data.IndexCount += 6;
-		}
-
-	static void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const gl::Texture& tex, glm::vec4 color = glm::vec4(1.f)) {
-			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
-
-			float textureIndex = 0.f;
-			uint32_t texID = tex.GetRendererID();
-			for (uint8_t i = 1; i < m_Data.TextureSlotIndex; i++) {
-				if (m_Data.TextureSlots[i] == texID) {
-					textureIndex = (float)texID;
+					textureIndex = (float)i;
 					break;
 				}
 			}
@@ -254,10 +204,10 @@ namespace wc {
 
 			float vertices[] = {
 				// positions                                                              texture coords
-				pos.x + size.x, pos.y + size.y,  1.f, 0.f, textureIndex, color.r, color.g, color.b, color.a,  // top right
-				pos.x + size.x, pos.y,			 1.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, // bottom right
-				pos.x,			pos.y,			 0.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, // bottom left
-				pos.x,			pos.y + size.y,  0.f, 0.f, textureIndex, color.r, color.g, color.b, color.a// top left 
+				pos.x + size.x, pos.y + size.y,  textureEnd.x / tex.GetSize().x, textureEnd.y / tex.GetSize().y,     textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top right
+				pos.x,			pos.y + size.y,  textureStart.x / tex.GetSize().x, textureEnd.y / tex.GetSize().y,   textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top left 
+				pos.x,			pos.y,			 textureStart.x / tex.GetSize().x, textureStart.y / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // bottom left
+				pos.x + size.x, pos.y,			 textureEnd.x / tex.GetSize().x, textureStart.y / tex.GetSize().y,   textureIndex, color.r, color.g, color.b, color.a, 0.0f  // bottom right
 			};
 
 			m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
@@ -265,46 +215,14 @@ namespace wc {
 			m_Data.IndexCount += 6;
 		}
 
-	static void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const uint32_t& tex, glm::vec4 color = glm::vec4(1.f)) {
-		if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
-
-		float textureIndex = 0.f;
-		uint32_t texID = tex;
-		for (uint8_t i = 1; i < m_Data.TextureSlotIndex; i++) {
-			if (m_Data.TextureSlots[i] == texID) {
-				textureIndex = (float)texID;
-				break;
-			}
-		}
-
-		if (textureIndex == 0.f) {
-			textureIndex = (float)m_Data.TextureSlotIndex;
-			m_Data.TextureSlots[m_Data.TextureSlotIndex] = texID;
-			m_Data.TextureSlotIndex++;
-		}
-
-
-		float vertices[] = {
-			// positions                                                              texture coords
-			pos.x + size.x, pos.y + size.y,  1.f, 0.f, textureIndex, color.r, color.g, color.b, color.a,  // top right
-			pos.x + size.x, pos.y,			 1.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, // bottom right
-			pos.x,			pos.y,			 0.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, // bottom left
-			pos.x,			pos.y + size.y,  0.f, 0.f, textureIndex, color.r, color.g, color.b, color.a// top left 
-		};
-
-		m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
-		m_Data.byteOffset += sizeof(vertices);
-		m_Data.IndexCount += 6;
-	}
-
-	static void DrawQuadIndexedSprite(const glm::vec2& pos, const glm::vec2& size, const gl::Texture& tex, const glm::vec2& coords, const glm::vec2& sprSize, glm::vec4 color = glm::vec4(1.f)) {
+		void DrawQuadIndexedSprite(const glm::vec2& pos, const glm::vec2& size, const gl::Texture& tex, const glm::vec2& coords, const glm::vec2& sprSize, glm::vec4 color = glm::vec4(1.f)) {
 			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
 
 			float textureIndex = 0.f;
 			uint32_t texID = tex.GetRendererID();
 			for (uint8_t i = 1; i < m_Data.TextureSlotIndex; i++) {
 				if (m_Data.TextureSlots[i] == texID) {
-					textureIndex = (float)texID;
+					textureIndex = (float)i;
 					break;
 				}
 			}
@@ -318,10 +236,10 @@ namespace wc {
 
 			float vertices[] = {
 				// positions                                                              texture coords
-				pos.x + size.x, pos.y + size.y,  (coords.x * sprSize.x) / tex.GetSize().x,       (coords.y * sprSize.y) / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a, // top right
-				pos.x + size.x, pos.y,			 (coords.x * sprSize.x) / tex.GetSize().x,       ((coords.y + 1) * sprSize.y) / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a, // bottom right
-				pos.x,			pos.y,			 ((coords.x + 1) * sprSize.x) / tex.GetSize().x, ((coords.y + 1) * sprSize.y) / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a, // bottom left
-				pos.x,			pos.y + size.y,  ((coords.x + 1) * sprSize.x) / tex.GetSize().x, (coords.y * sprSize.y) / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a  // top left 
+				pos.x + size.x, pos.y + size.y,  (coords.x * sprSize.x) / tex.GetSize().x,       ((coords.y + 1) * sprSize.y) / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top right
+				pos.x,			pos.y + size.y,  ((coords.x + 1) * sprSize.x) / tex.GetSize().x, ((coords.y + 1) * sprSize.y) / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top left 
+				pos.x,			pos.y,			 ((coords.x + 1) * sprSize.x) / tex.GetSize().x, (coords.y * sprSize.y) / tex.GetSize().y,		 textureIndex, color.r, color.g, color.b, color.a, 0.0f, // bottom left
+				pos.x + size.x, pos.y,			 (coords.x * sprSize.x) / tex.GetSize().x,       (coords.y * sprSize.y) / tex.GetSize().y,		 textureIndex, color.r, color.g, color.b, color.a, 0.0f  // bottom right
 			};
 
 			m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
@@ -329,38 +247,82 @@ namespace wc {
 			m_Data.IndexCount += 6;
 		}
 
-	static void DrawTexts(const std::string& text, const Font& font, glm::vec2 pos = glm::vec2(0.0f), const float& scale = 0.4f, const glm::vec4& color = glm::vec4(0.5, 0.8f, 0.2f, 1.f)) {
-			// activate corresponding render state	
-			m_Data.m_TextShader.use();
-			m_Data.m_TextShader.setVec4("textColor", color);
-			m_Data.m_TextVAO.Bind();
+		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const gl::Texture& tex, glm::vec4 color = glm::vec4(1.f)) {
+			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
 
-			// iterate through all characters
+			float textureIndex = 0.f;
+			uint32_t texID = tex.GetRendererID();
+			for (uint8_t i = 1; i < m_Data.TextureSlotIndex; i++) {
+				if (m_Data.TextureSlots[i] == texID) {
+					textureIndex = (float)i;
+					break;
+				}
+			}
+
+			if (textureIndex == 0.f) {
+				textureIndex = (float)m_Data.TextureSlotIndex;
+				m_Data.TextureSlots[m_Data.TextureSlotIndex] = texID;
+				m_Data.TextureSlotIndex++;
+			}
+
+
+			float vertices[] = {
+				// positions                                                              texture coords
+				pos.x + size.x, pos.y + size.y,  1.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top right
+				pos.x,			pos.y + size.y,  0.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top left 
+				pos.x,			pos.y,			 0.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // bottom left
+				pos.x + size.x, pos.y,			 1.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f  // bottom right
+			};
+
+			m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
+			m_Data.byteOffset += sizeof(vertices);
+			m_Data.IndexCount += 6;
+		}
+
+		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const uint32_t& tex, glm::vec4 color = glm::vec4(1.f), const int8_t& Type = 0) {
+			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
+
+			float textureIndex = 0.f;
+			uint32_t texID = tex;
+			for (uint8_t i = 1; i < m_Data.TextureSlotIndex; i++) {
+				if (m_Data.TextureSlots[i] == texID) {
+					textureIndex = (float)i;
+					break;
+				}
+			}
+
+			if (textureIndex == 0.f) {
+				textureIndex = (float)m_Data.TextureSlotIndex;
+				m_Data.TextureSlots[m_Data.TextureSlotIndex] = texID;
+				m_Data.TextureSlotIndex++;
+			}
+
+
+			float vertices[] = {
+				// positions                                                              texture coords
+				pos.x + size.x, pos.y + size.y,  1.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, Type, // top right
+				pos.x,			pos.y + size.y,  0.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, Type, // top left 
+				pos.x,			pos.y,			 0.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, Type, // bottom left
+				pos.x + size.x, pos.y,			 1.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, Type  // bottom right
+			};
+
+			m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
+			m_Data.byteOffset += sizeof(vertices);
+			m_Data.IndexCount += 6;
+		}
+
+		void DrawTexts(const std::string& text, const Font& font, glm::vec2 pos = glm::vec2(0.0f), const float& scale = 0.4f, const glm::vec4& color = glm::vec4(0.5, 0.8f, 0.2f, 1.f)) {
 			for (auto& c : text) {
 				Character ch = font.Characters[c];
 
 				float xpos = pos.x + ch.Bearing.x * scale;
-				float ypos = pos.y - (ch.Size.y - ch.Bearing.y) * scale;
+				float ypos = pos.y - ch.Bearing.y * scale;
 
 				float w = ch.Size.x * scale;
 				float h = ch.Size.y * scale;
 				// update VBO for each character
-				float vertices[] = {
-					xpos,     ypos + h,   0.0f, 0.0f,
-					xpos + w, ypos,       1.0f, 1.0f,
-					xpos,     ypos,       0.0f, 1.0f,
+				Renderer2D::DrawQuad({ xpos, ypos }, { w,h }, ch.TextureID, color, 1);
 
-					xpos,     ypos + h,   0.0f, 0.0f,
-					xpos + w, ypos + h,   1.0f, 0.0f,
-					xpos + w, ypos,       1.0f, 1.0f,
-				};
-				// render glyph texture over quad
-				glBindTexture(GL_TEXTURE_2D, ch.TextureID);
-				// update content of VBO memory
-				m_Data.m_TextVBO.Update(0, sizeof(vertices), vertices);
-
-				// render quad
-				glDrawArrays(GL_TRIANGLES, 0, 6);
 				// now advance cursors for next glyph (note that advance is number of 1/64 pixels)
 				pos.x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))
 			}

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FRUSTUM_HPP
+#define FRUSTUM_HPP
 #include <glm/matrix.hpp>
 
 namespace wc {
@@ -75,3 +76,4 @@ private:
     Plane m_planes[6];
 };
 }
+#endif

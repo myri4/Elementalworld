@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ENTITY_HPP
+#define ENTITY_HPP
 #include <glm/glm.hpp>
 
 namespace wc {
@@ -27,3 +28,4 @@ namespace wc {
 	};
 
 }
+#endif

@@ -1,6 +1,7 @@
-#pragma once
+#ifndef PLAYER_HPP
+#define PLAYER_HPP
 #include "Entity.hpp"
-#include "playerSpec/Ray.hpp"
+#include <Maths/Ray.hpp>
 #include <Utils/Mouse.hpp>
 
 namespace wc{
@@ -98,3 +99,4 @@ public:
 
 };
 }
+#endif

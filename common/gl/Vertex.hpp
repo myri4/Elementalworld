@@ -44,12 +44,10 @@ namespace gl {
         VertexArray() {}
         ~VertexArray() { Destroy(); }
 
-        void Create() { if (!m_RendererID) glGenVertexArrays(1, &m_RendererID); glBindVertexArray(m_RendererID); }
-
-        void VertexAttribPointer(const uint32_t& index, const int& size, const GLsizei& stride, const void* pointer, const GLenum& type = GL_FLOAT, const bool& normalized = false) {
-            glVertexAttribPointer(index, size, type, normalized, stride, pointer);
-            glEnableVertexAttribArray(index);
-        }
+        void Create() { 
+            if (!m_RendererID) glGenVertexArrays(1, &m_RendererID); 
+            glBindVertexArray(m_RendererID); 
+        }        
 
         void Bind() const { glBindVertexArray(m_RendererID); }
 

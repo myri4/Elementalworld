@@ -5,6 +5,7 @@
 #pragma comment(lib, "freetype.lib")
 #pragma comment(lib, "glfw3.lib")
 #pragma comment(lib, "irrKlang.lib")
+#pragma comment(lib, "assimp-vc142-mt.lib")
 
 //Visual studio specific
 #pragma comment(lib, "kernel32.lib")

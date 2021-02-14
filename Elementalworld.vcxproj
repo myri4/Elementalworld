@@ -172,6 +172,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="common\gl\CubeMap.hpp" />
+    <ClCompile Include="common\Maths\AssimpGLMHelpers.hpp" />
     <ClCompile Include="src\cpplibs\glad.c" />
     <ClCompile Include="src\cpplibs\stb_image.cpp" />
     <ClCompile Include="common\Utils\Log.cpp" />
@@ -179,6 +180,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\gl\Camera.h" />
+    <ClInclude Include="common\gl\Model.hpp" />
     <ClInclude Include="common\gl\TextureArray.hpp" />
     <ClInclude Include="common\GUI\AssetManager.hpp" />
     <ClInclude Include="common\GUI\ParticleSystem.hpp" />
@@ -196,6 +198,8 @@
     <ClInclude Include="common\gl\Shaders.h" />
     <ClInclude Include="common\gl\Shaders.hpp" />
     <ClInclude Include="common\gl\Skybox.h" />
+    <ClInclude Include="common\Renderer\Renderer.hpp" />
+    <ClInclude Include="common\Renderer\RendererCommands.hpp" />
     <ClInclude Include="common\wclibs\Skybox.hpp" />
     <ClInclude Include="common\gl\Text.h" />
     <ClInclude Include="common\gl\Texture.h" />
@@ -226,7 +230,7 @@
     <ClInclude Include="gl\VertexArray.h" />
     <ClInclude Include="common\Utils\NonCopyable.hpp" />
     <ClInclude Include="src\Block.h" />
-    <ClInclude Include="src\entityes\playerSpec\Ray.hpp" />
+    <ClInclude Include="common\Maths\Ray.hpp" />
     <ClInclude Include="src\world\Biome.hpp" />
     <ClInclude Include="src\world\Block.hpp" />
     <ClInclude Include="src\Engine.h" />
@@ -260,12 +264,12 @@
     <None Include="scripts\wood.lua" />
     <None Include="scripts\worldGen.lua" />
     <None Include="shaderpacks\default\chunkShader.glsl" />
+    <None Include="shaderpacks\default\modelShader.glsl" />
     <None Include="shaderpacks\default\particleShader.glsl" />
     <None Include="shaderpacks\default\Renderer2D.glsl" />
     <None Include="shaderpacks\default\screenShader.glsl" />
     <None Include="shaderpacks\default\shadows.glsl" />
     <None Include="shaderpacks\default\skybox.glsl" />
-    <None Include="shaderpacks\default\text.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

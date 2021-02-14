@@ -14,6 +14,7 @@
 #include <map>
 #include "Biome.hpp"
 #include <GUI/AssetManager.hpp>
+#include <gl/Model.hpp>
 
 namespace wc {
 
@@ -60,7 +61,12 @@ namespace wc {
 
 	class Singleplayer {
 	public:
-		Player p;	
+		Player p;
+		Font font;
+		Model model;
+		Animation animation;
+		Animator animator;
+		gl::Shader modelShader;
 
 		Singleplayer() {}
 
@@ -104,14 +110,14 @@ namespace wc {
 
 			luaState.script_file("scripts/blocks.lua");
 
-			p.InitPlayer({ RenderDistance * RenderDistance / 2 + RenderDistance, RenderDistance * 2 ,RenderDistance * RenderDistance / 2 });
+			p.InitPlayer({ RenderDistance * RenderDistance / 2 + RenderDistance, RenderDistance * 4 ,RenderDistance * RenderDistance / 2 });
 			for (ChunkID i = 0; i < world.size(); i++) {
 				//Configuring the vertex array
 				world[i].chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(gl::Vertex), GL_DYNAMIC_DRAW);
 				world[i].chunkMeshArray.Create();
-				world[i].chunkMeshArray.VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
-				world[i].chunkMeshArray.VertexAttribPointer(1, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
-				world[i].chunkMeshArray.VertexAttribPointer(3, 1, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, type)); // type attribute
+				Renderer::VertexAttribPointer(0, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, Position));  // position attribute
+				Renderer::VertexAttribPointer(1, 3, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, TexCoords)); // texture coord attribute
+				Renderer::VertexAttribPointer(3, 1, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, type)); // type attribute
 				world[i].chunkPos = to3D(i, glm::ivec3(RenderDistance));
 			}
 
@@ -131,6 +137,11 @@ namespace wc {
 			worldIndexBuffer.Create(indices, sizeof(indices));
 			for (ChunkID chunk = 0; chunk < world.size(); chunk++) UpdateNeighbours(chunk);
 			//defBiome.Create("scripts/biomeTest.lua");
+
+			modelShader.Create("shaderpacks/default/modelShader.glsl");
+			model.Create("assets/models/dancing_vampire.dae");
+			animation.Create("assets/models/dancing_vampire.dae", &model);
+			animator.Create(&animation);
 		}
 
 		void Update(const glm::vec2& windpos, const glm::vec2& windsize, const bool& CenterMouse, const float& deltaTime) {
@@ -152,17 +163,17 @@ namespace wc {
 
 			viewFrustum.update(p.projection * p.GetView());
 			uint8_t chunkHalf = RenderDistance / 2;
+			glm::vec3 currentPlayerPos = getChunkPos(p.Position);
 			for (ChunkID i = 0; i < world.size(); i++) {
 
 				if (world[i].IndexCount > 0 && ShowChunk(i)) {
 					glm::vec3 pos = world[i].chunkPos * glm::vec3(chunkSize);
 					world[i].chunkMeshArray.Bind();
 					worldShader.setMat4("u_Model", glm::translate(glm::mat4(1.0f), pos)); // calculate the model matrix for each object and pass it to shader before drawing
-					glDrawElements(GL_TRIANGLES, world[i].IndexCount, GL_UNSIGNED_INT, nullptr); // Drawing the cubes
+					Renderer::DrawIndexed(world[i].IndexCount);
 				}				
 
 				glm::vec3 currChunkPos = world[i].chunkPos;
-				glm::vec3 currentPlayerPos = getChunkPos(p.Position);
 				if (currChunkPos.x < currentPlayerPos.x - chunkHalf) ResetChunk(i, glm::vec3(currentPlayerPos.x + chunkHalf - 1, currChunkPos.y, currChunkPos.z));
 				if (currChunkPos.x > currentPlayerPos.x + chunkHalf) ResetChunk(i, glm::vec3(currentPlayerPos.x - chunkHalf + 1, currChunkPos.y, currChunkPos.z));
 
@@ -175,7 +186,37 @@ namespace wc {
 				// Updating the chunk`s mesh
 				if (!world[i].generated) { GenerateChunkTerrain(i);	world[i].generated = true;	}
 				if (world[i].canBeUpdated) { UpdateMesh(i);	world[i].canBeUpdated = false;	}
+			}			
+
+			animator.UpdateAnimation(deltaTime);
+			modelShader.use();
+			modelShader.setMat4("projection", p.projection);
+			modelShader.setMat4("view", p.GetView());
+
+			auto transforms = animator.GetFinalBoneMatrices();
+
+			for (int i = 0; i < transforms.size(); ++i) {
+				std::string Transforms = "finalBonesTransformations[" + std::to_string(i) + "]";
+				modelShader.setMat4(Transforms.c_str(),	transforms[i]);
 			}
+			// render the loaded model
+			//glm::mat4 Model = glm::mat4(1.0f);
+			//Model = glm::translate(Model, { RenderDistance * RenderDistance / 2 + RenderDistance, RenderDistance * 4 ,RenderDistance * RenderDistance / 2 }); // translate it down so it's at the center of the scene
+			//Model = glm::scale(Model, glm::vec3(0.11f));	// it's a bit too big for our scene, so scale it down
+			//modelShader.setMat4("model", Model);
+			//glDisable(GL_CULL_FACE);
+			//glDisable(GL_BLEND);
+			//model.Draw(modelShader);
+			//glEnable(GL_CULL_FACE);
+			//glEnable(GL_BLEND);
+
+			// Render2D Stuff
+			Renderer2D::DrawTexts("X: " + std::to_string(p.Position.x) + " Y: " + std::to_string(p.Position.y) + " Z: " + std::to_string(p.Position.z), font, { 25.0f, 60 });
+			Renderer2D::DrawTexts("Pitch: " + std::to_string(p.camera.Pitch) + " Yaw: " + std::to_string(p.camera.Yaw), font, { 25.0f, 100 });
+			Renderer2D::DrawTexts(
+				"ChunkX: " + std::to_string(currentPlayerPos.x) +
+				" ChunkY: " + std::to_string(currentPlayerPos.y) +
+				" ChunkZ: " + std::to_string(currentPlayerPos.z), font, { 25.0f, 140 });
 		}
 
 		void OnInput(const float& deltaTime) {
@@ -353,8 +394,8 @@ namespace wc {
 					offset += 4;
 				};
 
-				for (uint8_t x = 0; x < chunkSize; x++)
-					for (uint8_t y = 0; y < chunkSize; y++)
+						for (uint8_t y = 0; y < chunkSize; y++)
+						for (uint8_t x = 0; x < chunkSize; x++)
 						for (uint8_t z = 0; z < chunkSize; z++)
 						{
 							BlockID block = world[chunk].chunkData[x][y][z];

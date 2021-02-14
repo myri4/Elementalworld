@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TIME_HPP
+#define TIME_HPP
 
 #include <chrono>
 #include <wclibs/Core.hpp>
@@ -41,3 +42,4 @@ public:
 	}
 };
 }
+#endif

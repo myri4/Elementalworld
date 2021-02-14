@@ -38,12 +38,10 @@ namespace gl {
 
 		void Create(const void* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& NrComponents = 3, uint8_t mipMapLevel = 4) {
 			if (!m_RendererID) {
-				width = Width;
-				height = Height;
 				nrComponents = NrComponents;
 				glGenTextures(1, &m_RendererID);
 				glBindTexture(GL_TEXTURE_2D, m_RendererID);
-				glTexImage2D(GL_TEXTURE_2D, 0, GetFormat(), width, height, 0, GetFormat(), GL_UNSIGNED_BYTE, data);
+				glTexImage2D(GL_TEXTURE_2D, 0, GetFormat(), Width, Height, 0, GetFormat(), GL_UNSIGNED_BYTE, data);
 				glGenerateMipmap(GL_TEXTURE_2D);
 
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
@@ -56,11 +54,9 @@ namespace gl {
 
 		void Create(const TextureProps& props) {
 			if (!m_RendererID) {
-				width = props.Width;
-				height = props.Height;
 				glGenTextures(1, &m_RendererID);
 				glBindTexture(GL_TEXTURE_2D, m_RendererID);
-				glTexImage2D(GL_TEXTURE_2D, 0, props.internalFormat, width, height, 0, props.format, props.type, props.data);
+				glTexImage2D(GL_TEXTURE_2D, 0, props.internalFormat, props.Width, props.Height, 0, props.format, props.type, props.data);
 				glGenerateMipmap(GL_TEXTURE_2D);
 
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, props.min_filter);
@@ -72,7 +68,7 @@ namespace gl {
 		}
 
 
-		void SetData(const void* data, const int& width, const int& height, const int& xoffset = 0, const int& yoffset = 0) const {
+		void SetData(const void* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const {
 			if (m_RendererID) {
 				Bind();
 				glTexSubImage2D(GL_TEXTURE_2D, 0, xoffset, yoffset, width, height, GetFormat(), GL_UNSIGNED_BYTE, data);
@@ -91,14 +87,20 @@ namespace gl {
 			glDeleteTextures(1, &m_RendererID);
 		}
 
-		void Bind(const uint32_t& ActiveTexture = 0) const {
+		void Bind(const uint8_t& ActiveTexture = 0) const {
 			glActiveTexture(GL_TEXTURE0 + ActiveTexture);
 			glBindTexture(GL_TEXTURE_2D, m_RendererID);
 		}
 
 		void unbind() const { glBindTexture(GL_TEXTURE_2D, 0); }
 		uint32_t GetRendererID() const { return m_RendererID; }
-		glm::vec2 GetSize() const { return glm::vec2(width, height); }
+		glm::vec2 GetSize() const { 
+			int w, h;
+			Bind();
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+			return glm::vec2(w, h); 
+		}
 
 	private:
 
@@ -110,7 +112,6 @@ namespace gl {
 			return format;
 		}
 		uint8_t nrComponents = 3;
-		uint32_t width = 0, height = 0;
 		uint32_t m_RendererID = 0;
 	};
 }

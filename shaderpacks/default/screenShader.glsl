@@ -74,5 +74,6 @@ void main()
     }
     result = (result - 0.5f) * (1.0f + contrast) + 0.5f;
 
-    gl_FragColor = vec4(result, 1.0f);
+    //gl_FragColor = vec4(result, 1.0f);
+    gl_FragColor = texture(screenTexture, v_TexCoords);
 }

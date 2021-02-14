@@ -1,4 +1,5 @@
-#pragma once
+#ifndef APPLICATION_HPP
+#define APPLICATION_HPP
 #include <wclibs/pch.hpp>
 #include <gl/glErrors.hpp>
 #include "world/World.hpp"
@@ -19,8 +20,6 @@ namespace wc {
 		gl::Shader screenShader;
 
 		wc::Singleplayer world;
-
-		Font font;
 
 		//irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
 		//----------------------------------------------------------------------------------------------------------------------
@@ -69,7 +68,7 @@ namespace wc {
 			glCullFace(GL_BACK);
 			glFrontFace(GL_CW);
 
-			window.setClearColor(glm::vec4(0.1f, 3.5f, 5.0f, 1.0f));
+			Renderer::setClearColor(glm::vec4(0.1f, 3.5f, 5.0f, 1.0f));
 
 			screenShader.Create("shaderpacks/default/screenShader.glsl");
 			screen.Create(window.GetSize().x, window.GetSize().y);
@@ -88,17 +87,16 @@ namespace wc {
 			scrQuad.Create(quadVertices, sizeof(quadVertices));
 			scrQuadA.Create();
 			scrQuadA.Bind();
-			scrQuadA.VertexAttribPointer(0, 2, sizeof(float) * 4, (void*)0);
-			scrQuadA.VertexAttribPointer(1, 2, sizeof(float) * 4, (void*)(2 * sizeof(float)));
+			Renderer::VertexAttribPointer(0, 2, sizeof(float) * 4, (void*)0);
+			Renderer::VertexAttribPointer(1, 2, sizeof(float) * 4, (void*)(2 * sizeof(float)));
 
-			font.Load("assets/font/Minecraft.ttf", 128);
+			world.font.Load("assets/font/Minecraft.ttf", 128);
 
 			Renderer2D::Init();
 
-			glm::mat4 proj = glm::ortho(0.0f, window.GetSize().x, 0.0f, window.GetSize().y);
+			glm::mat4 proj = glm::ortho(0.0f, window.GetSize().x, window.GetSize().y, 0.0f);
 
 			Renderer2D::SetProjection(proj);
-			Renderer2D::SetTextProjection(proj);
 
 			world.Create();
 		}
@@ -107,14 +105,14 @@ namespace wc {
 			deltaTime = deltaTimer.restart();
 			screen.Bind();
 			glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
-			window.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			Renderer::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			world.Update(window.GetPos(), window.GetSize(), CenterMouse, deltaTime);
 
 			glDisable(GL_DEPTH_TEST);
 			screen.unbind();
 			// clear all relevant buffers
-			window.clear();
+			Renderer::Clear();
 
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			screenShader.use();			
@@ -122,16 +120,10 @@ namespace wc {
 			scrQuadA.Bind();
 			screen.BindTexture();	// use the color attachment texture as the texture of the quad plane
 
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-			Renderer2D::DrawTexts("FPS: " + std::to_string((int)(1 / deltaTime)) + " Frametime: " + std::to_string(deltaTime * 1000), font, { 25.0f, window.GetSize().y - 20 });
-			Renderer2D::DrawTexts("X: " + std::to_string(world.p.Position.x) + " Y: " + std::to_string(world.p.Position.y) + " Z: " + std::to_string(world.p.Position.z), font, { 25.0f, window.GetSize().y - 60 });
-			Renderer2D::DrawTexts("Pitch: " + std::to_string(world.p.camera.Pitch) + " Yaw: " + std::to_string(world.p.camera.Yaw), font, { 25.0f, window.GetSize().y - 100 });
-			Renderer2D::DrawTexts(
-				 "ChunkX: " + std::to_string(glm::floor(world.p.Position.x / chunkSize)) +
-				" ChunkY: " + std::to_string(glm::floor(world.p.Position.y / chunkSize)) +
-				" ChunkZ: " + std::to_string(glm::floor(world.p.Position.z / chunkSize)), font,{ 25.0f, window.GetSize().y - 140 });
+			Renderer::DrawArrays(6);
+			Renderer2D::DrawTexts("FPS: " + std::to_string((int)(1 / deltaTime)) + " Frametime: " + std::to_string(deltaTime * 1000), world.font, { 25.0f, 20 });
 
-			Renderer2D::DrawQuad({ 0,200 }, { 200,-200 }, screen.GetRendererID());
+			//Renderer2D::DrawQuad({ 0,400 }, { window.GetSize().x / 2,-window.GetSize().y / 2 }, screen.GetRendererID());
 			Renderer2D::Flush();
 			window.display();
 		}
@@ -144,3 +136,4 @@ namespace wc {
 		Application() {}
 	};
 }
+#endif

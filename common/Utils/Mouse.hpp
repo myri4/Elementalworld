@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MOUSE_HPP
+#define MOUSE_HPP
 
 #include <wclibs/Core.hpp>
 #include <glm/glm.hpp>
@@ -57,3 +58,4 @@ void ShowMouse(const bool& show) {
 	}
 }
 }
+#endif

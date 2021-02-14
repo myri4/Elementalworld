@@ -1,4 +1,6 @@
-#pragma once
+#ifndef LOG_HPP
+#define LOG_HPP
+
 #include <memory>
 // This ignores all warnings raised inside External headers
 #pragma warning(push, 0)
@@ -26,3 +28,4 @@ namespace wc {
 #define WC_WARN(...)          ::wc::Log::GetLogger()->warn(__VA_ARGS__)
 #define WC_ERROR(...)         ::wc::Log::GetLogger()->error(__VA_ARGS__)
 #define WC_CRITICAL(...)      ::wc::Log::GetLogger()->critical(__VA_ARGS__)
+#endif
