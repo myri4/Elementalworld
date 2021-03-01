@@ -23,40 +23,40 @@ public:
 
 	void UpdatePlayerInput(const float& deltaTime) {
 		float velocity = MovementSpeed * deltaTime;
-		if (Keyboard::isButtonPressed(Keyboard::Key::W)) { // Front
+		if (Keyboard::isKeyPressed(Keyboard::Key::W)) { // Front
 			camera.Position.x += glm::cos(glm::radians(camera.Yaw)) * velocity;
 			camera.Position.z += glm::sin(glm::radians(camera.Yaw)) * velocity;
 		}
 
-		if (Keyboard::isButtonPressed(Keyboard::Key::S)) { // Back
+		if (Keyboard::isKeyPressed(Keyboard::Key::S)) { // Back
 			camera.Position.x -= glm::cos(glm::radians(camera.Yaw)) * velocity;
 			camera.Position.z -= glm::sin(glm::radians(camera.Yaw)) * velocity;
 		}
-		if (Keyboard::isButtonPressed(Keyboard::Key::A)) { // Left
+		if (Keyboard::isKeyPressed(Keyboard::Key::A)) { // Left
 			camera.Position.x -= glm::cos(glm::radians(camera.Yaw + 90.0f)) * velocity;
 			camera.Position.z -= glm::sin(glm::radians(camera.Yaw + 90.0f)) * velocity;
 		}
-		if (Keyboard::isButtonPressed(Keyboard::Key::D)) { // Right
+		if (Keyboard::isKeyPressed(Keyboard::Key::D)) { // Right
 			camera.Position.x -= glm::cos(glm::radians(camera.Yaw - 90.0f)) * velocity;
 			camera.Position.z -= glm::sin(glm::radians(camera.Yaw - 90.0f)) * velocity;
 		}
-		if (Keyboard::isButtonPressed(Keyboard::Key::Space))  camera.Position.y += velocity;			  // Up
-		if (Keyboard::isButtonPressed(Keyboard::Key::LShift)) camera.Position.y -= velocity;			  // Down
-		if (Keyboard::isButtonPressed(Keyboard::Key::C)) { camera.FOV = 10; MouseSensitivity = 18; }
+		if (Keyboard::isKeyPressed(Keyboard::Key::Space))  camera.Position.y += velocity;			  // Up
+		if (Keyboard::isKeyPressed(Keyboard::Key::LShift)) camera.Position.y -= velocity;			  // Down
+		if (Keyboard::isKeyPressed(Keyboard::Key::C)) { camera.FOV = 10; MouseSensitivity = 18; }
 		else {
 			MouseSensitivity = 5;
 			camera.FOV = 90;
 		}
 
-		if (Keyboard::isButtonPressed(Keyboard::Key::Num1)) ItemHolding = 1;
-		if (Keyboard::isButtonPressed(Keyboard::Key::Num2)) ItemHolding = 2;
-		if (Keyboard::isButtonPressed(Keyboard::Key::Num2)) ItemHolding = 2;
-		if (Keyboard::isButtonPressed(Keyboard::Key::Num3)) ItemHolding = 3;
-		if (Keyboard::isButtonPressed(Keyboard::Key::Num4)) ItemHolding = 4;
-		if (Keyboard::isButtonPressed(Keyboard::Key::Num5)) ItemHolding = 5;
-		if (Keyboard::isButtonPressed(Keyboard::Key::Num6)) ItemHolding = 6;
-		if (Keyboard::isButtonPressed(Keyboard::Key::Num7)) ItemHolding = 7;
-		if (Keyboard::isButtonPressed(Keyboard::Key::Num8)) ItemHolding = 11;
+		if (Keyboard::isKeyPressed(Keyboard::Key::Num1)) ItemHolding = 1;
+		if (Keyboard::isKeyPressed(Keyboard::Key::Num2)) ItemHolding = 2;
+		if (Keyboard::isKeyPressed(Keyboard::Key::Num2)) ItemHolding = 2;
+		if (Keyboard::isKeyPressed(Keyboard::Key::Num3)) ItemHolding = 3;
+		if (Keyboard::isKeyPressed(Keyboard::Key::Num4)) ItemHolding = 4;
+		if (Keyboard::isKeyPressed(Keyboard::Key::Num5)) ItemHolding = 5;
+		if (Keyboard::isKeyPressed(Keyboard::Key::Num6)) ItemHolding = 6;
+		if (Keyboard::isKeyPressed(Keyboard::Key::Num7)) ItemHolding = 7;
+		if (Keyboard::isKeyPressed(Keyboard::Key::Num8)) ItemHolding = 11;
 	}
 
 	void InitPlayer(const glm::vec3& Position) {
@@ -95,8 +95,15 @@ public:
 		Position = camera.Position;
 	}
 
-	glm::mat4 GetView() {return camera.GetViewMatrix();}
+	glm::mat4 GetView() const {return camera.GetViewMatrix();}
 
+};
+
+class PlayerDescription : public Entity
+{
+public:
+	uint32_t nUniqueID = 0;
+	BlockID ItemHolding = 1;
 };
 }
 #endif

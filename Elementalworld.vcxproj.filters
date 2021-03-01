@@ -116,12 +116,6 @@
     <ClInclude Include="common\Utilitiess\State.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\wclibs\Core.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\wclibs\pch.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\gl\Material.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -182,9 +176,6 @@
     <ClInclude Include="common\Utils\Time.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\gl\Vertex.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\Maths\Frustum.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -198,9 +189,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\Maths\Noise.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\wclibs\Skybox.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Application.hpp">
@@ -218,9 +206,6 @@
     <ClInclude Include="common\GUI\Renderer2D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\gl\Model.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\Renderer\RendererCommands.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -228,6 +213,42 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\Maths\Ray.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\wc\Core.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\wc\pch.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\wc\Skybox.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\gl\VertexArray.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\gl\VertexBuffer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\wc\Vertex.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\wc\Model\Animation.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\wc\Model\Animator.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\wc\Model\Bone.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\wc\Model\BoneInfo.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\wc\Model\Mesh.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\wc\Model\Model.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

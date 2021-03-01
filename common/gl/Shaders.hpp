@@ -10,7 +10,6 @@
 
 #include <Utils/Log.hpp>
 
-
 namespace gl{
 class Shader{
 public:

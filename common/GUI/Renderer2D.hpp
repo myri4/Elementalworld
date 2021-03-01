@@ -6,7 +6,8 @@
 #include <gl/Shaders.hpp>
 #include <ft2build.h>
 #include <gl/IndexBuffer.hpp>
-#include <gl/Vertex.hpp>
+#include <gl/VertexBuffer.hpp>
+#include <gl/VertexArray.hpp>
 #include FT_FREETYPE_H
 
 namespace wc {

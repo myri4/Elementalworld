@@ -1,11 +1,12 @@
 #ifndef ASSIMP_GLM_HELPERS_HPP
 #define ASSIMP_GLM_HELPERS_HPP
 
-#include<assimp/Quaternion.h>
-#include<assimp/vector3.h>
-#include<assimp/matrix4x4.h>
-#include<glm/glm.hpp>
-#include<glm/gtc/quaternion.hpp>
+#include <assimp/Quaternion.h>
+#include <assimp/vector3.h>
+#include <assimp/matrix4x4.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+//#include <glm/gtx/quaternion.hpp>
 
 namespace wc {
     namespace AssimpGLMHelpers{

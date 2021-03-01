@@ -72,29 +72,29 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)common;$(SolutionDir)vendor\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)common;$(SolutionDir)vendor\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)common;$(SolutionDir)vendor\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)common;$(SolutionDir)vendor\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -180,8 +180,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\gl\Camera.h" />
-    <ClInclude Include="common\gl\Model.hpp" />
     <ClInclude Include="common\gl\TextureArray.hpp" />
+    <ClInclude Include="common\gl\VertexArray.hpp" />
     <ClInclude Include="common\GUI\AssetManager.hpp" />
     <ClInclude Include="common\GUI\ParticleSystem.hpp" />
     <ClInclude Include="common\GUI\Renderer2D.hpp" />
@@ -200,12 +200,18 @@
     <ClInclude Include="common\gl\Skybox.h" />
     <ClInclude Include="common\Renderer\Renderer.hpp" />
     <ClInclude Include="common\Renderer\RendererCommands.hpp" />
-    <ClInclude Include="common\wclibs\Skybox.hpp" />
+    <ClInclude Include="common\wc\Model\Animation.hpp" />
+    <ClInclude Include="common\wc\Model\Animator.hpp" />
+    <ClInclude Include="common\wc\Model\Bone.hpp" />
+    <ClInclude Include="common\wc\Model\BoneInfo.hpp" />
+    <ClInclude Include="common\wc\Model\Mesh.hpp" />
+    <ClInclude Include="common\wc\Model\Model.hpp" />
+    <ClInclude Include="common\wc\Skybox.hpp" />
     <ClInclude Include="common\gl\Text.h" />
     <ClInclude Include="common\gl\Texture.h" />
     <ClInclude Include="common\gl\Texture.hpp" />
     <ClInclude Include="common\gl\VertexArray.h" />
-    <ClInclude Include="common\gl\Vertex.hpp" />
+    <ClInclude Include="common\gl\VertexBuffer.hpp" />
     <ClInclude Include="common\Maths\Frustum.hpp" />
     <ClInclude Include="common\Maths\Noise.hpp" />
     <ClInclude Include="common\Utils\Keyboard.hpp" />
@@ -216,8 +222,9 @@
     <ClInclude Include="common\Utils\State.hpp" />
     <ClInclude Include="common\Utils\Time.hpp" />
     <ClInclude Include="common\Utils\Window.hpp" />
-    <ClInclude Include="common\wclibs\Core.hpp" />
-    <ClInclude Include="common\wclibs\pch.hpp" />
+    <ClInclude Include="common\wc\Core.hpp" />
+    <ClInclude Include="common\wc\pch.hpp" />
+    <ClInclude Include="common\wc\Vertex.hpp" />
     <ClInclude Include="gl\Camera.h" />
     <ClInclude Include="gl\Cubemap.h" />
     <ClInclude Include="gl\FrameBuffer.h" />

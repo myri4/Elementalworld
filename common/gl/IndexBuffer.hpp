@@ -1,7 +1,7 @@
 #ifndef INDEXBUFFER_HPP
 #define INDEXBUFFER_HPP
 
-#include <wclibs/pch.hpp>
+#include <wc/pch.hpp>
 
 namespace gl {
     class IndexBuffer {

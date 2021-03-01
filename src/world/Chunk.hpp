@@ -1,12 +1,13 @@
 #ifndef CHUNK_HPP
 #define CHUNK_HPP
 
-#include <gl/Vertex.hpp>
+#include <gl/VertexBuffer.hpp>
+#include <gl/VertexArray.hpp>
 #include "Block.hpp"
 
 //OpenGL Memory Buffer Variables
 //@Todo try with size_t 
-static const uint32_t chunkSize = 16;
+static const uint8_t chunkSize = 16;
 
 static const uint32_t MaxFaceCount = chunkSize * chunkSize * 6;
 static const uint32_t MaxVertexCount = MaxFaceCount * 4;
@@ -49,6 +50,27 @@ public: // Functions
 	Chunk() {}
 	~Chunk() {}
 };
+
+glm::vec3 getBlockPos(const int& x, const int& y, const int& z)
+{
+	return glm::floor(glm::vec3{ x % chunkSize, y % chunkSize, z % chunkSize });
+}
+
+glm::vec3 getBlockPos(const glm::ivec3& pos)
+{
+	return glm::floor(glm::vec3{ pos.x % chunkSize, pos.y % chunkSize, pos.z % chunkSize });
+}
+
+glm::vec3 getChunkPos(const int& x, const int& y, const int& z)
+{
+	return glm::floor(glm::vec3{ x / chunkSize, y / chunkSize, z / chunkSize });
+}
+
+glm::vec3 getChunkPos(const glm::vec3& pos)
+{
+	return glm::floor(glm::vec3{ pos.x / chunkSize, pos.y / chunkSize, pos.z / chunkSize });
+}
+
 }
 
 #endif

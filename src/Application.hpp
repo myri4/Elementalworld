@@ -1,6 +1,6 @@
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
-#include <wclibs/pch.hpp>
+#include <wc/pch.hpp>
 #include <gl/glErrors.hpp>
 #include "world/World.hpp"
 
@@ -19,7 +19,7 @@ namespace wc {
 		gl::FrameBuffer screen;
 		gl::Shader screenShader;
 
-		wc::Singleplayer world;
+		wc::Multiplayer world;
 
 		//irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
 		//----------------------------------------------------------------------------------------------------------------------
@@ -33,10 +33,10 @@ namespace wc {
 		void OnInput() override {
 
 			world.OnInput(deltaTime);
-			if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::F)) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			if (wc::Keyboard::isKeyPressed(wc::Keyboard::Key::F)) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-			if (wc::Keyboard::isButtonPressed(wc::Keyboard::Key::R)) glDisable(GL_CULL_FACE);
+			if (wc::Keyboard::isKeyPressed(wc::Keyboard::Key::R)) glDisable(GL_CULL_FACE);
 			else glEnable(GL_CULL_FACE);
 
 			if (!window.hasFocus()) CenterMouse = false;
@@ -49,9 +49,7 @@ namespace wc {
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() override {
 			window.Create("config/window.lua", "Elementalworld");
-
 			if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) WC_ERROR("Failed to initialize GLAD");
-
 			// OpenGL state
 			EnableGLDebuging();
 			// ------------
@@ -129,7 +127,6 @@ namespace wc {
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnDelete() override {
-			glfwTerminate();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 	public:

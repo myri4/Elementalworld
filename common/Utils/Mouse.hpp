@@ -1,7 +1,7 @@
 #ifndef MOUSE_HPP
 #define MOUSE_HPP
 
-#include <wclibs/Core.hpp>
+#include <wc/Core.hpp>
 #include <glm/glm.hpp>
 
 #ifdef _WIN32

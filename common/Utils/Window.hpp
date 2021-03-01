@@ -20,9 +20,10 @@ namespace wc {
 			windowScript.script_file(luaScript);
 
 			GLFWmonitor* mode = nullptr;
-			if (windowScript["fullscreen"])mode = glfwGetPrimaryMonitor();
+			if (windowScript["fullscreen"]) mode = glfwGetPrimaryMonitor();
 
 			glfwInit();
+			window = glfwCreateWindow(windowScript["screenWidth"], windowScript["screenHeight"], title, mode, nullptr);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -30,7 +31,6 @@ namespace wc {
 			glfwWindowHint(GLFW_REFRESH_RATE, windowScript["framerateLimit"]);
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
-			window = glfwCreateWindow(windowScript["screenWidth"], windowScript["screenHeight"], title, mode, nullptr);
 			bool vsync = windowScript["vsync"];
 			glfwMakeContextCurrent(window);
 			if (!vsync)glfwSwapInterval(0);

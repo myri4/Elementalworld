@@ -23,7 +23,7 @@ public:
 	Camera() {}
 
 	// returns the view matrix calculated using Euler Angles and the LookAt Matrix
-	glm::mat4 GetViewMatrix() { return glm::lookAt(Position, Position + Front, Up); }	
+	glm::mat4 GetViewMatrix() const { return glm::lookAt(Position, Position + Front, Up); }	
 
 	void UpdateCameraAngles() {
 		// update Front, Right and Up Vectors using the updated Euler angles

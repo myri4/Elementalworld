@@ -1,7 +1,7 @@
 #ifndef KEYBOARD_HPP
 #define KEYBOARD_HPP
 
-#include "../wclibs/Core.hpp"
+#include "../wc/Core.hpp"
 #include <Windows.h>
 
 namespace wc {
@@ -52,12 +52,12 @@ namespace wc {
             LControl,     ///< The left Control key
             LShift,       ///< The left Shift key       
             LAlt,         ///< The left Alt key
-            //LSystem,      ///< The left OS specific key: window (Windows and Linux), apple (MacOS X), ...
+            LSystem,      ///< The left OS specific key: window (Windows and Linux), apple (MacOS X), ...
 
             RControl,     ///< The right Control key
             RShift,       ///< The right Shift key
             RAlt,         ///< The right Alt key        
-            //RSystem,      ///< The right OS specific key: window (Windows and Linux), apple (MacOS X), ...
+            RSystem,      ///< The right OS specific key: window (Windows and Linux), apple (MacOS X), ...
 
             Menu,         ///< The Menu key
             LBracket,     ///< The [ key
@@ -77,8 +77,8 @@ namespace wc {
 
             Backspace,    ///< The Backspace key
             Tab,          ///< The Tabulation key
-            //PageUp,       ///< The Page up key
-            //PageDown,     ///< The Page down key
+            PageUp,       ///< The Page up key
+            PageDown,     ///< The Page down key
             End,          ///< The End key
             Home,         ///< The Home key
             Insert,       ///< The Insert key
@@ -129,120 +129,117 @@ namespace wc {
             Return = Enter         ///<  Use Enter instead
         };
 
-        bool isButtonPressed(Key key) {
-#ifdef _WIN32
-            if (key == Key::A) if (GetAsyncKeyState('A')) return true;
-            if (key == Key::B) if (GetAsyncKeyState('B')) return true;
-            if (key == Key::C) if (GetAsyncKeyState('C')) return true;
-            if (key == Key::D) if (GetAsyncKeyState('D')) return true;
-            if (key == Key::E) if (GetAsyncKeyState('E')) return true;
-            if (key == Key::F) if (GetAsyncKeyState('F')) return true;
-            if (key == Key::G) if (GetAsyncKeyState('G')) return true;
-            if (key == Key::H) if (GetAsyncKeyState('H')) return true;
-            if (key == Key::I) if (GetAsyncKeyState('I')) return true;
-            if (key == Key::J) if (GetAsyncKeyState('J')) return true;
-            if (key == Key::K) if (GetAsyncKeyState('K')) return true;
-            if (key == Key::L) if (GetAsyncKeyState('L')) return true;
-            if (key == Key::M) if (GetAsyncKeyState('M')) return true;
-            if (key == Key::N) if (GetAsyncKeyState('N')) return true;
-            if (key == Key::O) if (GetAsyncKeyState('O')) return true;
-            if (key == Key::P) if (GetAsyncKeyState('P')) return true;
-            if (key == Key::Q) if (GetAsyncKeyState('Q')) return true;
-            if (key == Key::R) if (GetAsyncKeyState('R')) return true;
-            if (key == Key::S) if (GetAsyncKeyState('S')) return true;
-            if (key == Key::T) if (GetAsyncKeyState('T')) return true;
-            if (key == Key::U) if (GetAsyncKeyState('U')) return true;
-            if (key == Key::V) if (GetAsyncKeyState('V')) return true;
-            if (key == Key::W) if (GetAsyncKeyState('W')) return true;
-            if (key == Key::X) if (GetAsyncKeyState('X')) return true;
-            if (key == Key::Y) if (GetAsyncKeyState('Y')) return true;
-            if (key == Key::Z) if (GetAsyncKeyState('Z')) return true;
-
-            if (key == Key::Num0) if (GetAsyncKeyState('0')) return true;
-            if (key == Key::Num1) if (GetAsyncKeyState('1')) return true;
-            if (key == Key::Num2) if (GetAsyncKeyState('2')) return true;
-            if (key == Key::Num3) if (GetAsyncKeyState('3')) return true;
-            if (key == Key::Num4) if (GetAsyncKeyState('4')) return true;
-            if (key == Key::Num5) if (GetAsyncKeyState('5')) return true;
-            if (key == Key::Num6) if (GetAsyncKeyState('6')) return true;
-            if (key == Key::Num7) if (GetAsyncKeyState('7')) return true;
-            if (key == Key::Num8) if (GetAsyncKeyState('8')) return true;
-            if (key == Key::Num9) if (GetAsyncKeyState('9')) return true;
-
-            if (key == Key::Escape)   if (GetAsyncKeyState(VK_ESCAPE))     return true;
-            if (key == Key::LControl) if (GetAsyncKeyState(VK_LCONTROL)) return true;
-            if (key == Key::LShift)   if (GetAsyncKeyState(VK_LSHIFT))     return true;
-            if (key == Key::LBracket) if (GetAsyncKeyState('['))         return true;
-
-            if (key == Key::Menu || key == Key::LAlt || key == Key::RAlt) if (GetAsyncKeyState(VK_MENU))         return true;
-            if (key == Key::Space)      if (GetAsyncKeyState(VK_SPACE))      return true;
-            if (key == Key::SemiColon)  if (GetAsyncKeyState(';'))       return true;
-
-            if (key == Key::RControl) if (GetAsyncKeyState(VK_RCONTROL)) return true;
-            if (key == Key::RShift)   if (GetAsyncKeyState(VK_RSHIFT))     return true;
-            if (key == Key::RBracket) if (GetAsyncKeyState(']'))         return true;
-
-
-            if (key == Key::Numpad0) if (GetAsyncKeyState(VK_NUMPAD0)) return true;
-            if (key == Key::Numpad1) if (GetAsyncKeyState(VK_NUMPAD1)) return true;
-            if (key == Key::Numpad2) if (GetAsyncKeyState(VK_NUMPAD2)) return true;
-            if (key == Key::Numpad3) if (GetAsyncKeyState(VK_NUMPAD3)) return true;
-            if (key == Key::Numpad4) if (GetAsyncKeyState(VK_NUMPAD4)) return true;
-            if (key == Key::Numpad5) if (GetAsyncKeyState(VK_NUMPAD5)) return true;
-            if (key == Key::Numpad6) if (GetAsyncKeyState(VK_NUMPAD6)) return true;
-            if (key == Key::Numpad7) if (GetAsyncKeyState(VK_NUMPAD7)) return true;
-            if (key == Key::Numpad8) if (GetAsyncKeyState(VK_NUMPAD8)) return true;
-            if (key == Key::Numpad9) if (GetAsyncKeyState(VK_NUMPAD9)) return true;
-
-            if (key == Key::F1)   if (GetAsyncKeyState(VK_F1))  return true;
-            if (key == Key::F2)   if (GetAsyncKeyState(VK_F2))  return true;
-            if (key == Key::F3)   if (GetAsyncKeyState(VK_F3))  return true;
-            if (key == Key::F4)   if (GetAsyncKeyState(VK_F4))  return true;
-            if (key == Key::F5)   if (GetAsyncKeyState(VK_F5))  return true;
-            if (key == Key::F6)   if (GetAsyncKeyState(VK_F6))  return true;
-            if (key == Key::F7)   if (GetAsyncKeyState(VK_F7))  return true;
-            if (key == Key::F8)   if (GetAsyncKeyState(VK_F8))  return true;
-            if (key == Key::F9)   if (GetAsyncKeyState(VK_F9))  return true;
-            if (key == Key::F10)   if (GetAsyncKeyState(VK_F10)) return true;
-            if (key == Key::F11)   if (GetAsyncKeyState(VK_F11)) return true;
-            if (key == Key::F12)   if (GetAsyncKeyState(VK_F12)) return true;
-            if (key == Key::F13)   if (GetAsyncKeyState(VK_F13)) return true;
-            if (key == Key::F14)   if (GetAsyncKeyState(VK_F14)) return true;
-            if (key == Key::F15)   if (GetAsyncKeyState(VK_F15)) return true;
-            if (key == Key::Pause) if (GetAsyncKeyState(VK_PAUSE)) return true;
-
-            if (key == Key::Comma)  if (GetAsyncKeyState(',')) return true;
-            if (key == Key::Period) if (GetAsyncKeyState('.')) return true;
-            if (key == Key::Quote)  if (GetAsyncKeyState('\'')) return true;
-            if (key == Key::Slash)  if (GetAsyncKeyState('/')) return true;
-            if (key == Key::Backslash) if (GetAsyncKeyState('\\')) return true;
-            if (key == Key::Tilde)  if (GetAsyncKeyState('~')) return true;
-            if (key == Key::Equal)  if (GetAsyncKeyState('=')) return true;
-            if (key == Key::Hyphen) if (GetAsyncKeyState('-')) return true;
-
-            if (key == Key::BackSpace) if (GetAsyncKeyState(VK_BACK)) return true;
-            if (key == Key::Tab)       if (GetAsyncKeyState(VK_TAB)) return true;
-
-            if (key == Key::End)      if (GetAsyncKeyState(VK_END)) return true;
-            if (key == Key::Home)     if (GetAsyncKeyState(VK_HOME)) return true;
-            if (key == Key::Insert)   if (GetAsyncKeyState(VK_INSERT)) return true;
-
-            if (key == Key::Delete)   if (GetAsyncKeyState(VK_DELETE)) return true;
-            if (key == Key::Add)      if (GetAsyncKeyState(VK_ADD))return true;
-            if (key == Key::Subtract) if (GetAsyncKeyState(VK_SUBTRACT)) return true;
-            if (key == Key::Multiply) if (GetAsyncKeyState(VK_MULTIPLY)) return true;
-            if (key == Key::Divide)   if (GetAsyncKeyState(VK_DIVIDE)) return true;
-
-
-            if (key == Key::Up)   if (GetAsyncKeyState(VK_UP)) return true;
-            if (key == Key::Down) if (GetAsyncKeyState(VK_DOWN)) return true;
-
-            if (key == Key::Left)  if (GetAsyncKeyState(VK_LEFT)) return true;
-            if (key == Key::Right) if (GetAsyncKeyState(VK_RIGHT)) return true;
-#endif // _WIN32
-
-            return false;
+        bool isKeyPressed(Key key)
+        {
+            int vkey = 0;
+            switch (key)
+            {
+            default:              vkey = 0;             break;
+            case Key::A:          vkey = 'A';           break;
+            case Key::B:          vkey = 'B';           break;
+            case Key::C:          vkey = 'C';           break;
+            case Key::D:          vkey = 'D';           break;
+            case Key::E:          vkey = 'E';           break;
+            case Key::F:          vkey = 'F';           break;
+            case Key::G:          vkey = 'G';           break;
+            case Key::H:          vkey = 'H';           break;
+            case Key::I:          vkey = 'I';           break;
+            case Key::J:          vkey = 'J';           break;
+            case Key::K:          vkey = 'K';           break;
+            case Key::L:          vkey = 'L';           break;
+            case Key::M:          vkey = 'M';           break;
+            case Key::N:          vkey = 'N';           break;
+            case Key::O:          vkey = 'O';           break;
+            case Key::P:          vkey = 'P';           break;
+            case Key::Q:          vkey = 'Q';           break;
+            case Key::R:          vkey = 'R';           break;
+            case Key::S:          vkey = 'S';           break;
+            case Key::T:          vkey = 'T';           break;
+            case Key::U:          vkey = 'U';           break;
+            case Key::V:          vkey = 'V';           break;
+            case Key::W:          vkey = 'W';           break;
+            case Key::X:          vkey = 'X';           break;
+            case Key::Y:          vkey = 'Y';           break;
+            case Key::Z:          vkey = 'Z';           break;
+            case Key::Num0:       vkey = '0';           break;
+            case Key::Num1:       vkey = '1';           break;
+            case Key::Num2:       vkey = '2';           break;
+            case Key::Num3:       vkey = '3';           break;
+            case Key::Num4:       vkey = '4';           break;
+            case Key::Num5:       vkey = '5';           break;
+            case Key::Num6:       vkey = '6';           break;
+            case Key::Num7:       vkey = '7';           break;
+            case Key::Num8:       vkey = '8';           break;
+            case Key::Num9:       vkey = '9';           break;
+            case Key::Escape:     vkey = VK_ESCAPE;     break;
+            case Key::LControl:   vkey = VK_LCONTROL;   break;
+            case Key::LShift:     vkey = VK_LSHIFT;     break;
+            case Key::LAlt:       vkey = VK_LMENU;      break;
+            case Key::LSystem:    vkey = VK_LWIN;       break;
+            case Key::RControl:   vkey = VK_RCONTROL;   break;
+            case Key::RShift:     vkey = VK_RSHIFT;     break;
+            case Key::RAlt:       vkey = VK_RMENU;      break;
+            case Key::RSystem:    vkey = VK_RWIN;       break;
+            case Key::Menu:       vkey = VK_APPS;       break;
+            case Key::LBracket:   vkey = VK_OEM_4;      break;
+            case Key::RBracket:   vkey = VK_OEM_6;      break;
+            case Key::Semicolon:  vkey = VK_OEM_1;      break;
+            case Key::Comma:      vkey = VK_OEM_COMMA;  break;
+            case Key::Period:     vkey = VK_OEM_PERIOD; break;
+            case Key::Quote:      vkey = VK_OEM_7;      break;
+            case Key::Slash:      vkey = VK_OEM_2;      break;
+            case Key::Backslash:  vkey = VK_OEM_5;      break;
+            case Key::Tilde:      vkey = VK_OEM_3;      break;
+            case Key::Equal:      vkey = VK_OEM_PLUS;   break;
+            case Key::Hyphen:     vkey = VK_OEM_MINUS;  break;
+            case Key::Space:      vkey = VK_SPACE;      break;
+            case Key::Enter:      vkey = VK_RETURN;     break;
+            case Key::Backspace:  vkey = VK_BACK;       break;
+            case Key::Tab:        vkey = VK_TAB;        break;
+            case Key::PageUp:     vkey = VK_PRIOR;      break;
+            case Key::PageDown:   vkey = VK_NEXT;       break;
+            case Key::End:        vkey = VK_END;        break;
+            case Key::Home:       vkey = VK_HOME;       break;
+            case Key::Insert:     vkey = VK_INSERT;     break;
+            case Key::Delete:     vkey = VK_DELETE;     break;
+            case Key::Add:        vkey = VK_ADD;        break;
+            case Key::Subtract:   vkey = VK_SUBTRACT;   break;
+            case Key::Multiply:   vkey = VK_MULTIPLY;   break;
+            case Key::Divide:     vkey = VK_DIVIDE;     break;
+            case Key::Left:       vkey = VK_LEFT;       break;
+            case Key::Right:      vkey = VK_RIGHT;      break;
+            case Key::Up:         vkey = VK_UP;         break;
+            case Key::Down:       vkey = VK_DOWN;       break;
+            case Key::Numpad0:    vkey = VK_NUMPAD0;    break;
+            case Key::Numpad1:    vkey = VK_NUMPAD1;    break;
+            case Key::Numpad2:    vkey = VK_NUMPAD2;    break;
+            case Key::Numpad3:    vkey = VK_NUMPAD3;    break;
+            case Key::Numpad4:    vkey = VK_NUMPAD4;    break;
+            case Key::Numpad5:    vkey = VK_NUMPAD5;    break;
+            case Key::Numpad6:    vkey = VK_NUMPAD6;    break;
+            case Key::Numpad7:    vkey = VK_NUMPAD7;    break;
+            case Key::Numpad8:    vkey = VK_NUMPAD8;    break;
+            case Key::Numpad9:    vkey = VK_NUMPAD9;    break;
+            case Key::F1:         vkey = VK_F1;         break;
+            case Key::F2:         vkey = VK_F2;         break;
+            case Key::F3:         vkey = VK_F3;         break;
+            case Key::F4:         vkey = VK_F4;         break;
+            case Key::F5:         vkey = VK_F5;         break;
+            case Key::F6:         vkey = VK_F6;         break;
+            case Key::F7:         vkey = VK_F7;         break;
+            case Key::F8:         vkey = VK_F8;         break;
+            case Key::F9:         vkey = VK_F9;         break;
+            case Key::F10:        vkey = VK_F10;        break;
+            case Key::F11:        vkey = VK_F11;        break;
+            case Key::F12:        vkey = VK_F12;        break;
+            case Key::F13:        vkey = VK_F13;        break;
+            case Key::F14:        vkey = VK_F14;        break;
+            case Key::F15:        vkey = VK_F15;        break;
+            case Key::Pause:      vkey = VK_PAUSE;      break;
+            }
+            return (GetAsyncKeyState(vkey) & 0x8000) != 0;
         }
+
     }
 }
 #endif
