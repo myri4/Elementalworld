@@ -4,6 +4,8 @@
 #include "tsqueue.hpp"
 #include "message.hpp"
 
+#include <Utils/Log.hpp>
+
 namespace wc
 {
 	namespace net
@@ -186,7 +188,7 @@ namespace wc
 							// for now simply assume the connection has died by closing the
 							// socket. When a future attempt to write to this client fails due
 							// to the closed socket, it will be tidied up.
-							std::cout << "[" << id << "] Write Header Fail.\n";
+							WC_INFO("[{0}] Write Header Fail.", id);
 							m_socket.close();
 						}
 					});
@@ -217,7 +219,7 @@ namespace wc
 						else
 						{
 							// Sending failed, see WriteHeader() equivalent for description :P
-							std::cout << "[" << id << "] Write Body Fail.\n";
+							WC_INFO("[{0}] Write Body Fail.", id);
 							m_socket.close();
 						}
 					});
@@ -255,8 +257,8 @@ namespace wc
 						else
 						{
 							// Reading form the client went wrong, most likely a disconnect
-							// has occurred. Close the socket and let the system tidy it up later.
-							std::cout << "[" << id << "] Read Header Fail.\n";
+							// has occurred. Close the socket and let the system tidy it up later
+							WC_INFO("[{0}] Read Header Fail.", id);
 							m_socket.close();
 						}
 					});
@@ -280,7 +282,7 @@ namespace wc
 						else
 						{
 							// As above!
-							std::cout << "[" << id << "] Read Body Fail.\n";
+							WC_INFO("[{0}] Read Body Fail.", id);
 							m_socket.close();
 						}
 					});
@@ -329,7 +331,7 @@ namespace wc
 								if (m_nHandshakeIn == m_nHandshakeCheck)
 								{
 									// Client has provided valid solution, so allow it to connect properly
-									std::cout << "Client Validated" << std::endl;
+									WC_INFO("Client Validated");
 									server->OnClientValidated(this->shared_from_this());
 
 									// Sit waiting to receive data now
@@ -338,7 +340,7 @@ namespace wc
 								else
 								{
 									// Client gave incorrect data, so disconnect
-									std::cout << "Client Disconnected (Fail Validation)" << std::endl;
+									WC_INFO("Client Disconnected (Fail Validation)");
 									m_socket.close();
 								}
 							}
@@ -354,7 +356,7 @@ namespace wc
 						else
 						{
 							// Some biggerfailure occured
-							std::cout << "Client Disconnected (ReadValidation)" << std::endl;
+							WC_INFO("Client Disconnected (ReadValidation)");
 							m_socket.close();
 						}
 					});

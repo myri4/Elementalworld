@@ -61,9 +61,9 @@ public:
 
 private:
 	std::array<glm::mat4, MAX_BONE_WEIGHTS> m_Transforms;
-	Animation* m_CurrentAnimation;
-	float m_CurrentTime;
-	float m_DeltaTime;
+	Animation* m_CurrentAnimation = nullptr;
+	float m_CurrentTime = 0.f;
+	float m_DeltaTime = 0.f;
 };
 }
 

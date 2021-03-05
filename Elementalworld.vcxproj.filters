@@ -215,9 +215,6 @@
     <ClInclude Include="common\Maths\Ray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\wc\Core.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\wc\pch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -249,6 +246,27 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\wc\Model\Model.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\net\message.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\net\net_client.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\net\net_common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\net\net_connection.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\net\net_server.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\net\tsqueue.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\net\wc_net.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

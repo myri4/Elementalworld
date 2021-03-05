@@ -42,7 +42,7 @@ namespace wc
 				}
 				catch (std::exception& e)
 				{
-					std::cerr << "Client Exception: " << e.what() << "\n";
+					WC_ERROR("Client Exception: {0}", e.what());
 					return false;
 				}
 				return true;

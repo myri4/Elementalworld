@@ -94,7 +94,7 @@ namespace wc {
 		struct Data {
 			//Quad Rendering
 			uint32_t IndexCount = 0;
-			uint32_t TextureSlots[MaxTextures];
+			uint32_t TextureSlots[MaxTextures] = {0};
 			uint32_t byteOffset = 0;
 			uint8_t TextureSlotIndex = 1;
 			gl::Texture whiteTexture;

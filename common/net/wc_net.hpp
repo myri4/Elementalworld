@@ -5,4 +5,3 @@
 #include "net_client.hpp"
 #include "net_connection.hpp"
 #include "message.hpp"
-#include "net_common.hpp"

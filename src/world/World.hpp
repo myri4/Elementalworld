@@ -15,6 +15,7 @@
 #include "Biome.hpp"
 #include <GUI/AssetManager.hpp>
 #include <wc/Model/Animator.hpp>
+#include <iostream>
 
 namespace wc {
 
@@ -30,7 +31,11 @@ namespace wc {
 
 		Game_AddPlayer,
 		Game_RemovePlayer,
-		Game_UpdatePlayer
+		Game_UpdatePlayer,
+
+		RequestChunk,
+		SendChunk,
+		BlockEdit
 	};
 
 	static std::unordered_map<int, Block> blockData;
@@ -77,10 +82,10 @@ namespace wc {
 	public:
 		Player p;
 		Font font;
-		//Model model;
+		Model model;
 		//Animation animation;
 		//Animator animator;
-		//gl::Shader modelShader;
+		gl::Shader modelShader;
 
 		Singleplayer() {}
 
@@ -152,14 +157,14 @@ namespace wc {
 			for (ChunkID chunk = 0; chunk < world.size(); chunk++) UpdateNeighbours(chunk);
 			//defBiome.Create("scripts/biomeTest.lua");
 
-			//modelShader.Create("shaderpacks/default/modelShader.glsl");
-			//model.Create("assets/models/dancing_vampire.dae");
+			modelShader.Create("shaderpacks/default/modelShader.glsl");
+			model.Create("assets/models/dancing_vampire.dae");
 			//animation.Create("assets/models/dancing_vampire.dae", &model);
 			//animator.PlayAnimation(&animation);
 		}
 
 		void Update(const glm::vec2& windpos, const glm::vec2& windsize, const bool& CenterMouse, const float& deltaTime) {
-			p.UpdatePlayer(windpos, windsize, CenterMouse, deltaTime);
+			p.UpdatePlayer(windpos, windsize, CenterMouse);
 	
 			assets.Bind();
 			// activate shader
@@ -202,9 +207,9 @@ namespace wc {
 				if (world[i].canBeUpdated) { UpdateMesh(i);	world[i].canBeUpdated = false;	}
 			}			
 
-			//modelShader.use();
-			//modelShader.setMat4("projection", p.projection);
-			//modelShader.setMat4("view", p.GetView());
+			modelShader.use();
+			modelShader.setMat4("projection", p.projection);
+			modelShader.setMat4("view", p.GetView());
 
 			//auto transforms = animator.GetPoseTransforms();
 
@@ -214,15 +219,15 @@ namespace wc {
 			//}
 			// render the loaded model
 			//animator.UpdateAnimation(deltaTime, modelShader);
-			//glm::mat4 Model = glm::mat4(1.0f);
-			//Model = glm::translate(Model, { 161, 47.5f ,121 }); // translate it down so it's at the center of the scene
-			//Model = glm::scale(Model, glm::vec3(1.f));	// it's a bit too big for our scene, so scale it down
-			//modelShader.setMat4("model", Model);
-			//glDisable(GL_CULL_FACE);
-			//glDisable(GL_BLEND);
-			//model.Draw(modelShader);
-			//glEnable(GL_CULL_FACE);
-			//glEnable(GL_BLEND);
+			glm::mat4 Model = glm::mat4(1.0f);
+			Model = glm::translate(Model, { 161, 47.5f ,121 }); // translate it down so it's at the center of the scene
+			Model = glm::scale(Model, glm::vec3(1.f));	// it's a bit too big for our scene, so scale it down
+			modelShader.setMat4("model", Model);
+			glDisable(GL_CULL_FACE);
+			glDisable(GL_BLEND);
+			model.Draw(modelShader);
+			glEnable(GL_CULL_FACE);
+			glEnable(GL_BLEND);
 
 			// Render2D Stuff
 			Renderer2D::DrawTexts("X: " + std::to_string(p.Position.x) + " Y: " + std::to_string(p.Position.y) + " Z: " + std::to_string(p.Position.z), font, { 25.0f, 60 });
@@ -235,8 +240,8 @@ namespace wc {
 
 		void OnInput(const float& deltaTime) {
 			p.UpdatePlayerInput(deltaTime);
-			bool bBreak = wc::Mouse::isButtonPressed() == wc::Mouse::MouseButton::LBUTTON;
-			bool bPlace = wc::Mouse::isButtonPressed() == wc::Mouse::MouseButton::RBUTTON;
+			bool bBreak = Mouse::isButtonPressed() == Mouse::MouseButton::LBUTTON;
+			bool bPlace = Mouse::isButtonPressed() == Mouse::MouseButton::RBUTTON;
 
 			if (bBreak || bPlace) {
 				glm::vec3 m_rayLastPos = glm::vec3(0.0f);
@@ -284,7 +289,7 @@ namespace wc {
 		}
 
 		void ResetChunk(const ChunkID& chunk, const glm::vec3& newChunkPos) {
-			//wc::Timer timer("ResetChunk");
+			//Timer timer("ResetChunk");
 			world[chunk].chunkPos = newChunkPos;
 			UpdateNeighbours(chunk);
 			GenerateChunkTerrain(chunk);
@@ -657,7 +662,7 @@ namespace wc {
 		std::array<Chunk, RenderDistance * RenderDistance * RenderDistance> world;
 		Noise worldNoise;
 		//Noise biomeNoise;
-		wc::Frustum viewFrustum;
+		Frustum viewFrustum;
 
 		int8_t water_level = 0;
 		//int8_t snow_level = 0;
@@ -670,7 +675,8 @@ namespace wc {
 		uint32_t localPlayerID = 0;
 		std::unordered_map<uint32_t, PlayerDescription> players;
 		Font font;
-
+		Model model;
+		gl::Shader modelShader;
 		Multiplayer() {}
 
 		void Create() {
@@ -720,12 +726,27 @@ namespace wc {
 
 				ioffset += 4;
 			}
+			modelShader.Create("shaderpacks/default/modelShader.glsl");
+			model.Create("assets/models/dancing_vampire.dae");
+
+			//std::string ipAddres;
+			//std::cin >> ipAddres;
+
+			Connect("25.104.236.246", 60000); // 25.104.236.246
+
 			worldIndexBuffer.Create(indices, sizeof(indices));
 			for (ChunkID chunk = 0; chunk < world.size(); chunk++) UpdateNeighbours(chunk);
+			//players[0].nUniqueID = 0;
+			//players[0].Position = { RenderDistance * RenderDistance / 2 + RenderDistance, RenderDistance * 4 ,RenderDistance * RenderDistance / 2 };
 		}
 
+		bool bWaitingForConnection = true;
+
+		PlayerDescription descPlayer;
+
 		void Update(const glm::vec2& windpos, const glm::vec2& windsize, const bool& CenterMouse, const float& deltaTime) {
-			p.UpdatePlayer(windpos, windsize, CenterMouse, deltaTime);
+			p.UpdatePlayer(windpos, windsize, CenterMouse);
+
 
 			assets.Bind();
 			// activate shader
@@ -742,9 +763,75 @@ namespace wc {
 			uint8_t chunkHalf = RenderDistance / 2;
 			glm::vec3 currentPlayerPos = getChunkPos(p.Position);
 			
-			for (auto& player : players) {
+			if (IsConnected())
+			{
+				while (!Incoming().empty())
+				{
+					auto msg = Incoming().pop_front().msg;
 
+					switch (msg.header.id)
+					{
+					case(GameMsg::Client_Accepted):
+					{
+						WC_INFO("Server accepted client - you're in!");
+						net::message<GameMsg> msg;
+						msg.header.id = GameMsg::Client_RegisterWithServer;
+						descPlayer.Position = glm::vec3(0.f);
+						msg << descPlayer;
+						Send(msg);
+						break;
+					}
+
+					case(GameMsg::Client_AssignID):
+					{
+						// Server is assigning us OUR id
+						msg >> localPlayerID;
+						WC_INFO("Assigned Client ID = {0}", localPlayerID);						
+						break;
+					}
+
+					case(GameMsg::Game_AddPlayer):
+					{
+						PlayerDescription desc;
+						msg >> desc;
+						players.insert_or_assign(desc.nUniqueID, desc);
+						WC_INFO("New Player Joined");
+						if (desc.nUniqueID == localPlayerID)
+						{
+							// Now we exist in game world
+							bWaitingForConnection = false;
+						}
+						break;
+					}
+
+					case(GameMsg::Game_RemovePlayer):
+					{
+						uint32_t nRemovalID = 0;
+						msg >> nRemovalID;
+						players.erase(nRemovalID);
+						break;
+					}
+
+					case(GameMsg::Game_UpdatePlayer):
+					{
+						PlayerDescription desc;
+						msg >> desc;
+						players.insert_or_assign(desc.nUniqueID, desc);
+						break;
+					}
+
+					case(GameMsg::BlockEdit):
+					{
+						glm::vec4 blockData = glm::vec4(0.f);
+						msg >> blockData;
+						setBlock(blockData, blockData.w);
+						break;
+					}
+					}
+				}
 			}
+
+			if (bWaitingForConnection) Renderer2D::DrawTexts("Waiting for connection", font, windsize / glm::vec2(2));	
 
 			for (ChunkID i = 0; i < world.size(); i++) {
 
@@ -767,21 +854,53 @@ namespace wc {
 				if (world[i].canBeUpdated) { UpdateMesh(i);	world[i].canBeUpdated = false; }
 			}
 
+			net::message<GameMsg> msg;
+			msg.header.id = GameMsg::Game_UpdatePlayer;
+			players[localPlayerID].Position = p.Position;
+			msg << players[localPlayerID];
+			Send(msg);
+
+			modelShader.use();
+			modelShader.setMat4("projection", p.projection);
+			modelShader.setMat4("view", p.GetView());			
+
+			for (auto& player : players) {
+				if (player.second.nUniqueID != localPlayerID) {
+
+				glm::mat4 Model = glm::mat4(1.0f);
+				// Draw Players
+				// render the loaded model
+				Model = glm::translate(Model, player.second.Position); // translate it down so it's at the center of the scene
+				Model = glm::scale(Model, glm::vec3(0.01f));	// it's a bit too big for our scene, so scale it down
+				modelShader.setMat4("model", Model);
+				glDisable(GL_CULL_FACE);
+				glDisable(GL_BLEND);
+				model.Draw(modelShader);
+				glEnable(GL_CULL_FACE);
+				glEnable(GL_BLEND);
+				}
+			}
+
 			// Render2D Stuff
 			Renderer2D::DrawTexts("X: " + std::to_string(p.Position.x) + " Y: " + std::to_string(p.Position.y) + " Z: " + std::to_string(p.Position.z), font, { 25.0f, 60 });
 			Renderer2D::DrawTexts("Pitch: " + std::to_string(p.camera.Pitch) + " Yaw: " + std::to_string(p.camera.Yaw), font, { 25.0f, 100 });
 			Renderer2D::DrawTexts(
-				"ChunkX: " + std::to_string(currentPlayerPos.x) +
+				 "ChunkX: " + std::to_string(currentPlayerPos.x) +
 				" ChunkY: " + std::to_string(currentPlayerPos.y) +
 				" ChunkZ: " + std::to_string(currentPlayerPos.z), font, { 25.0f, 140 });
+			Renderer2D::DrawTexts("Players ingame: " + std::to_string(players.size()), font, { 25.0f, 180 });
+			Renderer2D::DrawTexts("Local player id: " + std::to_string(localPlayerID), font, { 25.0f, 220 });
 		}
 
 		void OnInput(const float& deltaTime) {
 			p.UpdatePlayerInput(deltaTime);
-			bool bBreak = wc::Mouse::isButtonPressed() == wc::Mouse::MouseButton::LBUTTON;
-			bool bPlace = wc::Mouse::isButtonPressed() == wc::Mouse::MouseButton::RBUTTON;
-
+			bool bBreak = Mouse::isButtonPressed() == Mouse::MouseButton::LBUTTON;
+			bool bPlace = Mouse::isButtonPressed() == Mouse::MouseButton::RBUTTON;
 			if (bBreak || bPlace) {
+				net::message<GameMsg> msg;
+				float x = 0.0f;
+				float y = 0.0f;
+				float z = 0.0f;
 				glm::vec3 m_rayLastPos = glm::vec3(0.0f);
 				Ray ray(p.Position);
 				while (ray.getLength() < 4) {
@@ -789,12 +908,24 @@ namespace wc {
 
 					if (getBlock(ray.getEnd()) > 0)
 						if (bBreak) {
-							setBlock(glm::floor(ray.getEnd()), 0); break;
+							setBlock(glm::floor(ray.getEnd()), 0); 
+							msg.header.id = GameMsg::BlockEdit;
+							glm::vec4 test = glm::vec4(ray.getEnd(),0);
+							msg << test;
+							Send(msg);
+							break;
 						}
-						else if (bPlace) { setBlock(glm::floor(m_rayLastPos), p.ItemHolding); break; }
+						else if (bPlace) { 
+							setBlock(glm::floor(m_rayLastPos), p.ItemHolding);
+							msg.header.id = GameMsg::BlockEdit;
+							glm::vec4 test = glm::vec4(m_rayLastPos, p.ItemHolding);
+							msg << test;
+							Send(msg);
+							break; 
+						}					
 
 					m_rayLastPos = ray.getEnd();
-				}
+				}				
 			}
 		}
 	private:
@@ -828,7 +959,7 @@ namespace wc {
 		}
 
 		void ResetChunk(const ChunkID& chunk, const glm::vec3& newChunkPos) {
-			//wc::Timer timer("ResetChunk");
+			//Timer timer("ResetChunk");
 			world[chunk].chunkPos = newChunkPos;
 			UpdateNeighbours(chunk);
 			GenerateChunkTerrain(chunk);
@@ -1155,7 +1286,7 @@ namespace wc {
 		gl::IndexBuffer worldIndexBuffer;
 		std::array<Chunk, RenderDistance* RenderDistance* RenderDistance> world;
 		Noise worldNoise;
-		wc::Frustum viewFrustum;
+		Frustum viewFrustum;
 
 		int8_t water_level = 0;
 	};

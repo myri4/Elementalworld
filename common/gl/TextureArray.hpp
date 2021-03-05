@@ -62,7 +62,7 @@ private:
 		if (nrComponents == 1) return GL_RED;
 		else if (nrComponents == 3)	return GL_RGB;
 		else if (nrComponents == 4) return GL_RGBA;
-
+		return 0;
 	}
 
 	uint32_t MaxTextureSize = 1;

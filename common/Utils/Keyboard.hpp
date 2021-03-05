@@ -1,7 +1,6 @@
 #ifndef KEYBOARD_HPP
 #define KEYBOARD_HPP
 
-#include "../wc/Core.hpp"
 #include <Windows.h>
 
 namespace wc {

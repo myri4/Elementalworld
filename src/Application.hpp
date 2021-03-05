@@ -31,8 +31,8 @@ namespace wc {
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnInput() override {
+			if (window.hasFocus())	world.OnInput(deltaTime);
 
-			world.OnInput(deltaTime);
 			if (wc::Keyboard::isKeyPressed(wc::Keyboard::Key::F)) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
@@ -44,7 +44,8 @@ namespace wc {
 			
 			if (CenterMouse) wc::Mouse::ShowMouse(false);
 			else wc::Mouse::ShowMouse(true);
-
+			
+			
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() override {

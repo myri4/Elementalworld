@@ -34,7 +34,8 @@ void main()
    }
 	
     mat4 viewModel = view * model;
-    gl_Position =  projection * viewModel * totalPosition;
+    //gl_Position =  projection * viewModel * totalPosition;
+    gl_Position = projection * view * model * vec4(pos, 1.0);
 	TexCoords = aTexCoords;
 }
 

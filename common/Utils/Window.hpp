@@ -33,7 +33,7 @@ namespace wc {
 
 			bool vsync = windowScript["vsync"];
 			glfwMakeContextCurrent(window);
-			if (!vsync)glfwSwapInterval(0);
+			if (!vsync) glfwSwapInterval(0);
 			glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 		}
 
@@ -52,13 +52,13 @@ namespace wc {
 			glfwPollEvents();
 		}
 
-		const glm::vec2& GetPos() const {
+		glm::vec2 GetPos() const {
 			int xpos, ypos;
 			glfwGetWindowPos(window, &xpos, &ypos);
 			return { xpos, ypos };
 		}
 
-		const glm::vec2& GetSize() const {
+		glm::vec2 GetSize() const {
 			int width, height;
 			glfwGetWindowSize(window, &width, &height);
 			return { width, height };
@@ -86,7 +86,7 @@ namespace wc {
 	private:
 		float lastFrame = 0.0f;
 		int framerateLimit = 0;
-		GLFWwindow* window;
+		GLFWwindow* window = nullptr;
 	};
 
 }

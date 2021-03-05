@@ -5,6 +5,8 @@
 #include "message.hpp"
 #include "net_connection.hpp"
 
+#include <Utils/Log.hpp>
+
 namespace wc
 {
 	namespace net
@@ -45,11 +47,11 @@ namespace wc
 				catch (std::exception& e)
 				{
 					// Something prohibited the server from listening
-					std::cerr << "[SERVER] Exception: " << e.what() << "\n";
+					WC_ERROR("Exception: {0}", e.what());
 					return false;
 				}
 
-				std::cout << "[SERVER] Started!\n";
+				WC_INFO("Started!");
 				return true;
 			}
 
@@ -63,7 +65,7 @@ namespace wc
 				if (m_threadContext.joinable()) m_threadContext.join();
 
 				// Inform someone, anybody, if they care...
-				std::cout << "[SERVER] Stopped!\n";
+				WC_INFO("Stopped!");
 			}
 
 			// ASYNC - Instruct asio to wait for connection
@@ -79,13 +81,12 @@ namespace wc
 						if (!ec)
 						{
 							// Display some useful(?) information
-							std::cout << "[SERVER] New Connection: " << socket.remote_endpoint() << "\n";
+							WC_INFO("New Connection: {0}", socket.remote_endpoint());
 
 							// Create a new connection to handle this client 
 							std::shared_ptr<connection<T>> newconn =
 								std::make_shared<connection<T>>(connection<T>::owner::server,
 									m_asioContext, std::move(socket), m_qMessagesIn);
-
 
 
 							// Give the user server a chance to deny connection
@@ -98,11 +99,11 @@ namespace wc
 								// asio context to sit and wait for bytes to arrive!
 								m_deqConnections.back()->ConnectToClient(this, nIDCounter++);
 
-								std::cout << "[" << m_deqConnections.back()->GetID() << "] Connection Approved\n";
+								WC_INFO("[{0}] Connection Approved", m_deqConnections.back()->GetID());
 							}
 							else
 							{
-								std::cout << "[-----] Connection Denied\n";
+								WC_INFO("[-----] Connection Denied");
 
 								// Connection will go out of scope with no pending tasks, so will
 								// get destroyed automagically due to the wonder of smart pointers
@@ -111,7 +112,7 @@ namespace wc
 						else
 						{
 							// Error has occurred during acceptance
-							std::cout << "[SERVER] New Connection Error: " << ec.message() << "\n";
+							WC_ERROR("New Connection Error: {0}", ec.message());
 						}
 
 						// Prime the asio context with more work - again simply wait for

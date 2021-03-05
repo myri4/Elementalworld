@@ -63,7 +63,7 @@ public:
 		camera.Position = Position;
 	}
 
-	void UpdatePlayer(const glm::vec2& windpos, const glm::vec2& windsize, const bool& CenterMouse, const float& deltaTime) {
+	void UpdatePlayer(const glm::vec2& windpos, const glm::vec2& windsize, const bool& CenterMouse) {
 
 		int16_t xt, yt;
 		
@@ -99,11 +99,10 @@ public:
 
 };
 
-class PlayerDescription : public Entity
-{
+class PlayerDescription {
 public:
 	uint32_t nUniqueID = 0;
-	BlockID ItemHolding = 1;
+	glm::vec3 Position = glm::vec3(0.f);
 };
 }
 #endif

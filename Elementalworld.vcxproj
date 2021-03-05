@@ -72,30 +72,30 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)common;$(SolutionDir)vendor\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)common;$(SolutionDir)vendor\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)common;$(SolutionDir)vendor\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)common;$(SolutionDir)vendor\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -112,8 +112,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
+      <AdditionalDependencies>liblua54.a;freetype.lib;glfw3.lib;irrKlang.lib;assimp-vc142-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -130,8 +129,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
+      <AdditionalDependencies>liblua54.a;freetype.lib;glfw3.lib;irrKlang.lib;assimp-vc142-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -148,8 +146,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
+      <AdditionalDependencies>liblua54.a;freetype.lib;glfw3.lib;irrKlang.lib;assimp-vc142-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -166,8 +163,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
+      <AdditionalDependencies>liblua54.a;freetype.lib;glfw3.lib;irrKlang.lib;assimp-vc142-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -198,6 +194,13 @@
     <ClInclude Include="common\gl\Shaders.h" />
     <ClInclude Include="common\gl\Shaders.hpp" />
     <ClInclude Include="common\gl\Skybox.h" />
+    <ClInclude Include="common\net\message.hpp" />
+    <ClInclude Include="common\net\net_client.hpp" />
+    <ClInclude Include="common\net\net_common.hpp" />
+    <ClInclude Include="common\net\net_connection.hpp" />
+    <ClInclude Include="common\net\net_server.hpp" />
+    <ClInclude Include="common\net\tsqueue.hpp" />
+    <ClInclude Include="common\net\wc_net.hpp" />
     <ClInclude Include="common\Renderer\Renderer.hpp" />
     <ClInclude Include="common\Renderer\RendererCommands.hpp" />
     <ClInclude Include="common\wc\Model\Animation.hpp" />
@@ -222,7 +225,6 @@
     <ClInclude Include="common\Utils\State.hpp" />
     <ClInclude Include="common\Utils\Time.hpp" />
     <ClInclude Include="common\Utils\Window.hpp" />
-    <ClInclude Include="common\wc\Core.hpp" />
     <ClInclude Include="common\wc\pch.hpp" />
     <ClInclude Include="common\wc\Vertex.hpp" />
     <ClInclude Include="gl\Camera.h" />

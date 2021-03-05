@@ -39,9 +39,6 @@
 
 #include <Maths/Camera.hpp>
 
-//Core file
-#include "Core.hpp"
-
 //Lua
 #include <sol/sol.hpp>
 

@@ -9,9 +9,9 @@ namespace wc {
 
 struct AssimpNodeData
 {
-	glm::mat4 transformation;
+	glm::mat4 transformation = glm::mat4(1.f);
 	std::string name;
-	int childrenCount;
+	int childrenCount = 0;
 	std::vector<AssimpNodeData> children;
 };
 

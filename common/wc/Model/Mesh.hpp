@@ -31,7 +31,7 @@ struct MeshVertex {
 };
 
 struct MeshTexture {
-    uint32_t id;
+    uint32_t id = 0;
     std::string type;
     std::string path;
 };
