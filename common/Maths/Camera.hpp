@@ -28,10 +28,12 @@ public:
 	void UpdateCameraAngles() {
 		// update Front, Right and Up Vectors using the updated Euler angles
 		// calculates the new Front vector from the Camera's (updated) Euler Angles
+		float yaw = glm::radians(Yaw);
+		float pitch = glm::radians(Pitch);
 		glm::vec3 front;
-		front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-		front.y = sin(glm::radians(Pitch));
-		front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
+		front.x = glm::cos(yaw) * glm::cos(pitch);
+		front.y = glm::sin(pitch);
+		front.z = glm::sin(yaw) * glm::cos(pitch);
 		Front = glm::normalize(front);
 		
 		// also re-calculate the Right and Up vector

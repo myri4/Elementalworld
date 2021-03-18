@@ -15,6 +15,10 @@ namespace wc {
 	static const uint32_t MaxQuadCount = 1000;
 	static const uint32_t MaxQuadVertexCount = MaxQuadCount * 4;
 	static const uint32_t MaxQuadIndexCount = MaxQuadCount * 6;
+
+	//static const uint32_t MaxLineCount = 1000;
+	//static const uint32_t MaxLineVertexCount = MaxQuadCount * 2;
+
 	static const uint8_t MaxTextures = 32;
 
 	struct Vertex2D {
@@ -101,24 +105,30 @@ namespace wc {
 			gl::VertexBuffer m_VBO;
 			gl::VertexArray m_VAO;
 			gl::IndexBuffer m_EBO;
+
+			//gl::VertexBuffer m_LineVBO;
+			//gl::VertexArray m_LineVAO;
+			//uint32_t lineByteOffset = 0;
+			//uint32_t LineIndexCount = 0;
+
 			gl::Shader m_Shader;
 		};
 
 		Data m_Data;
 
-		void Init() {
+		void Init(const bool& lines = false) {
 			// Quad Rendering
 			uint32_t indices[MaxQuadIndexCount];
 			uint32_t offset = 0;
 
 			for (uint32_t i = 0; i < MaxQuadIndexCount; i += 6) {
-				indices[i + 0] = 0 + offset;
+				indices[i + 0] =     offset;
 				indices[i + 1] = 1 + offset;
 				indices[i + 2] = 2 + offset;
 
 				indices[i + 3] = 2 + offset;
 				indices[i + 4] = 3 + offset;
-				indices[i + 5] = 0 + offset;
+				indices[i + 5] =     offset;
 
 				offset += 4;
 			}
@@ -130,6 +140,17 @@ namespace wc {
 			Renderer::VertexAttribPointer(1, 3, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, TexCoords));
 			Renderer::VertexAttribPointer(2, 4, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Color));
 			Renderer::VertexAttribPointer(3, 1, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Type));
+
+
+
+			//m_Data.m_LineVAO.Create();
+			//m_Data.m_LineVBO.Create(nullptr, MaxQuadVertexCount * sizeof(Vertex2D), GL_DYNAMIC_DRAW);
+			//Renderer::VertexAttribPointer(0, 2, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Position));
+			//Renderer::VertexAttribPointer(1, 3, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, TexCoords));
+			//Renderer::VertexAttribPointer(2, 4, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Color));
+			//Renderer::VertexAttribPointer(3, 1, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Type));
+
+
 			m_Data.m_Shader.Create("shaderpacks/default/Renderer2D.glsl");
 
 			int32_t samplers[MaxTextures];
@@ -149,13 +170,23 @@ namespace wc {
 			m_Data.m_Shader.setMat4("proj", proj);
 		}
 
+		//void FlushLines() {
+		//	//if (!m_Data.LineIndexCount) return;
+		//	m_Data.m_Shader.use();
+		//
+		//	m_Data.m_LineVAO.Bind();
+		//	glDrawArrays(GL_LINES, 0, m_Data.LineIndexCount);
+		//	m_Data.LineIndexCount = 0;
+		//	m_Data.lineByteOffset = 0;
+		//}
+
 		void Flush() {
+			if (!m_Data.IndexCount) return;
 			m_Data.m_Shader.use();
 
 			for (uint8_t i = 0; i < m_Data.TextureSlotIndex; i++) {
 				glActiveTexture(GL_TEXTURE0 + i);
 				glBindTexture(GL_TEXTURE_2D, m_Data.TextureSlots[i]);
-				//glBindTextureUnit(i, m_Data.TextureSlots[i]);
 			}
 			m_Data.m_VAO.Bind();
 			m_Data.m_EBO.Bind();
@@ -165,7 +196,9 @@ namespace wc {
 			m_Data.TextureSlotIndex = 1;
 			glActiveTexture(GL_TEXTURE0);
 			m_Data.m_EBO.Unbind();
+			//FlushLines();
 		}
+
 
 		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, glm::vec4 color = glm::vec4(1.f)) {
 			if (m_Data.IndexCount >= MaxQuadIndexCount) Flush();
@@ -183,6 +216,20 @@ namespace wc {
 			m_Data.byteOffset += sizeof(vertices);
 			m_Data.IndexCount += 6;
 		}
+
+		//void DrawLine(const glm::vec2& start, const glm::vec2& end, glm::vec4 color = glm::vec4(1.f)) {
+		//	if (m_Data.LineIndexCount >= MaxLineVertexCount) FlushLines();
+		//
+		//	float textureIndex = 0.f;
+		//	float vertices[] = {
+		//		// positions
+		//		start.x, start.y, end.x, end.y, 0.f, color.r, color.g, color.b, color.a, 2.f
+		//	};
+		//
+		//	m_Data.m_LineVBO.Update(m_Data.lineByteOffset, sizeof(vertices), vertices);
+		//	m_Data.lineByteOffset += sizeof(vertices);
+		//	m_Data.LineIndexCount += 2;
+		//}
 
 		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const gl::Texture& tex, const glm::vec2& textureStart, const glm::vec2& textureEnd, glm::vec4 color = glm::vec4(1.f)) {
 			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();

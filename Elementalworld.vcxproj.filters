@@ -269,6 +269,12 @@
     <ClInclude Include="common\net\wc_net.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\world\Multiplayer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Utils\Bits.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\skybox.lua" />

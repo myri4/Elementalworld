@@ -19,6 +19,8 @@ namespace gl {
 		int mag_filter;
 		int wrap_s;
 		int wrap_t;
+
+		void SetSize(const glm::vec2& size) { Width = size.x; Height = size.y; }
 	};
 
 	class Texture {
@@ -36,12 +38,16 @@ namespace gl {
 			stbi_image_free(data);
 		}
 
-		void Create(const void* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& NrComponents = 3, uint8_t mipMapLevel = 4) {
+		void Create(const void* data, const uint32_t& Width, const uint32_t& Height, const uint8_t&nrComponents = 3, uint8_t mipMapLevel = 4) {
 			if (!m_RendererID) {
-				nrComponents = NrComponents;
+				int32_t format = 0;
+				if (nrComponents == 1) format = GL_RED;
+				else if (nrComponents == 3)	format = GL_RGB;
+				else if (nrComponents == 4) format = GL_RGBA;
+
 				glGenTextures(1, &m_RendererID);
 				glBindTexture(GL_TEXTURE_2D, m_RendererID);
-				glTexImage2D(GL_TEXTURE_2D, 0, GetFormat(), Width, Height, 0, GetFormat(), GL_UNSIGNED_BYTE, data);
+				glTexImage2D(GL_TEXTURE_2D, 0, format, Width, Height, 0, format, GL_UNSIGNED_BYTE, data);
 				glGenerateMipmap(GL_TEXTURE_2D);
 
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
@@ -61,9 +67,9 @@ namespace gl {
 
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, props.min_filter);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, props.mag_filter);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, props.wrap_s);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, props.wrap_t);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, props.mipMapLevel);
+				if (props.wrap_s) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, props.wrap_s);
+				if (props.wrap_t) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, props.wrap_t);
+				if (props.mipMapLevel) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, props.mipMapLevel);
 			}
 		}
 
@@ -103,15 +109,11 @@ namespace gl {
 		}
 
 	private:
-
 		uint32_t GetFormat() const {
-			uint32_t format = 0;
-			if (nrComponents == 1) format = GL_RED;
-			else if (nrComponents == 3)	format = GL_RGB;
-			else if (nrComponents == 4) format = GL_RGBA;
+			int32_t format = 0;
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &format);
 			return format;
 		}
-		uint8_t nrComponents = 3;
 		uint32_t m_RendererID = 0;
 	};
 }

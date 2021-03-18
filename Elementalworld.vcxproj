@@ -74,28 +74,28 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -203,6 +203,7 @@
     <ClInclude Include="common\net\wc_net.hpp" />
     <ClInclude Include="common\Renderer\Renderer.hpp" />
     <ClInclude Include="common\Renderer\RendererCommands.hpp" />
+    <ClInclude Include="common\Utils\Bits.hpp" />
     <ClInclude Include="common\wc\Model\Animation.hpp" />
     <ClInclude Include="common\wc\Model\Animator.hpp" />
     <ClInclude Include="common\wc\Model\Bone.hpp" />
@@ -248,6 +249,7 @@
     <ClInclude Include="src\entityes\Player.hpp" />
     <ClInclude Include="common\Utilitiess\Log.h" />
     <ClInclude Include="src\world\Chunk.hpp" />
+    <ClInclude Include="src\world\Multiplayer.hpp" />
     <ClInclude Include="src\world\World.hpp" />
     <ClInclude Include="Utils\SFMLCLock.hpp" />
     <ClInclude Include="Utils\State.h" />

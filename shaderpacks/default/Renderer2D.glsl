@@ -19,7 +19,6 @@ void main() {
 }
 
 #type fragment
-#version 330 core
 
 in vec3 v_TexCoords;
 in vec4 v_Color;
@@ -33,5 +32,6 @@ void main()
     vec4 finalColor = vec4(1.0f);
     if(v_Type == 0.0f) finalColor = texture(u_Texture[index], v_TexCoords.xy);
     if(v_Type == 1.0f) finalColor = vec4(1.0, 1.0, 1.0, texture(u_Texture[index], v_TexCoords.xy).r);
+    if(v_Type == 2.0f) finalColor = vec4(1.f);
     gl_FragColor = finalColor * v_Color;
 }

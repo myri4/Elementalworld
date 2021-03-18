@@ -14,12 +14,14 @@ namespace wc {
 		bool CenterMouse = false;
 		float deltaTime = 0.0f;
 
+		// Framebuffer stuff
 		gl::VertexBuffer scrQuad;
 		gl::VertexArray scrQuadA;
 		gl::FrameBuffer screen;
 		gl::Shader screenShader;
+		gl::Texture scrTexture;
 
-		wc::Multiplayer world;
+		wc::Singleplayer world;
 
 		//irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
 		//----------------------------------------------------------------------------------------------------------------------
@@ -43,9 +45,7 @@ namespace wc {
 			else  CenterMouse = true;
 			
 			if (CenterMouse) wc::Mouse::ShowMouse(false);
-			else wc::Mouse::ShowMouse(true);
-			
-			
+			else wc::Mouse::ShowMouse(true);			
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() override {
@@ -71,6 +71,21 @@ namespace wc {
 
 			screenShader.Create("shaderpacks/default/screenShader.glsl");
 			screen.Create(window.GetSize().x, window.GetSize().y);
+
+			gl::TextureProps scrProps;
+			scrProps.data = nullptr;
+			scrProps.SetSize(window.GetSize());
+			scrProps.internalFormat = GL_RGB;
+			scrProps.format = GL_RGB;
+			scrProps.type = GL_UNSIGNED_BYTE;
+			scrProps.mag_filter = GL_LINEAR;
+			scrProps.min_filter = GL_LINEAR;
+
+			scrTexture.Create(scrProps);
+
+			screen.Bind();
+			screen.addTexture(scrTexture);
+			screen.unbind();
 
 			float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
 				// positions   // texCoords
@@ -117,12 +132,11 @@ namespace wc {
 			screenShader.use();			
 			scrQuad.Bind();
 			scrQuadA.Bind();
-			screen.BindTexture();	// use the color attachment texture as the texture of the quad plane
+			scrTexture.Bind(); // use the color attachment texture as the texture of the quad plane
 
 			Renderer::DrawArrays(6);
 			Renderer2D::DrawTexts("FPS: " + std::to_string((int)(1 / deltaTime)) + " Frametime: " + std::to_string(deltaTime * 1000), world.font, { 25.0f, 20 });
 
-			//Renderer2D::DrawQuad({ 0,400 }, { window.GetSize().x / 2,-window.GetSize().y / 2 }, screen.GetRendererID());
 			Renderer2D::Flush();
 			window.display();
 		}

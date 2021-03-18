@@ -1,6 +1,9 @@
 #ifndef BLOCK_HPP
 #define BLOCK_HPP
 
+#include <glm/glm.hpp>
+#include <array>
+
 namespace wc{
 
 enum class ConnectionType { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT, X_CONNECT};
@@ -96,11 +99,13 @@ Face X_FACE4 = {
 	glm::vec3( blockSize,  blockSize, -blockSize)   // top-left   
 };
 
+const uint8_t isCollidableFlag = 1; // 0
+const uint8_t emitLightFlag = 2;	// 1
+
 class Block{
 public:
 	BlockID id = 0;
-	bool isCollidable = true;
-	bool emitLight = false;
+	uint8_t flags;
 	uint32_t texture[6] = {0};
 	ConnectionType blockConnectionType = ConnectionType::CONNECT_DEFAULT;
 

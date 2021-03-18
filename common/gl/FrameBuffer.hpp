@@ -12,18 +12,9 @@ namespace gl {
         FrameBuffer() {}
 
         ~FrameBuffer() { Destroy(); }
-        virtual void Create(uint32_t width, uint32_t height) {
+        void Create(uint32_t width, uint32_t height) {
             glGenFramebuffers(1, &m_RendererID);
             glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
-
-            // create a color attachment texture
-            glGenTextures(1, &m_ColorAttachment);
-            glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ColorAttachment, 0);
 
             // create a renderbuffer object for depth and stencil attachment (we won't be sampling these)
             uint32_t rbo;
@@ -36,53 +27,31 @@ namespace gl {
             if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) WC_ERROR("Framebuffer not complete!");
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
+
+        void addTexture(const uint32_t& texture) {
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + numTextures, GL_TEXTURE_2D, texture, 0);
+            numTextures++;
+        }
+
+        void addTexture(const Texture& texture) {
+            addTexture(texture.GetRendererID());
+        }
+
+        void setUpDrawBuffers() {
+            uint32_t attachments[32];
+            for (uint8_t i = 0; i < numTextures; i++) attachments[i] = GL_COLOR_ATTACHMENT0 + i;
+            glDrawBuffers(numTextures, attachments);
+        }
+
         void Destroy() { glDeleteFramebuffers(1, &m_RendererID); }
 
         void Bind() const { glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID); }
 
         void unbind() const { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
-        void BindTexture() const { glBindTexture(GL_TEXTURE_2D, m_ColorAttachment); } // use the color attachment texture as the texture of the quad plane
-
         uint32_t GetRendererID() const { return m_RendererID; }
-
-        uint32_t GetColorAttachment() const { return m_ColorAttachment; }
-    protected:
-        uint32_t m_RendererID = 0, m_ColorAttachment = 0;
-    };
-
-    class ShadowMap : FrameBuffer {
-    public:
-        void Create(uint32_t width, uint32_t height) override {
-            glGenFramebuffers(1, &m_RendererID);
-
-            // create depth texture
-            glGenTextures(1, &m_ColorAttachment);
-            glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-            // attach depth texture as FBO's depth buffer
-            glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_ColorAttachment, 0);
-            glDrawBuffer(GL_NONE);
-            glReadBuffer(GL_NONE);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        }
-
-        void Bind() const { glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID); }
-
-        void unbind() const { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
-
-        void BindTexture() const { glBindTexture(GL_TEXTURE_2D, m_ColorAttachment); } // use the color attachment texture as the texture of the quad plane
-
-        uint32_t GetRendererID() const { return m_RendererID; }
-
-        uint32_t GetColorAttachment() const { return m_ColorAttachment; }
+    private:
+        uint32_t m_RendererID = 0, numTextures = 0;
     };
 }
 #endif
