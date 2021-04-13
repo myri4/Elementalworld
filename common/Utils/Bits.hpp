@@ -4,8 +4,7 @@
 #include <glm/glm.hpp>
 
 bool bitEnabled(const uint8_t& flags, const uint8_t& bit) {
-	uint8_t Flags = flags >> bit;
-	return Flags & 1;
+	return (flags >> bit) & 1;
 }
 
 void disableBit(uint8_t& flags, const uint8_t& bit) {
@@ -13,7 +12,7 @@ void disableBit(uint8_t& flags, const uint8_t& bit) {
 }
 
 void enableBit(uint8_t& flags, const uint8_t& bit) {
-	flags = flags | bit; // disables flag
+	flags = flags | bit; // enables flag
 }
 
 #endif

@@ -134,9 +134,6 @@
     <ClInclude Include="common\gl\FrameBuffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\gl\glErrors.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\gl\IndexBuffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -273,6 +270,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\Utils\Bits.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game Mechanics\Inventory.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game Mechanics\Item.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

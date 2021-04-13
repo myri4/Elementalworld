@@ -1,16 +1,15 @@
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
 #include <wc/pch.hpp>
-#include <gl/glErrors.hpp>
 #include "world/World.hpp"
 
 namespace wc {
 
 	class Application : public Engine {
 	private:
-		wc::Window window;
+		Window window;
 
-		wc::Clock deltaTimer;
+		Clock deltaTimer;
 		bool CenterMouse = false;
 		float deltaTime = 0.0f;
 
@@ -21,9 +20,8 @@ namespace wc {
 		gl::Shader screenShader;
 		gl::Texture scrTexture;
 
-		wc::Singleplayer world;
+		Singleplayer world;
 
-		//irrklang::ISoundEngine* SoundEngine = irrklang::createIrrKlangDevice();
 		//----------------------------------------------------------------------------------------------------------------------
 		bool IsEngineOK() override {
 
@@ -33,7 +31,7 @@ namespace wc {
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnInput() override {
-			if (window.hasFocus())	world.OnInput(deltaTime);
+			if (window.hasFocus())	world.OnInput(deltaTime, window.GetSize());
 
 			if (wc::Keyboard::isKeyPressed(wc::Keyboard::Key::F)) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -52,7 +50,7 @@ namespace wc {
 			window.Create("config/window.lua", "Elementalworld");
 			if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) WC_ERROR("Failed to initialize GLAD");
 			// OpenGL state
-			EnableGLDebuging();
+			Renderer::enableDebuging();
 			// ------------
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -108,9 +106,7 @@ namespace wc {
 
 			Renderer2D::Init();
 
-			glm::mat4 proj = glm::ortho(0.0f, window.GetSize().x, window.GetSize().y, 0.0f);
-
-			Renderer2D::SetProjection(proj);
+			Renderer2D::SetProjection(Renderer2D::Get2DProj(window.GetSize()));
 
 			world.Create();
 		}
@@ -138,6 +134,8 @@ namespace wc {
 			Renderer2D::DrawTexts("FPS: " + std::to_string((int)(1 / deltaTime)) + " Frametime: " + std::to_string(deltaTime * 1000), world.font, { 25.0f, 20 });
 
 			Renderer2D::Flush();
+			Renderer2D::FlushLines();
+
 			window.display();
 		}
 		//----------------------------------------------------------------------------------------------------------------------

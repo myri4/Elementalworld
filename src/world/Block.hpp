@@ -105,7 +105,7 @@ const uint8_t emitLightFlag = 2;	// 1
 class Block{
 public:
 	BlockID id = 0;
-	uint8_t flags;
+	uint8_t flags = isCollidableFlag;
 	uint32_t texture[6] = {0};
 	ConnectionType blockConnectionType = ConnectionType::CONNECT_DEFAULT;
 

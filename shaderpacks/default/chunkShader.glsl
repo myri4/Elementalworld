@@ -166,7 +166,7 @@ vec4 CalculateLight(Material material, Light light){
     else
     {
         vec3 reflectDir = reflect(-lightDir, normal);
-        spec = pow(max(dot(viewDir, reflectDir), 0.f), material.shininess / 2);
+        spec = pow(max(dot(viewDir, reflectDir), 0.f), material.shininess * 0.5);
     }
     vec3 Specular = vec3(0.f); 
     if(material.shininess > 0.f){

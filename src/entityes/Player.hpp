@@ -3,6 +3,7 @@
 #include "Entity.hpp"
 #include <Maths/Ray.hpp>
 #include <Utils/Mouse.hpp>
+#include "../Game Mechanics/Inventory.hpp"
 
 namespace wc{
 class Player{
@@ -11,9 +12,10 @@ public:
 	BlockID ItemHolding = 1;
 	glm::vec3 Position = glm::vec3(0.f);
 	glm::vec3 Size = glm::vec3(1.0f);
-	bool m_isOnGround;
+	bool m_isOnGround = false;
+	bool flying = true;
 	glm::vec3 velocity;
-	glm::vec3 m_acceleration;
+	Inventory<9, 4> inventory;
 
 	Player() {}
 };

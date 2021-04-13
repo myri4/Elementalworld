@@ -186,7 +186,6 @@
     <ClInclude Include="common\gl\FrameBuffer.h" />
     <ClInclude Include="common\gl\FrameBuffer.hpp" />
     <ClInclude Include="common\gl\glErrors.h" />
-    <ClInclude Include="common\gl\glErrors.hpp" />
     <ClInclude Include="common\gl\IndexBuffer.h" />
     <ClInclude Include="common\gl\IndexBuffer.hpp" />
     <ClInclude Include="common\gl\Light.hpp" />
@@ -241,6 +240,8 @@
     <ClInclude Include="common\Utils\NonCopyable.hpp" />
     <ClInclude Include="src\Block.h" />
     <ClInclude Include="common\Maths\Ray.hpp" />
+    <ClInclude Include="src\Game Mechanics\Inventory.hpp" />
+    <ClInclude Include="src\Game Mechanics\Item.hpp" />
     <ClInclude Include="src\world\Biome.hpp" />
     <ClInclude Include="src\world\Block.hpp" />
     <ClInclude Include="src\Engine.h" />

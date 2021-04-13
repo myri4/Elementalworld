@@ -8,36 +8,16 @@
 #include "Chunk.hpp"
 #include "Block.hpp"
 #include "../entityes/Player.hpp"
-#include <Utils/Time.hpp>
 #include <Maths/Frustum.hpp>
 #include <Maths/Noise.hpp>
-#include <map>
 #include "Biome.hpp"
-#include <GUI/AssetManager.hpp>
 #include <wc/Model/Animator.hpp>
-#include <GUI/Renderer2D.hpp>
-#include <Utils/Bits.hpp>
+#include "../Game Mechanics/Inventory.hpp"
+#include <wc/pch.hpp>
+
+const uint32_t numThreads = std::thread::hardware_concurrency();
 
 namespace wc {
-
-	enum class GameMsg : uint32_t
-	{
-		Server_GetStatus,
-		Server_GetPing,
-
-		Client_Accepted,
-		Client_AssignID,
-		Client_RegisterWithServer,
-		Client_UnregisterWithServer,
-
-		Game_AddPlayer,
-		Game_RemovePlayer,
-		Game_UpdatePlayer,
-
-		RequestChunk,
-		SendChunk,
-		BlockEdit
-	};
 
 	static std::unordered_map<int, Block> blockData;
 	static AssetManager assets;
@@ -50,7 +30,7 @@ namespace wc {
 		sol::state blockState;
 		blockState.script_file(script);
 		if (blockState["id"].valid()) block.id = blockState["id"];
-		if (blockState["isCollidable"].valid()) if (blockState["isCollidable"]) enableBit(block.flags, isCollidableFlag);
+		if (blockState["isCollidable"].valid()) if (blockState["isCollidable"] == false) disableBit(block.flags, isCollidableFlag);
 		if (blockState["ConnectionType"].valid()) conType = blockState["ConnectionType"];
 
 		if (conType == "CONNECT_DEFAULT") block.blockConnectionType = ConnectionType::CONNECT_DEFAULT;
@@ -79,114 +59,114 @@ namespace wc {
 		blockData[block.id] = block;
 	}
 
-	//struct quad_t
-	//{
-	//	glm::ivec3 a, b, c, d;
-	//};
+	/*struct quad_t
+	{
+		glm::ivec3 a, b, c, d;
+	};
 
-	//static size_t to_index(const uint32_t u, const uint32_t v, const uint32_t sz_u)
-	//{
-	//	return static_cast<size_t>(v) * static_cast<size_t>(sz_u) + static_cast<size_t>(u);
-	//}
+	static size_t to_index(const uint32_t u, const uint32_t v, const uint32_t sz_u)
+	{
+		return static_cast<size_t>(v) * static_cast<size_t>(sz_u) + static_cast<size_t>(u);
+	}
 
-	//static auto greedy_remesher(const glm::uvec3& dims,	const std::function<bool(glm::ivec3)>& map_fn) {
-	//	Face* quads;
-	//	uint32_t count = 0;
-	//	uint8_t norm = 0u;
-	//	for (; norm < 3u; norm++) {
+	static auto greedy_remesher(const glm::uvec3& dims,	const std::function<bool(glm::ivec3)>& map_fn) {
+		Face* quads;
+		uint32_t count = 0;
+		uint8_t norm = 0u;
+		for (; norm < 3u; norm++) {
 
-	//		const auto tan = (norm + 1u) % 3u;
-	//		const auto biTan = (norm + 2u) % 3u;
+			const auto tan = (norm + 1u) % 3u;
+			const auto biTan = (norm + 2u) % 3u;
 
-	//		glm::ivec3 normalVector(0);
-	//		normalVector[norm] = 1;
+			glm::ivec3 normalVector(0);
+			normalVector[norm] = 1;
 
-	//		std::vector<bool> mask(dims[tan] * dims[biTan]);
+			std::vector<bool> mask(dims[tan] * dims[biTan]);
 
-	//		for (size_t slice = 0u; slice <= dims[norm]; slice++) {
+			for (size_t slice = 0u; slice <= dims[norm]; slice++) {
 
-	//			glm::uvec3 cursor(0);
-	//			cursor[norm] = slice;
+				glm::uvec3 cursor(0);
+				cursor[norm] = slice;
 
-	//			for (cursor[biTan] = 0; cursor[biTan] < dims[biTan]; ++cursor[biTan])
-	//			{
-	//				for (cursor[tan] = 0; cursor[tan] < dims[tan]; ++cursor[tan])
-	//				{
-	//					const glm::ivec3 curr(cursor);
-	//					const glm::ivec3 vec(normalVector);
+				for (cursor[biTan] = 0; cursor[biTan] < dims[biTan]; ++cursor[biTan])
+				{
+					for (cursor[tan] = 0; cursor[tan] < dims[tan]; ++cursor[tan])
+					{
+						const glm::ivec3 curr(cursor);
+						const glm::ivec3 vec(normalVector);
 
-	//					const auto voxel_in_slice = map_fn(curr);
-	//					const auto voxel_in_previous_slice = map_fn(curr - vec);
+						const auto voxel_in_slice = map_fn(curr);
+						const auto voxel_in_previous_slice = map_fn(curr - vec);
 
-	//					const auto i = to_index(cursor[tan], cursor[biTan], dims[tan]);
-	//					mask[i] = voxel_in_slice != voxel_in_previous_slice;
-	//				}
-	//			}
+						const auto i = to_index(cursor[tan], cursor[biTan], dims[tan]);
+						mask[i] = voxel_in_slice != voxel_in_previous_slice;
+					}
+				}
 
-	//			// Generate mesh for mask using lexicographic ordering
-	//			for (size_t y = 0; y < dims[biTan]; y++) {
-	//				for (size_t x = 0; x < dims[tan];) {
-	//					if (!mask[to_index(x, y, dims[tan])])
-	//					{
-	//						x++;
-	//						continue;
-	//					}
+				// Generate mesh for mask using lexicographic ordering
+				for (size_t y = 0; y < dims[biTan]; y++) {
+					for (size_t x = 0; x < dims[tan];) {
+						if (!mask[to_index(x, y, dims[tan])])
+						{
+							x++;
+							continue;
+						}
 
-	//					size_t width = 1;
-	//					while (x + width < dims[tan]
-	//						&& mask[to_index(x + width, y, dims[tan])])
-	//					{
-	//						width++;
-	//					}
+						size_t width = 1;
+						while (x + width < dims[tan]
+							&& mask[to_index(x + width, y, dims[tan])])
+						{
+							width++;
+						}
 
-	//					size_t height = 1;
-	//					for (; y + height < dims[biTan]; height++) {
-	//						for (auto k = x; k < x + width; k++) {
-	//							if (!mask[to_index(k, y + height, dims[tan])]) {
-	//								goto done_quad;
-	//							}
-	//						}
-	//					}
+						size_t height = 1;
+						for (; y + height < dims[biTan]; height++) {
+							for (auto k = x; k < x + width; k++) {
+								if (!mask[to_index(k, y + height, dims[tan])]) {
+									goto done_quad;
+								}
+							}
+						}
 
-	//				done_quad:
-	//					// The base of the quad to add
-	//					glm::ivec3 b(0);
-	//					b[norm] = slice;
-	//					b[tan] = x;
-	//					b[biTan] = y;
+					done_quad:
+						// The base of the quad to add
+						glm::ivec3 b(0);
+						b[norm] = slice;
+						b[tan] = x;
+						b[biTan] = y;
 
-	//					// The 'width' of the quad.
-	//					glm::ivec3 du(0);
-	//					du[tan] = width;
+						// The 'width' of the quad.
+						glm::ivec3 du(0);
+						du[tan] = width;
 
-	//					// The 'height' of the quad.
-	//					glm::ivec3 dv(0);
-	//					dv[biTan] = height;
+						// The 'height' of the quad.
+						glm::ivec3 dv(0);
+						dv[biTan] = height;
 
-	//					quads[count] = { b, b + du, b + du + dv, b + dv };
-	//					count++;
+						quads[count] = { b, b + du, b + du + dv, b + dv };
+						count++;
 
-	//					// Clear the mask and increment x by the width of this quad.
-	//					for (size_t l = 0; l < height; ++l)
-	//					{
-	//						for (size_t k = 0; k < width; ++k)
-	//						{
-	//							const auto i = to_index(x + k,
-	//								y + l,
-	//								dims[tan]);
+						// Clear the mask and increment x by the width of this quad.
+						for (size_t l = 0; l < height; ++l)
+						{
+							for (size_t k = 0; k < width; ++k)
+							{
+								const auto i = to_index(x + k,
+									y + l,
+									dims[tan]);
 
-	//							mask[i] = false;
-	//						}
-	//					}
+								mask[i] = false;
+							}
+						}
 
-	//					x += width;
-	//				}
-	//			}
-	//		}
-	//	}
+						x += width;
+					}
+				}
+			}
+		}
 
-	//	return quads;
-	//}
+		return quads;
+	}*/
 
 	class Singleplayer {
 	private:
@@ -195,7 +175,7 @@ namespace wc {
 		glm::mat4 projection = glm::mat4(0.0f);
 		Camera camera;
 		float MouseSensitivity = 5;
-
+		Random numberGen;
 
 		gl::Shader chunkShader;
 
@@ -217,6 +197,8 @@ namespace wc {
 		//Animator animator;
 		//Animation animation;
 		//Model model;
+
+		std::thread threads[8];
 	public:
 		Font font;
 
@@ -262,7 +244,8 @@ namespace wc {
 
 			luaState.script_file("scripts/blocks.lua");
 
-			camera.Position = { RenderDistance * RenderDistance / 2 + RenderDistance, RenderDistance * 4 ,RenderDistance * RenderDistance / 2 };
+			p.Position = { RenderDistance * RenderDistance * 0.5 + RenderDistance, RenderDistance * 4 ,RenderDistance * RenderDistance * 0.5 };
+			p.Size = {1, 1, 1};
 			ChunkID chunkID = 0;
 			for (; chunkID < world.size(); chunkID++) {
 				//Configuring the vertex array
@@ -302,12 +285,7 @@ namespace wc {
 			//model.Create("assets/models/dancing_vampire.dae");
 			//animation.Create("assets/models/dancing_vampire.dae", &model);
 			//animator.PlayAnimation(&animation);
-
-			//uint8_t flags = canBeUpdatedFlag | usedFlag;
-			//
-			//disableBit(flags, canBeUpdatedFlag);
-			//
-			//WC_INFO(bitEnabled(flags, 0));
+			numberGen.seed = worldNoise.seed;
 		}
 
 		void Update(const glm::vec2& windpos, const glm::vec2& windsize, const bool& CenterMouse, const float& deltaTime) {
@@ -316,14 +294,16 @@ namespace wc {
 
 				glm::vec2 pos = wc::Mouse::GetMousePos();
 
-				xt = windpos.x + windsize.x / 2;
-				yt = windpos.y + windsize.y / 2;
+				xt = windpos.x + windsize.x * 0.5;
+				yt = windpos.y + windsize.y * 0.5;
+
+				float ms = 1 / MouseSensitivity;
 
 				bool invertMouse = false;
-				if (invertMouse) camera.Yaw += (xt - pos.x) / MouseSensitivity;
-				else camera.Yaw -= (xt - pos.x) / MouseSensitivity;
+				if (invertMouse) camera.Yaw += (xt - pos.x) * ms;
+				else camera.Yaw -= (xt - pos.x) * ms;
 
-				camera.Pitch += (yt - pos.y) / MouseSensitivity;
+				camera.Pitch += (yt - pos.y) * ms;
 
 				// make sure that when pitch is out of bounds, screen doesn't get flipped
 				if (camera.Pitch > 89.0f) camera.Pitch = 89.0f;
@@ -339,9 +319,27 @@ namespace wc {
 
 			float Far = chunkSize * RenderDistance; // 1100
 			projection = glm::perspective(glm::radians(camera.FOV), windsize.x / windsize.y, 0.1f, Far);
-
-			p.Position = camera.Position;
 			}
+
+			if (!p.flying) {
+				if (!p.m_isOnGround) {
+					p.velocity.y -= 20 * deltaTime;
+				}
+				p.m_isOnGround = false;
+			}
+
+			p.Position.x += p.velocity.x * deltaTime;
+			collide({ p.velocity.x,0,0 });
+
+			p.Position.y += p.velocity.y * deltaTime;
+			collide({ 0,p.velocity.y,0 });
+
+			p.Position.z += p.velocity.z * deltaTime;
+			collide({ 0,0,p.velocity.z });
+
+
+			camera.Position = { p.Position.x, p.Position.y + p.Size.y, p.Position.z };
+			p.velocity = { 0,0,0 };
 	
 			assets.Bind();
 			// activate shader
@@ -382,7 +380,7 @@ namespace wc {
 				// Updating the chunk`s mesh
 				if (!bitEnabled(world[i].flags, 1)) { GenerateChunkTerrain(i);	enableBit(world[i].flags, generatedFlag); }
 				//if (world[i].canBeUpdated) { UpdateMesh(i);	world[i].canBeUpdated = false;	} 
-				if (bitEnabled(world[i].flags, 2)) { UpdateMesh(i);	disableBit(world[i].flags, canBeUpdatedFlag); }
+				if (bitEnabled(world[i].flags, 2) && !bitEnabled(world[i].flags, 3)) { UpdateMesh(i);	disableBit(world[i].flags, canBeUpdatedFlag); }
 			}			
 
 			//modelShader.use();
@@ -414,41 +412,46 @@ namespace wc {
 				"ChunkX: " + std::to_string(currentPlayerPos.x) +
 				" ChunkY: " + std::to_string(currentPlayerPos.y) +
 				" ChunkZ: " + std::to_string(currentPlayerPos.z), font, { 25.0f, 140 });
-
-			//Renderer2D::DrawLine({ 0,0 }, { 200, 200 }, glm::vec4(1, 0.f, 0.f, 1.f));
-
+			Renderer2D::DrawTexts("Is on ground: " + std::to_string(p.m_isOnGround), font, { 25.0f, 180 });
+			
 			{
 				glm::vec2 cursorSize = cursorTex.GetSize() * glm::vec2(1.4f);
-				glm::vec2 cursorPos = {windsize.x / 2 - cursorSize.x, windsize.y / 2 - cursorSize.y };
+				glm::vec2 cursorPos = {windsize.x * 0.5 - cursorSize.x, windsize.y * 0.5 - cursorSize.y };
 				Renderer2D::DrawQuad(cursorPos, cursorSize, cursorTex);
 			}
 
 		}
 
-		void OnInput(const float& deltaTime) {
+		void OnInput(const float& deltaTime, const glm::vec2& windSize) {
 			{
-				float velocity = p.MovementSpeed * deltaTime;
 				float yaw = glm::radians(camera.Yaw);
 				float yaw90 = glm::radians(camera.Yaw + 90.0f);
 				if (Keyboard::isKeyPressed(Keyboard::Key::W)) { // Front
-					camera.Position.x += glm::cos(yaw) * velocity;
-					camera.Position.z += glm::sin(yaw) * velocity;
+					p.velocity.x += glm::cos(yaw) * p.MovementSpeed;
+					p.velocity.z += glm::sin(yaw) * p.MovementSpeed;
 				}
 
 				if (Keyboard::isKeyPressed(Keyboard::Key::S)) { // Back
-					camera.Position.x -= glm::cos(yaw) * velocity;
-					camera.Position.z -= glm::sin(yaw) * velocity;
+					p.velocity.x -= glm::cos(yaw) * p.MovementSpeed;
+					p.velocity.z -= glm::sin(yaw) * p.MovementSpeed;
 				}
 				if (Keyboard::isKeyPressed(Keyboard::Key::A)) { // Left
-					camera.Position.x -= glm::cos(yaw90) * velocity;
-					camera.Position.z -= glm::sin(yaw90) * velocity;
+					p.velocity.x -= glm::cos(yaw90) * p.MovementSpeed;
+					p.velocity.z -= glm::sin(yaw90) * p.MovementSpeed;
 				}
 				if (Keyboard::isKeyPressed(Keyboard::Key::D)) { // Right
-					camera.Position.x += glm::cos(yaw90) * velocity;
-					camera.Position.z += glm::sin(yaw90) * velocity;
+					p.velocity.x += glm::cos(yaw90) * p.MovementSpeed;
+					p.velocity.z += glm::sin(yaw90) * p.MovementSpeed;
 				}
-				if (Keyboard::isKeyPressed(Keyboard::Key::Space))  camera.Position.y += velocity;			  // Up
-				if (Keyboard::isKeyPressed(Keyboard::Key::LShift)) camera.Position.y -= velocity;			  // Down
+				if (Keyboard::isKeyPressed(Keyboard::Key::Space))					
+					if (p.m_isOnGround) 
+					{ 
+						p.m_isOnGround = false; 
+						p.velocity.y += p.MovementSpeed * 50;
+					}		
+
+
+				if (Keyboard::isKeyPressed(Keyboard::Key::LShift)) p.velocity.y -= p.MovementSpeed;	
 				if (Keyboard::isKeyPressed(Keyboard::Key::C)) { camera.FOV = 10; MouseSensitivity = 18; }
 				else {
 					MouseSensitivity = 5;
@@ -465,6 +468,18 @@ namespace wc {
 					LoadChunk(getChunkPos(p.Position), pos);
 				}
 
+				if (Keyboard::isKeyPressed(Keyboard::Key::P)) {
+					p.flying = true;
+				}
+
+				if (Keyboard::isKeyPressed(Keyboard::Key::I)) {
+					p.flying = false;
+				}
+
+				//if (Keyboard::isKeyPressed(Keyboard::Key::L)) {
+				//	linePos = p.Position;
+				//}
+
 				if (Keyboard::isKeyPressed(Keyboard::Key::Num1)) p.ItemHolding = 1;
 				if (Keyboard::isKeyPressed(Keyboard::Key::Num2)) p.ItemHolding = 2;
 				if (Keyboard::isKeyPressed(Keyboard::Key::Num2)) p.ItemHolding = 2;
@@ -478,6 +493,9 @@ namespace wc {
 			bool bBreak = Mouse::isButtonPressed() == Mouse::MouseButton::LBUTTON;
 			bool bPlace = Mouse::isButtonPressed() == Mouse::MouseButton::RBUTTON;
 
+			//Renderer2D::SetProjection(camera.GetViewMatrix() * projection * glm::translate(glm::mat4(1.0f), linePos));
+			//Renderer2D::DrawLine({ -0.5, -0.5 , -0.5}, {0.5, 0.5, 0.5}, glm::vec4(1.f, 0.f, 0.f, 1.f));
+
 			if (bBreak || bPlace) {
 				glm::vec3 m_rayLastPos = glm::vec3(0.0f);
 				Ray ray(p.Position);
@@ -485,19 +503,61 @@ namespace wc {
 					ray.m_rayEnd += camera.Front * 0.5f;
 					BlockID block = getBlock(ray.getEnd());
 					if (block > 0 && block != 5)
-					{
+					{	
 						if (bBreak) { 
-							setBlock(glm::floor(ray.getEnd()), 0); break; }
-						else if (bPlace) { setBlock(glm::floor(m_rayLastPos), p.ItemHolding); break; }
+							setBlock(glm::floor(ray.getEnd()), 0); 
+							break; 
+						}
+						else if (bPlace) { 
+							setBlock(glm::floor(m_rayLastPos), p.ItemHolding); 
+							break; 
+						}
 					}
 					
 					m_rayLastPos = ray.getEnd();
 				}
 			}
+			//Renderer2D::SetProjection(Renderer2D::Get2DProj(windSize));
 		}
 	private:
-
+		//glm::vec3 linePos;
 		//Chunk managing
+
+		void collide(const glm::vec3& vel) // @TODO: Redo the offset
+		{
+				for (int x = p.Position.x; x < p.Position.x + p.Size.x; x++)
+				for (int y = p.Position.y; y < p.Position.y + p.Size.y; y++)
+				for (int z = p.Position.z; z < p.Position.z + p.Size.z; z++) 
+				{
+				auto blockID = getBlock({ x, y, z });
+				auto block = blockData[blockID];
+				if (block.id != 0 && bitEnabled(block.flags, 0)) {
+					if (vel.y > 0) {
+						p.Position.y = y - p.Size.y;
+						p.velocity.y = 0;
+					}
+					else if (vel.y < 0) {
+						p.m_isOnGround = true;
+						p.Position.y = y + p.Size.y;
+						p.velocity.y = 0;
+					}
+
+					if (vel.x > 0) {
+						p.Position.x = x - p.Size.x;
+					}
+					else if (vel.x < 0) {
+						p.Position.x = x + p.Size.x;
+					}
+
+					if (vel.z > 0) {
+						p.Position.z = z - p.Size.z;
+					}
+					else if (vel.z < 0) {
+						p.Position.z = z + p.Size.z;
+					}
+				}
+			}
+		}
 
 		bool ShowChunk(const ChunkID& chunk) { //@TODO: Optimize
 			glm::vec3 pos1 = world[chunk].chunkPos * glm::vec3(chunkSize);
@@ -640,9 +700,8 @@ namespace wc {
 		}
 
 		void GenerateChunkTerrain(const ChunkID& chunk) {
-
 				memset(&world[chunk].chunkData, 0, sizeof(world[chunk].chunkData));
-				for (uint8_t z = 0; z < chunkSize; z++)
+				concurrency::parallel_for(0, (int)chunkSize, [&](uint8_t z) {
 					for (uint8_t x = 0; x < chunkSize; x++) {
 						int heightMap =
 						worldNoise.getNoiseFor(
@@ -657,7 +716,7 @@ namespace wc {
 						//if (noise3D < 7) { setBlock(glm::vec3(x, y, z), 1, chunk); }
 							if (pos.y == heightMap) { setBlock(glm::vec3(x, y, z), 1, chunk); }
 							if (pos.y < heightMap) { setBlock(glm::vec3(x, y, z), 2, chunk); }
-							if (pos.y < heightMap - 3) { setBlock(glm::vec3(x, y, z), 3, chunk); } // @TODO randomnes
+							if (pos.y < heightMap - numberGen.asInt() % 3) { setBlock(glm::vec3(x, y, z), 3, chunk); } // @TODO randomnes
 							if (pos.y == heightMap && pos.y <= water_level) { setBlock(glm::vec3(x, y, z), 4, chunk); } // @TODO randomnes
 							if (pos.y > heightMap && pos.y < water_level) { setBlock(glm::vec3(x, y, z), 5, chunk); }
 							//if (pos.y == heightMap && rand() % 100 > 98 && pos.y > water_level) setBlock(pos, 7); // @TODO randomnes
@@ -665,6 +724,7 @@ namespace wc {
 							//if (pos == heightMap && heightMap > water_level && biomeMap > 48) { setBlock(glm::vec3(x, y, z), 4, chunk); }
 						}
 					}
+				});
 		}
 
 		void setBlock(const glm::vec3& pos, const BlockID& block, const ChunkID& chunk) {
@@ -679,6 +739,7 @@ namespace wc {
 			if (world[chunk].chunkData[x][y][z] == block) return;
 				world[chunk].chunkData[x][y][z] = block;
 				enableBit(world[chunk].flags, canBeUpdatedFlag);
+				disableBit(world[chunk].flags, emptyFlag);
 
 				if (x == 0) { if (world[chunk].neighborXneg >= 0) { enableBit(world[world[chunk].neighborXneg].flags, canBeUpdatedFlag); } }
 				if (y == 0) { if (world[chunk].neighborYneg >= 0) { enableBit(world[world[chunk].neighborYneg].flags, canBeUpdatedFlag); } }
@@ -710,44 +771,7 @@ namespace wc {
 				if (x == chunkSize - 1) { if (world[chunk].neighborXpos >= 0) { enableBit(world[world[chunk].neighborXpos].flags, canBeUpdatedFlag); } }
 				if (y == chunkSize - 1) { if (world[chunk].neighborYpos >= 0) { enableBit(world[world[chunk].neighborYpos].flags, canBeUpdatedFlag); } }
 				if (z == chunkSize - 1) { if (world[chunk].neighborZpos >= 0) { enableBit(world[world[chunk].neighborZpos].flags, canBeUpdatedFlag); } }			
-		}
-
-			
-		void collide(const glm::vec3& vel, float dt)
-		{
-			for (int x = p.Position.x - p.Size.x; x < p.Position.x + p.Size.x; x++)
-				for (int y = p.Position.y - p.Size.y; y < p.Position.y + 0.7; y++)
-					for (int z = p.Position.z - p.Size.z; z < p.Position.z + p.Size.z; z++) {
-						auto blockID = getBlock({ x, y, z });
-						auto block = blockData[blockID];
-				if (block.id != 0 && bitEnabled(block.flags, 0)) {
-					if (vel.y > 0) {
-						p.Position.y = y - p.Size.y;
-						p.velocity.y = 0;
-					}
-					else if (vel.y < 0) {
-						p.m_isOnGround = true;
-						p.Position.y = y + p.Size.y + 1;
-						p.velocity.y = 0;
-					}
-
-					if (vel.x > 0) {
-						p.Position.x = x - p.Size.x;
-					}
-					else if (vel.x < 0) {
-						p.Position.x = x + p.Size.x + 1;
-					}
-
-					if (vel.z > 0) {
-						p.Position.z = z - p.Size.z;
-					}
-					else if (vel.z < 0) {
-						p.Position.z = z + p.Size.z + 1;
-					}
-				}
-			}
-		}
-		
+		}	
 
 		void UpdateMesh(const ChunkID& chunk) {
 			if (chunk >= world.size() || chunk < 0) return;
@@ -857,7 +881,7 @@ namespace wc {
 								}
 							}
 
-							if (makeFace({ x,y,z }, chunk, ConnectionType::NO_CONNECT)) // Can make block face
+							else if (makeFace({ x,y,z }, chunk, ConnectionType::NO_CONNECT)) // Can make block face
 							{
 								//Positive
 								if (y + 1 < chunkSize) {
@@ -927,7 +951,7 @@ namespace wc {
 								}
 							}
 
-							if (makeFace({ x,y,z }, chunk, ConnectionType::FLUID_CONNECT)) // Can make a fluid face
+							else if (makeFace({ x,y,z }, chunk, ConnectionType::FLUID_CONNECT)) // Can make a fluid face
 							{
 								//Positive
 								if (y + 1 < chunkSize) {
@@ -953,7 +977,7 @@ namespace wc {
 								//}
 							}
 
-							if (makeFace({ x,y,z }, chunk, ConnectionType::X_CONNECT)) // Can make a fluid face
+							else if (makeFace({ x,y,z }, chunk, ConnectionType::X_CONNECT)) // Can make a fluid face
 							{
 									addFace(X_FACE1, glm::vec3(x, y, z), blockData[block].texture[(int)BlockTexture::TOP], 0);
 									addFace(X_FACE2, glm::vec3(x, y, z), blockData[block].texture[(int)BlockTexture::TOP], 0);

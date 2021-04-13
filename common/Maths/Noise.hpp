@@ -21,7 +21,7 @@ private:
 
     float lerp(const float& a, const float& b, const float& z) const noexcept
     {
-        float mu2 = (1 - glm::cos(z * glm::pi<float>())) / 2;
+        float mu2 = (1 - glm::cos(z * glm::pi<float>())) * 0.5;
         return (a * (1 - mu2) + b * mu2);
     }
 
@@ -55,9 +55,10 @@ public:
 		float amplitude = 1.0f;
 		float frequency = 1.0f;
 		float noiseValue = 0.0f;
+        float ns = 1 / scale;
 
 		for (uint8_t i = 0; i < octaves; i++) {
-			float perlinValue = (noise(voxelX / scale * frequency, voxelZ / scale * frequency) + 1) / 2;
+			float perlinValue = (noise(voxelX * ns * frequency, voxelZ * ns * frequency) + 1) * 0.5;
 			noiseValue += perlinValue * amplitude;
 
 			amplitude *= persistance;
@@ -69,9 +70,10 @@ public:
 
 	float get3DNoiseFor(const int& voxelX, const int& voxelY, const int& voxelZ)
 	{
-        float noiseX = noise(voxelY / scale, voxelZ / scale);
-        float noiseY = noise(voxelX / scale, voxelZ / scale);
-        float noiseZ = noise(voxelX / scale, voxelY / scale);
+        float ns = 1 / scale;
+        float noiseX = noise(voxelY * ns, voxelZ * ns);
+        float noiseY = noise(voxelX * ns, voxelZ * ns);
+        float noiseZ = noise(voxelX * ns, voxelY * ns);
 
         float abc = noiseX + noiseY + noiseZ;
         return abc * multiplier / 6.f;

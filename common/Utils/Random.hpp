@@ -4,25 +4,20 @@
 #include <random>
 
 namespace wc{
-class Random
-{
+class Random{
 public:
-	static void Init()
+	uint32_t seed;
+	uint32_t asInt()
 	{
-		s_RandomEngine.seed(std::random_device()());
+		seed += 0xe120fc15;
+		uint64_t tmp;
+		tmp = (uint64_t)seed * 0x4a39b70d;
+		uint32_t m1 = (tmp >> 32) ^ tmp;
+		tmp = (uint64_t)m1 * 0x12fad5c9;
+		uint32_t m2 = (tmp >> 32) ^ tmp;
+		return m2;
 	}
 
-	static float Float()
-	{
-		return (float)s_Distribution(s_RandomEngine) / (float)std::numeric_limits<uint32_t>::max();
-	}
-
-private:
-	static std::mt19937 s_RandomEngine;
-	static std::uniform_int_distribution<std::mt19937::result_type> s_Distribution;
 };
-
-std::mt19937 Random::s_RandomEngine;
-std::uniform_int_distribution<std::mt19937::result_type> Random::s_Distribution;
 }
 #endif

@@ -3,7 +3,8 @@
 
 //#include <iostream>
 //#include <future>
-//#include <thread>
+#include <ppl.h>
+#include <thread>
 #include <memory>
 
 #include <fstream>
@@ -42,9 +43,6 @@
 //Lua
 #include <sol/sol.hpp>
 
-//Sound
-//#include <irrKlang/irrKlang.h>
-
 //Util
 #include <Utils/State.hpp>
 #include <Utils/Keyboard.hpp>
@@ -52,6 +50,8 @@
 #include <Utils/Log.hpp>
 #include <Utils/Window.hpp>
 #include <Utils/Time.hpp>
+#include <Utils/Random.hpp>
+#include <Utils/Bits.hpp>
 
 // GUI
 #include <GUI/AssetManager.hpp>

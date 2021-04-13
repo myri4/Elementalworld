@@ -16,13 +16,13 @@ namespace wc {
 	static const uint32_t MaxQuadVertexCount = MaxQuadCount * 4;
 	static const uint32_t MaxQuadIndexCount = MaxQuadCount * 6;
 
-	//static const uint32_t MaxLineCount = 1000;
-	//static const uint32_t MaxLineVertexCount = MaxQuadCount * 2;
+	static const uint32_t MaxLineCount = 1000;
+	static const uint32_t MaxLineVertexCount = MaxQuadCount * 2;
 
 	static const uint8_t MaxTextures = 32;
 
 	struct Vertex2D {
-		glm::vec2 Position;
+		glm::vec3 Position;
 		glm::vec3 TexCoords;
 		glm::vec4 Color;
 		int Type;
@@ -106,10 +106,10 @@ namespace wc {
 			gl::VertexArray m_VAO;
 			gl::IndexBuffer m_EBO;
 
-			//gl::VertexBuffer m_LineVBO;
-			//gl::VertexArray m_LineVAO;
-			//uint32_t lineByteOffset = 0;
-			//uint32_t LineIndexCount = 0;
+			gl::VertexBuffer m_LineVBO;
+			gl::VertexArray m_LineVAO;
+			uint32_t lineByteOffset = 0;
+			uint32_t LineIndexCount = 0;
 
 			gl::Shader m_Shader;
 		};
@@ -136,20 +136,18 @@ namespace wc {
 			m_Data.m_EBO.Create(indices, sizeof(indices));
 			m_Data.m_VAO.Create();
 			m_Data.m_VBO.Create(nullptr, MaxQuadVertexCount * sizeof(Vertex2D), GL_DYNAMIC_DRAW);
-			Renderer::VertexAttribPointer(0, 2, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Position));
+			Renderer::VertexAttribPointer(0, 3, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Position));
 			Renderer::VertexAttribPointer(1, 3, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, TexCoords));
 			Renderer::VertexAttribPointer(2, 4, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Color));
 			Renderer::VertexAttribPointer(3, 1, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Type));
 
 
-
-			//m_Data.m_LineVAO.Create();
-			//m_Data.m_LineVBO.Create(nullptr, MaxQuadVertexCount * sizeof(Vertex2D), GL_DYNAMIC_DRAW);
-			//Renderer::VertexAttribPointer(0, 2, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Position));
-			//Renderer::VertexAttribPointer(1, 3, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, TexCoords));
-			//Renderer::VertexAttribPointer(2, 4, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Color));
-			//Renderer::VertexAttribPointer(3, 1, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Type));
-
+			m_Data.m_LineVAO.Create();
+			m_Data.m_LineVBO.Create(nullptr, MaxLineVertexCount * sizeof(Vertex2D), GL_DYNAMIC_DRAW);
+			Renderer::VertexAttribPointer(0, 3, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Position));
+			Renderer::VertexAttribPointer(1, 3, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, TexCoords));
+			Renderer::VertexAttribPointer(2, 4, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Color));
+			Renderer::VertexAttribPointer(3, 1, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Type));
 
 			m_Data.m_Shader.Create("shaderpacks/default/Renderer2D.glsl");
 
@@ -167,18 +165,28 @@ namespace wc {
 
 		void SetProjection(const glm::mat4& proj) {
 			m_Data.m_Shader.use();
-			m_Data.m_Shader.setMat4("proj", proj);
+			m_Data.m_Shader.setMat4("u_Projection", proj);
 		}
 
-		//void FlushLines() {
-		//	//if (!m_Data.LineIndexCount) return;
-		//	m_Data.m_Shader.use();
-		//
-		//	m_Data.m_LineVAO.Bind();
-		//	glDrawArrays(GL_LINES, 0, m_Data.LineIndexCount);
-		//	m_Data.LineIndexCount = 0;
-		//	m_Data.lineByteOffset = 0;
-		//}
+		void SetView(const glm::mat4& view) {
+			m_Data.m_Shader.use();
+			m_Data.m_Shader.setMat4("u_View", view);
+		}
+
+		void SetModel(const glm::mat4& model) {
+			m_Data.m_Shader.use();
+			m_Data.m_Shader.setMat4("u_Model", model);
+		}
+
+		void FlushLines() {
+			//if (!m_Data.LineIndexCount) return;
+			m_Data.m_Shader.use();
+		
+			m_Data.m_LineVAO.Bind();
+			glDrawArrays(GL_LINES, 0, m_Data.LineIndexCount);
+			m_Data.LineIndexCount = 0;
+			m_Data.lineByteOffset = 0;
+		}
 
 		void Flush() {
 			if (!m_Data.IndexCount) return;
@@ -200,16 +208,49 @@ namespace wc {
 		}
 
 
-		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, glm::vec4 color = glm::vec4(1.f)) {
+		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color = glm::vec4(1.f)) {
 			if (m_Data.IndexCount >= MaxQuadIndexCount) Flush();
 
 			float textureIndex = 0.f;
 			float vertices[] = {
 				// positions                                                              texture coords
-				pos.x + size.x, pos.y + size.y,  1.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top right
-				pos.x,			pos.y + size.y,  0.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top left 
-				pos.x,			pos.y,			 0.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // bottom left
-				pos.x + size.x, pos.y,			 1.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f  // bottom right
+				pos.x + size.x, pos.y + size.y, 0.f, 1.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top right
+				pos.x,			pos.y + size.y, 0.f, 0.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top left 
+				pos.x,			pos.y,			0.f, 0.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // bottom left
+				pos.x + size.x, pos.y,			0.f, 1.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f  // bottom right
+			};
+
+			m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
+			m_Data.byteOffset += sizeof(vertices);
+			m_Data.IndexCount += 6;
+		}		
+
+		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const gl::Texture& tex, const glm::vec2& textureStart, const glm::vec2& textureEnd, const glm::vec4& color = glm::vec4(1.f)) {
+			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
+
+			float textureIndex = 0.f;
+			uint32_t texID = tex.GetRendererID();
+			for (uint8_t i = 1; i < m_Data.TextureSlotIndex; i++) {
+				if (m_Data.TextureSlots[i] == texID) {
+					textureIndex = (float)i;
+					break;
+				}
+			}
+
+			if (textureIndex == 0.f) {
+				textureIndex = (float)m_Data.TextureSlotIndex;
+				m_Data.TextureSlots[m_Data.TextureSlotIndex] = texID;
+				m_Data.TextureSlotIndex++;
+			}
+
+			float tsx = 1 / tex.GetSize().x;
+			float tsy = 1 / tex.GetSize().y;
+			float vertices[] = {
+				// positions                                                              texture coords
+				pos.x + size.x, pos.y + size.y, 0.f, textureEnd.x   * tsx, textureEnd.y   * tsy, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top right
+				pos.x,			pos.y + size.y, 0.f, textureStart.x * tsx, textureEnd.y   * tsy, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top left 
+				pos.x,			pos.y,			0.f, textureStart.x * tsx, textureStart.y * tsy, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // bottom left
+				pos.x + size.x, pos.y,			0.f, textureEnd.x   * tsx, textureStart.y * tsy, textureIndex, color.r, color.g, color.b, color.a, 0.0f  // bottom right
 			};
 
 			m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
@@ -217,21 +258,40 @@ namespace wc {
 			m_Data.IndexCount += 6;
 		}
 
-		//void DrawLine(const glm::vec2& start, const glm::vec2& end, glm::vec4 color = glm::vec4(1.f)) {
-		//	if (m_Data.LineIndexCount >= MaxLineVertexCount) FlushLines();
-		//
-		//	float textureIndex = 0.f;
-		//	float vertices[] = {
-		//		// positions
-		//		start.x, start.y, end.x, end.y, 0.f, color.r, color.g, color.b, color.a, 2.f
-		//	};
-		//
-		//	m_Data.m_LineVBO.Update(m_Data.lineByteOffset, sizeof(vertices), vertices);
-		//	m_Data.lineByteOffset += sizeof(vertices);
-		//	m_Data.LineIndexCount += 2;
-		//}
+		void DrawQuadIndexedSprite(const glm::vec2& pos, const glm::vec2& size, const gl::Texture& tex, const glm::vec2& coords, const glm::vec2& sprSize, const glm::vec4& color = glm::vec4(1.f)) {
+			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
 
-		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const gl::Texture& tex, const glm::vec2& textureStart, const glm::vec2& textureEnd, glm::vec4 color = glm::vec4(1.f)) {
+			float textureIndex = 0.f;
+			uint32_t texID = tex.GetRendererID();
+			for (uint8_t i = 1; i < m_Data.TextureSlotIndex; i++) {
+				if (m_Data.TextureSlots[i] == texID) {
+					textureIndex = (float)i;
+					break;
+				}
+			}
+
+			if (textureIndex == 0.f) {
+				textureIndex = (float)m_Data.TextureSlotIndex;
+				m_Data.TextureSlots[m_Data.TextureSlotIndex] = texID;
+				m_Data.TextureSlotIndex++;
+			}
+
+			float tsx = 1 / tex.GetSize().x;
+			float tsy = 1 / tex.GetSize().y;
+			float vertices[] = {
+				// positions                                                              texture coords
+				pos.x + size.x, pos.y + size.y, 0.f, (coords.x * sprSize.x)		  * tsx, ((coords.y + 1) * sprSize.y) * tsy, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top right
+				pos.x,			pos.y + size.y, 0.f, ((coords.x + 1) * sprSize.x) * tsx, ((coords.y + 1) * sprSize.y) * tsy, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top left 
+				pos.x,			pos.y,			0.f, ((coords.x + 1) * sprSize.x) * tsx, (coords.y * sprSize.y)		  * tsy, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // bottom left
+				pos.x + size.x, pos.y,			0.f, (coords.x * sprSize.x)		  * tsx, (coords.y * sprSize.y)		  * tsy, textureIndex, color.r, color.g, color.b, color.a, 0.0f  // bottom right
+			};
+
+			m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
+			m_Data.byteOffset += sizeof(vertices);
+			m_Data.IndexCount += 6;
+		}
+
+		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const gl::Texture& tex, const glm::vec4& color = glm::vec4(1.f)) {
 			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
 
 			float textureIndex = 0.f;
@@ -252,10 +312,10 @@ namespace wc {
 
 			float vertices[] = {
 				// positions                                                              texture coords
-				pos.x + size.x, pos.y + size.y,  textureEnd.x / tex.GetSize().x, textureEnd.y / tex.GetSize().y,     textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top right
-				pos.x,			pos.y + size.y,  textureStart.x / tex.GetSize().x, textureEnd.y / tex.GetSize().y,   textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top left 
-				pos.x,			pos.y,			 textureStart.x / tex.GetSize().x, textureStart.y / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // bottom left
-				pos.x + size.x, pos.y,			 textureEnd.x / tex.GetSize().x, textureStart.y / tex.GetSize().y,   textureIndex, color.r, color.g, color.b, color.a, 0.0f  // bottom right
+				pos.x + size.x, pos.y + size.y, 0.f, 1.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top right
+				pos.x,			pos.y + size.y, 0.f, 0.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top left 
+				pos.x,			pos.y,			0.f, 0.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // bottom left
+				pos.x + size.x, pos.y,			0.f, 1.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f  // bottom right
 			};
 
 			m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
@@ -263,71 +323,7 @@ namespace wc {
 			m_Data.IndexCount += 6;
 		}
 
-		void DrawQuadIndexedSprite(const glm::vec2& pos, const glm::vec2& size, const gl::Texture& tex, const glm::vec2& coords, const glm::vec2& sprSize, glm::vec4 color = glm::vec4(1.f)) {
-			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
-
-			float textureIndex = 0.f;
-			uint32_t texID = tex.GetRendererID();
-			for (uint8_t i = 1; i < m_Data.TextureSlotIndex; i++) {
-				if (m_Data.TextureSlots[i] == texID) {
-					textureIndex = (float)i;
-					break;
-				}
-			}
-
-			if (textureIndex == 0.f) {
-				textureIndex = (float)m_Data.TextureSlotIndex;
-				m_Data.TextureSlots[m_Data.TextureSlotIndex] = texID;
-				m_Data.TextureSlotIndex++;
-			}
-
-
-			float vertices[] = {
-				// positions                                                              texture coords
-				pos.x + size.x, pos.y + size.y,  (coords.x * sprSize.x) / tex.GetSize().x,       ((coords.y + 1) * sprSize.y) / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top right
-				pos.x,			pos.y + size.y,  ((coords.x + 1) * sprSize.x) / tex.GetSize().x, ((coords.y + 1) * sprSize.y) / tex.GetSize().y, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top left 
-				pos.x,			pos.y,			 ((coords.x + 1) * sprSize.x) / tex.GetSize().x, (coords.y * sprSize.y) / tex.GetSize().y,		 textureIndex, color.r, color.g, color.b, color.a, 0.0f, // bottom left
-				pos.x + size.x, pos.y,			 (coords.x * sprSize.x) / tex.GetSize().x,       (coords.y * sprSize.y) / tex.GetSize().y,		 textureIndex, color.r, color.g, color.b, color.a, 0.0f  // bottom right
-			};
-
-			m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
-			m_Data.byteOffset += sizeof(vertices);
-			m_Data.IndexCount += 6;
-		}
-
-		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const gl::Texture& tex, glm::vec4 color = glm::vec4(1.f)) {
-			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
-
-			float textureIndex = 0.f;
-			uint32_t texID = tex.GetRendererID();
-			for (uint8_t i = 1; i < m_Data.TextureSlotIndex; i++) {
-				if (m_Data.TextureSlots[i] == texID) {
-					textureIndex = (float)i;
-					break;
-				}
-			}
-
-			if (textureIndex == 0.f) {
-				textureIndex = (float)m_Data.TextureSlotIndex;
-				m_Data.TextureSlots[m_Data.TextureSlotIndex] = texID;
-				m_Data.TextureSlotIndex++;
-			}
-
-
-			float vertices[] = {
-				// positions                                                              texture coords
-				pos.x + size.x, pos.y + size.y,  1.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top right
-				pos.x,			pos.y + size.y,  0.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top left 
-				pos.x,			pos.y,			 0.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // bottom left
-				pos.x + size.x, pos.y,			 1.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, 0.0f  // bottom right
-			};
-
-			m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
-			m_Data.byteOffset += sizeof(vertices);
-			m_Data.IndexCount += 6;
-		}
-
-		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const uint32_t& tex, glm::vec4 color = glm::vec4(1.f), const int8_t& Type = 0) {
+		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const uint32_t& tex, const glm::vec4& color = glm::vec4(1.f), const int8_t& Type = 0) {
 			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
 
 			float textureIndex = 0.f;
@@ -348,10 +344,10 @@ namespace wc {
 
 			float vertices[] = {
 				// positions                                                              texture coords
-				pos.x + size.x, pos.y + size.y,  1.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, Type, // top right
-				pos.x,			pos.y + size.y,  0.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, Type, // top left 
-				pos.x,			pos.y,			 0.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, Type, // bottom left
-				pos.x + size.x, pos.y,			 1.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, Type  // bottom right
+				pos.x + size.x, pos.y + size.y, 0.f, 1.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, Type, // top right
+				pos.x,			pos.y + size.y, 0.f, 0.f, 1.f, textureIndex, color.r, color.g, color.b, color.a, Type, // top left 
+				pos.x,			pos.y,			0.f, 0.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, Type, // bottom left
+				pos.x + size.x, pos.y,			0.f, 1.f, 0.f, textureIndex, color.r, color.g, color.b, color.a, Type  // bottom right
 			};
 
 			m_Data.m_VBO.Update(m_Data.byteOffset, sizeof(vertices), vertices);
@@ -375,6 +371,66 @@ namespace wc {
 				pos.x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))
 			}
 		}
+
+		void DrawLine(const glm::vec2& start, const glm::vec2& end, const glm::vec4& color = glm::vec4(1.f)) {
+			if (m_Data.LineIndexCount >= MaxLineVertexCount) FlushLines();
+
+			float vertices[] = {
+				// positions
+				start.x, start.y, 0.f, 0.f, 0.f, 0.f, color.r, color.g, color.b, color.a, 2.f,
+				end.x,   end.y,   0.f, 0.f, 0.f, 0.f, color.r, color.g, color.b, color.a, 2.f
+			};
+
+			m_Data.m_LineVBO.Update(m_Data.lineByteOffset, sizeof(vertices), vertices);
+			m_Data.lineByteOffset += sizeof(vertices);
+			m_Data.LineIndexCount += 2;
+		}
+
+		void DrawLineDC(const glm::vec2& start, const glm::vec3& end, const glm::vec4& startColor = glm::vec4(1.f), const glm::vec4& endColor = glm::vec4(1.f)) {
+			if (m_Data.LineIndexCount >= MaxLineVertexCount) FlushLines();
+
+			float vertices[] = {
+				// positions
+				start.x, start.y, 0.f, 0.f, 0.f, 0.f, startColor.r, startColor.g, startColor.b, startColor.a, 2.f,
+				end.x,   end.y,   0.f, 0.f, 0.f, 0.f, endColor.r,   endColor.g,   endColor.b,   endColor.a, 2.f
+			};
+
+			m_Data.m_LineVBO.Update(m_Data.lineByteOffset, sizeof(vertices), vertices);
+			m_Data.lineByteOffset += sizeof(vertices);
+			m_Data.LineIndexCount += 2;
+		}
+
+		void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color = glm::vec4(1.f)) {
+			if (m_Data.LineIndexCount >= MaxLineVertexCount) FlushLines();
+
+			float vertices[] = {
+				// positions
+				start.x, start.y, start.z, 0.f, 0.f, 0.f, color.r, color.g, color.b, color.a, 2.f,
+				end.x,   end.y,   end.z, 0.f, 0.f, 0.f, color.r, color.g, color.b, color.a, 2.f
+			};
+
+			m_Data.m_LineVBO.Update(m_Data.lineByteOffset, sizeof(vertices), vertices);
+			m_Data.lineByteOffset += sizeof(vertices);
+			m_Data.LineIndexCount += 2;
+		}
+
+		void DrawLineDC(const glm::vec3& start, const glm::vec3& end, const glm::vec4& startColor = glm::vec4(1.f), const glm::vec4& endColor = glm::vec4(1.f)) {
+			if (m_Data.LineIndexCount >= MaxLineVertexCount) FlushLines();
+
+			float vertices[] = {
+				// positions
+				start.x, start.y, start.z, 0.f, 0.f, 0.f, startColor.r, startColor.g, startColor.b, startColor.a, 2.f,
+				end.x,   end.y,   end.z, 0.f, 0.f, 0.f, endColor.r,   endColor.g,   endColor.b,   endColor.a, 2.f
+			};
+
+			m_Data.m_LineVBO.Update(m_Data.lineByteOffset, sizeof(vertices), vertices);
+			m_Data.lineByteOffset += sizeof(vertices);
+			m_Data.LineIndexCount += 2;
+		}
+
+		void SetLineWidth(const float& width) { glLineWidth(width); }
+
+		glm::mat4 Get2DProj(const glm::vec2& windowSize) { return glm::ortho(0.0f, windowSize.x, windowSize.y, 0.0f); }
 	}
 }
 #endif
