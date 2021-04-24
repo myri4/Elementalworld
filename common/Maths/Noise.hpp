@@ -2,6 +2,7 @@
 #define NOISE_HPP
 
 #include <glm/glm.hpp>
+#include <glm/gtx/compatibility.hpp>
 
 struct Noise {
 private:
@@ -11,18 +12,12 @@ private:
         n = (n << 15) ^ n;
         float newN = (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
 
-        return 1.0 - ((float)newN / 1073741824.0);
+        return 1.0 - (newN / 1073741824.0);
     }
 
     float getNoise(const float& x, const float& z) const noexcept
     {
         return getNoise(x + z * 57.f);
-    }
-
-    float lerp(const float& a, const float& b, const float& z) const noexcept
-    {
-        float mu2 = (1 - glm::cos(z * glm::pi<float>())) * 0.5;
-        return (a * (1 - mu2) + b * mu2);
     }
 
     float noise(const float x, const float z) const noexcept
@@ -35,9 +30,9 @@ private:
         float u = getNoise(floorX, floorZ + 1); 
         float v = getNoise(floorX + 1, floorZ + 1);
 
-        float rec1 = lerp(s, t, x - floorX);
-        float rec2 = lerp(u, v, x - floorX);
-        float rec3 = lerp(rec1, rec2, z - floorZ);
+        float rec1 = glm::lerp(s, t, x - floorX);
+        float rec2 = glm::lerp(u, v, x - floorX);
+        float rec3 = glm::lerp(rec1, rec2, z - floorZ);
         return rec3;
     }
 public:
