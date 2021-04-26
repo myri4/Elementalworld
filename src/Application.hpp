@@ -31,7 +31,7 @@ namespace wc {
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnInput() override {
-			if (window.hasFocus())	world.OnInput(deltaTime, window.GetSize());
+			if (window.hasFocus())	world.OnInput(deltaTime, window.GetPos(), window.GetSize(), CenterMouse);
 
 			if (wc::Keyboard::isKeyPressed(wc::Keyboard::Key::F)) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -117,7 +117,7 @@ namespace wc {
 			glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
 			Renderer::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			world.Update(window.GetPos(), window.GetSize(), CenterMouse, deltaTime);
+			world.Update(window.GetSize(), deltaTime);
 
 			glDisable(GL_DEPTH_TEST);
 			screen.unbind();

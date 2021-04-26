@@ -23,19 +23,19 @@ const uint8_t emptyFlag =		 0b00001000; // 3
 
 //int to1D(const glm::vec3& pos) { return (pos.z * chunkSize * chunkSize) + (pos.y * chunkSize) + pos.x; }
 //int to1D(const int& x, const int& y, const int& z) { return (z * chunkSize * chunkSize) + (y * chunkSize) + x; }
-glm::vec3 to3D(const int& idx, const glm::ivec3& size = glm::ivec3(chunkSize)) {
+glm::ivec3 to3D(const int& idx, const glm::ivec3& size = glm::ivec3(chunkSize)) {
 	int i = idx;
 	int z = i / (size.x * size.y);
 	i -= (z * size.x * size.y);
 	int y = i / size.x;
 	int x = i % size.x;
-	return glm::vec3(x, y, z);
+	return glm::ivec3(x, y, z);
 }
 
 class Chunk {
 public: // Variables
 	uint32_t IndexCount = 0;
-	glm::vec3 chunkPos = glm::vec3(0);
+	glm::ivec3 chunkPos = glm::ivec3(0);
 	BlockID chunkData[chunkSize][chunkSize][chunkSize] = { 0 };
 
 	uint8_t flags = canBeUpdatedFlag | emptyFlag;
@@ -55,28 +55,26 @@ public: // Functions
 	Chunk() {}
 };
 
-glm::vec3 getBlockPos(const int& x, const int& y, const int& z)
+glm::ivec3 getBlockPos(const int& x, const int& y, const int& z)
 {
-	return glm::floor(glm::vec3{ x % chunkSize, y % chunkSize, z % chunkSize });
+	return { x % chunkSize, y % chunkSize, z % chunkSize };
 }
 
-glm::vec3 getBlockPos(const glm::ivec3& pos)
+glm::ivec3 getBlockPos(const glm::ivec3& pos)
 {
-	return glm::floor(glm::vec3{ pos.x % chunkSize, pos.y % chunkSize, pos.z % chunkSize });
+	return { pos.x % chunkSize, pos.y % chunkSize, pos.z % chunkSize };
 }
 
-glm::vec3 getChunkPos(const int& x, const int& y, const int& z)
+glm::ivec3 getChunkPos(const int& x, const int& y, const int& z)
 {
-	//float cs = 1 / chunkSize;
-	//return glm::floor(glm::vec3{ x * cs, y * cs, z * cs });
-	return glm::floor(glm::vec3{ x / chunkSize, y / chunkSize, z / chunkSize });
+	float cs = 1.f / chunkSize;
+	return glm::floor(glm::vec3{ x * cs, y * cs, z * cs });
 }
 
-glm::vec3 getChunkPos(const glm::vec3& pos)
+glm::ivec3 getChunkPos(const glm::ivec3& pos)
 {
-	//float cs = 1 / chunkSize;
-	//return glm::floor(glm::vec3{ pos.x * cs, pos.y * cs, pos.z * cs });
-	return glm::floor(glm::vec3{ pos.x / chunkSize, pos.y / chunkSize, pos.z / chunkSize });
+	float cs = 1.f / chunkSize;
+	return glm::floor(glm::vec3{ pos.x * cs, pos.y * cs, pos.z * cs });
 }
 
 }

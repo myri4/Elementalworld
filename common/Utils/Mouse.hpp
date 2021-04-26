@@ -16,10 +16,10 @@ void SetMousePosition(const glm::ivec2& pos) {
 	SetCursorPos(pos.x, pos.y);
 }
 
-glm::vec2 GetMousePos() {
+glm::ivec2 GetMousePos() {
 	POINT p;
 	GetCursorPos(&p);
-	return { p.x,p.y };
+	return { p.x, p.y };
 }
 
 void ShowMouse(const bool& show) {

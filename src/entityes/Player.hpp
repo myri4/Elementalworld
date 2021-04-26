@@ -14,7 +14,7 @@ public:
 	glm::vec3 Size = glm::vec3(1.0f);
 	bool m_isOnGround = false;
 	bool flying = true;
-	glm::vec3 velocity;
+	glm::vec3 velocity = glm::vec3(0.f);
 	Inventory<9, 4> inventory;
 
 	Player() {}

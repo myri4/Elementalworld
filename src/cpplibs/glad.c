@@ -20,8 +20,6 @@
 */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <glad/glad.h>
 
 static void* get_proc(const char *namez);
@@ -53,8 +51,7 @@ static PFNWGLGETPROCADDRESSPROC_PRIVATE gladGetProcAddressPtr;
   #endif
 #endif
 
-static
-int open_gl(void) {
+static int open_gl(void) {
 #ifndef IS_UWP
     libGL = LoadLibraryW(L"opengl32.dll");
     if(libGL != NULL) {
@@ -68,8 +65,7 @@ int open_gl(void) {
     return 0;
 }
 
-static
-void close_gl(void) {
+static void close_gl(void) {
     if(libGL != NULL) {
         FreeLibrary((HMODULE) libGL);
         libGL = NULL;
@@ -84,8 +80,7 @@ typedef void* (APIENTRYP PFNGLXGETPROCADDRESSPROC_PRIVATE)(const char*);
 static PFNGLXGETPROCADDRESSPROC_PRIVATE gladGetProcAddressPtr;
 #endif
 
-static
-int open_gl(void) {
+static int open_gl(void) {
 #ifdef __APPLE__
     static const char *NAMES[] = {
         "../Frameworks/OpenGL.framework/OpenGL",
@@ -124,8 +119,7 @@ void close_gl(void) {
 }
 #endif
 
-static
-void* get_proc(const char *namez) {
+static void* get_proc(const char *namez) {
     void* result = NULL;
     if(libGL == NULL) return NULL;
 
@@ -1830,4 +1824,3 @@ int gladLoadGLLoader(GLADloadproc load) {
 	if (!find_extensionsGL()) return 0;
 	return GLVersion.major != 0 || GLVersion.minor != 0;
 }
-

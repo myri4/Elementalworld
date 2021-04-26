@@ -42,23 +42,17 @@ namespace wc {
 		}
 
 		void display() {
-			float currentTime = glfwGetTime();
-
-			if (currentTime - lastFrame >= 1.0 / framerateLimit || framerateLimit == 0)
-			{
-				lastFrame = currentTime;
-				glfwSwapBuffers(window);
-			}
+			glfwSwapBuffers(window);
 			glfwPollEvents();
 		}
 
-		glm::vec2 GetPos() const {
+		glm::ivec2 GetPos() const {
 			int xpos, ypos;
 			glfwGetWindowPos(window, &xpos, &ypos);
 			return { xpos, ypos };
 		}
 
-		glm::vec2 GetSize() const {
+		glm::ivec2 GetSize() const {
 			int width, height;
 			glfwGetWindowSize(window, &width, &height);
 			return { width, height };

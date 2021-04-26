@@ -59,115 +59,6 @@ namespace wc {
 		blockData[block.id] = block;
 	}
 
-	/*struct quad_t
-	{
-		glm::ivec3 a, b, c, d;
-	};
-
-	static size_t to_index(const uint32_t u, const uint32_t v, const uint32_t sz_u)
-	{
-		return static_cast<size_t>(v) * static_cast<size_t>(sz_u) + static_cast<size_t>(u);
-	}
-
-	static auto greedy_remesher(const glm::uvec3& dims,	const std::function<bool(glm::ivec3)>& map_fn) {
-		Face* quads;
-		uint32_t count = 0;
-		uint8_t norm = 0u;
-		for (; norm < 3u; norm++) {
-
-			const auto tan = (norm + 1u) % 3u;
-			const auto biTan = (norm + 2u) % 3u;
-
-			glm::ivec3 normalVector(0);
-			normalVector[norm] = 1;
-
-			std::vector<bool> mask(dims[tan] * dims[biTan]);
-
-			for (size_t slice = 0u; slice <= dims[norm]; slice++) {
-
-				glm::uvec3 cursor(0);
-				cursor[norm] = slice;
-
-				for (cursor[biTan] = 0; cursor[biTan] < dims[biTan]; ++cursor[biTan])
-				{
-					for (cursor[tan] = 0; cursor[tan] < dims[tan]; ++cursor[tan])
-					{
-						const glm::ivec3 curr(cursor);
-						const glm::ivec3 vec(normalVector);
-
-						const auto voxel_in_slice = map_fn(curr);
-						const auto voxel_in_previous_slice = map_fn(curr - vec);
-
-						const auto i = to_index(cursor[tan], cursor[biTan], dims[tan]);
-						mask[i] = voxel_in_slice != voxel_in_previous_slice;
-					}
-				}
-
-				// Generate mesh for mask using lexicographic ordering
-				for (size_t y = 0; y < dims[biTan]; y++) {
-					for (size_t x = 0; x < dims[tan];) {
-						if (!mask[to_index(x, y, dims[tan])])
-						{
-							x++;
-							continue;
-						}
-
-						size_t width = 1;
-						while (x + width < dims[tan]
-							&& mask[to_index(x + width, y, dims[tan])])
-						{
-							width++;
-						}
-
-						size_t height = 1;
-						for (; y + height < dims[biTan]; height++) {
-							for (auto k = x; k < x + width; k++) {
-								if (!mask[to_index(k, y + height, dims[tan])]) {
-									goto done_quad;
-								}
-							}
-						}
-
-					done_quad:
-						// The base of the quad to add
-						glm::ivec3 b(0);
-						b[norm] = slice;
-						b[tan] = x;
-						b[biTan] = y;
-
-						// The 'width' of the quad.
-						glm::ivec3 du(0);
-						du[tan] = width;
-
-						// The 'height' of the quad.
-						glm::ivec3 dv(0);
-						dv[biTan] = height;
-
-						quads[count] = { b, b + du, b + du + dv, b + dv };
-						count++;
-
-						// Clear the mask and increment x by the width of this quad.
-						for (size_t l = 0; l < height; ++l)
-						{
-							for (size_t k = 0; k < width; ++k)
-							{
-								const auto i = to_index(x + k,
-									y + l,
-									dims[tan]);
-
-								mask[i] = false;
-							}
-						}
-
-						x += width;
-					}
-				}
-			}
-		}
-
-		return quads;
-	}*/
-
 	class Singleplayer {
 	private:
 		// Player related
@@ -209,14 +100,18 @@ namespace wc {
 			sol::state luaState;
 			luaState.script_file("scripts/worldGen.lua");
 
-			worldNoise.lacunarity = luaState["lacunarity"];
-			worldNoise.multiplier = luaState["multiplier"];
-			worldNoise.octaves = luaState["octaves"];
-			worldNoise.persistance = luaState["persistance"];
-			worldNoise.scale = luaState["scale"];
-			worldNoise.seed = luaState["seed"];
+			if (luaState["lacunarity"].valid())   worldNoise.lacunarity = luaState["lacunarity"];
+			if (luaState["multiplier"].valid())  worldNoise.multiplier = luaState["multiplier"];
+			if (luaState["octaves"].valid()) { 
+				worldNoise.octaves = luaState["octaves"]; 
+				if (worldNoise.octaves > 9) worldNoise.octaves = 9;
+				if (worldNoise.octaves < 1) worldNoise.octaves = 1;
+			}
+			if (luaState["persistance"].valid()) worldNoise.persistance = luaState["persistance"];
+			if (luaState["scale"].valid())       worldNoise.scale = 1.f / (float)luaState["scale"];
+			if (luaState["seed"].valid())        worldNoise.seed = luaState["seed"];
 
-			water_level = luaState["water_level"];
+			if (luaState["water_level"].valid()) water_level = luaState["water_level"];
 			//snow_level = noiseState["snow_level"];
 
 			//biomeNoise.lacunarity = 2;
@@ -244,7 +139,7 @@ namespace wc {
 
 			luaState.script_file("scripts/blocks.lua");
 
-			p.Position = { RenderDistance * RenderDistance * 0.5 + RenderDistance, RenderDistance * 4 ,RenderDistance * RenderDistance * 0.5 };
+			p.Position = { (RenderDistance * RenderDistance * 0.5f + RenderDistance), RenderDistance * 4 , (RenderDistance * RenderDistance * 0.5f) };
 			p.Size = {1, 1, 1};
 			ChunkID chunkID = 0;
 			for (; chunkID < world.size(); chunkID++) {
@@ -256,8 +151,9 @@ namespace wc {
 				Renderer::VertexAttribPointer(3, 1, sizeof(gl::Vertex), (void*)offsetof(gl::Vertex, type)); // type attribute
 				world[chunkID].chunkPos = to3D(chunkID, glm::ivec3(RenderDistance));
 			}
+			
+			for (ChunkID chunk = 0; chunk < world.size(); chunk++) UpdateNeighbours(chunk);
 
-			{
 			uint32_t indices[MaxFaceCount * 6];
 			uint32_t ioffset = 0;
 			uint32_t i = 0;
@@ -272,12 +168,10 @@ namespace wc {
 
 				ioffset += 4;
 			}
-			worldIndexBuffer.Create(indices, sizeof(indices));
-			}
+			worldIndexBuffer.Create(indices, sizeof(indices));		
 			
-			for (ChunkID chunk = 0; chunk < world.size(); chunk++) UpdateNeighbours(chunk);
 
-			cursorTex.load("assets/textures/misc/cursor2.png");
+			load("assets/textures/misc/cursor2.png", cursorTex);
 
 			//defBiome.Create("scripts/biomeTest.lua");
 
@@ -288,38 +182,7 @@ namespace wc {
 			numberGen.seed = worldNoise.seed;
 		}
 
-		void Update(const glm::vec2& windpos, const glm::vec2& windsize, const bool& CenterMouse, const float& deltaTime) {
-			{
-				int16_t xt, yt;
-
-				glm::vec2 pos = wc::Mouse::GetMousePos();
-
-				xt = windpos.x + windsize.x * 0.5;
-				yt = windpos.y + windsize.y * 0.5;
-
-				float ms = 1 / MouseSensitivity;
-
-				bool invertMouse = false;
-				if (invertMouse) camera.Yaw += (xt - pos.x) * ms;
-				else camera.Yaw -= (xt - pos.x) * ms;
-
-				camera.Pitch += (yt - pos.y) * ms;
-
-				// make sure that when pitch is out of bounds, screen doesn't get flipped
-				if (camera.Pitch > 89.0f) camera.Pitch = 89.0f;
-				if (camera.Pitch < -89.0f)camera.Pitch = -89.0f;
-
-				if (camera.Yaw > 360.0f)camera.Yaw = 0.0f;
-				if (camera.Yaw < 0.0f)  camera.Yaw = 360.0f;
-
-				if (CenterMouse) {
-					camera.UpdateCameraAngles();
-					wc::Mouse::SetMousePosition(xt, yt);
-				}
-
-			float Far = chunkSize * RenderDistance; // 1100
-			projection = glm::perspective(glm::radians(camera.FOV), windsize.x / windsize.y, 0.1f, Far);
-			}
+		void Update(const glm::vec2& windsize, const float& deltaTime) {			
 
 			if (!p.flying) {
 				if (!p.m_isOnGround) {
@@ -356,12 +219,12 @@ namespace wc {
 			chunkShader.setMat4("u_View", camera.GetViewMatrix());
 
 			viewFrustum.update(projection * camera.GetViewMatrix());
-			uint8_t chunkHalf = RenderDistance / 2;
+			uint8_t chunkHalf = (uint8_t)(RenderDistance * 0.5);
 			glm::vec3 currentPlayerPos = getChunkPos(p.Position);
 			for (ChunkID i = 0; i < world.size(); i++) {
 
 				if (world[i].IndexCount > 0 && ShowChunk(i)) {
-					glm::vec3 pos = world[i].chunkPos * glm::vec3(chunkSize);
+					glm::vec3 pos = world[i].chunkPos * glm::ivec3(chunkSize);
 					world[i].chunkMeshArray.Bind();
 					chunkShader.setMat4("u_Model", glm::translate(glm::mat4(1.0f), pos)); // calculate the model matrix for each object and pass it to shader before drawing
 					Renderer::DrawIndexed(world[i].IndexCount);
@@ -422,7 +285,7 @@ namespace wc {
 
 		}
 
-		void OnInput(const float& deltaTime, const glm::vec2& windSize) {
+		void OnInput(const float& deltaTime, const glm::ivec2& windpos, const glm::ivec2& windSize, const bool& CenterMouse) {
 			{
 				float yaw = glm::radians(camera.Yaw);
 				float yaw90 = glm::radians(camera.Yaw + 90.0f);
@@ -452,10 +315,11 @@ namespace wc {
 
 
 				if (Keyboard::isKeyPressed(Keyboard::Key::LShift)) p.velocity.y -= p.MovementSpeed;	
-				if (Keyboard::isKeyPressed(Keyboard::Key::C)) { camera.FOV = 10; MouseSensitivity = 18; }
+				if (Keyboard::isKeyPressed(Keyboard::Key::C)) { camera.FOV = 10; MouseSensitivity = 18; UpdateProj(windSize); }
 				else {
 					MouseSensitivity = 5;
 					camera.FOV = 90;
+					UpdateProj(windSize);
 				}
 
 				if (Keyboard::isKeyPressed(Keyboard::Key::Y)) {
@@ -489,6 +353,33 @@ namespace wc {
 				if (Keyboard::isKeyPressed(Keyboard::Key::Num6)) p.ItemHolding = 6;
 				if (Keyboard::isKeyPressed(Keyboard::Key::Num7)) p.ItemHolding = 7;
 				if (Keyboard::isKeyPressed(Keyboard::Key::Num8)) p.ItemHolding = 11;
+				
+				int16_t xt, yt;
+
+				glm::ivec2 pos = wc::Mouse::GetMousePos();
+
+				xt = (int16_t)(windpos.x + windSize.x * 0.5f);
+				yt = (int16_t)(windpos.y + windSize.y * 0.5f);
+
+				float ms = 1 / MouseSensitivity;
+
+				bool invertMouse = false;
+				if (invertMouse) camera.Yaw += (xt - pos.x) * ms;
+				else camera.Yaw -= (xt - pos.x) * ms;
+
+				camera.Pitch += (yt - pos.y) * ms;
+
+				// make sure that when pitch is out of bounds, screen doesn't get flipped
+				if (camera.Pitch > 89.0f) camera.Pitch = 89.0f;
+				if (camera.Pitch < -89.0f)camera.Pitch = -89.0f;
+
+				if (camera.Yaw > 360.0f)camera.Yaw = 0.0f;
+				if (camera.Yaw < 0.0f)  camera.Yaw = 360.0f;
+
+				if (CenterMouse) {
+					camera.UpdateCameraAngles();
+					wc::Mouse::SetMousePosition(xt, yt);
+				}				
 			}
 			bool bBreak = Mouse::isButtonPressed() == Mouse::MouseButton::LBUTTON;
 			bool bPlace = Mouse::isButtonPressed() == Mouse::MouseButton::RBUTTON;
@@ -519,18 +410,24 @@ namespace wc {
 			}
 			//Renderer2D::SetProjection(Renderer2D::Get2DProj(windSize));
 		}
+
+		void UpdateProj(const glm::vec2& windsize) {
+			float Far = chunkSize * RenderDistance; // 1100
+			projection = glm::perspective(glm::radians(camera.FOV), windsize.x / windsize.y, 0.1f, Far);
+		}
+
 	private:
 		//glm::vec3 linePos;
 		//Chunk managing
 
 		void collide(const glm::vec3& vel) // @TODO: Redo the offset
 		{
-				for (int x = p.Position.x; x < p.Position.x + p.Size.x; x++)
-				for (int y = p.Position.y; y < p.Position.y + p.Size.y; y++)
-				for (int z = p.Position.z; z < p.Position.z + p.Size.z; z++) 
+				for (int x = (int)p.Position.x; x < (int)p.Position.x + (int)p.Size.x; x++)
+				for (int y = (int)p.Position.y; y < (int)p.Position.y + (int)p.Size.y; y++)
+				for (int z = (int)p.Position.z; z < (int)p.Position.z + (int)p.Size.z; z++) 
 				{
-				auto blockID = getBlock({ x, y, z });
-				auto block = blockData[blockID];
+				wc::BlockID blockID = getBlock({ x, y, z });
+				wc::Block& block = blockData[blockID];
 				if (block.id != 0 && bitEnabled(block.flags, 0)) {
 					if (vel.y > 0) {
 						p.Position.y = y - p.Size.y;
@@ -560,7 +457,7 @@ namespace wc {
 		}
 
 		bool ShowChunk(const ChunkID& chunk) { //@TODO: Optimize
-			glm::vec3 pos1 = world[chunk].chunkPos * glm::vec3(chunkSize);
+			glm::vec3 pos1 = world[chunk].chunkPos * glm::ivec3(chunkSize);
 			glm::vec3 pos = pos1;
 			if (viewFrustum.isBoxInFrustum(pos)) return true;
 
@@ -586,7 +483,7 @@ namespace wc {
 		}
 
 		void SaveChunk(const ChunkID& chunk) {
-			glm::vec3 pos = world[chunk].chunkPos;
+			glm::ivec3 pos = world[chunk].chunkPos;
 			int X = pos.x;
 			int Y = pos.y;
 			int Z = pos.z;
@@ -604,7 +501,7 @@ namespace wc {
 			//stbi_load
 		}
 
-		void LoadChunk(const glm::vec3& pos, const ChunkID& chunk) {
+		void LoadChunk(const glm::ivec3& pos, const ChunkID& chunk) {
 			int X = pos.x;
 			int Y = pos.y;
 			int Z = pos.z;
@@ -660,7 +557,7 @@ namespace wc {
 				auto blockID = block.first;
 				auto count = block.second;
 				for (uint16_t i = 0; i < count; i++) {
-					glm::vec3 pos = to3D(counter);
+					glm::ivec3 pos = to3D(counter);
 					uint8_t x = pos.x;
 					uint8_t y = pos.z;
 					uint8_t z = pos.y;
@@ -672,8 +569,7 @@ namespace wc {
 			enableBit(world[chunk].flags, canBeUpdatedFlag);
 		}
 
-		void ResetChunk(const ChunkID& chunk, const glm::vec3& newChunkPos) {
-			//Timer timer("ResetChunk");
+		void ResetChunk(const ChunkID& chunk, const glm::ivec3& newChunkPos) {
 			world[chunk].chunkPos = newChunkPos;
 			UpdateNeighbours(chunk);
 			GenerateChunkTerrain(chunk);
@@ -681,13 +577,13 @@ namespace wc {
 		}
 
 		void UpdateNeighbours(const ChunkID& chunk) {
-			world[chunk].neighborXpos = getChunkID(world[chunk].chunkPos + glm::vec3{ 1,0,0 });
-			world[chunk].neighborYpos = getChunkID(world[chunk].chunkPos + glm::vec3{ 0,1,0 });
-			world[chunk].neighborZpos = getChunkID(world[chunk].chunkPos + glm::vec3{ 0,0,1 });
+			world[chunk].neighborXpos = getChunkID(world[chunk].chunkPos + glm::ivec3{ 1,0,0 });
+			world[chunk].neighborYpos = getChunkID(world[chunk].chunkPos + glm::ivec3{ 0,1,0 });
+			world[chunk].neighborZpos = getChunkID(world[chunk].chunkPos + glm::ivec3{ 0,0,1 });
 
-			world[chunk].neighborXneg = getChunkID(world[chunk].chunkPos - glm::vec3{ 1,0,0 });
-			world[chunk].neighborYneg = getChunkID(world[chunk].chunkPos - glm::vec3{ 0,1,0 });
-			world[chunk].neighborZneg = getChunkID(world[chunk].chunkPos - glm::vec3{ 0,0,1 });
+			world[chunk].neighborXneg = getChunkID(world[chunk].chunkPos - glm::ivec3{ 1,0,0 });
+			world[chunk].neighborYneg = getChunkID(world[chunk].chunkPos - glm::ivec3{ 0,1,0 });
+			world[chunk].neighborZneg = getChunkID(world[chunk].chunkPos - glm::ivec3{ 0,0,1 });
 
 			if (world[chunk].neighborXpos >= 0) { world[world[chunk].neighborXpos].neighborXneg = chunk; }
 			if (world[chunk].neighborXneg >= 0) { world[world[chunk].neighborXneg].neighborXpos = chunk; }
@@ -704,14 +600,14 @@ namespace wc {
 				concurrency::parallel_for(0, (int)chunkSize, [&](uint8_t z) {
 					for (uint8_t x = 0; x < chunkSize; x++) {
 						int heightMap =
-						worldNoise.getNoiseFor(
+						(int)worldNoise.getNoiseFor(
 							x + world[chunk].chunkPos.x * chunkSize, 
 							z + world[chunk].chunkPos.z * chunkSize);
 						//int biomeMap = biomeNoise.getNoiseFor(
 						//	x + world[chunk].chunkPos.x * chunkSize,
 						//	z + world[chunk].chunkPos.z * chunkSize);
 						for (uint8_t y = 0; y < chunkSize; y++) {
-						glm::vec3 pos = world[chunk].chunkPos * glm::vec3(chunkSize) + glm::vec3(x, y, z);
+						glm::vec3 pos = world[chunk].chunkPos * glm::ivec3(chunkSize) + glm::ivec3(x, y, z);
 						//float noise3D = worldNoise.get3DNoiseFor(pos.x, pos.y, pos.z);
 						//if (noise3D < 7) { setBlock(glm::vec3(x, y, z), 1, chunk); }
 							if (pos.y == heightMap) { setBlock(glm::vec3(x, y, z), 1, chunk); }
@@ -727,12 +623,12 @@ namespace wc {
 				});
 		}
 
-		void setBlock(const glm::vec3& pos, const BlockID& block, const ChunkID& chunk) {
+		void setBlock(const glm::ivec3& pos, const BlockID& block, const ChunkID& chunk) {
 			if (chunk >= world.size() || chunk < 0) return;
 			    int8_t x = static_cast<int8_t>(pos.x);
 			    int8_t y = static_cast<int8_t>(pos.y);
 			    int8_t z = static_cast<int8_t>(pos.z);
-				glm::vec3 blockPos = getBlockPos(pos);
+				glm::ivec3 blockPos = getBlockPos(pos);
 				if (x >= chunkSize) x = blockPos.x;
 				if (y >= chunkSize) y = blockPos.y;
 				if (z >= chunkSize) z = blockPos.z;
@@ -994,7 +890,7 @@ namespace wc {
 				if (world[chunk].IndexCount > 0) world[chunk].chunkMeshBuffer.Update(0, sizeof(worldMesh), &worldMesh);			
 		}	
 
-		bool makeFace(const glm::vec3& pos, const ChunkID& chunkID, ConnectionType type) {
+		bool makeFace(const glm::ivec3& pos, const ChunkID& chunkID, ConnectionType type) {
 			if (pos.x >= chunkSize || pos.y >= chunkSize || pos.z >= chunkSize) return false;
 			if (pos.x < 0 || pos.y < 0 || pos.z < 0) return false;
 			if (chunkID >= world.size()) return false;
@@ -1007,9 +903,9 @@ namespace wc {
 			return false;
 		}				
 
-		BlockID getBlock(const glm::vec3& pos) {
+		BlockID getBlock(const glm::ivec3& pos) {
 			ChunkID chunk = getChunkID(getChunkPos(pos));
-			glm::vec3  blockPos = getBlockPos(pos);
+			glm::ivec3 blockPos = getBlockPos(pos);
 			int8_t x = blockPos.x;
 			int8_t y = blockPos.y;
 			int8_t z = blockPos.z;
@@ -1025,13 +921,6 @@ namespace wc {
 				}
 			}
 			return -1;
-		}
-
-		bool cpmparaQuads(glm::vec4 quad1, glm::vec4 quad2) {
-			if (quad1.y != quad2.y) return quad1.y < quad2.y;
-			if (quad1.x != quad2.x) return quad1.x < quad2.x;
-			if (quad1.z != quad2.z) return quad1.z < quad2.z;
-			return quad1.w < quad2.w;
 		}
 	};	
 }

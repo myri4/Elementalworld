@@ -196,7 +196,7 @@ private:
 			auto weights = mesh->mBones[boneIndex]->mWeights;
 			uint32_t numWeights = mesh->mBones[boneIndex]->mNumWeights;
 
-			for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex)
+			for (uint32_t weightIndex = 0; weightIndex < numWeights; ++weightIndex)
 			{
 				uint32_t vertexId = weights[weightIndex].mVertexId;
 				float weight = weights[weightIndex].mWeight;

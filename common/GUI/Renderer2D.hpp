@@ -323,7 +323,7 @@ namespace wc {
 			m_Data.IndexCount += 6;
 		}
 
-		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const uint32_t& tex, const glm::vec4& color = glm::vec4(1.f), const int8_t& Type = 0) {
+		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const uint32_t& tex, const glm::vec4& color = glm::vec4(1.f), const float& Type = 0.f) {
 			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
 
 			float textureIndex = 0.f;

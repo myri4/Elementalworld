@@ -6,24 +6,24 @@
 
 struct Noise {
 private:
-    float getNoise(int n) const noexcept
+    float getNoise(int n) const
     {
         n += seed;
         n = (n << 15) ^ n;
-        float newN = (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
+        int newN = (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
 
-        return 1.0 - (newN / 1073741824.0);
+        return 1.f - (newN * 9.313226e-10f); // 1073741824
     }
 
-    float getNoise(const float& x, const float& z) const noexcept
+    float getNoise(const int& x, const int& z) const
     {
-        return getNoise(x + z * 57.f);
+        return getNoise(x + z * 57);
     }
 
-    float noise(const float x, const float z) const noexcept
+    float noise(const float& x, const float& z) const
     {
-        float floorX = glm::floor(x);
-        float floorZ = glm::floor(z);
+        int floorX = (int)glm::floor(x);
+        int floorZ = (int)glm::floor(z);
 
         float s = getNoise(floorX, floorZ);
         float t = getNoise(floorX + 1, floorZ);
@@ -42,18 +42,13 @@ public:
 	float persistance = 0;
 	float lacunarity = 0;
 	int16_t seed = 0;
-	float getNoiseFor(const int& voxelX, const int& voxelZ)
-	{
-		if (octaves > 9) octaves = 9;
-		if (octaves < 1) octaves = 1;
-
-		float amplitude = 1.0f;
-		float frequency = 1.0f;
-		float noiseValue = 0.0f;
-        float ns = 1 / scale;
+	float getNoiseFor(const int& voxelX, const int& voxelZ) {
+		float amplitude = 1.f;
+		float frequency = 1.f;
+		float noiseValue = 0.f;
 
 		for (uint8_t i = 0; i < octaves; i++) {
-			float perlinValue = (noise(voxelX * ns * frequency, voxelZ * ns * frequency) + 1) * 0.5;
+			float perlinValue = (noise(voxelX * scale * frequency, voxelZ * scale * frequency) + 1) * 0.5f;
 			noiseValue += perlinValue * amplitude;
 
 			amplitude *= persistance;
@@ -65,13 +60,12 @@ public:
 
 	float get3DNoiseFor(const int& voxelX, const int& voxelY, const int& voxelZ)
 	{
-        float ns = 1 / scale;
-        float noiseX = noise(voxelY * ns, voxelZ * ns);
-        float noiseY = noise(voxelX * ns, voxelZ * ns);
-        float noiseZ = noise(voxelX * ns, voxelY * ns);
+        float noiseX = noise(voxelY * scale, voxelZ * scale);
+        float noiseY = noise(voxelX * scale, voxelZ * scale);
+        float noiseZ = noise(voxelX * scale, voxelY * scale);
 
         float abc = noiseX + noiseY + noiseZ;
-        return abc * multiplier / 6.f;
+        return abc * multiplier * 0.1666666666666667f; //  / 6
 	}
 };
 

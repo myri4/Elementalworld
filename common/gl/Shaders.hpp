@@ -202,30 +202,30 @@ namespace gl {
 		{
 			auto loc = GetUnifLoc(name);
 			if (loc != -1)
-				glUniformMatrix2fv(loc, 1, GL_FALSE, glm::value_ptr(mat));
+				glUniformMatrix2fv(loc, 1, false, glm::value_ptr(mat));
 		}
 		// ------------------------------------------------------------------------
 		void setMat3(const char* name, const glm::mat3& mat) const
 		{
 			auto loc = GetUnifLoc(name);
 			if (loc != -1)
-				glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(mat));
+				glUniformMatrix3fv(loc, 1, false, glm::value_ptr(mat));
 		}
 		// ------------------------------------------------------------------------
 		void setMat4(const char* name, const glm::mat4& mat) const
 		{
 			auto loc = GetUnifLoc(name);
 			if (loc != -1)
-				glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(mat));
+				glUniformMatrix4fv(loc, 1, false, glm::value_ptr(mat));
 		}
-		void SetArray(const char* name, const size_t& size, const int arr[]) const
+		void SetArray(const char* name, const size_t& size, const int* arr) const
 		{
 			auto loc = GetUnifLoc(name);
 			if (loc != -1)
 				glUniform1iv(loc, size, arr);
 		}
 
-		void SetArray(const char* name, size_t size, const float arr[]) const
+		void SetArray(const char* name, size_t size, const float* arr) const
 		{
 			auto loc = GetUnifLoc(name);
 			if (loc != -1)

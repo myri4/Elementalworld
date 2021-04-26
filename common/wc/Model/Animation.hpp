@@ -11,7 +11,7 @@ struct AssimpNodeData
 {
 	glm::mat4 transformation = glm::mat4(1.f);
 	std::string name;
-	int childrenCount = 0;
+	uint32_t childrenCount = 0;
 	std::vector<AssimpNodeData> children;
 };
 
@@ -30,8 +30,8 @@ public:
 		const aiScene* scene = importer.ReadFile(animationPath, aiProcess_Triangulate);
 		assert(scene && scene->mRootNode);
 		auto animation = scene->mAnimations[0];
-		m_Duration = animation->mDuration;
-		m_TicksPerSecond = animation->mTicksPerSecond;
+		m_Duration = (float)animation->mDuration;
+		m_TicksPerSecond = (float)animation->mTicksPerSecond;
 		aiMatrix4x4 globalTransformation = scene->mRootNode->mTransformation;
 		globalTransformation = globalTransformation.Inverse();
 		ReadHeirarchyData(m_RootNode, scene->mRootNode);
