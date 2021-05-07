@@ -11,9 +11,9 @@ namespace wc {
 
 		Clock deltaTimer;
 		bool CenterMouse = false;
-		float deltaTime = 0.0f;
+		float deltaTime = 0.f;
 
-		// Framebuffer stuff
+		// FrameBuffer stuff
 		gl::VertexBuffer scrQuad;
 		gl::VertexArray scrQuadA;
 		gl::FrameBuffer screen;

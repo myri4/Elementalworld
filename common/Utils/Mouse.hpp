@@ -22,6 +22,11 @@ glm::ivec2 GetMousePos() {
 	return { p.x, p.y };
 }
 
+glm::ivec2 GetMousePosToWindow(const glm::ivec2& windowPos) {
+	glm::ivec2 pos = GetMousePos();
+	return { pos.x - windowPos.x, pos.y - windowPos.y };
+}
+
 void ShowMouse(const bool& show) {
 	ShowCursor(show);
 }

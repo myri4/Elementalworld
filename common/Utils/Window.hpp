@@ -8,7 +8,10 @@
 #include <sol/sol.hpp>
 
 namespace wc {
-	void framebuffer_size_callback(GLFWwindow* window, int width, int height) { glViewport(0, 0, width, height); }
+
+	bool resized = false;
+
+	void framebuffer_size_callback(GLFWwindow* window, int width, int height) { glViewport(0, 0, width, height); resized = true; }
 
 	class Window {
 	public:

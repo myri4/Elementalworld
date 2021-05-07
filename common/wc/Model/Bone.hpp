@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <assimp/scene.h>
-#define GLM_ENABLE_EXPERIMENTAL
 #include <Maths/AssimpGLMHelpers.hpp>
 
 namespace wc {
@@ -32,7 +31,7 @@ public:
 		:
 		m_Name(name),
 		m_ID(ID),
-		m_LocalTransform(1.0f)
+		m_LocalTransform(1.f)
 	{
 		m_NumPositions = channel->mNumPositionKeys;
 
@@ -41,7 +40,7 @@ public:
 			aiVector3D aiPosition = channel->mPositionKeys[positionIndex].mValue;
 			float timeStamp = (float)channel->mPositionKeys[positionIndex].mTime;
 			KeyPosition data;
-			data.position = wc::AssimpGLMHelpers::GetGLMVec(aiPosition);
+			data.position = AssimpGLMHelpers::GetGLMVec(aiPosition);
 			data.timeStamp = timeStamp;
 			m_Positions.push_back(data);
 		}

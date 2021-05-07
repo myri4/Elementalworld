@@ -6,7 +6,7 @@
 
 namespace wc{
 
-enum class ConnectionType { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT, X_CONNECT};
+enum class ConnectionType { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT, X_CONNECT, CANT_CONNECT};
 enum class BlockTexture { TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK };
 
 static const float blockSize = 0.5f;

@@ -3,7 +3,6 @@
 
 //#include <iostream>
 //#include <future>
-#include <ppl.h>
 #include <thread>
 #include <memory>
 
@@ -15,6 +14,7 @@
 #include <sstream>
 #include <array>
 
+#define GLM_FORCE_PURE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -25,7 +25,7 @@
 #include <GLFW/glfw3.h>
 
 //Internet connection
-#include <net/wc_net.hpp>
+//#include <net/wc_net.hpp>
 
 //Custom libraries
 #include <gl/Shaders.hpp>

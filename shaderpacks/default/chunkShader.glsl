@@ -7,36 +7,19 @@ layout (location = 3) in int a_Type;
 
 const float PI = 3.1415926535897932384626433832795;
 
-const float waveLength = 1.0;
-const float waveAmplitude = 1.0;
-
 out vec3 v_TexCoords;
 out float v_visibility;
 out vec3 v_Normal;
 out vec3 v_FragPos;
-uniform float waveTime;
+uniform float deltaTime;
 
 uniform const float u_Density = 0.001f;
 uniform const float u_Gradient = 1.5f;
 
+uniform vec3 chunkPos;
 uniform mat4 u_Model = mat4(1.f);
 uniform mat4 u_View = mat4(1.f);
 uniform mat4 u_Projection = mat4(1.f);
-
-float generateOffset(float x, float z, float val1, float val2){
-	float radiansX = ((mod(x+z*x*val1, waveLength)/waveLength) + waveTime * mod(x * 0.8f + z, 1.5f)) * 2.f * PI;
-	float radiansZ = ((mod(val2 * (z*x +x*z), waveLength)/waveLength) + waveTime * 2.f * mod(x , 2.f) ) * 2.f * PI;
-
-	return waveAmplitude * 0.5f * (sin(radiansZ) + cos(radiansX));
-}
-
-vec3 applyDistortion(vec3 vertex){                            
-	float xDistortion = generateOffset(vertex.x, vertex.z, 0.1f, 0.1f);
-	float yDistortion = generateOffset(vertex.x, vertex.z, 0.1f, 0.1f);
-	float zDistortion = generateOffset(vertex.x, vertex.z, 0.1f, 0.1f);
-
-	return vertex + vec3(xDistortion, yDistortion, zDistortion);
-}
 
 void main()
 {
@@ -45,9 +28,12 @@ void main()
     if (a_Type == 1) currentVertex = vec3(a_Pos.x, a_Pos.y - 0.2f, a_Pos.z); // fluid
 
     vec4 PosRelativeToCam = u_View * u_Model * vec4(currentVertex, 1.f);
-    //currentVertex = applyDistortion(currentVertex);
 
 	gl_Position = u_Projection * PosRelativeToCam;
+    //if (a_Type == 1) {
+    //    vec3 chunkVertex = currentVertex + chunkPos * 16;
+    //    gl_Position.y += sin(10.f * deltaTime * 4.0 + 2.0 * (chunkVertex.x + chunkVertex.z) + chunkVertex.y) * sin(chunkVertex.z) * 0.3f;
+    //}
 	v_TexCoords = a_TexCoord;
 
     //Lighting
@@ -60,7 +46,7 @@ void main()
     v_visibility = clamp(v_visibility, 0.f, 1.f);    
 }
 
-//#type geom4etry
+//#type geometry
 //#version 330 core
 //layout (triangles) in;
 //layout (triangle_strip, max_vertices = 3) out;
