@@ -169,8 +169,7 @@
   <ItemGroup>
     <ClCompile Include="common\gl\CubeMap.hpp" />
     <ClCompile Include="common\Maths\AssimpGLMHelpers.hpp" />
-    <ClCompile Include="src\cpplibs\glad.c" />
-    <ClCompile Include="src\cpplibs\stb_image.cpp" />
+    <ClCompile Include="src\glad.c" />
     <ClCompile Include="common\Utils\Log.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
@@ -179,8 +178,10 @@
     <ClInclude Include="common\gl\TextureArray.hpp" />
     <ClInclude Include="common\gl\VertexArray.hpp" />
     <ClInclude Include="common\GUI\AssetManager.hpp" />
+    <ClInclude Include="common\GUI\Button.hpp" />
     <ClInclude Include="common\GUI\ParticleSystem.hpp" />
     <ClInclude Include="common\GUI\Renderer2D.hpp" />
+    <ClInclude Include="common\GUI\Textbox.hpp" />
     <ClInclude Include="common\Maths\Camera.hpp" />
     <ClInclude Include="common\gl\Cubemap.h" />
     <ClInclude Include="common\gl\FrameBuffer.h" />
@@ -188,8 +189,6 @@
     <ClInclude Include="common\gl\glErrors.h" />
     <ClInclude Include="common\gl\IndexBuffer.h" />
     <ClInclude Include="common\gl\IndexBuffer.hpp" />
-    <ClInclude Include="common\gl\Light.hpp" />
-    <ClInclude Include="common\gl\Material.hpp" />
     <ClInclude Include="common\gl\Shaders.h" />
     <ClInclude Include="common\gl\Shaders.hpp" />
     <ClInclude Include="common\gl\Skybox.h" />
@@ -242,16 +241,20 @@
     <ClInclude Include="common\Maths\Ray.hpp" />
     <ClInclude Include="src\Game Mechanics\Inventory.hpp" />
     <ClInclude Include="src\Game Mechanics\Item.hpp" />
+    <ClInclude Include="src\Game Mechanics\LineBatcher.hpp" />
+    <ClInclude Include="src\Game Mechanics\ParticleSystem.hpp" />
     <ClInclude Include="src\world\Biome.hpp" />
     <ClInclude Include="src\world\Block.hpp" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\Application.hpp" />
-    <ClInclude Include="src\entityes\Entity.hpp" />
-    <ClInclude Include="src\entityes\Player.hpp" />
+    <ClInclude Include="src\entities\Entity.hpp" />
+    <ClInclude Include="src\entities\Player.hpp" />
     <ClInclude Include="common\Utilitiess\Log.h" />
     <ClInclude Include="src\world\Chunk.hpp" />
+    <ClInclude Include="src\world\files.hpp" />
     <ClInclude Include="src\world\Multiplayer.hpp" />
     <ClInclude Include="src\world\World.hpp" />
+    <ClInclude Include="src\world\WorldFiles.hpp" />
     <ClInclude Include="Utils\SFMLCLock.hpp" />
     <ClInclude Include="Utils\State.h" />
     <ClInclude Include="src\world\Chunk.h" />
@@ -259,7 +262,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="config\window.lua" />
-    <None Include="scripts\biomeTest.lua" />
     <None Include="scripts\blocks.lua" />
     <None Include="scripts\coal.lua" />
     <None Include="scripts\flower.lua" />
@@ -276,6 +278,7 @@
     <None Include="scripts\wood.lua" />
     <None Include="scripts\worldGen.lua" />
     <None Include="shaderpacks\default\chunkShader.glsl" />
+    <None Include="shaderpacks\default\Line3D.glsl" />
     <None Include="shaderpacks\default\modelShader.glsl" />
     <None Include="shaderpacks\default\particleShader.glsl" />
     <None Include="shaderpacks\default\Renderer2D.glsl" />

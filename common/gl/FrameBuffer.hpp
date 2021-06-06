@@ -31,11 +31,7 @@ namespace gl {
         void addTexture(const uint32_t& texture) {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + numTextures, GL_TEXTURE_2D, texture, 0);
             numTextures++;
-        }
-
-        void addTexture(const Texture& texture) {
-            addTexture(texture.GetRendererID());
-        }
+		}
 
         void setUpDrawBuffers() {
             uint32_t attachments[32];
@@ -49,7 +45,7 @@ namespace gl {
 
         void unbind() const { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
-        uint32_t GetRendererID() const { return m_RendererID; }
+        operator uint32_t() const { return m_RendererID; }
     private:
         uint32_t m_RendererID = 0, numTextures = 0;
     };

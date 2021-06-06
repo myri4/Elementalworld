@@ -15,15 +15,11 @@ struct AssimpNodeData
 	std::vector<AssimpNodeData> children;
 };
 
-class Animation
-{
+class Animation {
 public:
 	Animation() = default;
 
-	Animation(const std::string& animationPath, Model* model)
-	{
-		Create(animationPath, model);
-	}
+	Animation(const std::string& animationPath, Model* model) {	Create(animationPath, model); }
 
 	void Create(const std::string& animationPath, Model* model) {
 		Assimp::Importer importer;
@@ -81,8 +77,7 @@ private:
 		m_BoneInfoMap = boneInfoMap;
 	}
 
-	void ReadHeirarchyData(AssimpNodeData& dest, const aiNode* src)
-	{
+	void ReadHeirarchyData(AssimpNodeData& dest, const aiNode* src)	{
 		assert(src);
 
 		dest.name = src->mName.data;
@@ -96,8 +91,8 @@ private:
 			dest.children.push_back(newData);
 		}
 	}
-	float m_Duration;
-	float m_TicksPerSecond;
+	float m_Duration = 0.f;
+	float m_TicksPerSecond = 0.f;
 	std::vector<Bone> m_Bones;
 	AssimpNodeData m_RootNode;
 	std::unordered_map<std::string, BoneInfo> m_BoneInfoMap;

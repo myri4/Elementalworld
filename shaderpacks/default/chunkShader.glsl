@@ -11,6 +11,7 @@ out vec3 v_TexCoords;
 out float v_visibility;
 out vec3 v_Normal;
 out vec3 v_FragPos;
+flat out int v_Type;
 uniform float deltaTime;
 
 uniform const float u_Density = 0.001f;
@@ -21,19 +22,27 @@ uniform mat4 u_Model = mat4(1.f);
 uniform mat4 u_View = mat4(1.f);
 uniform mat4 u_Projection = mat4(1.f);
 
+vec4 getWorldPos()
+{
+    vec3 inVert = a_Pos.xyz;
+    inVert.y += sin((deltaTime + inVert.x) * 1.5) / 8.8f;
+    inVert.y += cos((deltaTime + inVert.z) * 1.5) / 8.1f;
+    inVert.y -= 0.2;
+    return vec4(inVert, 1);
+}
+
 void main()
 {
     vec3 currentVertex = a_Pos;
 
     if (a_Type == 1) currentVertex = vec3(a_Pos.x, a_Pos.y - 0.2f, a_Pos.z); // fluid
 
-    vec4 PosRelativeToCam = u_View * u_Model * vec4(currentVertex, 1.f);
+    vec4 PosRelativeToCam = u_View * vec4(currentVertex + 16 * chunkPos, 1.f); // * u_Model
 
 	gl_Position = u_Projection * PosRelativeToCam;
-    //if (a_Type == 1) {
-    //    vec3 chunkVertex = currentVertex + chunkPos * 16;
-    //    gl_Position.y += sin(10.f * deltaTime * 4.0 + 2.0 * (chunkVertex.x + chunkVertex.z) + chunkVertex.y) * sin(chunkVertex.z) * 0.3f;
-    //}
+   // if (a_Type == 1) {
+   //     gl_Position = ;
+   // }
 	v_TexCoords = a_TexCoord;
 
     //Lighting
@@ -44,6 +53,7 @@ void main()
     float dist = length(PosRelativeToCam.xyz);
     v_visibility = exp(-pow((dist * u_Density), u_Gradient));
     v_visibility = clamp(v_visibility, 0.f, 1.f);    
+    v_Type = a_Type;
 }
 
 //#type geometry
@@ -93,6 +103,7 @@ in vec3 v_TexCoords;
 in vec3 g_Normal;
 in float v_visibility;
 in vec3 v_FragPos;
+flat in int v_Type;
 
 uniform vec3 viewPos;
 
@@ -186,6 +197,7 @@ void main()
 
     finalColor += CalculateLight(mat, lights);
     //finalColor = vec4(g_Normal, 1);
+    if (!gl_FrontFacing && v_Type != 1 && v_Type != 2) discard;
     if(finalColor.a < 0.1) discard;
   
     gl_FragColor = mix(vec4(fogColor, 1.0f), finalColor, v_visibility);

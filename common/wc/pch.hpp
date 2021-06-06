@@ -1,8 +1,6 @@
 #ifndef PCH_HPP
 #define PCH_HPP
 
-//#include <iostream>
-//#include <future>
 #include <thread>
 #include <memory>
 
@@ -18,7 +16,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/noise.hpp>
 
 //OpenGL
 #include <glad/glad.h>
@@ -51,7 +48,7 @@
 #include <Utils/Window.hpp>
 #include <Utils/Time.hpp>
 #include <Utils/Random.hpp>
-#include <Utils/Bits.hpp>
+//#include <Utils/Bits.hpp>
 
 // GUI
 #include <GUI/AssetManager.hpp>

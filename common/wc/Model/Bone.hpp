@@ -27,8 +27,7 @@ struct KeyScale
 
 class Bone {
 public:
-	Bone(const std::string& name, const int& ID, const aiNodeAnim* channel)
-		:
+	Bone(const std::string& name, const int& ID, const aiNodeAnim* channel)	:
 		m_Name(name),
 		m_ID(ID),
 		m_LocalTransform(1.f)

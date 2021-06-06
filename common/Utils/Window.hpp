@@ -4,14 +4,22 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
-#include <lua/lua.hpp>
 #include <sol/sol.hpp>
 
 namespace wc {
 
 	bool resized = false;
 
-	void framebuffer_size_callback(GLFWwindow* window, int width, int height) { glViewport(0, 0, width, height); resized = true; }
+	double scrollX, scrollY;
+	bool mouseScrolled = false;
+	uint32_t currentKeyPressed = 0; 
+	bool keyPressed = false;
+	bool buttonPressed = false;
+	int currKey;
+	int Action;
+	int mouseButton;
+	int mouseAction;
+	bool mouseUsed = false;
 
 	class Window {
 	public:
@@ -27,8 +35,8 @@ namespace wc {
 
 			glfwInit();
 			window = glfwCreateWindow(windowScript["screenWidth"], windowScript["screenHeight"], title, mode, nullptr);
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 			glfwWindowHint(GLFW_SAMPLES, windowScript["antialiasingLevel"]);
 			glfwWindowHint(GLFW_REFRESH_RATE, windowScript["framerateLimit"]);
@@ -37,7 +45,20 @@ namespace wc {
 			bool vsync = windowScript["vsync"];
 			glfwMakeContextCurrent(window);
 			if (!vsync) glfwSwapInterval(0);
-			glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+			glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {glViewport(0, 0, width, height); resized = true; });
+			glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) { scrollX = xoffset; scrollY = yoffset; mouseScrolled = true; });
+			glfwSetCharCallback(window, [](GLFWwindow* window, uint32_t codepoint) { currentKeyPressed = codepoint; keyPressed = true; });
+			glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+				currKey = key;
+				Action = action;
+				buttonPressed = true;
+				});
+
+			glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
+				mouseUsed = true;
+				mouseButton = button;
+				mouseAction = action;
+				});
 		}
 
 		void Destroy() const {
@@ -45,14 +66,31 @@ namespace wc {
 		}
 
 		void display() {
+			resized = false;
+			keyPressed = false;
+			buttonPressed = false;
+			mouseScrolled = false;
+			mouseUsed = false;
 			glfwSwapBuffers(window);
 			glfwPollEvents();
+		}
+
+		const char* getClipboard() {
+			return glfwGetClipboardString(window);
+		}
+
+		void setClipboard(const char* string) {
+			glfwSetClipboardString(window, string);
 		}
 
 		glm::ivec2 GetPos() const {
 			int xpos, ypos;
 			glfwGetWindowPos(window, &xpos, &ypos);
 			return { xpos, ypos };
+		}
+
+		auto getKey(int key){
+			return glfwGetKey(window, key);
 		}
 
 		glm::ivec2 GetSize() const {

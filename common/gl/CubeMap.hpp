@@ -36,7 +36,7 @@ public:
 	void Unbind() {
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	}
-	uint32_t GetRendererID() { return m_RendererID; }
+	operator uint32_t() const { return m_RendererID; }
 private:
 	uint32_t GetFormat() {
 		uint32_t format = 0;

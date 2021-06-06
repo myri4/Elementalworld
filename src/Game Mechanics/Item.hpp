@@ -1,7 +1,7 @@
 #ifndef ITEM_HPP
 #define ITEM_HPP
 
-#include "../world/World.hpp"
+#include <gl/Texture.hpp>
 
 namespace wc {
 

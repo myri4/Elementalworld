@@ -2,7 +2,6 @@
 #define INVENTORY_HPP
 
 #include "Item.hpp"
-#include <glm/glm.hpp>
 
 class BlockItem : public wc::Item {
 	bool onUse() override {

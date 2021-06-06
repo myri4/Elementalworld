@@ -1,5 +1,5 @@
 id = 10
-isCollidable = true
+isCollidable = false
 ConnectionType = "X_CONNECT"
 
 allTextures = "assets/textures/block/flower.png"

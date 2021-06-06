@@ -2,11 +2,13 @@
 #define RANDOM_HPP
 
 #include <random>
+namespace wc {
 
-namespace wc{
-class Random{
+class Random
+{
 public:
-	uint32_t seed = 0;
+
+	uint32_t seed;
 	uint32_t asInt()
 	{
 		seed += 0xe120fc15;
@@ -18,6 +20,22 @@ public:
 		return m2;
 	}
 
+	void Init()
+	{
+		s_RandomEngine.seed(std::random_device()());
+	}
+
+	float Float()
+	{
+		//int r1 = s_Distribution(s_RandomEngine);
+		//int r2 = std::numeric_limits<uint32_t>::max();
+		//float r = r1 / r2;
+		return 1.f;
+	}
+
+private:
+	std::mt19937 s_RandomEngine;
+	std::uniform_int_distribution<std::mt19937::result_type> s_Distribution;
 };
 }
 #endif

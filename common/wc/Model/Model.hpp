@@ -1,10 +1,6 @@
 #ifndef MODEL_HPP
 #define MODEL_HPP
 
-#include <glad/glad.h> 
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <stb_image/stb_image.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -12,31 +8,21 @@
 
 #include "Mesh.hpp"
 
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <map>
-#include <vector>
+#include <unordered_map>
 #include <Maths/AssimpGLMHelpers.hpp>
 #include "BoneInfo.hpp"
 
 namespace wc {
 
-class Model
-{
+class Model{
 public:
 	// model data 
 	std::vector<MeshTexture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
 	std::vector<Mesh>    meshes;
 	std::string directory;
 
-
-
 	// constructor, expects a filepath to a 3D model.
-	Model(const std::string& path)
-	{
-		loadModel(path);
-	}
+	Model(const std::string& path) { loadModel(path); }
 
 	Model() {}
 
@@ -53,7 +39,6 @@ public:
 
 	auto& GetOffsetMatMap() { return m_OffsetMatMap; }
 	int& GetBoneCount() { return m_BoneCount; }
-
 
 private:
 
@@ -91,11 +76,8 @@ private:
 			meshes.push_back(processMesh(mesh, scene));
 		}
 		// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
-		for (uint32_t i = 0; i < node->mNumChildren; i++)
-		{
+		for (uint32_t i = 0; i < node->mNumChildren; i++)		
 			processNode(node->mChildren[i], scene);
-		}
-
 	}
 
 	void SetVertexBoneDataToDefault(MeshVertex& vertex)
@@ -169,7 +151,6 @@ private:
 		return Mesh(vertices, indices, textures);
 	}
 
-
 	void ExtractBoneWeightForVertices(std::vector<MeshVertex>& vertices, aiMesh* mesh, const aiScene* scene)
 	{
 		auto& boneInfoMap = m_OffsetMatMap;
@@ -206,8 +187,7 @@ private:
 		}
 	}
 
-
-	uint32_t TextureFromFile(const char* path, const std::string& directory, bool gamma = false)
+	uint32_t TextureFromFile(const char* path)
 	{
 		std::string filename = std::string(path);
 		filename = directory + '/' + filename;
@@ -267,7 +247,7 @@ private:
 			if (!skip)
 			{   // if texture hasn't been loaded already, load it
 				MeshTexture texture;
-				texture.id = TextureFromFile(str.C_Str(), this->directory);
+				texture.id = TextureFromFile(str.C_Str());
 				texture.type = typeName;
 				texture.path = str.C_Str();
 				textures.push_back(texture);

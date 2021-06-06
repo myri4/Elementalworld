@@ -2,8 +2,6 @@
 #define VERTEX_ARRAY_HPP
 
 #include <glad/glad.h>
-#include <Utils/Log.hpp>
-#include <glm/glm.hpp>
 
 namespace gl {
 
@@ -13,7 +11,7 @@ namespace gl {
         ~VertexArray() { Destroy(); }
 
         void Create() {
-            if (!m_RendererID) glGenVertexArrays(1, &m_RendererID);
+            glGenVertexArrays(1, &m_RendererID);
             glBindVertexArray(m_RendererID);
         }
 
@@ -23,9 +21,9 @@ namespace gl {
 
         void Destroy() { glDeleteVertexArrays(1, &m_RendererID); }
 
-        uint32_t GetRendererID() const { return m_RendererID; }
+        operator GLuint() const { return m_RendererID; }
     private:
-        uint32_t m_RendererID = 0;
+        GLuint m_RendererID = 0;
     };
 }
 #endif

@@ -1,7 +1,7 @@
 #ifndef BITS_HPP
 #define BITS_HPP
 
-#include <glm/glm.hpp>
+typedef unsigned char uint8_t;
 
 bool bitEnabled(const uint8_t& flags, const uint8_t& bit) {
 	return (flags >> bit) & 1;

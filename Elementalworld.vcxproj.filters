@@ -21,10 +21,7 @@
     <ClCompile Include="common\Utils\Log.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\cpplibs\glad.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\cpplibs\stb_image.cpp">
+    <ClCompile Include="src\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="common\gl\CubeMap.hpp">
@@ -41,7 +38,7 @@
     <ClInclude Include="src\Block.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\entityes\Entity.hpp">
+    <ClInclude Include="src\entities\Entity.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine.h">
@@ -116,12 +113,6 @@
     <ClInclude Include="common\Utilitiess\State.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\gl\Material.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\Light.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\Utilitiess\Log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -146,7 +137,7 @@
     <ClInclude Include="src\world\Chunk.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\entityes\Player.hpp">
+    <ClInclude Include="src\entities\Player.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\world\Block.hpp">
@@ -278,6 +269,24 @@
     <ClInclude Include="src\Game Mechanics\Item.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\world\files.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\GUI\Textbox.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\GUI\Button.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\world\WorldFiles.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game Mechanics\LineBatcher.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game Mechanics\ParticleSystem.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\skybox.lua" />
@@ -297,12 +306,12 @@
     <None Include="shaderpacks\default\shadows.glsl" />
     <None Include="scripts\blocks.lua" />
     <None Include="scripts\snow.lua" />
-    <None Include="scripts\biomeTest.lua" />
     <None Include="scripts\haybale.lua" />
     <None Include="scripts\leaves.lua" />
     <None Include="scripts\flower.lua" />
     <None Include="scripts\coal.lua" />
     <None Include="shaderpacks\default\Renderer2D.glsl" />
     <None Include="shaderpacks\default\modelShader.glsl" />
+    <None Include="shaderpacks\default\Line3D.glsl" />
   </ItemGroup>
 </Project>

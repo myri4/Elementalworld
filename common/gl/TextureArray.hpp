@@ -52,7 +52,7 @@ public:
 	void Bind() { glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID); }
 	void unbind() { glBindTexture(GL_TEXTURE_2D_ARRAY, 0); }
 
-	uint32_t GetRendererID() { return m_RendererID; }
+	operator uint32_t() const { return m_RendererID; }
 	uint32_t GetGeneretedTextures() { return m_Textures; }
 
 private:

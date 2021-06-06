@@ -2,8 +2,7 @@
 #define MULTIPLAYER_HPP
 
 #include "Chunk.hpp"
-#include "Block.hpp"
-#include "../entityes/Player.hpp"
+#include "../entities/Player.hpp"
 #include <Utils/Time.hpp>
 #include <Maths/Frustum.hpp>
 #include <Maths/Noise.hpp>

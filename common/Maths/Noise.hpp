@@ -6,18 +6,15 @@
 
 struct Noise {
 private:
-    float getNoise(int n) const
-    {
-        n += seed;
-        n = (n << 15) ^ n;
-        int newN = (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
-
-        return 1.f - (newN * 9.313226e-10f); // 1073741824
-    }
 
     float getNoise(const int& x, const int& z) const
     {
-        return getNoise(x + z * 57);
+		int n = x + z * 57;
+		n += seed;
+		n = (n << 15) ^ n;
+		int newN = (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
+
+		return 1.f - (newN * 9.313226e-10f); // 1073741824
     }
 
     float noise(const float& x, const float& z) const
@@ -48,7 +45,8 @@ public:
 		float noiseValue = 0.f;
 
 		for (uint8_t i = 0; i < octaves; i++) {
-			float perlinValue = (noise(voxelX * scale * frequency, voxelZ * scale * frequency) + 1) * 0.5f;
+			float scaleFreq = scale * frequency;
+			float perlinValue = (noise(voxelX * scaleFreq, voxelZ * scaleFreq) + 1) * 0.5f;
 			noiseValue += perlinValue * amplitude;
 
 			amplitude *= persistance;

@@ -71,9 +71,7 @@ private:
 
         float distanceToOrigin;
         glm::vec3 normal;
-    };
-
-    Plane m_planes[6];
+    } m_planes[6];
 };
 }
 #endif

@@ -280,7 +280,7 @@ namespace gl {
 			if (loc != -1)
 				glUniform1fv(loc, size, arr);
 		}
-		uint32_t GetRendererID() const { return m_RendererID; }
+		operator uint32_t() const { return m_RendererID; }
 
 		void Destroy() { glDeleteProgram(m_RendererID); }
 		// utility function for checking shader compilation/linking errors.
@@ -296,6 +296,7 @@ namespace gl {
 				return m_UniformCache[name];
 
 			int location = glGetUniformLocation(m_RendererID, name.c_str());
+			if (location == -1) WC_WARN("Uniform {0} at shaderID {1} cannot be found!", name.c_str(), m_RendererID);
 			m_UniformCache[name] = location;
 			return location;
 		}

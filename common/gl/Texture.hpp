@@ -68,13 +68,14 @@ namespace gl {
 		}
 
 		void unbind() const { glBindTexture(GL_TEXTURE_2D, 0); }
-		uint32_t GetRendererID() const { return m_RendererID; }
-		glm::vec2 GetSize() const { 
+		operator uint32_t() const { return m_RendererID; }
+
+		glm::ivec2 GetSize() const { 
 			int w, h;
 			Bind();
 			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
 			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
-			return glm::vec2(w, h); 
+			return glm::ivec2(w, h); 
 		}
 
 	private:

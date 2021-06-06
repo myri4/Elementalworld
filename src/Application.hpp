@@ -1,7 +1,9 @@
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
-#include <wc/pch.hpp>
 #include "world/World.hpp"
+#include "GUI/Textbox.hpp"
+#include "GUI/Button.hpp"
+
 
 namespace wc {
 
@@ -36,14 +38,10 @@ namespace wc {
 			if (wc::Keyboard::isKeyPressed(wc::Keyboard::Key::F)) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-			if (wc::Keyboard::isKeyPressed(wc::Keyboard::Key::R)) glDisable(GL_CULL_FACE);
-			else glEnable(GL_CULL_FACE);
+			CenterMouse = window.hasFocus();
 
-			if (!window.hasFocus()) CenterMouse = false;
-			else  CenterMouse = true;
-			
 			if (CenterMouse) wc::Mouse::ShowMouse(false);
-			else wc::Mouse::ShowMouse(true);			
+			else wc::Mouse::ShowMouse(true);
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() override {
@@ -61,7 +59,7 @@ namespace wc {
 			//Depth testing
 			glEnable(GL_DEPTH_TEST);
 
-			glEnable(GL_CULL_FACE);
+			//glEnable(GL_CULL_FACE);
 			glCullFace(GL_BACK);
 			glFrontFace(GL_CW);
 
@@ -125,13 +123,12 @@ namespace wc {
 			Renderer::Clear();
 
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			screenShader.use();			
+			screenShader.use();
 			scrQuad.Bind();
 			scrQuadA.Bind();
-			scrTexture.Bind(); // use the color attachment texture as the texture of the quad plane
+			scrTexture.Bind(); // use the color attachment texture as the texture of the quad plane			
 
-			Renderer::DrawArrays(6);
-			Renderer2D::DrawTexts("FPS: " + std::to_string((int)(1 / deltaTime)) + " Frametime: " + std::to_string(deltaTime * 1000), world.font, { 25.0f, 20 });
+			Renderer::DrawArrays(6);			
 
 			Renderer2D::Flush();
 			Renderer2D::FlushLines();
@@ -139,8 +136,7 @@ namespace wc {
 			window.display();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
-		void OnDelete() override {
-		}
+		void OnDelete() override {}
 		//----------------------------------------------------------------------------------------------------------------------
 	public:
 		Application() {}
