@@ -2,7 +2,7 @@
 #define MESH_HPP
 
 #include <gl/Shaders.hpp>
-#include <gl/IndexBuffer.hpp>
+#include <gl/Buffer.hpp>
 
 #include <vector>
 #include <Renderer/Renderer.hpp>
@@ -81,7 +81,7 @@ public:
             glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
 
             // now set the sampler to the correct texture unit
-            shader.setInt((textures[i].type + "1").c_str(), i);
+            shader.setInt(0, i); // Fix for every type
             // and finally bind the texture
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
         }

@@ -25,14 +25,11 @@
 //#include <net/wc_net.hpp>
 
 //Custom libraries
+#include <gl/Buffer.hpp>
 #include <gl/Shaders.hpp>
 #include <gl/Texture.hpp>
-#include <gl/IndexBuffer.hpp>
-#include <gl/FrameBuffer.hpp>
-#include <gl/Material.hpp>  
-#include <gl/Light.hpp>
 #include <gl/VertexArray.hpp>
-#include <gl/VertexBuffer.hpp>
+#include <gl/FrameBuffer.hpp>
 //#include "Skybox.hpp"
 
 #include <Maths/Camera.hpp>
@@ -41,17 +38,19 @@
 #include <sol/sol.hpp>
 
 //Util
-#include <Utils/State.hpp>
-#include <Utils/Keyboard.hpp>
-#include <Utils/Mouse.hpp>
 #include <Utils/Log.hpp>
-#include <Utils/Window.hpp>
 #include <Utils/Time.hpp>
+#include <Utils/Mouse.hpp>
+#include <Utils/State.hpp>
 #include <Utils/Random.hpp>
-//#include <Utils/Bits.hpp>
+#include <Utils/Window.hpp>
+#include <Utils/Keyboard.hpp>
 
 // GUI
-#include <GUI/AssetManager.hpp>
 #include <GUI/Renderer2D.hpp>
+#include <GUI/AssetManager.hpp>
 #include "Vertex.hpp"
+#undef far
+#undef max
+#undef min
 #endif

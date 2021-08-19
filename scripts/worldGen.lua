@@ -4,7 +4,7 @@ noise.scale = 90
 noise.multiplier = 64
 noise.persistance = 0.3
 noise.lacunarity = 2
-noise.seed = 2895
+noise.seed = 0
 
 TempNoise = Noise:new()
 TempNoise.octaves = 1 -- min 1 max 9

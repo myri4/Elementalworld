@@ -125,9 +125,6 @@
     <ClInclude Include="common\gl\FrameBuffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\gl\IndexBuffer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\gl\Shaders.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -138,9 +135,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\entities\Player.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\world\Block.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\Utils\Keyboard.hpp">
@@ -212,7 +206,7 @@
     <ClInclude Include="common\gl\VertexArray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\gl\VertexBuffer.hpp">
+    <ClInclude Include="common\gl\Buffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\wc\Vertex.hpp">
@@ -287,6 +281,9 @@
     <ClInclude Include="src\Game Mechanics\ParticleSystem.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\world\Block.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\skybox.lua" />
@@ -303,15 +300,19 @@
     <None Include="scripts\glass.lua" />
     <None Include="scripts\wood.lua" />
     <None Include="scripts\worldGen.lua" />
-    <None Include="shaderpacks\default\shadows.glsl" />
     <None Include="scripts\blocks.lua" />
     <None Include="scripts\snow.lua" />
     <None Include="scripts\haybale.lua" />
     <None Include="scripts\leaves.lua" />
-    <None Include="scripts\flower.lua" />
-    <None Include="scripts\coal.lua" />
+    <None Include="scripts\red_flower.lua" />
+    <None Include="scripts\coal_ore.lua" />
     <None Include="shaderpacks\default\Renderer2D.glsl" />
     <None Include="shaderpacks\default\modelShader.glsl" />
     <None Include="shaderpacks\default\Line3D.glsl" />
+    <None Include="scripts\yellow_flower.lua" />
+    <None Include="scripts\dead_bush.lua" />
+    <None Include="scripts\small_grass.lua" />
+    <None Include="scripts\iron_ore.lua" />
+    <None Include="shaderpacks\default\pbrUtil.glsl" />
   </ItemGroup>
 </Project>

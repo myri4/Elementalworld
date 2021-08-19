@@ -4,14 +4,18 @@ layout (location = 0) in vec3 a_Pos;
 
 out vec3 v_TexCoords;
 
-uniform mat4 projection;
-uniform mat4 view;
+layout (std140) uniform Matrices
+{
+    mat4 u_Projection;
+    mat4 u_View;
+    float deltaTime;
+};
 uniform mat4 model;
 
 void main()
 {
     v_TexCoords = a_Pos;
-    gl_Position = projection * model * view * vec4(a_Pos, 1.0);
+    gl_Position = u_Projection * model * u_View * vec4(a_Pos, 1.0);
 }  
 
 #type fragment

@@ -2,4 +2,4 @@ id = 2
 isCollidable = true
 ConnectionType = "CONNECT_DEFAULT"
 
-allTextures = "assets/textures/block/dirt.png"
+allTextures = "dirt.png"

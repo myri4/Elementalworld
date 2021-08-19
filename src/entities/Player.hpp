@@ -3,19 +3,30 @@
 #include "../Game Mechanics/Inventory.hpp"
 
 namespace wc{
+const uint32_t inventorySize = 9;
+
 class Player{
 public:	
-	float MovementSpeed = 4;
+	float MovementSpeed = 4.f;
 	glm::vec2 rotation = glm::vec2(0.f);
-	BlockID ItemHolding = 1;
+	BlockID currentSlot = 0;
 	glm::vec3 Position = glm::vec3(0.f);
-	glm::vec3 Size = glm::vec3(1.f);
-	bool m_isOnGround = false;
-	bool flying = true;
+	glm::vec3 Size = glm::vec3(0.48f, 0.8f, 0.48f);
+	bool m_isOnGround : 1;
+	bool flying : 1;
+	bool wasOnGround : 1;
+	bool collision : 1;
 	glm::vec3 velocity = glm::vec3(0.f);
-	Inventory<9, 4> inventory;
+	glm::vec3 acceleration = glm::vec3(0.f);
+	Inventory<inventorySize> inventory;
+	float health = 10.f;
 
-	Player() {}
+	Player() {
+		m_isOnGround = false;
+		flying = true;
+		wasOnGround = false;
+		collision = true;
+	}
 };
 
 class PlayerDescription {

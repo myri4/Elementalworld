@@ -3,7 +3,6 @@
 
 #include <glad/glad.h>
 #include <stb_image/stb_image.h>
-#include <glm/glm.hpp>
 
 namespace gl {
 class TextureArray {
@@ -16,18 +15,11 @@ public:
 		nrComponents = NrOfComp;
 		MaxTextureSize = arraySize;
 		if (!m_RendererID) {
-			glGenTextures(1, &m_RendererID);
+			glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_RendererID);
 			glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID);
 
 			glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GetFormat(), width, height, MaxTextureSize, 0, GetFormat(), GL_UNSIGNED_BYTE, nullptr);
-
-			glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
-
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 5);
+			//glTextureStorage3D(m_RendererID, 1, GetFormat(), width, height, MaxTextureSize);
 		}
 	}
 
@@ -35,26 +27,25 @@ public:
 
 	void AddTexture(const void* data) {
 		if (m_Textures <= MaxTextureSize) {
-			glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID);
-			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, m_Textures, width, height, 1, GetFormat(), GL_UNSIGNED_BYTE, data);
+			glTextureSubImage3D(m_RendererID, 0, 0, 0, m_Textures, width, height, 1, GetFormat(), GL_UNSIGNED_BYTE, data);
 
-			glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+			glGenerateTextureMipmap(m_RendererID);
 
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 5);
+			glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // GL_NEAREST_MIPMAP_LINEAR
+			glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 			m_Textures++;
 		}
 	}
 
 	void Bind() { glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID); }
-	void unbind() { glBindTexture(GL_TEXTURE_2D_ARRAY, 0); }
+	static void unbind() { glBindTexture(GL_TEXTURE_2D_ARRAY, 0); }
 
-	operator uint32_t() const { return m_RendererID; }
+	inline operator uint32_t& () { return m_RendererID; }
+	inline operator const uint32_t& () const { return m_RendererID; }
+
 	uint32_t GetGeneretedTextures() { return m_Textures; }
-
 private:
 	uint32_t width = 32, height = 32;
 	uint8_t nrComponents = 4;

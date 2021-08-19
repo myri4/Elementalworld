@@ -31,7 +31,7 @@ void ShowMouse(const bool& show) {
 	ShowCursor(show);
 }
 	
-enum class MouseButton{NONE, LBUTTON, RBUTTON};
+enum class MouseButton{NONE = -1, LBUTTON = 0, RBUTTON};
 
 MouseButton isButtonPressed() {
 	if (GetAsyncKeyState(VK_LBUTTON)) return MouseButton::LBUTTON;

@@ -4,8 +4,12 @@
 layout(location = 0) in vec3 a_Pos;
 //layout(location = 1) in vec4 a_Color;
 
-uniform mat4 u_View = mat4(1.f);
-uniform mat4 u_Projection = mat4(1.f);
+layout (std140) uniform Matrices
+{
+    mat4 u_Projection;
+    mat4 u_View;
+    float deltaTime;
+};
 uniform mat4 u_Model = mat4(1.f);
 
 //out vec4 v_Color;

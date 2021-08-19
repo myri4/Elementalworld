@@ -167,120 +167,91 @@ namespace gl {
 			glGetIntegerv(GL_CURRENT_PROGRAM, &id);
 			if (id != m_RendererID)	glUseProgram(m_RendererID);
 		}
-		void unUse() const
+		static void unUse()
 		{
 			glUseProgram(0);
 		}
 		// utility uniform functions
 		// ------------------------------------------------------------------------
-		void setBool(const char* name, const bool& value) const
+
+		void setBool(const uint32_t& loc, const bool& value) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniform1i(loc, value);
+			glProgramUniform1i(m_RendererID, loc, value);
 		}
 		// ------------------------------------------------------------------------
-		void setInt(const char* name, const int& value) const
+		void setInt(const uint32_t& loc, const int& value) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniform1i(loc, value);
+			glProgramUniform1i(m_RendererID, loc, value);
 		}
 		// ------------------------------------------------------------------------
-		void setFloat(const char* name, const float& value) const
+		void setFloat(const uint32_t& loc, const float& value) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniform1f(loc, value);
+			glProgramUniform1f(m_RendererID, loc, value);
 		}
 		// ------------------------------------------------------------------------
-		void setNum(const char* name, const float& value) const
+		void setNum(const uint32_t& loc, const float& value) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniform1f(loc, value);
+			glProgramUniform1f(m_RendererID, loc, value);
 		}
 		// ------------------------------------------------------------------------
-		void setNum(const char* name, const int& value) const
+		void setNum(const uint32_t& loc, const int& value) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniform1i(loc, value);
+			glProgramUniform1i(m_RendererID, loc, value);
 		}
 		// ------------------------------------------------------------------------
-		void setVec2(const char* name, const glm::vec2& value) const
+		void setVec2(const uint32_t& loc, const glm::vec2& value) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniform2fv(loc, 1, glm::value_ptr(value));
+			glProgramUniform2fv(m_RendererID,loc, 1, glm::value_ptr(value));
 		}
-		void setVec2(const char* name, const float& x, const float& y) const
+		void setVec2(const uint32_t& loc, const float& x, const float& y) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniform2f(loc, x, y);
+			glProgramUniform2f(m_RendererID, loc, x, y);
 		}
 		// ------------------------------------------------------------------------
-		void setVec3(const char* name, const glm::vec3& value) const
+		void setVec3(const uint32_t& loc, const glm::vec3& value) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniform3fv(loc, 1, glm::value_ptr(value));
+			glProgramUniform3fv(m_RendererID, loc, 1, glm::value_ptr(value));
 		}
-		void setVec3(const char* name, const float& x, const float& y, const float& z) const
+		void setVec3(const uint32_t& loc, const float& x, const float& y, const float& z) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniform3f(loc, x, y, z);
+			glProgramUniform3f(m_RendererID, loc, x, y, z);
 		}
 		// ------------------------------------------------------------------------
-		void setVec4(const char* name, const glm::vec4& value) const
+		void setVec4(const uint32_t& loc, const glm::vec4& value) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniform4fv(loc, 1, glm::value_ptr(value));
+			glProgramUniform4fv(m_RendererID, loc, 1, glm::value_ptr(value));
 		}
-		void setVec4(const char* name, const float& x, const float& y, const float& z, const float& w) const
+		void setVec4(const uint32_t& loc, const float& x, const float& y, const float& z, const float& w) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniform4f(loc, x, y, z, w);
+			glProgramUniform4f(m_RendererID, loc, x, y, z, w);
 		}
 		// ------------------------------------------------------------------------
-		void setMat2(const char* name, const glm::mat2& mat) const
+		void setMat2(const uint32_t& loc, const glm::mat2& mat) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniformMatrix2fv(loc, 1, false, glm::value_ptr(mat));
+			glProgramUniformMatrix2fv(m_RendererID, loc, 1, false, glm::value_ptr(mat));
 		}
 		// ------------------------------------------------------------------------
-		void setMat3(const char* name, const glm::mat3& mat) const
+		void setMat3(const uint32_t& loc, const glm::mat3& mat) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniformMatrix3fv(loc, 1, false, glm::value_ptr(mat));
+			glProgramUniformMatrix3fv(m_RendererID, loc, 1, false, glm::value_ptr(mat));
 		}
 		// ------------------------------------------------------------------------
-		void setMat4(const char* name, const glm::mat4& mat) const
+		void setMat4(const uint32_t& loc, const glm::mat4& mat) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniformMatrix4fv(loc, 1, false, glm::value_ptr(mat));
+			glProgramUniformMatrix4fv(m_RendererID, loc, 1, false, glm::value_ptr(mat));
 		}
-		void SetArray(const char* name, const size_t& size, const int* arr) const
+		void SetArray(const uint32_t& loc, const size_t& size, const int* arr) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniform1iv(loc, size, arr);
+			glProgramUniform1iv(m_RendererID, loc, size, arr);
 		}
 
-		void SetArray(const char* name, size_t size, const float* arr) const
+		void SetArray(const uint32_t& loc, size_t size, const float* arr) const
 		{
-			auto loc = GetUnifLoc(name);
-			if (loc != -1)
-				glUniform1fv(loc, size, arr);
+			glProgramUniform1fv(m_RendererID, loc, size, arr);
 		}
-		operator uint32_t() const { return m_RendererID; }
+
+		inline operator uint32_t& () { return m_RendererID; }
+		inline operator const uint32_t& () const { return m_RendererID; }
 
 		void Destroy() { glDeleteProgram(m_RendererID); }
 		// utility function for checking shader compilation/linking errors.
@@ -288,18 +259,18 @@ namespace gl {
 	private:
 		uint32_t m_RendererID = 0;	
 
-		mutable std::unordered_map<std::string, int> m_UniformCache;
+		//mutable std::unordered_map<std::string, int> m_UniformCache;
 
-		int GetUnifLoc(const std::string& name) const
-		{
-			if (m_UniformCache.find(name) != m_UniformCache.end())
-				return m_UniformCache[name];
-
-			int location = glGetUniformLocation(m_RendererID, name.c_str());
-			if (location == -1) WC_WARN("Uniform {0} at shaderID {1} cannot be found!", name.c_str(), m_RendererID);
-			m_UniformCache[name] = location;
-			return location;
-		}
+		//int GetUnifLoc(const std::string& name) const
+		//{
+		//	if (m_UniformCache.find(name) != m_UniformCache.end())
+		//		return m_UniformCache[name];
+		//
+		//	int location = glGetUniformLocation(m_RendererID, name.c_str());
+		//	if (location == -1) WC_WARN("Uniform {0} at shaderID {1} cannot be found!", name.c_str(), m_RendererID);
+		//	m_UniformCache[name] = location;
+		//	return location;
+		//}
 	};
 }
 #endif

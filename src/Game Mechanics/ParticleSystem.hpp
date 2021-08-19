@@ -1,9 +1,8 @@
 #ifndef PARTICLE_SYSTEM_HPP
 #define PARTICLE_SYSTEM_HPP
 
-#include <gl/VertexBuffer.hpp>
+#include <gl/Buffer.hpp>
 #include <gl/VertexArray.hpp>
-#include <gl/IndexBuffer.hpp>
 #include <Utils/Random.hpp>
 
 #include <glm/gtc/constants.hpp>
@@ -25,7 +24,7 @@ namespace wc {
 		glm::vec3 Velocity, VelocityVariation;
 		glm::vec4 ColorBegin, ColorEnd;
 		float SizeBegin, SizeEnd, SizeVariation;
-		float LifeTime = 1.0f;
+		float LifeTime = 1.f;
 	};
 
 	class ParticleSystem {
@@ -38,11 +37,11 @@ namespace wc {
 			glm::vec3 Position;
 			glm::vec3 Velocity;
 			glm::vec4 ColorBegin, ColorEnd;
-			float Rotation = 0.0f;
+			float Rotation = 0.f;
 			float SizeBegin, SizeEnd;
 
-			float LifeTime = 1.0f;
-			float LifeRemaining = 0.0f;
+			float LifeTime = 1.f;
+			float LifeRemaining = 0.f;
 
 			bool Active = false;
 		};

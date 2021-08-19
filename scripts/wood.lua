@@ -2,9 +2,9 @@ id = 7
 isCollidable = true
 ConnectionType = "CONNECT_DEFAULT"
 
-top =    "assets/textures/block/log_top.png"
-bottom = "assets/textures/block/log_top.png"
-front =  "assets/textures/block/log_side.png"
-back =   "assets/textures/block/log_side.png"
-left =   "assets/textures/block/log_side.png"
-right =  "assets/textures/block/log_side.png"
+top =    "log_top.png"
+bottom = top
+front =  "log_side.png"
+back =   front
+left =   front
+right =  front

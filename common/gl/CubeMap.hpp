@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <Utils/Log.hpp>
 namespace gl {
+
 class Cubemap {
 public:
 	Cubemap() {}
@@ -33,10 +34,11 @@ public:
 	void Bind() {
 		glBindTexture(GL_TEXTURE_CUBE_MAP, m_RendererID);
 	}
-	void Unbind() {
+	static void Unbind() {
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	}
-	operator uint32_t() const { return m_RendererID; }
+	inline operator uint32_t& () { return m_RendererID; }
+	inline operator const uint32_t& () const { return m_RendererID; }
 private:
 	uint32_t GetFormat() {
 		uint32_t format = 0;
@@ -48,5 +50,6 @@ private:
 	uint32_t m_RendererID = 0;
 	int32_t nrComponents = 1;
 };
+
 }
 #endif

@@ -11,17 +11,18 @@ namespace gl {
         ~VertexArray() { Destroy(); }
 
         void Create() {
-            glGenVertexArrays(1, &m_RendererID);
+            glCreateVertexArrays(1, &m_RendererID);
             glBindVertexArray(m_RendererID);
         }
 
         void Bind() const { glBindVertexArray(m_RendererID); }
 
-        void Unind() const { glBindVertexArray(0); }
+        static void Unind() { glBindVertexArray(0); }
 
         void Destroy() { glDeleteVertexArrays(1, &m_RendererID); }
 
-        operator GLuint() const { return m_RendererID; }
+        inline operator GLuint& () { return m_RendererID; }
+        inline operator const GLuint& () const { return m_RendererID; }
     private:
         GLuint m_RendererID = 0;
     };

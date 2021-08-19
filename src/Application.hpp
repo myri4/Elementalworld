@@ -1,9 +1,9 @@
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
+//#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include "world/World.hpp"
 #include "GUI/Textbox.hpp"
 #include "GUI/Button.hpp"
-
 
 namespace wc {
 
@@ -12,7 +12,6 @@ namespace wc {
 		Window window;
 
 		Clock deltaTimer;
-		bool CenterMouse = false;
 		float deltaTime = 0.f;
 
 		// FrameBuffer stuff
@@ -33,20 +32,18 @@ namespace wc {
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnInput() override {
-			if (window.hasFocus())	world.OnInput(deltaTime, window.GetPos(), window.GetSize(), CenterMouse);
-
+			bool hasFocus = window.hasFocus();
+			if (hasFocus) {
+				if (mode == MenuMode::GAME) world.OnInput(window.GetPos(), window.GetSize(), hasFocus, deltaTime);
+				else world.OnInputInventory();
+			}				
+				//world.OnInput(window.GetPos(), window.GetSize(), hasFocus);
 			if (wc::Keyboard::isKeyPressed(wc::Keyboard::Key::F)) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-			CenterMouse = window.hasFocus();
-
-			if (CenterMouse) wc::Mouse::ShowMouse(false);
-			else wc::Mouse::ShowMouse(true);
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() override {
 			window.Create("config/window.lua", "Elementalworld");
-			if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) WC_ERROR("Failed to initialize GLAD");
 			// OpenGL state
 			Renderer::enableDebuging();
 			// ------------
@@ -59,11 +56,10 @@ namespace wc {
 			//Depth testing
 			glEnable(GL_DEPTH_TEST);
 
-			//glEnable(GL_CULL_FACE);
 			glCullFace(GL_BACK);
 			glFrontFace(GL_CW);
 
-			Renderer::setClearColor(glm::vec4(0.1f, 3.5f, 5.0f, 1.0f));
+			//Renderer::setClearColor(glm::vec4(0.1f, 3.5f, 5.0f, 1.0f));
 
 			screenShader.Create("shaderpacks/default/screenShader.glsl");
 			screen.Create(window.GetSize().x, window.GetSize().y);
@@ -104,23 +100,24 @@ namespace wc {
 
 			Renderer2D::Init();
 
-			Renderer2D::SetProjection(Renderer2D::Get2DProj(window.GetSize()));
-
 			world.Create();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnUpdate() override {
 			deltaTime = deltaTimer.restart();
+			Renderer2D::SetProjection(Renderer2D::Get2DProj(window.GetSize()));
 			screen.Bind();
 			glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
 			Renderer::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			world.Update(window.GetSize(), deltaTime);
+			auto windsize = window.GetSize();
+			if (mode == MenuMode::GAME) world.Update(windsize, deltaTime);
+			else world.UpdateInventory(windsize, window.GetPos(), deltaTime);
 
 			glDisable(GL_DEPTH_TEST);
 			screen.unbind();
 			// clear all relevant buffers
-			Renderer::Clear();
+			Renderer::Clear(GL_COLOR_BUFFER_BIT);
 
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			screenShader.use();
@@ -132,7 +129,6 @@ namespace wc {
 
 			Renderer2D::Flush();
 			Renderer2D::FlushLines();
-
 			window.display();
 		}
 		//----------------------------------------------------------------------------------------------------------------------

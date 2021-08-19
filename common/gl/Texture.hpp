@@ -28,27 +28,25 @@ namespace gl {
 		Texture() {}
 		~Texture() { Destroy(); }		
 
-		void Create(const unsigned char* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {  if (!m_RendererID) CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_UNSIGNED_BYTE); }
-		void Create(const char* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {			  if (!m_RendererID) CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_BYTE); }
-		void Create(const float* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {		  if (!m_RendererID) CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_FLOAT); }
-		void Create(const int* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {			  if (!m_RendererID) CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_INT); }
-		void Create(const unsigned int* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {   if (!m_RendererID) CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_UNSIGNED_INT); }
-		void Create(const short* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {		  if (!m_RendererID) CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_SHORT); }
-		void Create(const unsigned short* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { if (!m_RendererID) CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_UNSIGNED_SHORT); }
+		inline void Create(const unsigned char* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {  CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_UNSIGNED_BYTE); }
+		inline void Create(const char* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {			  CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_BYTE); }
+		inline void Create(const float* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {		  CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_FLOAT); }
+		inline void Create(const int* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {			  CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_INT); }
+		inline void Create(const unsigned int* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {   CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_UNSIGNED_INT); }
+		inline void Create(const short* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {		  CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_SHORT); }
+		inline void Create(const unsigned short* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, mipMapLevel, GL_UNSIGNED_SHORT); }
 
 		void Create(const TextureProps& props) {
-			if (!m_RendererID) {
-				glGenTextures(1, &m_RendererID);
-				glBindTexture(GL_TEXTURE_2D, m_RendererID);
-				glTexImage2D(GL_TEXTURE_2D, 0, props.internalFormat, props.Width, props.Height, 0, props.format, props.type, props.data);
-				glGenerateMipmap(GL_TEXTURE_2D);
+			glGenTextures(1, &m_RendererID);
+			glBindTexture(GL_TEXTURE_2D, m_RendererID);
+			glTexImage2D(GL_TEXTURE_2D, 0, props.internalFormat, props.Width, props.Height, 0, props.format, props.type, props.data);
+			glGenerateMipmap(GL_TEXTURE_2D);
 
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, props.min_filter);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, props.mag_filter);
-				if (props.wrap_s) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, props.wrap_s);
-				if (props.wrap_t) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, props.wrap_t);
-				if (props.mipMapLevel) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, props.mipMapLevel);
-			}
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, props.min_filter);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, props.mag_filter);
+			if (props.wrap_s) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, props.wrap_s);
+			if (props.wrap_t) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, props.wrap_t);
+			if (props.mipMapLevel) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, props.mipMapLevel);
 		}
 
 
@@ -67,14 +65,15 @@ namespace gl {
 			glBindTexture(GL_TEXTURE_2D, m_RendererID);
 		}
 
-		void unbind() const { glBindTexture(GL_TEXTURE_2D, 0); }
-		operator uint32_t() const { return m_RendererID; }
+		static void unbind() { glBindTexture(GL_TEXTURE_2D, 0); }
+
+		inline operator uint32_t& () { return m_RendererID; }
+		inline operator const uint32_t& () const { return m_RendererID; }
 
 		glm::ivec2 GetSize() const { 
 			int w, h;
-			Bind();
-			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
-			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+			glGetTextureLevelParameteriv(m_RendererID, 0, GL_TEXTURE_WIDTH, &w);
+			glGetTextureLevelParameteriv(m_RendererID, 0, GL_TEXTURE_HEIGHT, &h);
 			return glm::ivec2(w, h); 
 		}
 
@@ -83,7 +82,7 @@ namespace gl {
 		
 		uint32_t GetFormat() const {
 			int32_t format = 0;
-			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &format);
+			glGetTextureLevelParameteriv(m_RendererID, 0, GL_TEXTURE_INTERNAL_FORMAT, &format);
 			return format;
 		}
 
@@ -93,29 +92,28 @@ namespace gl {
 			else if (nrComponents == 3)	format = GL_RGB;
 			else if (nrComponents == 4) format = GL_RGBA;
 
-			glGenTextures(1, &m_RendererID);
+			glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
 			glBindTexture(GL_TEXTURE_2D, m_RendererID);
 			glTexImage2D(GL_TEXTURE_2D, 0, format, Width, Height, 0, format, type, data);
-			glGenerateMipmap(GL_TEXTURE_2D);
+			glGenerateTextureMipmap(m_RendererID);
 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipMapLevel);			
+			glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+			glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTextureParameteri(m_RendererID, GL_TEXTURE_MAX_LEVEL, mipMapLevel);
 		}
 
-		void SetDataMode(const void* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset, const uint32_t& yoffset, const uint32_t& type) const {			
-			Bind();
-			glTexSubImage2D(GL_TEXTURE_2D, 0, xoffset, yoffset, width, height, GetFormat(), type, data);
+		void SetDataMode(const void* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset, const uint32_t& yoffset, const uint32_t& type) const {					
+			glTextureSubImage2D(m_RendererID, 0, xoffset, yoffset, width, height, GetFormat(), type, data);
 
-			glGenerateMipmap(GL_TEXTURE_2D);
+			glGenerateTextureMipmap(m_RendererID);
 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 5);			
+			glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+			glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTextureParameteri(m_RendererID, GL_TEXTURE_MAX_LEVEL, 5);			
 		}
 	};
 

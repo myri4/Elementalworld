@@ -33,10 +33,9 @@ namespace wc {
 			GLFWmonitor* mode = nullptr;
 			if (windowScript["fullscreen"]) mode = glfwGetPrimaryMonitor();
 
-			glfwInit();
 			window = glfwCreateWindow(windowScript["screenWidth"], windowScript["screenHeight"], title, mode, nullptr);
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 			glfwWindowHint(GLFW_SAMPLES, windowScript["antialiasingLevel"]);
 			glfwWindowHint(GLFW_REFRESH_RATE, windowScript["framerateLimit"]);
@@ -59,6 +58,8 @@ namespace wc {
 				mouseButton = button;
 				mouseAction = action;
 				});
+
+			if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) WC_ERROR("Failed to initialize GLAD");
 		}
 
 		void Destroy() const {

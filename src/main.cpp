@@ -18,8 +18,15 @@ void operator delete(void* memory, size_t bytes) {
 	free(memory);
 }
 
+void operator delete[](void* memory, size_t bytes) {
+	heapMemory -= bytes;
+	free(memory);
+}
+
 int main() {
 	wc::Log::Init();
+	glfwInit();
+
 	app.Start();
 
 	glfwTerminate();

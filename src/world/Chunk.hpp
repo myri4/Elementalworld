@@ -1,21 +1,22 @@
 #ifndef CHUNK_HPP
 #define CHUNK_HPP
 
-#include <gl/VertexBuffer.hpp>
 #include <gl/VertexArray.hpp>
+#include <gl/Buffer.hpp>
 #include "Block.hpp"
 
 //OpenGL Memory Buffer Variables
 //@Todo try with size_t 
-const uint8_t chunkSize = 16;
+const uint16_t chunkSize = 16;
 const uint16_t chunkVolume = chunkSize * chunkSize * chunkSize;
-const uint8_t chunkSizeMinusOne = chunkSize - 1;
+const uint16_t chunkSizeMinusOne = chunkSize - 1;
 const float cs = 1.f / chunkSize;
 
 const uint32_t MaxFaceCount = chunkVolume;
 const uint32_t MaxVertexCount = MaxFaceCount * 4;
 
 typedef uint16_t ChunkID; // This represents the chunk id in the chunk array
+typedef glm::ivec3 chunkPosV;
 
 namespace wc {
 
@@ -33,7 +34,7 @@ glm::ivec3 to3D(const int& idx, const glm::ivec3& size = glm::ivec3(chunkSize)) 
 class Chunk {
 public: // Variables
 	uint32_t IndexCount = 0;
-	glm::ivec3 chunkPos = glm::ivec3(0);
+	chunkPosV chunkPos = chunkPosV(0);
 	BlockID chunkData[chunkSize][chunkSize][chunkSize] = { 0 };
 
 	bool used : 1;
@@ -63,22 +64,28 @@ public: // Functions
 
 glm::ivec3 getBlockPos(const int& x, const int& y, const int& z)
 {
-	return { x & chunkSizeMinusOne, y & chunkSizeMinusOne, z & chunkSizeMinusOne };
+	glm::ivec3 vec = { (chunkSize + (x % chunkSize)) % chunkSize,
+			(chunkSize + (y % chunkSize)) % chunkSize,
+			(chunkSize + (z % chunkSize)) % chunkSize };
+	//if (vec.x < 0) vec.x++;
+	//if (vec.y < 0) vec.y++;
+	//if (vec.z < 0) vec.z++;
+	return vec;
 }
 
 glm::ivec3 getBlockPos(const glm::ivec3& pos)
 {
-	return { pos.x & chunkSizeMinusOne, pos.y & chunkSizeMinusOne, pos.z & chunkSizeMinusOne };
+	return getBlockPos(pos.x, pos.y, pos.z);
 }
 
 glm::ivec3 getChunkPos(const int& x, const int& y, const int& z)
 {
-	return glm::ivec3( x * cs, y * cs, z * cs );
+	return (glm::ivec3)glm::floor(glm::vec3{ x * cs, y * cs, z * cs});
 }
 
-glm::ivec3 getChunkPos(const glm::ivec3& pos)
+glm::ivec3 getChunkPos(const glm::vec3& pos)
 {
-	return glm::ivec3( pos.x * cs, pos.y * cs, pos.z * cs );
+	return getChunkPos(pos.x, pos.y, pos.z);
 }
 }
 #endif

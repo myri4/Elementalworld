@@ -2,21 +2,20 @@
 #define ITEM_HPP
 
 #include <gl/Texture.hpp>
+#include "../world/Block.hpp"
 
 namespace wc {
 
-	class Item {
-	public:
-		Item() {}
-		Item(const char* _name, const gl::Texture& tex) : name(_name), texture(tex) {}
-		virtual bool onInteract() { return false; }
-		virtual bool onUse() { return false; }
-		virtual uint32_t GetDurabiliy() { return 0; }
-
-		const char* name = nullptr;
+	struct Item {
 		gl::Texture texture;
-		uint32_t maxStackSize = 1;
-		uint32_t stackSize = 1;
+		uint8_t id = 0;
+		uint8_t maxStackSize = 100;
+		BlockID block = 0u;
+	} items[256];
+
+	struct ItemSlot {
+		int8_t itemID = -1;
+		uint8_t stack_size = 0;
 	};
 }
 

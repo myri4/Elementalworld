@@ -108,6 +108,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -123,6 +124,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PreprocessorDefinitions />
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -142,6 +144,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -157,6 +160,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PreprocessorDefinitions />
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -188,7 +192,6 @@
     <ClInclude Include="common\gl\FrameBuffer.hpp" />
     <ClInclude Include="common\gl\glErrors.h" />
     <ClInclude Include="common\gl\IndexBuffer.h" />
-    <ClInclude Include="common\gl\IndexBuffer.hpp" />
     <ClInclude Include="common\gl\Shaders.h" />
     <ClInclude Include="common\gl\Shaders.hpp" />
     <ClInclude Include="common\gl\Skybox.h" />
@@ -213,7 +216,7 @@
     <ClInclude Include="common\gl\Texture.h" />
     <ClInclude Include="common\gl\Texture.hpp" />
     <ClInclude Include="common\gl\VertexArray.h" />
-    <ClInclude Include="common\gl\VertexBuffer.hpp" />
+    <ClInclude Include="common\gl\Buffer.hpp" />
     <ClInclude Include="common\Maths\Frustum.hpp" />
     <ClInclude Include="common\Maths\Noise.hpp" />
     <ClInclude Include="common\Utils\Keyboard.hpp" />
@@ -244,12 +247,12 @@
     <ClInclude Include="src\Game Mechanics\LineBatcher.hpp" />
     <ClInclude Include="src\Game Mechanics\ParticleSystem.hpp" />
     <ClInclude Include="src\world\Biome.hpp" />
-    <ClInclude Include="src\world\Block.hpp" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\Application.hpp" />
     <ClInclude Include="src\entities\Entity.hpp" />
     <ClInclude Include="src\entities\Player.hpp" />
     <ClInclude Include="common\Utilitiess\Log.h" />
+    <ClInclude Include="src\world\Block.hpp" />
     <ClInclude Include="src\world\Chunk.hpp" />
     <ClInclude Include="src\world\files.hpp" />
     <ClInclude Include="src\world\Multiplayer.hpp" />
@@ -263,8 +266,10 @@
   <ItemGroup>
     <None Include="config\window.lua" />
     <None Include="scripts\blocks.lua" />
-    <None Include="scripts\coal.lua" />
-    <None Include="scripts\flower.lua" />
+    <None Include="scripts\coal_ore.lua" />
+    <None Include="scripts\dead_bush.lua" />
+    <None Include="scripts\iron_ore.lua" />
+    <None Include="scripts\red_flower.lua" />
     <None Include="scripts\glass.lua" />
     <None Include="scripts\dirt.lua" />
     <None Include="scripts\grassblock.lua" />
@@ -272,18 +277,20 @@
     <None Include="scripts\leaves.lua" />
     <None Include="scripts\sand.lua" />
     <None Include="scripts\skybox.lua" />
+    <None Include="scripts\small_grass.lua" />
     <None Include="scripts\snow.lua" />
     <None Include="scripts\stone.lua" />
     <None Include="scripts\water.lua" />
     <None Include="scripts\wood.lua" />
     <None Include="scripts\worldGen.lua" />
+    <None Include="scripts\yellow_flower.lua" />
     <None Include="shaderpacks\default\chunkShader.glsl" />
     <None Include="shaderpacks\default\Line3D.glsl" />
     <None Include="shaderpacks\default\modelShader.glsl" />
     <None Include="shaderpacks\default\particleShader.glsl" />
+    <None Include="shaderpacks\default\pbrUtil.glsl" />
     <None Include="shaderpacks\default\Renderer2D.glsl" />
     <None Include="shaderpacks\default\screenShader.glsl" />
-    <None Include="shaderpacks\default\shadows.glsl" />
     <None Include="shaderpacks\default\skybox.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

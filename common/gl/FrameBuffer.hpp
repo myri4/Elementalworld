@@ -2,8 +2,6 @@
 #define FRAMEBUFFER_HPP
 
 #include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <Utils/Log.hpp>
 
 namespace gl {
 
@@ -43,9 +41,10 @@ namespace gl {
 
         void Bind() const { glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID); }
 
-        void unbind() const { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+        static void unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
-        operator uint32_t() const { return m_RendererID; }
+        inline operator uint32_t& () { return m_RendererID; }
+        inline operator const uint32_t& () const { return m_RendererID; }
     private:
         uint32_t m_RendererID = 0, numTextures = 0;
     };
