@@ -1,5 +1,4 @@
-#ifndef TIME_HPP
-#define TIME_HPP
+#pragma once
 
 #include <chrono>
 #include "Log.hpp"
@@ -41,4 +40,3 @@ public:
 	}
 };
 }
-#endif

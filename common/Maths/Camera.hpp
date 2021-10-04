@@ -1,5 +1,4 @@
-#ifndef CAMERA_HPP
-#define CAMERA_HPP
+#pragma once
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -24,8 +23,8 @@ public:
 
 	void center(const glm::vec3& center, const float& yaw) {
 		if (mouseScrolled) {
-			distanceFromCenter -= (scrollY * 0.1f);
-			Pitch -= (scrollY * 0.1f);
+			distanceFromCenter -= ((float)scrollY * 0.1f);
+			Pitch -= ((float)scrollY * 0.1f);
 		}
 		float horizontalDistance = distanceFromCenter * glm::cos(glm::radians(Pitch));
 		float verticleDistance = distanceFromCenter * glm::sin(glm::radians(Pitch));
@@ -63,4 +62,3 @@ public:
 	}
 };
 }
-#endif

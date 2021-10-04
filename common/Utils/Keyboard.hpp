@@ -1,6 +1,4 @@
-#ifndef KEYBOARD_HPP
-#define KEYBOARD_HPP
-
+#pragma once
 #include <Windows.h>
 
 namespace wc {
@@ -241,4 +239,3 @@ namespace wc {
 
     }
 }
-#endif

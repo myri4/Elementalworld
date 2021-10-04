@@ -18,9 +18,6 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="common\Utils\Log.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -170,9 +167,6 @@
     <ClInclude Include="src\world\Biome.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\Maths\Noise.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Application.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -188,9 +182,6 @@
     <ClInclude Include="common\GUI\Renderer2D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\Renderer\RendererCommands.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\Renderer\Renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -200,28 +191,16 @@
     <ClInclude Include="common\wc\pch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\wc\Skybox.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\gl\VertexArray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\gl\Buffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\wc\Vertex.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\wc\Model\Animation.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\wc\Model\Animator.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\wc\Model\Bone.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\wc\Model\BoneInfo.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\wc\Model\Mesh.hpp">
@@ -263,16 +242,10 @@
     <ClInclude Include="src\Game Mechanics\Item.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\world\files.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\GUI\Textbox.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\GUI\Button.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\world\WorldFiles.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Game Mechanics\LineBatcher.hpp">
@@ -282,6 +255,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\world\Block.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\wc\Skybox.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\Include\FastNoise\FastNoiseLite.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -314,5 +293,7 @@
     <None Include="scripts\small_grass.lua" />
     <None Include="scripts\iron_ore.lua" />
     <None Include="shaderpacks\default\pbrUtil.glsl" />
+    <None Include="scripts\green_coral.lua" />
+    <None Include="scripts\requirements.lua" />
   </ItemGroup>
 </Project>

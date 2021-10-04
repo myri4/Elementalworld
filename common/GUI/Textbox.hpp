@@ -1,6 +1,4 @@
-#ifndef TEXTBOX_HPP
-#define TEXTBOX_HPP
-
+#pragma once
 #include "../Utils/Window.hpp"
 #include "../Utils/Keyboard.hpp"
 
@@ -19,9 +17,9 @@ public:
 					if (text.length() > 0)
 					{
 						std::string t = text;
-						int lengh = text.length() - 1;
+						uint32_t length = text.length() - 1;
 						text = "";
-						for (uint32_t i = 0; i < lengh; i++) text += t[i];
+						for (uint32_t i = 0; i < length; i++) text += t[i];
 					}
 
 				if (Keyboard::isKeyPressed(Keyboard::Key::V) && Keyboard::isKeyPressed(Keyboard::Key::LControl)) text += clipBoard;
@@ -31,5 +29,3 @@ public:
 
 };
 }
-
-#endif

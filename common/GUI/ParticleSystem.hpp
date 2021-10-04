@@ -1,5 +1,4 @@
-#ifndef PARTICLE_SYSTEM_HPP
-#define PARTICLE_SYSTEM_HPP
+#pragma once
 
 #include <glm/glm.hpp>
 
@@ -14,5 +13,3 @@ public:
 	float elapsedTime;
 private:
 };
-
-#endif

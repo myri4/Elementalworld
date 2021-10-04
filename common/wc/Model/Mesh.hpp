@@ -1,8 +1,8 @@
-#ifndef MESH_HPP
-#define MESH_HPP
+#pragma once
 
-#include <gl/Shaders.hpp>
 #include <gl/Buffer.hpp>
+#include <gl/Texture.hpp>
+#include <gl/VertexArray.hpp>
 
 #include <vector>
 #include <Renderer/Renderer.hpp>
@@ -12,94 +12,75 @@
 
 struct MeshVertex {
     // position
-    glm::vec3 Position;
+    glm::vec3 Position = glm::vec3(0.f);
     // normal
-    glm::vec3 Normal;
+    glm::vec3 Normal = glm::vec3(0.f);
     // texCoords
-    glm::vec2 TexCoords;
+    glm::vec2 TexCoords = glm::vec2(0.f);
 
     //bone indexes which will influence this vertex
-    int m_BoneIDs[MAX_BONE_INFLUENCE];
+    int m_BoneIDs[MAX_BONE_INFLUENCE] = { -1 };
 
     //weights from each bone
-    float m_Weights[MAX_BONE_INFLUENCE];
+    float m_Weights[MAX_BONE_INFLUENCE] = { 0.f };
+
+    MeshVertex() {
+        memset(m_BoneIDs,-1, sizeof(m_BoneIDs));
+        memset(m_Weights, 0, sizeof(m_Weights));
+    }
 };
 
-struct MeshTexture {
-    uint32_t id = 0;
-    std::string type;
-    std::string path;
-};
 
 namespace wc {
 class Mesh {
 public:
     // mesh Data
-    std::vector<MeshTexture> textures;
-    uint32_t VAO;
+    gl::Texture diffuseTexture;
 
     // constructor
-    Mesh(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<MeshTexture>& textures)
-    {
-        this->textures = textures;
+    Mesh() {}
+    Mesh(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices, const gl::Texture& Textures) { Create(vertices, indices, Textures); }
 
-        // now that we have all the required data, set the vertex buffers and its attribute pointers.
-        // create buffers/arrays
+    void Create(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices, const gl::Texture& Textures) {
+        diffuseTexture = Textures;
 
-        m_VertexBuffer.Create(vertices.data(), vertices.size() * sizeof(MeshVertex));
-        glGenVertexArrays(1, &VAO);
-        glBindVertexArray(VAO);
-        // load data into vertex buffers
-        // A great thing about structs is that their memory layout is sequential for all its items.
-        // The effect is that we can simply pass a pointer to the struct and it translates perfectly to a glm::vec3/2 array which
-        // again translates to 3/2 floats which translates to a byte array.
+        m_VertexArray.Create();
 
-        m_IndexBuffer.Create(&indices[0], indices.size() * sizeof(uint32_t));
+        m_VertexBuffer.Create(vertices.data(), vertices.size() * sizeof(MeshVertex), 0);
 
+        m_IndexBuffer.Create(indices.data(), indices.size() * sizeof(uint32_t), 0);
+
+        m_VertexArray.AddIndexBuffer(m_IndexBuffer);
+        m_VertexArray.AddVertexBuffer(m_VertexBuffer, sizeof(MeshVertex));
         indexSize = indices.size();
 
         // set the vertex attribute pointers
         // vertex Positions
-        Renderer::VertexAttribPointer(0, 3, sizeof(MeshVertex), (void*)offsetof(MeshVertex, Position));
+        m_VertexArray.VertexAttribPointer(0, 3, offsetof(MeshVertex, Position));
         // vertex normals
-        Renderer::VertexAttribPointer(1, 3, sizeof(MeshVertex), (void*)offsetof(MeshVertex, Normal));
+        m_VertexArray.VertexAttribPointer(1, 3, offsetof(MeshVertex, Normal));
         // vertex texture coords
-        Renderer::VertexAttribPointer(2, 2, sizeof(MeshVertex), (void*)offsetof(MeshVertex, TexCoords));
+        m_VertexArray.VertexAttribPointer(2, 2, offsetof(MeshVertex, TexCoords));
         // ids
-        Renderer::VertexAttribIntPointer(3, 4, sizeof(MeshVertex), (void*)offsetof(MeshVertex, m_BoneIDs));
+        m_VertexArray.VertexAttribIntPointer(3, 4, offsetof(MeshVertex, m_BoneIDs));
         // weights
-        Renderer::VertexAttribPointer(4, 4, sizeof(MeshVertex), (void*)offsetof(MeshVertex, m_Weights));
-
-        glBindVertexArray(0);
+        m_VertexArray.VertexAttribPointer(4, 4, offsetof(MeshVertex, m_Weights));
     }
 
     // render the mesh
-    void Draw(const gl::Shader& shader) const {
+    void Draw() const {
         // bind appropriate textures
-        for (uint32_t i = 0; i < textures.size(); i++)
-        {
-            glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
-
-            // now set the sampler to the correct texture unit
-            shader.setInt(0, i); // Fix for every type
-            // and finally bind the texture
-            glBindTexture(GL_TEXTURE_2D, textures[i].id);
-        }
-
+        diffuseTexture.Bind();
         // draw mesh
-        glBindVertexArray(VAO);
+        m_VertexArray.Bind();
         Renderer::DrawIndexed(indexSize);
-
-        // always good practice to set everything back to defaults once configured.
-        glActiveTexture(GL_TEXTURE0);
     }
 
 private:
     uint32_t indexSize = 0;
     // render data 
+    gl::VertexArray m_VertexArray;
     gl::IndexBuffer m_IndexBuffer;
     gl::VertexBuffer m_VertexBuffer;
 };
 }
-
-#endif

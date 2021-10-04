@@ -1,5 +1,4 @@
-#ifndef STATE_HPP
-#define STATE_HPP
+#pragma once
 #include "NonCopyable.hpp"
 
 class Engine : public NonCopyable{
@@ -26,4 +25,3 @@ public:
 		OnDelete();
 	}
 };
-#endif

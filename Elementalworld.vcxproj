@@ -125,6 +125,7 @@
       <PreprocessorDefinitions />
       <LanguageStandard>stdcpp17</LanguageStandard>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -174,7 +175,6 @@
     <ClCompile Include="common\gl\CubeMap.hpp" />
     <ClCompile Include="common\Maths\AssimpGLMHelpers.hpp" />
     <ClCompile Include="src\glad.c" />
-    <ClCompile Include="common\Utils\Log.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -203,22 +203,17 @@
     <ClInclude Include="common\net\tsqueue.hpp" />
     <ClInclude Include="common\net\wc_net.hpp" />
     <ClInclude Include="common\Renderer\Renderer.hpp" />
-    <ClInclude Include="common\Renderer\RendererCommands.hpp" />
     <ClInclude Include="common\Utils\Bits.hpp" />
     <ClInclude Include="common\wc\Model\Animation.hpp" />
-    <ClInclude Include="common\wc\Model\Animator.hpp" />
     <ClInclude Include="common\wc\Model\Bone.hpp" />
-    <ClInclude Include="common\wc\Model\BoneInfo.hpp" />
     <ClInclude Include="common\wc\Model\Mesh.hpp" />
     <ClInclude Include="common\wc\Model\Model.hpp" />
-    <ClInclude Include="common\wc\Skybox.hpp" />
     <ClInclude Include="common\gl\Text.h" />
     <ClInclude Include="common\gl\Texture.h" />
     <ClInclude Include="common\gl\Texture.hpp" />
     <ClInclude Include="common\gl\VertexArray.h" />
     <ClInclude Include="common\gl\Buffer.hpp" />
     <ClInclude Include="common\Maths\Frustum.hpp" />
-    <ClInclude Include="common\Maths\Noise.hpp" />
     <ClInclude Include="common\Utils\Keyboard.hpp" />
     <ClInclude Include="common\Utils\Log.hpp" />
     <ClInclude Include="common\Utils\Mouse.hpp" />
@@ -228,7 +223,7 @@
     <ClInclude Include="common\Utils\Time.hpp" />
     <ClInclude Include="common\Utils\Window.hpp" />
     <ClInclude Include="common\wc\pch.hpp" />
-    <ClInclude Include="common\wc\Vertex.hpp" />
+    <ClInclude Include="common\wc\Skybox.hpp" />
     <ClInclude Include="gl\Camera.h" />
     <ClInclude Include="gl\Cubemap.h" />
     <ClInclude Include="gl\FrameBuffer.h" />
@@ -254,20 +249,20 @@
     <ClInclude Include="common\Utilitiess\Log.h" />
     <ClInclude Include="src\world\Block.hpp" />
     <ClInclude Include="src\world\Chunk.hpp" />
-    <ClInclude Include="src\world\files.hpp" />
     <ClInclude Include="src\world\Multiplayer.hpp" />
     <ClInclude Include="src\world\World.hpp" />
-    <ClInclude Include="src\world\WorldFiles.hpp" />
     <ClInclude Include="Utils\SFMLCLock.hpp" />
     <ClInclude Include="Utils\State.h" />
     <ClInclude Include="src\world\Chunk.h" />
     <ClInclude Include="Utils\Time.hpp" />
+    <ClInclude Include="vendor\Include\FastNoise\FastNoiseLite.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="config\window.lua" />
     <None Include="scripts\blocks.lua" />
     <None Include="scripts\coal_ore.lua" />
     <None Include="scripts\dead_bush.lua" />
+    <None Include="scripts\green_coral.lua" />
     <None Include="scripts\iron_ore.lua" />
     <None Include="scripts\red_flower.lua" />
     <None Include="scripts\glass.lua" />
@@ -275,6 +270,7 @@
     <None Include="scripts\grassblock.lua" />
     <None Include="scripts\haybale.lua" />
     <None Include="scripts\leaves.lua" />
+    <None Include="scripts\requirements.lua" />
     <None Include="scripts\sand.lua" />
     <None Include="scripts\skybox.lua" />
     <None Include="scripts\small_grass.lua" />

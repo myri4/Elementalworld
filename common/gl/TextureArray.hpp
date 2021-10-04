@@ -1,5 +1,4 @@
-#ifndef TEXTURE_ARRAY_HPP
-#define TEXTURE_ARRAY_HPP
+#pragma once
 
 #include <glad/glad.h>
 #include <stb_image/stb_image.h>
@@ -14,23 +13,18 @@ public:
 		height = Height;
 		nrComponents = NrOfComp;
 		MaxTextureSize = arraySize;
-		if (!m_RendererID) {
-			glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_RendererID);
-			glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID);
-
-			glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GetFormat(), width, height, MaxTextureSize, 0, GetFormat(), GL_UNSIGNED_BYTE, nullptr);
-			//glTextureStorage3D(m_RendererID, 1, GetFormat(), width, height, MaxTextureSize);
-		}
+		glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_RendererID);
+		glTextureStorage3D(m_RendererID, 1, GL_RGBA8, width, height, MaxTextureSize);		
 	}
 
 	~TextureArray() { glDeleteTextures(1, &m_RendererID); }
 
 	void AddTexture(const void* data) {
-		if (m_Textures <= MaxTextureSize) {
+		if (m_Textures <= MaxTextureSize && m_RendererID && data) {
 			glTextureSubImage3D(m_RendererID, 0, 0, 0, m_Textures, width, height, 1, GetFormat(), GL_UNSIGNED_BYTE, data);
 
 			glGenerateTextureMipmap(m_RendererID);
-
+			
 			glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // GL_NEAREST_MIPMAP_LINEAR
 			glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -39,8 +33,8 @@ public:
 		}
 	}
 
-	void Bind() { glBindTexture(GL_TEXTURE_2D_ARRAY, m_RendererID); }
-	static void unbind() { glBindTexture(GL_TEXTURE_2D_ARRAY, 0); }
+	void Bind(const uint32_t& unit = 0) { glBindTextureUnit(unit, m_RendererID); }
+	static void unbind() { glBindTextureUnit(0, 0); }
 
 	inline operator uint32_t& () { return m_RendererID; }
 	inline operator const uint32_t& () const { return m_RendererID; }
@@ -61,5 +55,3 @@ private:
 	uint32_t m_Textures = 0;
 };
 }
-
-#endif

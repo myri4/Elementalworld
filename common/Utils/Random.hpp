@@ -1,5 +1,4 @@
-#ifndef RANDOM_HPP
-#define RANDOM_HPP
+#pragma once
 
 #include <random>
 namespace wc {
@@ -38,4 +37,3 @@ private:
 	std::uniform_int_distribution<std::mt19937::result_type> s_Distribution;
 };
 }
-#endif

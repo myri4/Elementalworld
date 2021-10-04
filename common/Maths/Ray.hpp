@@ -1,5 +1,4 @@
-#ifndef RAY_HPP
-#define RAY_HPP
+#pragma once
 
 #include <glm/glm.hpp>
 
@@ -22,4 +21,3 @@ public:
 	glm::vec3 m_rayOrigin = glm::vec3(0.f);
 	glm::vec3 m_rayDir = glm::vec3(0.f);
 };
-#endif

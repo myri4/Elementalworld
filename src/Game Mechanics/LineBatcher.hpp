@@ -1,6 +1,4 @@
-#ifndef LINEBATCHER_HPP
-#define LINEBATCHER_HPP
-
+#pragma once
 #include <gl/Buffer.hpp>
 #include <gl/VertexArray.hpp>
 #include <GUI/Renderer2D.hpp>
@@ -26,9 +24,10 @@ namespace wc {
 			shader.Create("shaderpacks/default/Line3D.glsl");
 
 			lineArray.Create();
-			lineBuffer.Create(nullptr, MaxLineVertexCount * sizeof(LineVertex), GL_DYNAMIC_DRAW);
-			Renderer::VertexAttribPointer(0, 3, sizeof(LineVertex), (const void*)offsetof(LineVertex, pos));
-			Renderer::VertexAttribPointer(1, 4, sizeof(LineVertex), (const void*)offsetof(LineVertex, color));
+			lineBuffer.Create(nullptr, MaxLineVertexCount * sizeof(LineVertex), GL_DYNAMIC_STORAGE_BIT);
+			lineArray.AddVertexBuffer(lineBuffer, sizeof(LineVertex));
+			lineArray.VertexAttribPointer(0, 3, offsetof(LineVertex, pos));
+			lineArray.VertexAttribPointer(1, 4, offsetof(LineVertex, color));
 		}
 
 		void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color = glm::vec4(1.f)) {
@@ -70,6 +69,7 @@ namespace wc {
 
 		gl::VertexBuffer quadBuffer;
 		gl::VertexArray quadArray;
+		gl::IndexBuffer quadIbuffer;
 		gl::Shader shader;
 
 	public:
@@ -77,9 +77,10 @@ namespace wc {
 			shader.Create("shaderpacks/default/Line3D.glsl");
 
 			quadArray.Create();
-			quadBuffer.Create(nullptr, MaxLineVertexCount * sizeof(LineVertex), GL_DYNAMIC_DRAW);
-			Renderer::VertexAttribPointer(0, 3, sizeof(LineVertex), (const void*)offsetof(LineVertex, pos));
-			Renderer::VertexAttribPointer(1, 4, sizeof(LineVertex), (const void*)offsetof(LineVertex, color));
+			quadBuffer.Create(nullptr, MaxLineVertexCount * sizeof(QuadVertex), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
+			quadArray.AddVertexBuffer(quadBuffer, sizeof(QuadVertex));
+			quadArray.VertexAttribPointer(0, 3, offsetof(QuadVertex, pos));
+			quadArray.VertexAttribPointer(1, 4, offsetof(QuadVertex, color));
 		}
 
 		void DrawQuad(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color = glm::vec4(1.f)) {
@@ -101,7 +102,7 @@ namespace wc {
 			shader.use();
 
 			quadArray.Bind();
-			Renderer::DrawArrays(IndexCount, 0, GL_LINES);
+			Renderer::DrawArrays(IndexCount, 0, GL_TRIANGLES);
 			IndexCount = 0;
 			byteOffset = 0;
 		}
@@ -109,4 +110,3 @@ namespace wc {
 		QuadBatcher() {	}
 	};
 }
-#endif

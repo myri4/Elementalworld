@@ -1,11 +1,9 @@
-#ifndef SKY_HPP
-#define SKY_HPP
+#pragma once
 
-#include <glad/glad.h>
-#include <gl/IndexBuffer.hpp>
+#include <gl/Buffer.hpp>
+#include <gl/Shaders.hpp>
+#include <gl/VertexArray.hpp>
 #include <gl/CubeMap.hpp>
-#include <gl/Vertex.hpp>
-#include <lua/lua.hpp>
 #include <sol/sol.hpp>
 
 namespace gl {
@@ -13,8 +11,6 @@ namespace gl {
 	class Skybox{
 	public:
         Skybox() {}
-        Skybox(const char* file, const float& playerFarPlane) {Create(file, playerFarPlane);}
-        ~Skybox() { skyboxVertexBuffer.Destroy();}
         void Create(const char* file, const float& playerFarPlane) {
             sol::state skyboxState;
             skyboxState.script_file(file);
@@ -27,7 +23,7 @@ namespace gl {
                 shader.Create(path.c_str());
             }
 
-            float size = playerFarPlane / 2;
+            float size = playerFarPlane / 2.f;
 
             float vertices[] = {
                 // positions         
@@ -69,25 +65,19 @@ namespace gl {
             };
             skyBoxArray.Create();
             skyBoxArray.Bind();
-            skyboxVertexBuffer.Create(vertices, sizeof(vertices), GL_STATIC_DRAW);
-            skyBoxArray.VertexAttribPointer(0, 3, 3 * sizeof(float), (void*)0);
+            skyboxVertexBuffer.Create(vertices, sizeof(vertices), 0);
+            skyBoxArray.VertexAttribPointer(0, 3, 0);
+            skyBoxArray.AddVertexBuffer(skyboxVertexBuffer, 3 * sizeof(float));
 
-            const char** faces;
-            std::array<std::string, 6> sfaces;
-
-            sfaces[0] = skyboxState["right"];
-            sfaces[1] = skyboxState["left"];
-            sfaces[2] = skyboxState["top"];
-            sfaces[3] = skyboxState["bottom"];
-            sfaces[4] = skyboxState["front"];
-            sfaces[5] = skyboxState["back"];
-
-            faces[0] = sfaces[0].c_str();
-            faces[1] = sfaces[1].c_str();
-            faces[2] = sfaces[2].c_str();
-            faces[3] = sfaces[3].c_str();
-            faces[4] = sfaces[4].c_str();
-            faces[5] = sfaces[5].c_str();
+            const char* faces[6];
+            std::string sfaces[6];
+                                               
+            if (skyboxState["right"].valid())  { sfaces[0] = skyboxState["right"];  faces[0] = sfaces[0].c_str(); }
+            if (skyboxState["left"].valid())   { sfaces[1] = skyboxState["left"];   faces[1] = sfaces[1].c_str(); }
+            if (skyboxState["top"].valid())    { sfaces[2] = skyboxState["top"];    faces[2] = sfaces[2].c_str(); }
+            if (skyboxState["bottom"].valid()) { sfaces[3] = skyboxState["bottom"]; faces[3] = sfaces[3].c_str(); }
+            if (skyboxState["front"].valid())  { sfaces[4] = skyboxState["front"];  faces[4] = sfaces[4].c_str(); }
+            if (skyboxState["back"].valid())   { sfaces[5] = skyboxState["back"];   faces[5] = sfaces[5].c_str(); }
             skyboxTexture.Create(faces);
 
             uint32_t indices[36];
@@ -103,32 +93,70 @@ namespace gl {
 
                 offset += 4;
             }
-            skyboxIndicies.Create(indices, sizeof(indices));
+            skyboxIndicies.Create(indices, sizeof(indices), 0);
+            skyBoxArray.AddIndexBuffer(skyboxIndicies);
         }
 
-        void Draw(const glm::mat4& view, const glm::mat4& projection, const float& deltaTime){
+        void Draw(){
             glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
             shader.use();
-            shader.setMat4("view", view);
-            shader.setMat4("projection", projection);
             // skybox cube
             skyBoxArray.Bind();
             skyboxTexture.Bind();
-            skyboxIndicies.Bind();
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
             glDepthFunc(GL_LESS); // set depth function back to default
-            skyboxIndicies.Unbind();
-            skyboxVertexBuffer.Unbind();
         }
 
-        Shader shader;
+        void Update(const float& deltaTime, glm::vec3& fogColor) {
+            // skybox cube
+            angle += deltaTime * rotateSpeed;
+            angle = glm::mod(angle, 360.f);
+
+            glm::vec3 skyColor = dayColor;
+            glm::vec3 voidColor = dayVoidColor;
+            if (angle > 345.f) { 
+                voidColor = glm::mix(sunsetColor, nightColor, (360.f - angle) / 15.f);
+                glm::vec3 nColor = glm::mix(dayColor, nightColor, (360.f - angle) / 15.f);
+
+                skyColor = nColor;
+            }
+            else if (angle > startSunrise && angle < sunriseMid) voidColor = glm::mix(sunsetColor, dayVoidColor, (sunriseMid - angle) / 15.f);
+            else if (angle > sunriseMid && angle < endSunrise) {
+
+                glm::vec3 nSunsetColor = glm::mix(sunsetColor, nightColor, 1.f - (endSunrise - angle) / 30.f);
+                glm::vec3 nColor = glm::mix(dayColor, nightColor, 1.f - (endSunrise - angle) / 30.f);
+
+                skyColor = nColor;
+                voidColor = nSunsetColor;
+            }
+            else if (angle < 30.f) voidColor = glm::mix(sunsetColor, dayVoidColor, (angle / 30.f));
+
+            if (angle > endSunrise && angle < 345.f) {
+                voidColor = nightColor;
+                skyColor = nightColor;
+            }
+
+            fogColor = voidColor;
+            shader.setMat4(0, glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 0.f, 1.f)));
+            shader.setVec3(1, skyColor);
+            shader.setVec3(2, voidColor);
+        }
+
+        float rotateSpeed = 1.f * 6.f; // one cycle is one unit (in minutes)
+        float angle = 0.f;
 	private:
-        float rotateSpeed = 1.0f;
-        float angle = 0.0f;
+        const float startSunrise = 165.f;
+        const float sunriseMid = 180.f;
+        const float endSunrise = 210.f;
+
+        const glm::vec3 dayColor = glm::vec3(115.f, 211.f, 255.f) / 255.f;
+        const glm::vec3 dayVoidColor = glm::vec3(0.f, 0.5f, 0.75f);
+        const glm::vec3 sunsetColor = glm::vec3(255, 178, 79) / 255.f;
+        const glm::vec3 nightColor = glm::vec3(0.f, 0.f, 4.f / 255.f);
+        Shader shader;
         Cubemap skyboxTexture;
         VertexBuffer skyboxVertexBuffer;
         VertexArray skyBoxArray;
         IndexBuffer skyboxIndicies;
 	};
 }
-#endif

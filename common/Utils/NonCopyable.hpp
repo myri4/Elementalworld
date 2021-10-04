@@ -1,5 +1,4 @@
-#ifndef NON_COPYABLE_HPP
-#define NON_COPYABLE_HPP
+#pragma once
 
 class NonCopyable
 {
@@ -8,4 +7,3 @@ public:
 	NonCopyable& operator = (const NonCopyable&) = delete;
 	NonCopyable(const NonCopyable&) = delete;
 };
-#endif 

@@ -1,6 +1,4 @@
-#ifndef PARTICLE_SYSTEM_HPP
-#define PARTICLE_SYSTEM_HPP
-
+#pragma once
 #include <gl/Buffer.hpp>
 #include <gl/VertexArray.hpp>
 #include <Utils/Random.hpp>
@@ -147,4 +145,3 @@ namespace wc {
 		ParticleSystem() {}
 	};
 }
-#endif

@@ -1,5 +1,4 @@
-#ifndef VERTEX_BUFFER_HPP
-#define VERTEX_BUFFER_HPP
+#pragma once
 
 #include <glad/glad.h>
 
@@ -9,17 +8,15 @@ namespace gl {
     class Buffer {
     public:
         Buffer() = default;
-        Buffer(const void* data, const GLsizeiptr& size, const GLenum& mode = GL_STATIC_DRAW) { Create(data, size, mode); }
-        ~Buffer() { Destroy(); }
+        Buffer(const void* data, const GLsizeiptr& size, const GLenum& flags) { Create(data, size, flags); }
+        //~Buffer() { Destroy(); }
 
         inline virtual void Bind() const { glBindBuffer(target, m_RendererID); }
         static void Unbind() { glBindBuffer(target, 0); }
 
-        virtual void Create(const void* data, const GLsizeiptr& size, const GLenum& mode = GL_STATIC_DRAW) {
+        virtual void Create(const void* data, const GLsizeiptr& size, GLbitfield flags) {
            glCreateBuffers(1, &m_RendererID);
-
-           glBindBuffer(target, m_RendererID);
-           glNamedBufferData(m_RendererID, size, data, mode);
+           glNamedBufferStorage(m_RendererID, size, data, flags);
         }
 
         inline virtual void Destroy() { glDeleteBuffers(1, &m_RendererID); }
@@ -32,6 +29,14 @@ namespace gl {
             void* data = nullptr;
             glGetNamedBufferSubData(m_RendererID, offset, size, data);
             return data;
+        }
+
+        void* Map(const GLenum& access) {
+            return glMapNamedBuffer(m_RendererID, access);
+        }
+
+        bool UnMap() {
+            return glUnmapNamedBuffer(m_RendererID);
         }
 
         inline operator GLuint&() { return m_RendererID; }
@@ -54,4 +59,3 @@ namespace gl {
         void BufferBase(const GLuint& index) { glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, m_RendererID); }
     };
 }
-#endif

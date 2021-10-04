@@ -1,18 +1,18 @@
-#ifndef BITS_HPP
-#define BITS_HPP
+#pragma once
 
-typedef unsigned char uint8_t;
+template<typename T>
+class Bitfield {
+public:
+	bool operator[](const T& bit) {
+		return (flags >> bit) & 1;
+	}
 
-bool bitEnabled(const uint8_t& flags, const uint8_t& bit) {
-	return (flags >> bit) & 1;
-}
-
-void disableBit(uint8_t& flags, const uint8_t& bit) {
-	flags = flags & (~bit); // disables flag
-}
-
-void enableBit(uint8_t& flags, const uint8_t& bit) {
-	flags = flags | bit; // enables flag
-}
-
-#endif
+	void operator()(const T& bit, const bool& isTrue) {
+		if (isTrue)
+			flags = flags | (1 << bit); // enables flag
+		else
+			flags = flags & (~(1 << bit)); // disables flag
+	}
+private:
+	T flags;
+};

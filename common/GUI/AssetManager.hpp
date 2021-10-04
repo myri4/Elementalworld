@@ -1,13 +1,20 @@
-#ifndef ASSETMANAGER_HPP
-#define ASSETMANAGER_HPP
+#pragma once
 #include <gl/TextureArray.hpp>
-#include <glm/glm.hpp>
 
 namespace wc {
 class AssetManager {
 public:
 	AssetManager() {}
-	void Create(const uint32_t& arraySize, const uint32_t& width, const uint32_t& height, const uint8_t& nrOfComponents = 4) { texArr.Create(arraySize, width, height, nrOfComponents); }
+	void Create(const uint32_t& arraySize, const uint32_t& width, const uint32_t& height, const uint8_t& nrOfComponents = 4) { 
+		texArr.Create(arraySize, width, height, nrOfComponents);
+		uint8_t* data = new uint8_t[width * height];
+
+		for (int i = 0; i < width * height; i++) 
+			data[i] = 0x000000;
+		
+		texArr.AddTexture(data);
+		delete data;
+	}
 
 	uint32_t LoadTexture(const std::string& file)
 	{
@@ -43,14 +50,19 @@ public:
 		return location;
 	}
 
-	void Bind() { texArr.Bind(); }
-	void BindNormal() { texArr.Bind(); }
+	void Free() {
+		m_TextureCache.clear();
+	}
+
+	void Bind(const uint32_t& unit = 0) { texArr.Bind(unit); }
+	void BindNormal(const uint32_t& unit = 0) { texArr.Bind(unit); }
 	gl::Texture textures[5];
 private:
 	std::unordered_map<std::string, int> m_TextureCache;
 	gl::TextureArray texArr;
 	gl::TextureArray normalTexArr;
-};
-}
+}assets;
 
-#endif
+enum class MenuMode { GAME, INVENTORY };
+MenuMode mode = MenuMode::GAME; // @TODO: Remove it from here and make a file that needs to be include everywhere
+}

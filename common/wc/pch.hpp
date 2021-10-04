@@ -1,5 +1,4 @@
-#ifndef PCH_HPP
-#define PCH_HPP
+#pragma once
 
 #include <thread>
 #include <memory>
@@ -30,7 +29,7 @@
 #include <gl/Texture.hpp>
 #include <gl/VertexArray.hpp>
 #include <gl/FrameBuffer.hpp>
-//#include "Skybox.hpp"
+#include "Skybox.hpp"
 
 #include <Maths/Camera.hpp>
 
@@ -49,8 +48,6 @@
 // GUI
 #include <GUI/Renderer2D.hpp>
 #include <GUI/AssetManager.hpp>
-#include "Vertex.hpp"
 #undef far
 #undef max
 #undef min
-#endif

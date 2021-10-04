@@ -1,8 +1,6 @@
-#ifndef ANIMATION_HPP
-#define ANIMATION_HPP
+#pragma once
 
 #include "Bone.hpp"
-#include <functional>
 #include "Model.hpp"
 
 namespace wc {
@@ -17,25 +15,51 @@ struct AssimpNodeData
 
 class Animation {
 public:
-	Animation() = default;
+	Animation() { memset(m_Transforms, 1, sizeof(m_Transforms)); };
 
-	Animation(const std::string& animationPath, Model* model) {	Create(animationPath, model); }
+	//Animation(const std::string& animationPath, Model& model) {	Create(animationPath, model); }
 
-	void Create(const std::string& animationPath, Model* model) {
+	void Create(const std::string& animationPath, Model& model) {
 		Assimp::Importer importer;
 		const aiScene* scene = importer.ReadFile(animationPath, aiProcess_Triangulate);
 		assert(scene && scene->mRootNode);
-		auto animation = scene->mAnimations[0];
+		auto& animation = scene->mAnimations[0];
 		m_Duration = (float)animation->mDuration;
 		m_TicksPerSecond = (float)animation->mTicksPerSecond;
-		aiMatrix4x4 globalTransformation = scene->mRootNode->mTransformation;
-		globalTransformation = globalTransformation.Inverse();
-		ReadHeirarchyData(m_RootNode, scene->mRootNode);
-		SetupBones(animation, *model);
+		ReadHeirarchyData(m_RootNode, scene->mRootNode);		
+		//SetupBones
+
+		auto& offsetMatMap = model.m_OffsetMatMap;
+		uint32_t boneCount = model.m_OffsetMatMap.size();
+		m_Bones.reserve(animation->mNumChannels);
+		for (uint32_t i = 0; i < animation->mNumChannels; i++) {
+			auto aiChannel = animation->mChannels[i];
+			const char* boneName = aiChannel->mNodeName.data;
+
+			if (offsetMatMap.find(boneName) == offsetMatMap.end())
+			{
+				offsetMatMap[boneName].id = boneCount;
+				boneCount++;
+			}
+			m_Bones.emplace_back(aiChannel->mNodeName.data, aiChannel);
+		}
+
+		m_BoneInfoMap = &offsetMatMap;
 	}
 
-	~Animation() = default;
+	~Animation() = default;	
 
+	void Play(const float& startTime = 0.f) { m_CurrentTime = startTime; }
+
+	void Update(const float& dt) {		
+		m_CurrentTime += m_TicksPerSecond * dt;
+		m_CurrentTime = glm::mod(m_CurrentTime, m_Duration);
+		CalculateBoneTransform(m_RootNode, glm::mat4(1.0f));
+	}
+
+	auto& GetPoseTransforms() { return m_Transforms; }
+
+private:
 	Bone* FindBone(const std::string& name)
 	{
 		auto iter = std::find_if(m_Bones.begin(), m_Bones.end(),
@@ -48,34 +72,24 @@ public:
 		else return &(*iter);
 	}
 
+	void CalculateBoneTransform(const AssimpNodeData& node, const glm::mat4& parentTransform) // @TODO: Calculate the matricies in the shader
+	{
+		const std::string& nodeName = node.name;
+		glm::mat4& nodeTransform = (glm::mat4&)node.transformation;
 
-	inline float GetTicksPerSecond() { return m_TicksPerSecond; }
-	inline float GetDuration() { return m_Duration; }
-	inline const AssimpNodeData& GetRootNode() { return m_RootNode; }
-	inline const auto& GetBoneIDMap() {	return m_BoneInfoMap; }
+		Bone* Bone = FindBone(nodeName);
 
-private:
-	void SetupBones(const aiAnimation* animation, Model& model)	{
-		uint32_t size = animation->mNumChannels;
+		if (Bone) nodeTransform = Bone->Update(m_CurrentTime);		
 
-		auto& boneInfoMap = model.GetOffsetMatMap();
-		int& boneCount = model.GetBoneCount();
+		glm::mat4 globalTransformation = parentTransform * nodeTransform;
 
-		for (uint32_t i = 0; i < size; i++)	{
-			auto channel = animation->mChannels[i];
-			std::string boneName = channel->mNodeName.data;
+		if (m_BoneInfoMap->find(nodeName) != m_BoneInfoMap->end())
+			m_Transforms[m_BoneInfoMap->at(nodeName).id] = globalTransformation * m_BoneInfoMap->at(nodeName).offset;
 
-			if (boneInfoMap.find(boneName) == boneInfoMap.end())
-			{
-				boneInfoMap[boneName].id = boneCount;
-				boneCount++;
-			}
-			m_Bones.push_back(Bone(channel->mNodeName.data,
-				boneInfoMap[channel->mNodeName.data].id, channel));
-		}
-
-		m_BoneInfoMap = boneInfoMap;
+		for (uint32_t i = 0; i < node.childrenCount; i++)
+			CalculateBoneTransform(node.children[i], globalTransformation);
 	}
+
 
 	void ReadHeirarchyData(AssimpNodeData& dest, const aiNode* src)	{
 		assert(src);
@@ -83,20 +97,20 @@ private:
 		dest.name = src->mName.data;
 		dest.transformation = wc::AssimpGLMHelpers::ConvertMatrixToGLMFormat(src->mTransformation);
 		dest.childrenCount = src->mNumChildren;
-
+		dest.children.reserve(src->mNumChildren);
 		for (uint32_t i = 0; i < src->mNumChildren; i++)
 		{
 			AssimpNodeData newData;
 			ReadHeirarchyData(newData, src->mChildren[i]);
-			dest.children.push_back(newData);
+			dest.children.emplace_back(newData);
 		}
 	}
 	float m_Duration = 0.f;
 	float m_TicksPerSecond = 0.f;
+	float m_CurrentTime = 0.f;
 	std::vector<Bone> m_Bones;
+	std::unordered_map<std::string, BoneInfo>* m_BoneInfoMap;
 	AssimpNodeData m_RootNode;
-	std::unordered_map<std::string, BoneInfo> m_BoneInfoMap;
+	glm::mat4 m_Transforms[MAX_BONE_WEIGHTS] = { glm::mat4(1.f) };
 };
 }
-
-#endif

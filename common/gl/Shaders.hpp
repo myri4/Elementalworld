@@ -1,8 +1,9 @@
-#ifndef SHADERS_HPP
-#define SHADERS_HPP
+#pragma once
 
 #include <glad/glad.h>
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <string>
 #include <fstream>
@@ -163,9 +164,7 @@ namespace gl {
 		// ------------------------------------------------------------------------
 		void use() const
 		{
-			int id;
-			glGetIntegerv(GL_CURRENT_PROGRAM, &id);
-			if (id != m_RendererID)	glUseProgram(m_RendererID);
+			glUseProgram(m_RendererID);
 		}
 		static void unUse()
 		{
@@ -240,6 +239,12 @@ namespace gl {
 		{
 			glProgramUniformMatrix4fv(m_RendererID, loc, 1, false, glm::value_ptr(mat));
 		}
+
+		void setMat4Array(const uint32_t& loc, const glm::mat4* mat, const uint32_t& size) const
+		{
+			glProgramUniformMatrix4fv(m_RendererID, loc, size, false, (float*)mat);
+		}
+
 		void SetArray(const uint32_t& loc, const size_t& size, const int* arr) const
 		{
 			glProgramUniform1iv(m_RendererID, loc, size, arr);
@@ -257,20 +262,6 @@ namespace gl {
 		// utility function for checking shader compilation/linking errors.
 		// ------------------------------------------------------------------------
 	private:
-		uint32_t m_RendererID = 0;	
-
-		//mutable std::unordered_map<std::string, int> m_UniformCache;
-
-		//int GetUnifLoc(const std::string& name) const
-		//{
-		//	if (m_UniformCache.find(name) != m_UniformCache.end())
-		//		return m_UniformCache[name];
-		//
-		//	int location = glGetUniformLocation(m_RendererID, name.c_str());
-		//	if (location == -1) WC_WARN("Uniform {0} at shaderID {1} cannot be found!", name.c_str(), m_RendererID);
-		//	m_UniformCache[name] = location;
-		//	return location;
-		//}
+		uint32_t m_RendererID = 0;
 	};
 }
-#endif

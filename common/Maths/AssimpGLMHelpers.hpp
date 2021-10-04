@@ -1,8 +1,8 @@
-#ifndef ASSIMP_GLM_HELPERS_HPP
-#define ASSIMP_GLM_HELPERS_HPP
+#pragma once
 
 #include <assimp/Quaternion.h>
 #include <assimp/vector3.h>
+#include <assimp/color4.h>
 #include <assimp/matrix4x4.h>
 #include <assimp/matrix3x3.h>
 #include <glm/glm.hpp>
@@ -28,10 +28,14 @@ namespace wc {
         return glm::vec3(vec.x, vec.y, vec.z);
     }
 
+    static inline glm::vec4 GetGLMVec(const aiColor4D& vec)
+    {
+        return glm::vec4(vec.r, vec.g, vec.b, vec.a);
+    }
+
     static inline glm::quat GetGLMQuat(const aiQuaternion& pOrientation)
     {
         return glm::quat(pOrientation.w, pOrientation.x, pOrientation.y, pOrientation.z);
     }
 };
 }
-#endif

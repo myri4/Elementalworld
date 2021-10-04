@@ -1,6 +1,4 @@
-#ifndef ITEM_HPP
-#define ITEM_HPP
-
+#pragma once
 #include <gl/Texture.hpp>
 #include "../world/Block.hpp"
 
@@ -18,5 +16,3 @@ namespace wc {
 		uint8_t stack_size = 0;
 	};
 }
-
-#endif

@@ -1,10 +1,10 @@
-#ifndef RENDERER2D_HPP
-#define RENDERER2D_HPP
+#pragma once
 #include <string>
 
+#include <ft2build.h>
 #include <Renderer/Renderer.hpp>
 #include <gl/Shaders.hpp>
-#include <ft2build.h>
+#include <gl/Texture.hpp>
 #include <gl/Buffer.hpp>
 #include <gl/VertexArray.hpp>
 #include FT_FREETYPE_H
@@ -16,7 +16,7 @@ namespace wc {
 	static const uint32_t MaxQuadIndexCount = MaxQuadCount * 6;
 
 	static const uint32_t MaxLineCount = 100;
-	static const uint32_t MaxLineVertexCount = MaxQuadCount * 2;
+	static const uint32_t MaxLineVertexCount = MaxLineCount * 2;
 
 	static const uint8_t MaxTextures = 32;
 
@@ -45,6 +45,7 @@ namespace wc {
 		void Load(const char* fontFileLoc, const int& glyphs) {
 			// FreeType
 			// --------
+			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 			FT_Library ft;
 			// All functions return a value different than 0 whenever an error occurred
 			if (FT_Init_FreeType(&ft)) WC_ERROR("Could not init freetype library!");
@@ -60,7 +61,6 @@ namespace wc {
 				FT_Set_Pixel_Sizes(face, 0, 48);
 
 				// disable byte-alignment restriction
-				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 				// load first 128 characters of ASCII set
 				for (uint8_t c = 0; c < glyphs; c++)
@@ -70,14 +70,14 @@ namespace wc {
 
 					// generate texture
 					uint32_t texture;
-					glGenTextures(1, &texture);
+					glCreateTextures(GL_TEXTURE_2D, 1, &texture);
 					glBindTexture(GL_TEXTURE_2D, texture);
 					glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, face->glyph->bitmap.width, face->glyph->bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
 					// set texture options
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+					glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+					glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+					glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+					glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 					// now store character for later use
 					Character character = {
 						texture,
@@ -133,27 +133,24 @@ namespace wc {
 				offset += 4;
 			}
 
-			m_Data.m_EBO.Create(indices, sizeof(indices));
+			m_Data.m_EBO.Create(indices, sizeof(indices), GL_DYNAMIC_STORAGE_BIT);
 			m_Data.m_VAO.Create();
-			m_Data.m_VBO.Create(nullptr, MaxQuadVertexCount * sizeof(Vertex2D), GL_DYNAMIC_DRAW);
-			Renderer::VertexAttribPointer(0, 2, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Position));
-			Renderer::VertexAttribPointer(1, 3, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, TexCoords));
-			Renderer::VertexAttribPointer(2, 1, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Color));
-			Renderer::VertexAttribPointer(3, 1, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Type));
-
+			m_Data.m_VBO.Create(nullptr, MaxQuadVertexCount * sizeof(Vertex2D), GL_DYNAMIC_STORAGE_BIT);
+			m_Data.m_VAO.VertexAttribPointer(0, 2, offsetof(Vertex2D, Position));
+			m_Data.m_VAO.VertexAttribPointer(1, 3, offsetof(Vertex2D, TexCoords));
+			m_Data.m_VAO.VertexAttribPointer(2, 1, offsetof(Vertex2D, Color));
+			m_Data.m_VAO.VertexAttribPointer(3, 1, offsetof(Vertex2D, Type));
+			m_Data.m_VAO.AddVertexBuffer(m_Data.m_VBO, sizeof(Vertex2D));
+			m_Data.m_VAO.AddIndexBuffer(m_Data.m_EBO);
 
 			m_Data.m_LineVAO.Create();
-			m_Data.m_LineVBO.Create(nullptr, MaxLineVertexCount * sizeof(Vertex2D), GL_DYNAMIC_DRAW);
-			Renderer::VertexAttribPointer(0, 2, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Position));
-			Renderer::VertexAttribPointer(1, 3, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, TexCoords));
-			Renderer::VertexAttribPointer(2, 1, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Color));
-			Renderer::VertexAttribPointer(3, 1, sizeof(Vertex2D), (const void*)offsetof(Vertex2D, Type));
-
+			m_Data.m_LineVBO.Create(nullptr, MaxLineVertexCount * sizeof(Vertex2D), GL_DYNAMIC_STORAGE_BIT);
+			m_Data.m_LineVAO.VertexAttribPointer(0, 2, offsetof(Vertex2D, Position));
+			m_Data.m_LineVAO.VertexAttribPointer(1, 3, offsetof(Vertex2D, TexCoords));
+			m_Data.m_LineVAO.VertexAttribPointer(2, 1, offsetof(Vertex2D, Color));
+			m_Data.m_LineVAO.VertexAttribPointer(3, 1, offsetof(Vertex2D, Type));
+			m_Data.m_LineVAO.AddVertexBuffer(m_Data.m_LineVBO, sizeof(Vertex2D));
 			m_Data.m_Shader.Create("shaderpacks/default/Renderer2D.glsl");
-
-			int32_t samplers[MaxTextures];
-			for (uint8_t i = 0; i < MaxTextures; i++) samplers[i] = i;
-			m_Data.m_Shader.SetArray(0, MaxTextures, samplers);
 
 			float color[] = { 1.f, 1.f, 1.f };
 			m_Data.whiteTexture.Create(color, 1, 1);
@@ -180,25 +177,21 @@ namespace wc {
 			if (!m_Data.IndexCount) return;
 			m_Data.m_Shader.use();
 
-			for (uint8_t i = 0; i < m_Data.TextureSlotIndex; i++) {
-				glActiveTexture(GL_TEXTURE0 + i);
-				glBindTexture(GL_TEXTURE_2D, m_Data.TextureSlots[i]);
-			}
+			for (uint8_t i = 0; i < m_Data.TextureSlotIndex; i++)
+				glBindTextureUnit(i, m_Data.TextureSlots[i]);
+			
 			m_Data.m_VAO.Bind();
 			m_Data.m_EBO.Bind();
 			Renderer::DrawIndexed(m_Data.IndexCount);
 			m_Data.IndexCount = 0;
 			m_Data.byteOffset = 0;
 			m_Data.TextureSlotIndex = 1;
-			glActiveTexture(GL_TEXTURE0);
 			m_Data.m_EBO.Unbind();
 			FlushLines();
 		}
 
 		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color = glm::vec4(1.f)) {
 			if (m_Data.IndexCount >= MaxQuadIndexCount) Flush();
-
-			//float textureIndex = 0.f;
 
 			uint32_t Color = (uint32_t)(color.r * 255.f) << 24 | (uint32_t)(color.g * 255.f) << 16 | (uint32_t)(color.b * 255.f) << 8 | (uint32_t)(color.a * 255.f);
 
@@ -303,14 +296,6 @@ namespace wc {
 			vertices[2] = Vertex2D({ pos.x,			 pos.y, }, { ((coords.x + 1) * sprSize.x) * tsx, (coords.y * sprSize.y) * tsy, textureIndex }, Color, 0);
 			vertices[3] = Vertex2D({ pos.x + size.x, pos.y, }, { (coords.x * sprSize.x) * tsx, (coords.y * sprSize.y) * tsy, textureIndex }, Color, 0);
 
-			/*float vertices[] = {
-				// positions                                                              texture coords
-				pos.x + size.x, pos.y + size.y, (coords.x * sprSize.x)		  * tsx, ((coords.y + 1) * sprSize.y) * tsy, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top right
-				pos.x,			pos.y + size.y, ((coords.x + 1) * sprSize.x)  * tsx, ((coords.y + 1) * sprSize.y) * tsy, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // top left
-				pos.x,			pos.y,			((coords.x + 1) * sprSize.x)  * tsx, (coords.y * sprSize.y)		  * tsy, textureIndex, color.r, color.g, color.b, color.a, 0.0f, // bottom left
-				pos.x + size.x, pos.y,			(coords.x * sprSize.x)		  * tsx, (coords.y * sprSize.y)		  * tsy, textureIndex, color.r, color.g, color.b, color.a, 0.0f  // bottom right
-			};*/
-
 			m_Data.m_VBO.SetData(m_Data.byteOffset, sizeof(vertices), vertices);
 			m_Data.byteOffset += sizeof(vertices);
 			m_Data.IndexCount += 6;
@@ -336,13 +321,6 @@ namespace wc {
 
 		void DrawLine(const glm::vec2& start, const glm::vec2& end, const glm::vec4& color = glm::vec4(1.f)) {
 			if (m_Data.LineIndexCount >= MaxLineVertexCount) FlushLines();
-			/*
-			float vertices[] = {
-				// positions
-				start.x, start.y, 0.f, 0.f, 0.f, color.r, color.g, color.b, color.a, 2.f,
-				end.x,   end.y,   0.f, 0.f, 0.f, color.r, color.g, color.b, color.a, 2.f
-			};
-			*/
 
 			uint32_t Color = (uint32_t)(color.r * 255.f) << 24 | (uint32_t)(color.g * 255.f) << 16 | (uint32_t)(color.b * 255.f) << 8 | (uint32_t)(color.a * 255.f);
 			Vertex2D vertices[2];
@@ -356,13 +334,6 @@ namespace wc {
 
 		void DrawLineDC(const glm::vec2& start, const glm::vec3& end, const glm::vec4& startColor = glm::vec4(1.f), const glm::vec4& endColor = glm::vec4(1.f)) {
 			if (m_Data.LineIndexCount >= MaxLineVertexCount) FlushLines();
-			/*
-			float vertices[] = {
-				// positions
-				start.x, start.y, 0.f, 0.f, 0.f, 0.f, startColor.r, startColor.g, startColor.b, startColor.a, 2.f,
-				end.x,   end.y,   0.f, 0.f, 0.f, 0.f, endColor.r,   endColor.g,   endColor.b,   endColor.a, 2.f
-			};
-			*/
 
 			uint32_t ColorStart, colorEnd;
 			Vertex2D vertices[2];
@@ -374,9 +345,6 @@ namespace wc {
 			m_Data.LineIndexCount += 2;
 		}
 
-		void SetLineWidth(const float& width) { glLineWidth(width); }
-
 		glm::mat4 Get2DProj(const glm::vec2& windowSize) { return glm::ortho(0.f, windowSize.x, windowSize.y, 0.f); }
 	}
 }
-#endif

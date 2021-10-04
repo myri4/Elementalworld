@@ -1,5 +1,4 @@
-#ifndef BUTTON_HPP
-#define BUTTON_HPP
+#pragma once
 
 #include "../Utils/Mouse.hpp"
 
@@ -53,7 +52,4 @@ struct Slider {
 		if (current.y < start.y) current.y = start.y;
 	}
 };
-
 }
-
-#endif

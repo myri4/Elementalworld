@@ -1,10 +1,9 @@
-#ifndef WINDOW_HPP
-#define WINDOW_HPP
+#pragma once
 
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <sol/sol.hpp>
+#include "Log.hpp"
 
 namespace wc {
 
@@ -38,7 +37,6 @@ namespace wc {
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 			glfwWindowHint(GLFW_SAMPLES, windowScript["antialiasingLevel"]);
-			glfwWindowHint(GLFW_REFRESH_RATE, windowScript["framerateLimit"]);
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 			bool vsync = windowScript["vsync"];
@@ -115,15 +113,7 @@ namespace wc {
 		void setActive() const {
 			glfwMakeContextCurrent(window);
 		}
-
-		void setFramerateLimit(const int& limit) {
-			framerateLimit = limit;
-		}
 	private:
-		float lastFrame = 0.0f;
-		int framerateLimit = 0;
 		GLFWwindow* window = nullptr;
 	};
-
 }
-#endif

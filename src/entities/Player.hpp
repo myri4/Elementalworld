@@ -1,9 +1,9 @@
-#ifndef PLAYER_HPP
-#define PLAYER_HPP
+#pragma once
 #include "../Game Mechanics/Inventory.hpp"
 
 namespace wc{
-const uint32_t inventorySize = 9;
+const uint32_t inventorySizeX = 9;
+const uint32_t inventorySizeY = 4;
 
 class Player{
 public:	
@@ -18,7 +18,7 @@ public:
 	bool collision : 1;
 	glm::vec3 velocity = glm::vec3(0.f);
 	glm::vec3 acceleration = glm::vec3(0.f);
-	Inventory<inventorySize> inventory;
+	Inventory<inventorySizeX * inventorySizeY, inventorySizeX, inventorySizeY, 48> inventory;
 	float health = 10.f;
 
 	Player() {
@@ -35,4 +35,3 @@ public:
 	glm::vec3 Position = glm::vec3(0.f);
 };
 }
-#endif

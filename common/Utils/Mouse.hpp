@@ -1,5 +1,4 @@
-#ifndef MOUSE_HPP
-#define MOUSE_HPP
+#pragma once
 
 #include <glm/glm.hpp>
 
@@ -39,7 +38,5 @@ MouseButton isButtonPressed() {
 
 	return MouseButton::NONE;
 }
-
 }
 }
-#endif
