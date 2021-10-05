@@ -17,7 +17,7 @@
 #include <GUI/Button.hpp>
 #include <ppl.h>
 
-#define MODEL1
+#define MODEL
 
 namespace wc {
 	static const uint16_t RenderDistance = 16;	
@@ -279,7 +279,7 @@ namespace wc {
 			chunkMeshArray.Create();
 			chunkMeshArray.VertexAttribPointer(0, 3, offsetof(Vertex, Position));  // position attribute
 			chunkMeshArray.VertexAttribPointer(1, 3, offsetof(Vertex, TexCoords)); // texture coord attribute
-			chunkMeshArray.VertexAttribPointer(2, 1, offsetof(Vertex, NormalType)); // type attribute
+			chunkMeshArray.VertexAttribPointer(2, 4, offsetof(Vertex, NormalType)); // type attribute
 			chunkMeshArray.VertexAttribPointer(3, 1, offsetof(Vertex, color)); // color attribute
 			WC_INFO(MaxVertexCount * sizeof(Vertex));
 			chunkMeshArray.AddIndexBuffer(worldIndexBuffer);
@@ -294,7 +294,7 @@ namespace wc {
 			skybox.Create("scripts/skybox.lua", Far);
 #ifdef MODEL
 			modelShader.Create("shaderpacks/default/modelShader.glsl");
-			model.Create("assets/models/seagrass.ply");
+			model.Create("assets/models/dancing_vampire.dae");
 			animation.Create("assets/models/dancing_vampire.dae", model);
 #endif // MODEL
 			numberGen.seed = worldNoise.GetSeed();
@@ -324,8 +324,8 @@ namespace wc {
 			biomeMap[SNOW_PEAK].minTemp = -1.f;
 			biomeMap[SNOW_PEAK].maxTemp = 0.2f;
 			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 1.f, 1.f, 0.f)));
+			addLight(modelPos, convertColor(glm::vec4(1.f)));
 			BlockMeshes.Load("assets/models/seagrass.ply");
-			blockData[1].texture[0] = 0;
 		}
 		
 		glm::vec3 modelPos = { (RenderDistance * RenderDistance * 0.5f + RenderDistance), 51.f , (RenderDistance * RenderDistance * 0.5f) };

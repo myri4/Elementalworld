@@ -23,7 +23,7 @@ struct Face {
 	glm::vec3 normal;
 
 	void CalculateNormal() {
-		normal = glm::cross(corner3 - corner1, corner2 - corner1);		
+		normal = glm::normalize(glm::cross(corner3 - corner1, corner2 - corner1));		
 	}
 };
 
@@ -45,12 +45,13 @@ class Vertex {
 public:
 	glm::vec3 Position = { 0,0,0 };
 	glm::vec3 TexCoords = { 0,0,0 };
-	uint32_t color = 0xFFFFFFFF;
-	uint32_t NormalType = 0;
+	uint32_t color = 0x000000FF;
+	glm::vec4 NormalType = {0,0,0,0};
 	Vertex() {}
 	Vertex(const glm::vec3& pos, const glm::vec3& texCoord, const uint8_t& Type, const uint32_t& Color, const glm::vec3& normal) : Position(pos), TexCoords(texCoord), color(Color) {
+		//NormalType = (uint32_t)(normal.x * 255.f) << 24 | (uint32_t)(normal.y * 255.f) << 16 | (uint32_t)(normal.z * 255.f) << 8 | (uint32_t)(Type);
+		NormalType = glm::vec4(normal, Type);
 
-		NormalType = (uint32_t)(normal.r * 255.f) << 24 | (uint32_t)(normal.g * 255.f) << 16 | (uint32_t)(normal.b * 255.f) << 8 | (uint32_t)(Type);
 	}
 };
 
@@ -92,7 +93,7 @@ struct BlockMesh {
 				aiFace& face = mesh->mFaces[i];
 				for (uint32_t j = 0; j < face.mNumIndices; j++) {
 					indices.emplace_back(face.mIndices[j]);
-					WC_INFO(face.mIndices[j]);
+					//WC_INFO(face.mIndices[j]);
 				}
 			}
 		}

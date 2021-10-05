@@ -2,7 +2,7 @@
 #version 450 core
 layout (location = 0) in vec3 a_Pos;
 layout (location = 1) in vec3 a_TexCoord;
-layout (location = 2) in uint a_NormalType;
+layout (location = 2) in vec4 a_NormalType;
 layout (location = 3) in uint a_Color;
 
 const float PI = 3.1415926535897932384626433832795;
@@ -39,12 +39,13 @@ void main()
     v_Color.a = float((a_Color & uint(0x000000ff))) * c;
 
     //Normal
-    vec3 normal;
-    normal.x = float((a_NormalType & uint(0xff000000)) >> 24) * c;
-    normal.y = float((a_NormalType & uint(0x00ff0000)) >> 16) * c;
-    normal.z = float((a_NormalType & uint(0x0000ff00)) >> 8) * c;
-    v_Type = a_NormalType & uint(0x000000ff);
-    v_Normal = normalize(normal);
+    //vec3 normal;
+    //normal.x = float((a_NormalType & uint(0xff000000)) >> 24) * c;
+    //normal.y = float((a_NormalType & uint(0x00ff0000)) >> 16) * c;
+    //normal.z = float((a_NormalType & uint(0x0000ff00)) >> 8) * c;
+    //v_Type = a_NormalType & uint(0x000000ff);
+    v_Type = uint(a_NormalType.a);
+    v_Normal = normalize(a_NormalType.xyz);
 
     if (v_Type == 1) currentVertex = vec3(a_Pos.x, a_Pos.y - 0.2f, a_Pos.z); // fluid
 
@@ -79,7 +80,7 @@ layout(binding = 1) uniform sampler2DArray u_NormalMap;
 
 void main() {
     vec4 textureColor = texture(u_Texture, v_TexCoords) * v_Color;
-    if ((!gl_FrontFacing && v_Type != 1u && v_Type != 2u) || textureColor.a < 0.1) discard;
+    if ((!true && v_Type != 1u && v_Type != 2u) || textureColor.a < 0.1) discard;
     
 	vec3 N = getNormalFromMap(texture(u_NormalMap, v_TexCoords).rgb, v_Normal, p0, v_TexCoords.xy);
 	if (!gl_FrontFacing) N = -N;

@@ -7,10 +7,10 @@ public:
 	AssetManager() {}
 	void Create(const uint32_t& arraySize, const uint32_t& width, const uint32_t& height, const uint8_t& nrOfComponents = 4) { 
 		texArr.Create(arraySize, width, height, nrOfComponents);
-		uint8_t* data = new uint8_t[width * height];
+		uint8_t* data = new uint8_t[width * height * 4];
 
-		for (int i = 0; i < width * height; i++) 
-			data[i] = 0x000000;
+		for (int i = 0; i < width * height * 4; i++) 
+			data[i] = 0x0000FF;
 		
 		texArr.AddTexture(data);
 		delete data;
