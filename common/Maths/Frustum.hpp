@@ -27,37 +27,37 @@ public:
         m_planes[2].normal.x = mat[0][3] + mat[0][0];
         m_planes[2].normal.y = mat[1][3] + mat[1][0];
         m_planes[2].normal.z = mat[2][3] + mat[2][0];
-        m_planes[2].distanceToOrigin = mat[3][3] + mat[3][0];
+        m_planes[2].distance = mat[3][3] + mat[3][0];
 
         // right
         m_planes[3].normal.x = mat[0][3] - mat[0][0];
         m_planes[3].normal.y = mat[1][3] - mat[1][0];
         m_planes[3].normal.z = mat[2][3] - mat[2][0];
-        m_planes[3].distanceToOrigin = mat[3][3] - mat[3][0];
+        m_planes[3].distance = mat[3][3] - mat[3][0];
 
         // bottom
         m_planes[5].normal.x = mat[0][3] + mat[0][1];
         m_planes[5].normal.y = mat[1][3] + mat[1][1];
         m_planes[5].normal.z = mat[2][3] + mat[2][1];
-        m_planes[5].distanceToOrigin = mat[3][3] + mat[3][1];
+        m_planes[5].distance = mat[3][3] + mat[3][1];
 
         // top
         m_planes[4].normal.x = mat[0][3] - mat[0][1];
         m_planes[4].normal.y = mat[1][3] - mat[1][1];
         m_planes[4].normal.z = mat[2][3] - mat[2][1];
-        m_planes[4].distanceToOrigin = mat[3][3] - mat[3][1];
+        m_planes[4].distance = mat[3][3] - mat[3][1];
 
         // near
         m_planes[0].normal.x = mat[0][3] + mat[0][2];
         m_planes[0].normal.y = mat[1][3] + mat[1][2];
         m_planes[0].normal.z = mat[2][3] + mat[2][2];
-        m_planes[0].distanceToOrigin = mat[3][3] + mat[3][2];
+        m_planes[0].distance = mat[3][3] + mat[3][2];
 
         // far
         m_planes[1].normal.x = mat[0][3] - mat[0][2];
         m_planes[1].normal.y = mat[1][3] - mat[1][2];
         m_planes[1].normal.z = mat[2][3] - mat[2][2];
-        m_planes[1].distanceToOrigin = mat[3][3] - mat[3][2];
+        m_planes[1].distance = mat[3][3] - mat[3][2];
     }
 
     void update(const Camera& cam, const float& aspect, const float& zNear, const float& zFar){
@@ -78,7 +78,7 @@ public:
         for (uint8_t i = 0; i < 6; i++)
         {
             // Plane-sphere intersection test. If p*n + d + r < 0 then we're outside the plane.
-            if (glm::dot(center, m_planes[i].normal) + m_planes[i].distanceToOrigin + radius <= 0.f)
+            if (glm::dot(center, m_planes[i].normal) + m_planes[i].distance + radius <= 0.f)
                 return false;
         }
 
@@ -92,17 +92,17 @@ private:
         Plane() = default;
 
         Plane(const glm::vec3& p1, const glm::vec3& norm)
-            : normal((norm)),
-            distanceToOrigin(glm::dot(normal, p1))
+            : normal(norm),
+            distance(glm::dot(normal, p1))
         {}
 
         float distanceToPoint(const glm::vec3& point) const
         {
-            return glm::dot(point, normal) - distanceToOrigin;
+            return glm::dot(normal, point) - distance;
         }
 
         glm::vec3 normal;
-        float distanceToOrigin;
+        float distance;
     } m_planes[6];
 };
 }

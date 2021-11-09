@@ -14,7 +14,14 @@ public:
 		nrComponents = NrOfComp;
 		MaxTextureSize = arraySize;
 		glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_RendererID);
-		glTextureStorage3D(m_RendererID, 1, GL_RGBA8, width, height, MaxTextureSize);		
+		glTextureStorage3D(m_RendererID, 1, GL_RGBA8, width, height, MaxTextureSize);
+
+		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // GL_NEAREST_MIPMAP_LINEAR
+		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+		glGenerateTextureMipmap(m_RendererID);
 	}
 
 	~TextureArray() { glDeleteTextures(1, &m_RendererID); }
@@ -22,13 +29,13 @@ public:
 	void AddTexture(const void* data) {
 		if (m_Textures <= MaxTextureSize && m_RendererID && data) {
 			glTextureSubImage3D(m_RendererID, 0, 0, 0, m_Textures, width, height, 1, GetFormat(), GL_UNSIGNED_BYTE, data);
-
-			glGenerateTextureMipmap(m_RendererID);
 			
 			glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // GL_NEAREST_MIPMAP_LINEAR
 			glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+			glGenerateTextureMipmap(m_RendererID);
 			m_Textures++;
 		}
 	}

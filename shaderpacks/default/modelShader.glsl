@@ -79,6 +79,7 @@ layout(location = 3) in vec3 p0;
 layout(binding = 0) uniform sampler2D u_Texture;
 layout(binding = 1) uniform sampler2D u_NormalMap;
 
+layout(location = 0) out vec4 FragColor;
 void main()
 {    
     vec4 textureColor = texture(u_Texture, v_TexCoords);    
@@ -87,5 +88,5 @@ void main()
 	if (!gl_FrontFacing) N = -N;
 
     vec4 finalColor = textureColor * vec4(rayTrace(textureColor.rgb, N), textureColor.a);
-    gl_FragColor = mix(vec4(fogColor, 1.0f), finalColor, v_visibility);
+    FragColor = mix(vec4(fogColor, 1.0f), finalColor, v_visibility);
 }

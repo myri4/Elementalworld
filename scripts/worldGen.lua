@@ -39,10 +39,10 @@ frequency = 300
 noise:SetNoiseType(NoiseType.OpenSimplex2S)
 noise:SetFractalType(FractalType.FBm)
 noise:SetOctaves(9)
-noise:SetMultiplier(300)
+noise:SetMultiplier(128)
 noise:SetFrequency(1 / frequency) -- scale 
 noise:SetLacunarity(frequency / 300)
-noise:SetGain(0.6) -- persistance, roughness, advice: use gain that is 1 / 1000 of the frequency
+noise:SetGain(0.15) -- persistance, roughness, advice: use gain that is 1 / 1000 of the frequency
 noise:SetSeed(seed)
 
 TempNoise = Noise:new()

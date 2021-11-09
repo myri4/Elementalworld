@@ -1,16 +1,16 @@
 #type vertex
-#version 330 core
+#version 450 core
 
 layout(location = 0) in vec3 a_Pos;
 layout(location = 1) in vec4 a_Color;
 
-layout (std140) uniform Matrices
+layout (std140, binding = 0) uniform Transforms
 {
     mat4 u_Projection;
     mat4 u_View;
 };
 
-out vec4 v_Color;
+layout(location = 0) out vec4 v_Color;
 
 void main() {
     v_Color = a_Color;
@@ -18,10 +18,13 @@ void main() {
 }
 
 #type fragment
+#version 450 core
 
-in vec4 v_Color;
+layout(location = 0) in vec4 v_Color;
+
+layout(location = 0) out vec4 FragColor;
 
 void main()
 {
-    gl_FragColor = v_Color;
+    FragColor = v_Color;
 }

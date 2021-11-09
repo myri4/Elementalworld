@@ -9,11 +9,11 @@ public:
 		texArr.Create(arraySize, width, height, nrOfComponents);
 		uint8_t* data = new uint8_t[width * height * 4];
 
-		for (int i = 0; i < width * height * 4; i++) 
+		for (uint32_t i = 0; i < width * height * 4; i++) 
 			data[i] = 0x0000FF;
 		
 		texArr.AddTexture(data);
-		delete data;
+		delete[] data;
 	}
 
 	uint32_t LoadTexture(const std::string& file)

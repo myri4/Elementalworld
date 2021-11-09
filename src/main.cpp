@@ -10,11 +10,11 @@ wc::Application app;
 
 int main() {
 	wc::Log::Init();
-
 	glfwInit();
-
+	
 	app.Start();
-
+	wc::window.Destroy();
 	glfwTerminate();
+
 	return 0;
 }

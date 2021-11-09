@@ -39,15 +39,10 @@
 //Util
 #include <Utils/Log.hpp>
 #include <Utils/Time.hpp>
-#include <Utils/Mouse.hpp>
 #include <Utils/State.hpp>
 #include <Utils/Random.hpp>
 #include <Utils/Window.hpp>
-#include <Utils/Keyboard.hpp>
 
 // GUI
 #include <GUI/Renderer2D.hpp>
 #include <GUI/AssetManager.hpp>
-#undef far
-#undef max
-#undef min

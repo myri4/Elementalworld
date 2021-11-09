@@ -9,8 +9,6 @@ namespace wc {
 
 	class Application : public Engine {
 	private:
-		Window window;
-
 		Clock deltaTimer;
 		float deltaTime = 0.f;
 
@@ -35,7 +33,10 @@ namespace wc {
 			bool hasFocus = window.hasFocus();
 			if (hasFocus) {
 				if (mode == MenuMode::GAME) world.OnInput(window.GetPos(), window.GetSize(), hasFocus, deltaTime);
-				else world.p.inventory.OnInput();
+				else { 
+					world.p.inventory.OnInput(); 
+					world.p.crafting.OnInput();
+				}
 			}
 
 			if (resized) { 
@@ -47,14 +48,14 @@ namespace wc {
 				screen.Create(scrProps.Width, scrProps.Height, scrProps.samples);
 				screen.addTexture(scrTexture);
 			}
-			if (wc::Keyboard::isKeyPressed(wc::Keyboard::Key::F)) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			if (wc::Keyboard::isKeyPressed(Keyboard::Key::F)) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() override {
 			window.Create("config/window.lua", "Elementalworld");
 			// OpenGL state
-			//Renderer::enableDebuging();
+			Renderer::enableDebuging();
 			// ------------
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -88,7 +89,7 @@ namespace wc {
 			scrQuad.Create(quadVertices, sizeof(quadVertices), 0);
 			scrQuadA.Create();
 			scrQuadA.VertexAttribPointer(0, 2, 0);
-			scrQuadA.VertexAttribPointer(1, 2, (2 * sizeof(float)));
+			scrQuadA.VertexAttribPointer(1, 2, 2 * sizeof(float));
 			scrQuadA.AddVertexBuffer(scrQuad, sizeof(float) * 4);
 			world.font.Load("assets/font/Minecraft.ttf", 128);
 
@@ -96,6 +97,7 @@ namespace wc {
 
 			world.Create();
 			world.p.inventory.Create();
+			world.p.crafting.Create();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnUpdate() override {
@@ -107,7 +109,10 @@ namespace wc {
 			Renderer::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
 			if (mode == MenuMode::GAME) world.Update(windsize, deltaTime);
-			else world.p.inventory.Update(windsize, window.GetPos(), deltaTime, world.font);
+			else { 
+				world.p.inventory.Update(windsize, window.GetPos(), deltaTime, world.font); 
+				world.p.crafting.Update(windsize, window.GetPos(), deltaTime, world.font);
+			}
 			
 			glDisable(GL_DEPTH_TEST);
 			screen.blit(windsize.x, windsize.y);

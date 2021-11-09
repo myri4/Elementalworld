@@ -9,59 +9,74 @@
 
 namespace wc{
 
-enum ConnectionType : uint8_t { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT, X_CONNECT, CANT_CONNECT};
-enum class BlockTexture : uint8_t { TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK };
+enum ConnectionType : uint8_t { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT, X_CONNECT, CANT_CONNECT, CUSTOM_MODEL, AIR, NON_EXISTENT};
+enum class BlockTexture : uint8_t { RIGHT, TOP, FRONT, LEFT, BOTTOM, BACK };
 
 const float blockSize = 1.f;
 
 struct Face {
-	glm::vec3 corner1;
-	glm::vec3 corner2;
-	glm::vec3 corner3;
-	glm::vec3 corner4;
-	BlockTexture texID;
+	glm::vec3 corner[4];
+	uint32_t texID;
 	glm::vec3 normal;
 
 	void CalculateNormal() {
-		normal = glm::normalize(glm::cross(corner3 - corner1, corner2 - corner1));		
+		normal = glm::normalize(glm::cross(corner[2] - corner[0], corner[1] - corner[0]));		
 	}
 };
 
 uint32_t convertColor(const glm::vec4& color) {
-	return (uint32_t)(color.r * 255.f) << 24 | (uint32_t)(color.g * 255.f) << 16 | (uint32_t)(color.b * 255.f) << 8 | (uint32_t)(color.a * 255.f);
+	int32_t r = color.r * 255.f;
+	int32_t g = color.g * 255.f;
+	int32_t b = color.b * 255.f;
+	int32_t a = color.a * 255.f;
+	return a << 24 | b << 16 | g << 8 | r;
 }
 
 glm::vec4 convertColor(const uint32_t& color) {
 	const float c = 1.f / 255.f;
 	glm::vec4 Color;
-	Color.r = float((color & uint32_t(0xff000000)) >> 24) * c;
-	Color.g = float((color & uint32_t(0x00ff0000)) >> 16) * c;
-	Color.b = float((color & uint32_t(0x0000ff00)) >> 8) * c;
-	Color.a = float((color & uint32_t(0x000000ff))) * c;
+	Color.r = float((uint32_t)(color & uint32_t(0x000000ff))) * c;
+	Color.g = float((uint32_t)(color & uint32_t(0x0000ff00)) >> 8) * c;
+	Color.b = float((uint32_t)(color & uint32_t(0x00ff0000)) >> 16) * c;
+	Color.a = float((uint32_t)(color & uint32_t(0xff000000)) >> 24) * c;
+
 	return Color;
 }
+
+Face X_FACE1 = {
+	glm::vec3(blockSize,  blockSize, 0.f),  // top-right      
+	glm::vec3(blockSize, 0.f, 0.f),  // bottom-right          
+	glm::vec3(0.f, 0.f,  blockSize),  // bottom-left
+	glm::vec3(0.f,  blockSize,  blockSize),  // top-left
+};
+
+Face X_FACE2 = {
+	glm::vec3(blockSize,  blockSize,  blockSize),  // top-right
+	glm::vec3(blockSize, 0.f,  blockSize),  // bottom-right
+	glm::vec3(0.f, 0.f, 0.f),  // bottom-left 
+	glm::vec3(0.f,  blockSize, 0.f),  // top-left
+};
 
 class Vertex {
 public:
 	glm::vec3 Position = { 0,0,0 };
-	glm::vec3 TexCoords = { 0,0,0 };
-	uint32_t color = 0x000000FF;
-	glm::vec4 NormalType = {0,0,0,0};
+	uint32_t TexCoords = 0;
+	uint32_t color = 0xFFFFFFFF;
+	glm::vec3 Normal = { 0,0,0 };
 	Vertex() {}
-	Vertex(const glm::vec3& pos, const glm::vec3& texCoord, const uint8_t& Type, const uint32_t& Color, const glm::vec3& normal) : Position(pos), TexCoords(texCoord), color(Color) {
-		//NormalType = (uint32_t)(normal.x * 255.f) << 24 | (uint32_t)(normal.y * 255.f) << 16 | (uint32_t)(normal.z * 255.f) << 8 | (uint32_t)(Type);
-		NormalType = glm::vec4(normal, Type);
-
+	Vertex(const glm::vec3& pos, const glm::vec3& texCoord, const uint8_t& Type, const uint32_t& Color, const glm::vec3& normal) : Position(pos), color(Color), Normal(normal) {
+		TexCoords = convertColor(glm::vec4(texCoord / 255.f, Type));
 	}
 };
 
 struct BlockMesh {
 	std::vector<Vertex> vertices;
+	std::vector<uint32_t> indices;
 
 	void Load(const char* path) {
 		Assimp::Importer import;
-		const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_JoinIdenticalVertices);
-
+		const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_OptimizeMeshes | aiProcess_JoinIdenticalVertices | aiProcess_GenNormals);
+		
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
 			WC_ERROR(import.GetErrorString());
@@ -80,21 +95,22 @@ struct BlockMesh {
 			for (uint32_t i = 0; i < mesh->mNumVertices; i++)
 			{
 				Vertex vertex;
-				vertex.Position = AssimpGLMHelpers::GetGLMVec(mesh->mVertices[i]);
-				//vertex.Normal = AssimpGLMHelpers::GetGLMVec(mesh->mNormals[i]);
-				//vertex.color = convertColor(AssimpGLMHelpers::GetGLMVec(mesh->mColors[0][i]));
+				glm::mat4 model = glm::mat4(1.f);
+				glm::vec3 pos = AssimpGLMHelpers::GetGLMVec(mesh->mVertices[i]);
+				model = glm::scale(model, glm::vec3(0.31f)); // magica voxel mesh size - 1
+				vertex.Position = glm::vec3(glm::vec4(pos.x, pos.z, pos.y, 0.f) * model) ;
+				glm::vec3 normal = AssimpGLMHelpers::GetGLMVec(mesh->mNormals[i]);
+				vertex.Normal = glm::vec3(normal.x, normal.z, normal.y);
+				vertex.color = convertColor(AssimpGLMHelpers::GetGLMVec(mesh->mColors[0][i]));
 
 				vertices.emplace_back(vertex);
 			}
-			std::vector<uint32_t> indices;
 			indices.reserve(mesh->mNumFaces);
 			for (uint32_t i = 0; i < mesh->mNumFaces; i++)
 			{
 				aiFace& face = mesh->mFaces[i];
-				for (uint32_t j = 0; j < face.mNumIndices; j++) {
+				for (uint32_t j = 0; j < face.mNumIndices; j++) 
 					indices.emplace_back(face.mIndices[j]);
-					//WC_INFO(face.mIndices[j]);
-				}
 			}
 		}
 
@@ -106,78 +122,15 @@ struct BlockMesh {
 
 typedef int8_t BlockID;
 
-Face BACK_FACE = {
-	glm::vec3( 0.f,  blockSize, 0.f), // top-left
-	glm::vec3( 0.f, 0.f, 0.f), // Bottom-left  
-	glm::vec3( blockSize, 0.f, 0.f), // bottom-right 
-	glm::vec3( blockSize,  blockSize, 0.f), // top-right
-	BlockTexture::BACK
-};
-
-Face FRONT_FACE = {
-	glm::vec3( blockSize,  blockSize,  blockSize), // top-right
-	glm::vec3( blockSize, 0.f,  blockSize), // bottom-right        
-	glm::vec3( 0.f, 0.f,  blockSize), // bottom-left
-	glm::vec3( 0.f,  blockSize,  blockSize), // top-left   
-	BlockTexture::FRONT
-};
-
-Face LEFT_FACE = {
-	glm::vec3(0.f,  blockSize,  blockSize),  // top-right
-	glm::vec3(0.f, 0.f,  blockSize),  // bottom-right
-	glm::vec3(0.f, 0.f, 0.f),  // bottom-left 
-	glm::vec3(0.f,  blockSize, 0.f),  // top-left
-	BlockTexture::LEFT
-};
-
-Face RIGHT_FACE = {
-	 glm::vec3(blockSize,  blockSize, 0.f),  // top-right      
-	 glm::vec3(blockSize, 0.f, 0.f),  // bottom-right          
-	 glm::vec3(blockSize, 0.f,  blockSize),  // bottom-left
-	 glm::vec3(blockSize,  blockSize,  blockSize),  // top-left
-	 BlockTexture::RIGHT
-};
-
-Face BOTTOM_FACE = {
-	glm::vec3(0.f, 0.f, 0.f),  // top-right 
-	glm::vec3(0.f, 0.f,  blockSize),  // bottom-right
-	glm::vec3( blockSize, 0.f,  blockSize),  // bottom-left
-	glm::vec3( blockSize, 0.f, 0.f),  // top-left  
-	BlockTexture::BOTTOM
-};
-
-Face TOP_FACE = {
-	glm::vec3( blockSize,  blockSize, 0.f), // top-right
-	glm::vec3( blockSize,  blockSize,  blockSize), // bottom-right                 
-	glm::vec3(0.f,  blockSize,  blockSize), // bottom-left  
-	glm::vec3(0.f,  blockSize, 0.f), // top-left 
-	BlockTexture::TOP
-};
-
-Face X_FACE1 = {
-	glm::vec3( blockSize,  blockSize, 0.f),  // top-right      
-	glm::vec3( blockSize, 0.f, 0.f),  // bottom-right          
-	glm::vec3(0.f, 0.f,  blockSize),  // bottom-left
-	glm::vec3(0.f,  blockSize,  blockSize),  // top-left
-	BlockTexture::TOP
-};
-
-Face X_FACE2 = {
-	glm::vec3( blockSize,  blockSize,  blockSize),  // top-right
-	glm::vec3( blockSize, 0.f,  blockSize),  // bottom-right
-	glm::vec3(0.f, 0.f, 0.f),  // bottom-left 
-	glm::vec3(0.f,  blockSize, 0.f),  // top-left
-	BlockTexture::TOP
-};
-
 struct Block{
 	bool isCollidable : 1;
 	bool emitLight : 1;
 
 	uint32_t texture[6] = {0};
 	uint32_t normalTexture[6] = { 0 };
+	uint32_t color = 0xFFFFFFFF;
 	int32_t meshID = -1;
-	uint8_t blockConnectionType = ConnectionType::CONNECT_DEFAULT;
+	uint8_t connectionType = ConnectionType::AIR;
 
 	Block() {
 		isCollidable = true;

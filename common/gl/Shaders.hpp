@@ -178,9 +178,14 @@ namespace gl {
 			glProgramUniform1i(m_RendererID, loc, value);
 		}
 		// ------------------------------------------------------------------------
-		void setInt(const uint32_t& loc, const int& value) const
+		void setInt(const uint32_t& loc, const int32_t& value) const
 		{
 			glProgramUniform1i(m_RendererID, loc, value);
+		}
+		// ------------------------------------------------------------------------
+		void setUInt(const uint32_t& loc, const uint32_t& value) const
+		{
+			glProgramUniform1ui(m_RendererID, loc, value);
 		}
 		// ------------------------------------------------------------------------
 		void setFloat(const uint32_t& loc, const float& value) const
@@ -193,14 +198,19 @@ namespace gl {
 			glProgramUniform1f(m_RendererID, loc, value);
 		}
 		// ------------------------------------------------------------------------
-		void setNum(const uint32_t& loc, const int& value) const
+		void setNum(const uint32_t& loc, const int32_t& value) const
 		{
 			glProgramUniform1i(m_RendererID, loc, value);
 		}
 		// ------------------------------------------------------------------------
+		void setNum(const uint32_t& loc, const uint32_t& value) const
+		{
+			glProgramUniform1ui(m_RendererID, loc, value);
+		}
+		// ------------------------------------------------------------------------
 		void setVec2(const uint32_t& loc, const glm::vec2& value) const
 		{
-			glProgramUniform2fv(m_RendererID,loc, 1, glm::value_ptr(value));
+			glProgramUniform2fv(m_RendererID, loc, 1, glm::value_ptr(value));
 		}
 		void setVec2(const uint32_t& loc, const float& x, const float& y) const
 		{
@@ -258,7 +268,10 @@ namespace gl {
 		inline operator uint32_t& () { return m_RendererID; }
 		inline operator const uint32_t& () const { return m_RendererID; }
 
-		void Destroy() { glDeleteProgram(m_RendererID); }
+		void Destroy() {
+			glDeleteProgram(m_RendererID);
+			m_RendererID = 0;
+		}
 		// utility function for checking shader compilation/linking errors.
 		// ------------------------------------------------------------------------
 	private:

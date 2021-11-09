@@ -144,6 +144,7 @@ namespace gl {
 
         float rotateSpeed = 1.f * 6.f; // one cycle is one unit (in minutes)
         float angle = 0.f;
+        Shader shader;
 	private:
         const float startSunrise = 165.f;
         const float sunriseMid = 180.f;
@@ -153,7 +154,6 @@ namespace gl {
         const glm::vec3 dayVoidColor = glm::vec3(0.f, 0.5f, 0.75f);
         const glm::vec3 sunsetColor = glm::vec3(255, 178, 79) / 255.f;
         const glm::vec3 nightColor = glm::vec3(0.f, 0.f, 4.f / 255.f);
-        Shader shader;
         Cubemap skyboxTexture;
         VertexBuffer skyboxVertexBuffer;
         VertexArray skyBoxArray;

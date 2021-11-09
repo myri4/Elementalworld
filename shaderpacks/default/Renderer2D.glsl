@@ -34,11 +34,13 @@ in float v_Type;
 
 layout(binding = 0) uniform sampler2D u_Texture[32];
 
+layout(location = 0) out vec4 FragColor;
 void main()
 {
     int index = int(v_TexCoords.z);
-    vec4 finalColor = vec4(1.);
+    vec4 finalColor = vec4(1.f);
     if(v_Type == 0.f) finalColor = texture(u_Texture[index], v_TexCoords.xy);
     else if(v_Type == 1.f) finalColor = vec4(1.f, 1.f, 1.f, texture(u_Texture[index], v_TexCoords.xy).r);
-    gl_FragColor = finalColor * v_Color;
+
+    FragColor = finalColor * v_Color;
 }

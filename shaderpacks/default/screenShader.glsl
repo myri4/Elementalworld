@@ -17,6 +17,7 @@ void main()
 in vec2 v_TexCoords;
 
 layout(binding = 0) uniform sampler2D screenTexture;
+layout(location = 0) out vec4 FragColor;
 
 //vec3 GetKernelEffect(float kernel[9]){
 //
@@ -68,7 +69,7 @@ void main()
     //}
     //result = (result - 0.5f) * (1.0f + contrast) + 0.5f;
 
-    //gl_FragColor = vec4(result, 1.0f);
+    //FragColor = vec4(result, 1.0f);
 
-    gl_FragColor = texture(screenTexture, v_TexCoords);
+    FragColor = texture(screenTexture, v_TexCoords);
 }

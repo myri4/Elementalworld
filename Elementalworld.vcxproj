@@ -214,9 +214,7 @@
     <ClInclude Include="common\gl\VertexArray.h" />
     <ClInclude Include="common\gl\Buffer.hpp" />
     <ClInclude Include="common\Maths\Frustum.hpp" />
-    <ClInclude Include="common\Utils\Keyboard.hpp" />
     <ClInclude Include="common\Utils\Log.hpp" />
-    <ClInclude Include="common\Utils\Mouse.hpp" />
     <ClInclude Include="common\Utils\Random.hpp" />
     <ClInclude Include="common\Utilitiess\State.h" />
     <ClInclude Include="common\Utils\State.hpp" />

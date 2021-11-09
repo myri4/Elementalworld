@@ -1,1 +1,7 @@
-[10/05/21 14:32:25][info] APP: 720896
+[11/09/21 13:40:56][error] APP: Cannot find file at location: assets/textures/block/normal/crafting_table_top.png
+[11/09/21 13:40:56][error] APP: Cannot find file at location: assets/textures/block/normal/crafting_table_bottom.png
+[11/09/21 13:40:56][error] APP: Cannot find file at location: assets/textures/block/normal/crafting_table_side1.png
+[11/09/21 13:40:56][error] APP: Cannot find file at location: assets/textures/block/normal/crafting_table_side2.png
+[11/09/21 13:40:56][error] APP: Cannot find file at location: assets/textures/block/normal/crafting_table_side3.png
+[11/09/21 13:40:56][error] APP: Cannot find file at location: assets/textures/block/normal/crafting_table_side4.png
+[11/09/21 13:40:56][info] APP: 163840

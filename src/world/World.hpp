@@ -17,11 +17,11 @@
 #include <GUI/Button.hpp>
 #include <ppl.h>
 
-#define MODEL
+#define MODEL1
 
 namespace wc {
 	static const uint16_t RenderDistance = 16;	
-	Block blockData[256];
+	Block blockData[255];
 	uint32_t currentTexture = 0;
 
 	class Singleplayer {
@@ -41,20 +41,23 @@ namespace wc {
 		gl::UniformBuffer transforms;
 		gl::UniformBuffer lights;
 		uint32_t currentLightID = 0;
+		bool lightUpdate = false;
 
 		struct TransformData {
 			glm::mat4 proj = glm::mat4(1.f);
 			glm::mat4 view = glm::mat4(1.f);
 			float dt = 0.f;
 			uint32_t numLights = 0;
+			alignas(16) glm::vec3 cameraPos = glm::vec3(0.f);
+			alignas(16) glm::vec3 lower_left_corner = glm::vec3(0.f);
+			alignas(16) glm::vec3 horizontal = glm::vec3(0.f);
+			alignas(16) glm::vec3 vertical = glm::vec3(0.f);
+			alignas(16) glm::vec2 windowSize = glm::vec2(0.f);
 			alignas(16) glm::vec3 fogColor = glm::vec3(0.f);
-			glm::vec3 cameraPos = glm::vec3(0.f);
-			alignas(16) glm::vec3 ambientColor = glm::vec3(0.03f);
 			float u_Density = 0.007f;
 			float u_Gradient = 1.5f;
 		};
 
-		gl::IndexBuffer worldIndexBuffer;
 		gl::VertexArray chunkMeshArray;
 		std::array<Chunk, RenderDistance * RenderDistance * RenderDistance> chunks;
 		FastNoiseLite worldNoise;
@@ -71,6 +74,7 @@ namespace wc {
 		gl::Shader modelShader;
 		Animation animation;
 		Model model;
+		glm::vec3 modelPos = { (RenderDistance * RenderDistance * 0.5f + RenderDistance), 51.f , (RenderDistance * RenderDistance * 0.5f) };
 #endif
 
 		static void AddBlockScript(const char* script) {
@@ -83,11 +87,12 @@ namespace wc {
 			if (blockState["id"].valid()) blockID = blockState["id"];
 			if (blockState["isCollidable"].valid()) block.isCollidable = blockState["isCollidable"];
 			if (blockState["ConnectionType"].valid()) conType = blockState["ConnectionType"];
+			if (blockState["color"].valid()) block.color = blockState["color"];
 
-			if (conType == "CONNECT_DEFAULT")    block.blockConnectionType = ConnectionType::CONNECT_DEFAULT;
-			else if (conType == "FLUID_CONNECT") block.blockConnectionType = ConnectionType::FLUID_CONNECT;
-			else if (conType == "NO_CONNECT")    block.blockConnectionType = ConnectionType::NO_CONNECT;
-			else if (conType == "X_CONNECT")     block.blockConnectionType = ConnectionType::X_CONNECT;
+			if (conType == "CONNECT_DEFAULT")    block.connectionType = ConnectionType::CONNECT_DEFAULT;
+			else if (conType == "FLUID_CONNECT") block.connectionType = ConnectionType::FLUID_CONNECT;
+			else if (conType == "NO_CONNECT")    block.connectionType = ConnectionType::NO_CONNECT;
+			else if (conType == "X_CONNECT")     block.connectionType = ConnectionType::X_CONNECT;
 
 			std::string diffusePath = "assets/textures/block/diffuse/";
 			std::string normalPath = "assets/textures/block/normal/";
@@ -226,7 +231,7 @@ namespace wc {
 				"SetFractalType", &FastNoiseLite::SetFractalType,
 				"SetMultiplier", &FastNoiseLite::SetMultiplier
 				);
-			worldGenState.new_usertype<Block>("Block", sol::constructors<void()>(), "texture", &Block::texture, "ConnectionType", &Block::blockConnectionType);
+			worldGenState.new_usertype<Block>("Block", sol::constructors<void()>(), "texture", &Block::texture, "ConnectionType", &Block::connectionType);
 			//worldGenState.new_enum("FractalType", {{ "None", FastNoiseLite::FractalType::FractalType_None },{ "None", FastNoiseLite::FractalType::FractalType_None } });
 			worldGenState.script_file("scripts/worldGen.lua");
 			if (worldGenState["noise"].valid()) worldNoise = worldGenState["noise"];
@@ -260,34 +265,18 @@ namespace wc {
 			p.Position = { (RenderDistance * RenderDistance * 0.5f), (RenderDistance * RenderDistance * 0.5f), (RenderDistance * RenderDistance * 0.5f) };
 
 			lineBatcher.Create();
-
-			uint32_t indices[MaxFaceCount * 6];
-			uint32_t ioffset = 0;
-			uint32_t i = 0;
-			for (; i < ARRAYSIZE(indices); i += 6) {
-				indices[i + 0] = 0 + ioffset;
-				indices[i + 1] = 1 + ioffset;
-				indices[i + 2] = 2 + ioffset;
-
-				indices[i + 3] = 2 + ioffset;
-				indices[i + 4] = 3 + ioffset;
-				indices[i + 5] = 0 + ioffset;
-
-				ioffset += 4;
-			}
-			worldIndexBuffer.Create(indices, sizeof(indices), 0);
 			chunkMeshArray.Create();
 			chunkMeshArray.VertexAttribPointer(0, 3, offsetof(Vertex, Position));  // position attribute
-			chunkMeshArray.VertexAttribPointer(1, 3, offsetof(Vertex, TexCoords)); // texture coord attribute
-			chunkMeshArray.VertexAttribPointer(2, 4, offsetof(Vertex, NormalType)); // type attribute
+			chunkMeshArray.VertexAttribPointer(1, 1, offsetof(Vertex, TexCoords)); // texture coord attribute
+			chunkMeshArray.VertexAttribPointer(2, 3, offsetof(Vertex, Normal)); // type attribute
 			chunkMeshArray.VertexAttribPointer(3, 1, offsetof(Vertex, color)); // color attribute
 			WC_INFO(MaxVertexCount * sizeof(Vertex));
-			chunkMeshArray.AddIndexBuffer(worldIndexBuffer);
 			for (ChunkID chunkID = 0; chunkID < chunks.size(); chunkID++) {
 				//Configuring the vertex array
-				chunks[chunkID].chunkMeshBuffer.Create(nullptr, MaxVertexCount * sizeof(Vertex), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
+				chunks[chunkID].meshBuffer.Create(nullptr, MaxVertexCount * sizeof(Vertex), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
+				chunks[chunkID].indexBuffer.Create(nullptr, sizeof(uint32_t) * MaxFaceCount * 6, GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
 
-				chunks[chunkID].chunkPos = to3D(chunkID, glm::ivec3(RenderDistance));
+				chunks[chunkID].position = to3D(chunkID, glm::ivec3(RenderDistance));
 				UpdateNeighbours(chunkID);
 			}
 
@@ -299,17 +288,13 @@ namespace wc {
 #endif // MODEL
 			numberGen.seed = worldNoise.GetSeed();
 
-			BACK_FACE.CalculateNormal();
-			TOP_FACE.CalculateNormal();
-			LEFT_FACE.CalculateNormal();
-			RIGHT_FACE.CalculateNormal();
-			FRONT_FACE.CalculateNormal();
-			BOTTOM_FACE.CalculateNormal();
-
 			X_FACE1.CalculateNormal();
 			X_FACE2.CalculateNormal();
 			p.inventory.AddItem(10, 0, 50);
 			p.inventory.AddItem(18, 1, 50);
+			p.inventory.AddItem(5, 2, 50);
+			p.inventory.AddItem(6, 3, 50);
+			p.inventory.AddItem(19, 4, 50);
 
 			biomeMap[DESERT].topBlock = 4;
 			biomeMap[DESERT].trees = false;
@@ -323,41 +308,53 @@ namespace wc {
 			biomeMap[SNOW_PEAK].topBlock = 8;
 			biomeMap[SNOW_PEAK].minTemp = -1.f;
 			biomeMap[SNOW_PEAK].maxTemp = 0.2f;
-			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 1.f, 1.f, 0.f)));
-			addLight(modelPos, convertColor(glm::vec4(1.f)));
+			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f)));
+			//addLight(modelPos, convertColor(glm::vec4(1.f)));
+			recipes[0].data[0] = 6; recipes[0].data[1] = -1;
+			recipes[0].data[2] = -1; recipes[0].data[3] = -1;
+			recipes[0].amount = 4;
+			recipes[0].result = 18;
+
+			recipes[1].data[0] = 18; recipes[1].data[1] = 18;
+			recipes[1].data[2] = 18; recipes[1].data[3] = 18;
+			recipes[1].amount = 1;
+			recipes[1].result = 19;
+
 			BlockMeshes.Load("assets/models/seagrass.ply");
+			//blockData[18].connectionType = ConnectionType::CUSTOM_MODEL;
 		}
 		
-		glm::vec3 modelPos = { (RenderDistance * RenderDistance * 0.5f + RenderDistance), 51.f , (RenderDistance * RenderDistance * 0.5f) };
 		void Update(const glm::vec2& windsize, const float& deltaTime) {
-			//camera.center(p.Position, p.rotation.x);
-			assets.Bind(0);
-			//assets.BindNormal(1);
-			// activate shader
-			chunkShader.use();
-
-			glm::mat4 projection = glm::perspective(glm::radians(camera.FOV), windsize.x / windsize.y, 0.1f, Far);
-
 			// camera/view transformation
 			TransformData data;
-			data.proj = projection;
+			data.proj = glm::perspective(glm::radians(camera.FOV), windsize.x / windsize.y, 0.1f, Far);
 			data.view = camera.GetViewMatrix();
 			data.dt = deltaTime;
-			data.numLights = currentLightID;
 			data.cameraPos = camera.Position;
+			data.lower_left_corner = camera.lower_left_corner;
+			data.vertical = camera.vertical;
+			data.horizontal = camera.horizontal;
+			data.numLights = currentLightID;
+			data.windowSize = windsize;
+
 			skybox.Update(deltaTime, data.fogColor);
-			lighting[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(-skybox.angle), glm::vec3(0.f, 0.f, 1.f)));
-
+			lighting[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(skybox.angle), glm::vec3(0.f, 0.f, 1.f)));
+			//lighting[0].color = convertColor(glm::vec4(data.fogColor * glm::dot(lighting[0].vector, glm::vec3(0.f, -1.f, 0.f)), 0.f));
 			transforms.SetData(0, sizeof(TransformData), &data);
+			if (lightUpdate) {
+				lights.SetData(0, sizeof(Light) * currentLightID, lighting);
+				lightUpdate = false;
+			}
+			else {
+				lights.SetData(0, sizeof(Light), lighting);
+			}
 
-			lights.SetData(0, sizeof(lighting), lighting);
-
-			viewFrustum.update(projection * camera.GetViewMatrix());
+			viewFrustum.update(data.proj * data.view);
 			uint8_t chunkHalf = RenderDistance / 2;
 			glm::vec3 currentPlayerPos = getChunkPos(p.Position);
 
 			for (ChunkID i = 0; i < chunks.size(); i++) {
-				glm::vec3 currChunkPos = chunks[i].chunkPos;
+				glm::vec3 currChunkPos = chunks[i].position;
 				if (currChunkPos.x < currentPlayerPos.x - chunkHalf) ResetChunk(i, glm::ivec3(currentPlayerPos.x + chunkHalf - 1, currChunkPos.y, currChunkPos.z));
 				if (currChunkPos.x > currentPlayerPos.x + chunkHalf) ResetChunk(i, glm::ivec3(currentPlayerPos.x - chunkHalf + 1, currChunkPos.y, currChunkPos.z));
 
@@ -374,12 +371,16 @@ namespace wc {
 			for (ChunkID chunk = 0; chunk < chunks.size(); chunk++)
 				if (!chunks[chunk].generatedStructures) { GenerateChunkStructures(chunk); chunks[chunk].generatedStructures = true; }
 
+			chunkShader.use();
+			assets.Bind(0);
+			//assets.BindNormal(1);
 			for (ChunkID i = 0; i < chunks.size(); i++) {
 			
 				if (chunks[i].canBeUpdated && !chunks[i].empty) { UpdateMesh(i); chunks[i].canBeUpdated = false; }
 			
 				if (!chunks[i].empty && ShowChunk(i) && chunks[i].IndexCount > 0) {
-					chunkMeshArray.AddVertexBuffer(chunks[i].chunkMeshBuffer, sizeof(Vertex));
+					chunkMeshArray.AddVertexBuffer(chunks[i].meshBuffer, sizeof(Vertex));
+					chunkMeshArray.AddIndexBuffer(chunks[i].indexBuffer);
 					chunkMeshArray.Bind();
 					Renderer::DrawIndexed(chunks[i].IndexCount);
 				}
@@ -481,7 +482,7 @@ namespace wc {
 		void OnInput(const glm::ivec2& windpos, const glm::ivec2& windSize, bool& HasFocus, const float& deltaTime) {
 
 			// MENU MANAGMENT
-			if (Keyboard::isKeyPressed(Keyboard::Key::E) && Action == GLFW_PRESS && keyPressed)
+			if (Keyboard::getKey(Keyboard::Key::E) == GLFW_PRESS)
 					mode = MenuMode::INVENTORY;
 
 			// GAMEPLAY
@@ -529,7 +530,7 @@ namespace wc {
 			
 			camera.FOV = addFOV + 90.f;
 
-			if (Keyboard::isKeyPressed(Keyboard::Key::T) && Action == GLFW_PRESS && keyPressed) p.collision = !p.collision;
+			if (Keyboard::getKey(Keyboard::Key::T) == GLFW_PRESS) p.collision = !p.collision;
 
 			if (mouseScrolled) {
 				if (scrollY < 0) p.currentSlot++;
@@ -540,10 +541,10 @@ namespace wc {
 			
 			int16_t xt, yt;
 
-			glm::ivec2 pos = Mouse::GetMousePos();
+			glm::ivec2 pos = Mouse::GetMousePosToWindow();
 
-			xt = (int16_t)(windpos.x + windSize.x * 0.5f);
-			yt = (int16_t)(windpos.y + windSize.y * 0.5f);
+			xt = windSize.x / 2;
+			yt = windSize.y / 2;
 
 			float ms = 1.f / MouseSensitivity;
 
@@ -592,32 +593,15 @@ namespace wc {
 				p.velocity.y *= 0.009f;
 			//////////////
 
-			camera.UpdateCameraAngles();
+			camera.UpdateCameraAngles(windSize.x / windSize.y);
 			Mouse::SetMousePosition(xt, yt);
 			
 			Mouse::ShowMouse(!HasFocus);
 
-			bool flyingButton = Keyboard::isKeyPressed(Keyboard::Key::G) && Action == GLFW_PRESS && keyPressed;
+			if (Keyboard::getKey(Keyboard::Key::G) == GLFW_PRESS) p.flying = !p.flying;
 
-			if (flyingButton) p.flying = !p.flying;
-
-			bool bBreak = mouseButton == (int)Mouse::MouseButton::LBUTTON && mouseAction == GLFW_PRESS && mouseUsed;
-			bool bPlace = mouseButton == (int)Mouse::MouseButton::RBUTTON && mouseAction == GLFW_PRESS && mouseUsed;
-			bool bSave  = Keyboard::isKeyPressed(Keyboard::Key::P) && Action == GLFW_PRESS && keyPressed;
-			bool bLoad  = Keyboard::isKeyPressed(Keyboard::Key::O) && Action == GLFW_PRESS && keyPressed;
-			bool bReset = Keyboard::isKeyPressed(Keyboard::Key::U) && Action == GLFW_PRESS && keyPressed;
-			bool bStart = Keyboard::isKeyPressed(Keyboard::Key::V) && Action == GLFW_PRESS && keyPressed;
-			bool bEnd   = Keyboard::isKeyPressed(Keyboard::Key::B) && Action == GLFW_PRESS && keyPressed;
-			bool bMove  = Keyboard::isKeyPressed(Keyboard::Key::N) && Action == GLFW_PRESS && keyPressed;
-
-			if (bReset) skybox.angle = 330.f;
-			if (bMove) modelPos = p.Position;
-
-			if (bStart) sStart = (glm::ivec3)m_rayEnd + glm::ivec3(1);
-			if (bEnd) sEnd = (glm::ivec3)m_rayEnd + glm::ivec3(1);
-
-			if (bSave) SaveStructure("assets/structures/tesst.txt", sStart, sEnd);
-			if (bLoad) LoadStructure("assets/structures/tesst.txt", (glm::ivec3)p.Position);
+			bool bBreak = Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)  == GLFW_PRESS;
+			bool bPlace = Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 
 			ray.m_rayOrigin = camera.Position;
 			ray.m_rayDir = camera.Front;
@@ -644,9 +628,21 @@ namespace wc {
 							setBlock(floor(m_rayEnd), 0);
 						}
 						else if (bPlace) {
-							int itemID = p.inventory.data[p.currentSlot].itemID;
-							if (p.inventory.RemoveItem(p.currentSlot))
-								setBlock(m_rayLastPos, items[itemID].block);
+							if (getBlock(floor(m_rayEnd)) == 20) {
+								if (Keyboard::isKeyPressed(Keyboard::Key::LShift)) {
+									int itemID = p.inventory.data[p.currentSlot].itemID;
+									if (p.inventory.RemoveItem(p.currentSlot))
+										setBlock(m_rayLastPos, items[itemID].block);
+								}
+								else {
+									mode = MenuMode::INVENTORY;
+								}
+							}
+							else {
+								int itemID = p.inventory.data[p.currentSlot].itemID;
+								if (p.inventory.RemoveItem(p.currentSlot))
+									setBlock(m_rayLastPos, items[itemID].block);
+							}
 						}
 						break;
 					}
@@ -690,7 +686,7 @@ namespace wc {
 		}
 
 		bool ShowChunk(const ChunkID& chunk) { //@TODO: Optimize
-			glm::vec3 pos1 = chunks[chunk].chunkPos * chunkPosV(chunkSize);
+			glm::vec3 pos1 = chunks[chunk].position * chunkPosV(chunkSize);
 			glm::vec3 pos = pos1;
 			if (viewFrustum.isBoxInFrustum(pos)) return true;
 			
@@ -716,7 +712,7 @@ namespace wc {
 		}
 
 		/*void SaveChunk(const ChunkID& chunk) {
-			glm::ivec3 pos = chunks[chunk].chunkPos;
+			glm::ivec3 pos = chunks[chunk].position;
 			int X = pos.x;
 			int Y = pos.y;
 			int Z = pos.z;
@@ -761,19 +757,19 @@ namespace wc {
 
 		std::vector<std::pair<BlockID, uint16_t>> Compress(const ChunkID& chunk) {
 			std::vector<std::pair<BlockID, uint16_t>> compressed;
-			BlockID pBlockID = chunks[chunk].chunkData[0][0][0];
+			BlockID pBlockID = chunks[chunk].data[0][0][0];
 			uint16_t count = 0;
 
 			for (uint8_t y = 0; y < chunkSize; y++)
 			for (uint8_t z = 0; z < chunkSize; z++)
 			for (uint8_t x = 0; x < chunkSize; x++) // @TODO: optimize
 			{
-				BlockID block = chunks[chunk].chunkData[x][y][z];
+				BlockID block = chunks[chunk].data[x][y][z];
 				//if (block != 0) {
 					if (block == pBlockID) count++;
 					else {
 						compressed.emplace_back(pBlockID, count);
-						pBlockID = chunks[chunk].chunkData[x][y][z];
+						pBlockID = chunks[chunk].data[x][y][z];
 						count = 1;
 					}
 				//}
@@ -793,7 +789,7 @@ namespace wc {
 					uint8_t x = pos.x;
 					uint8_t y = pos.z;
 					uint8_t z = pos.y;
-					chunks[chunk].chunkData[x][y][z] = blockID;
+					chunks[chunk].data[x][y][z] = blockID;
 					counter++;
 				}
 			}
@@ -802,15 +798,15 @@ namespace wc {
 		}*/
 
 		void ResetChunk(const ChunkID& chunk, const glm::ivec3& newChunkPos) {
-			chunks[chunk].chunkPos = newChunkPos;
+			chunks[chunk].position = newChunkPos;
 			UpdateNeighbours(chunk);
 
 			//uint8_t y = 0, x = 0, z = 0;
 			//for (; y < chunkSize; y++)
 			//	for (x = 0; x < chunkSize; x++)
 			//		for (z = 0; z < chunkSize; z++) {
-			//			if (blockData[chunks[chunk].chunkData[x][y][z]].emitLight) {
-			//				glm::vec3 testPosition = (glm::vec3)chunks[chunk].chunkPos * (float)(chunkSize) + glm::vec3(x, y, z) + glm::vec3(0.5f);
+			//			if (blockData[chunks[chunk].data[x][y][z]].emitLight) {
+			//				glm::vec3 testPosition = (glm::vec3)chunks[chunk].position * (float)(chunkSize) + glm::vec3(x, y, z) + glm::vec3(0.5f);
 			//				for (uint32_t i = 0u; i < NUM_LIGHTS; i++)
 			//					if (lighting[i].vector == testPosition) {
 			//						WC_INFO("Found");
@@ -827,33 +823,33 @@ namespace wc {
 		}
 
 		void UpdateNeighbours(const ChunkID& chunk) {
-			glm::ivec3 neighborXpos = chunks[chunk].chunkPos + chunkPosV{ 1,0,0 };
-			glm::ivec3 neighborYpos = chunks[chunk].chunkPos + chunkPosV{ 0,1,0 };
-			glm::ivec3 neighborZpos = chunks[chunk].chunkPos + chunkPosV{ 0,0,1 };
+			glm::ivec3 neighborXpos = chunks[chunk].position + chunkPosV{ 1,0,0 };
+			glm::ivec3 neighborYpos = chunks[chunk].position + chunkPosV{ 0,1,0 };
+			glm::ivec3 neighborZpos = chunks[chunk].position + chunkPosV{ 0,0,1 };
 
-			glm::ivec3 neighborXneg = chunks[chunk].chunkPos - chunkPosV{ 1,0,0 };
-			glm::ivec3 neighborYneg = chunks[chunk].chunkPos - chunkPosV{ 0,1,0 };
-			glm::ivec3 neighborZneg = chunks[chunk].chunkPos - chunkPosV{ 0,0,1 };
+			glm::ivec3 neighborXneg = chunks[chunk].position - chunkPosV{ 1,0,0 };
+			glm::ivec3 neighborYneg = chunks[chunk].position - chunkPosV{ 0,1,0 };
+			glm::ivec3 neighborZneg = chunks[chunk].position - chunkPosV{ 0,0,1 };
 
-			chunks[chunk].neighborXpos = -1;
-			chunks[chunk].neighborYpos = -1;
-			chunks[chunk].neighborZpos = -1;
+			chunks[chunk].neighborPos[0] = -1;
+			chunks[chunk].neighborPos[1] = -1;
+			chunks[chunk].neighborPos[2] = -1;
 
-			chunks[chunk].neighborXneg = -1;
-			chunks[chunk].neighborYneg = -1;
-			chunks[chunk].neighborZneg = -1;
+			chunks[chunk].neighborNeg[0] = -1;
+			chunks[chunk].neighborNeg[1] = -1;
+			chunks[chunk].neighborNeg[2] = -1;
 
 			concurrency::parallel_for(ChunkID(0), (ChunkID)chunks.size(), [&](ChunkID i) {
-				if (chunks[i].chunkPos == neighborXpos) { chunks[chunk].neighborXpos = i; chunks[chunks[chunk].neighborXpos].neighborXneg = chunk; }
-				if (chunks[i].chunkPos == neighborYpos) { chunks[chunk].neighborYpos = i; chunks[chunks[chunk].neighborYpos].neighborYneg = chunk; }
-				if (chunks[i].chunkPos == neighborZpos) { chunks[chunk].neighborZpos = i; chunks[chunks[chunk].neighborZpos].neighborZneg = chunk; }
+				if (chunks[i].position == neighborXpos) { chunks[chunk].neighborPos[0] = i; chunks[chunks[chunk].neighborPos[0]].neighborNeg[0] = chunk; }
+				if (chunks[i].position == neighborYpos) { chunks[chunk].neighborPos[1] = i; chunks[chunks[chunk].neighborPos[1]].neighborNeg[1] = chunk; }
+				if (chunks[i].position == neighborZpos) { chunks[chunk].neighborPos[2] = i; chunks[chunks[chunk].neighborPos[2]].neighborNeg[2] = chunk; }
 
-				if (chunks[i].chunkPos == neighborXneg) { chunks[chunk].neighborXneg = i; chunks[chunks[chunk].neighborXneg].neighborXpos = chunk; }
-				if (chunks[i].chunkPos == neighborYneg) { chunks[chunk].neighborYneg = i; chunks[chunks[chunk].neighborYneg].neighborYpos = chunk; }
-				if (chunks[i].chunkPos == neighborZneg) { chunks[chunk].neighborZneg = i; chunks[chunks[chunk].neighborZneg].neighborZpos = chunk; }
+				if (chunks[i].position == neighborXneg) { chunks[chunk].neighborNeg[0] = i; chunks[chunks[chunk].neighborNeg[0]].neighborPos[0] = chunk; }
+				if (chunks[i].position == neighborYneg) { chunks[chunk].neighborNeg[1] = i; chunks[chunks[chunk].neighborNeg[1]].neighborPos[1] = chunk; }
+				if (chunks[i].position == neighborZneg) { chunks[chunk].neighborNeg[2] = i; chunks[chunks[chunk].neighborNeg[2]].neighborPos[2] = chunk; }
 
-				if (chunks[chunk].neighborXpos != -1 && chunks[chunk].neighborYpos != -1 && chunks[chunk].neighborZpos != -1 &&
-					chunks[chunk].neighborXneg != -1 && chunks[chunk].neighborYneg != -1 && chunks[chunk].neighborZneg != -1) return;			
+				if (chunks[chunk].neighborPos[0] != -1 && chunks[chunk].neighborPos[1] != -1 && chunks[chunk].neighborPos[2] != -1 &&
+					chunks[chunk].neighborNeg[0] != -1 && chunks[chunk].neighborNeg[1] != -1 && chunks[chunk].neighborNeg[2] != -1) return;			
 			});
 		}
 
@@ -865,20 +861,20 @@ namespace wc {
 			for(int x2 = x - 2; x2 < x + 3; x2++)
 				for (int y2 = y - 3 + trunkHeight - 1; y2 < y + 2 + trunkHeight - 1; y2++)
 					for (int z2 = z - 2; z2 < z + 3; z2++) {
-						setBlock(glm::ivec3(x2, y2, z2) + (int)chunkSize * chunks[chunk].chunkPos, 9);
+						setBlock(glm::ivec3(x2, y2, z2) + (int)chunkSize * chunks[chunk].position, 9);
 					}
 			
 			for (int i = 0; i < trunkHeight; i++) {
-				setBlock(glm::ivec3(x, y + i, z) + (int)chunkSize * chunks[chunk].chunkPos, 7);
+				setBlock(glm::ivec3(x, y + i, z) + (int)chunkSize * chunks[chunk].position, 7);
 			}
 		}
 
 		void GenerateChunkTerrain(const ChunkID& chunk) {
 			const float temperature_loss = 0.00003f;
-				memset(&chunks[chunk].chunkData, 0, sizeof(chunks[chunk].chunkData));
+				memset(&chunks[chunk].data, 0, sizeof(chunks[chunk].data));
 				concurrency::parallel_for(ChunkID(0), (ChunkID)chunkSize, [&](ChunkID z){
 					for (uint8_t x = 0; x < chunkSize; x++) {
-						glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].chunkPos.x * chunkSize, z + chunks[chunk].chunkPos.z * chunkSize);
+						glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
 						int heightMap =	(int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
 						float floraGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
 						float baseTemperature = 0.f;// temperatureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
@@ -886,7 +882,7 @@ namespace wc {
 						int dirtDepth = (int)(floraGen * 3.f) + 2;
 
 						for (uint8_t y = 0; y < chunkSize; y++) {
-								glm::ivec3 pos = chunks[chunk].chunkPos * chunkPosV(chunkSize) + chunkPosV(x, y, z);
+								glm::ivec3 pos = chunks[chunk].position * chunkPosV(chunkSize) + chunkPosV(x, y, z);
 								float temperature = 1.f - (pos.y * temperature_loss + baseTemperature);
 								//temperature *= (1.f - (pos.y / worldNoise.GetMultiplier()));
 								temperature = glm::mix(temperature, 1.f, (pos.y / worldNoise.GetMultiplier()));
@@ -930,15 +926,15 @@ namespace wc {
 				});
 			//UpdateChunkMissedBlocks
 			//if (numberMissingBlocks > 0) {
-			//	glm::ivec3 chunkSpaceStart = chunks[chunk].chunkPos * (int)chunkSize;
-			//	glm::ivec3 chunkSpaceEnd = (int)chunkSize + chunks[chunk].chunkPos * (int)chunkSize;
+			//	glm::ivec3 chunkSpaceStart = chunks[chunk].position * (int)chunkSize;
+			//	glm::ivec3 chunkSpaceEnd = (int)chunkSize + chunks[chunk].position * (int)chunkSize;
 			//	glm::ivec3 chunkP = getChunkPos(missingBlocks[chunk].second);
 			//
 			//	glm::vec3 currentPlayerPos = getChunkPos(p.Position);
 			//	uint8_t chunkHalf = RenderDistance / 2;
 			//
 			//	for (uint32_t i = 0; i < numberMissingBlocks; i++) {
-			//		glm::vec3 currChunkPos = chunks[i].chunkPos;
+			//		glm::vec3 currChunkPos = chunks[i].position;
 			//		if (currChunkPos.x < currentPlayerPos.x - chunkHalf) {numberMissingBlocks--; missingBlocks[i] = missingBlocks[numberMissingBlocks];}
 			//		if (currChunkPos.x > currentPlayerPos.x + chunkHalf) {numberMissingBlocks--; missingBlocks[i] = missingBlocks[numberMissingBlocks];}
 			//
@@ -972,13 +968,13 @@ namespace wc {
 		void GenerateChunkStructures(const ChunkID& chunk) {
 			concurrency::parallel_for(ChunkID(0), (ChunkID)chunkSize, [&](ChunkID z) {
 				for (uint8_t x = 0; x < chunkSize; x++) {
-					glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].chunkPos.x * chunkSize, z + chunks[chunk].chunkPos.z * chunkSize);
+					glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
 					int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
 					float treeGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
 					float baseTemperature = temperatureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
 
 					for (uint8_t y = 0; y < chunkSize; y++) {
-						glm::ivec3 pos = chunks[chunk].chunkPos * chunkPosV(chunkSize) + chunkPosV(x, y, z);
+						glm::ivec3 pos = chunks[chunk].position * chunkPosV(chunkSize) + chunkPosV(x, y, z);
 						uint32_t type = getBiome(baseTemperature, 0.f);
 						float CaveNoise = caveNoise.GetNoise((float)pos.x, (float)pos.y, (float)pos.z);
 						bool onGrass = !(pos.y <= water_level + (int)(treeGen * 2.f) && pos.y == heightMap);
@@ -997,23 +993,23 @@ namespace wc {
 			uint16_t y = pos.y;
 			uint16_t z = pos.z;
 
-			BlockID& chunkBlock = chunks[chunk].chunkData[x][y][z];
+			BlockID& chunkBlock = chunks[chunk].data[x][y][z];
 			if (block == 0 && blockData[chunkBlock].emitLight) 
-				removeLight((glm::vec3)chunks[chunk].chunkPos * (float)(chunkSize)+(glm::vec3)pos + glm::vec3(0.5f));			
+				removeLight((glm::vec3)chunks[chunk].position * (float)(chunkSize)+(glm::vec3)pos + glm::vec3(0.5f));			
 			else if (blockData[block].emitLight) 
-				addLight((glm::vec3)chunks[chunk].chunkPos * (float)chunkSize + (glm::vec3)pos + glm::vec3(0.5f), convertColor(glm::vec4(0.f, 1.f, 1.f, 1.f)));			
+				addLight((glm::vec3)chunks[chunk].position * (float)chunkSize + (glm::vec3)pos + glm::vec3(0.5f), convertColor(glm::vec4(1.f)));			
 
-			chunks[chunk].chunkData[x][y][z] = block;
+			chunks[chunk].data[x][y][z] = block;
 			chunks[chunk].canBeUpdated = true;
 			chunks[chunk].empty = chunks[chunk].empty && block == 0;
 
-			if (x == 0) { int16_t neg = chunks[chunk].neighborXneg; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
-			if (y == 0) { int16_t neg = chunks[chunk].neighborYneg; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
-			if (z == 0) { int16_t neg = chunks[chunk].neighborZneg; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
+			if (x == 0) { int16_t neg = chunks[chunk].neighborNeg[0]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
+			if (y == 0) { int16_t neg = chunks[chunk].neighborNeg[1]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
+			if (z == 0) { int16_t neg = chunks[chunk].neighborNeg[2]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
 
-			if (x == chunkSize - 1) { int16_t Pos = chunks[chunk].neighborXpos; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
-			if (y == chunkSize - 1) { int16_t Pos = chunks[chunk].neighborYpos; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
-			if (z == chunkSize - 1) { int16_t Pos = chunks[chunk].neighborZpos; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
+			if (x == chunkSize - 1) { int16_t Pos = chunks[chunk].neighborPos[0]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
+			if (y == chunkSize - 1) { int16_t Pos = chunks[chunk].neighborPos[1]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
+			if (z == chunkSize - 1) { int16_t Pos = chunks[chunk].neighborPos[2]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
 		}
 
 		uint32_t addLight(const glm::vec3& position, const uint32_t& color) {
@@ -1022,6 +1018,7 @@ namespace wc {
 				lighting[currentLightID].vector = position;
 				lighting[currentLightID].color = color;
 				currentLightID++;
+				lightUpdate = true;
 			}
 			return light;
 		}
@@ -1031,6 +1028,7 @@ namespace wc {
 				if (lighting[i].vector == position) {
 					currentLightID--;
 					lighting[i] = lighting[currentLightID];
+					lightUpdate = true;
 					break;
 				}
 		}
@@ -1050,298 +1048,256 @@ namespace wc {
 			uint32_t offset = 0;
 			chunks[chunk].IndexCount = 0;
 			Vertex vertices[4];
+			uint32_t ioffset = 0;
+			uint32_t& indIndex = chunks[chunk].IndexCount;
+			uint32_t indices[MaxFaceCount * 6];
 
-			chunkPosV chunkPos = chunks[chunk].chunkPos * chunkPosV(chunkSize);
-			//void* ptr = chunks[chunk].chunkMeshBuffer.Map(GL_WRITE_ONLY);
-			auto addFace = [&](const Face& face, const glm::vec3& pos, const BlockID& block, const int8_t& type, const uint32_t& color = 0xFFFFFF) {
-				if (chunks[chunk].IndexCount >= MaxFaceCount * 6) { /*WC_ERROR("Memory overflow!");*/ return; }
+			chunkPosV chunkPos = chunks[chunk].position * chunkPosV(chunkSize);
+			//void* ptr = chunks[chunk].meshBuffer.Map(GL_WRITE_ONLY);
+			auto addMesh = [&](const Face& face, const glm::vec3& pos, const BlockID& block, const glm::vec2& size = glm::vec2(1.f, 1.f)) {
+				if (chunks[chunk].IndexCount >= MaxFaceCount * 6) { /*WC_ERROR("Memory overflow!");*/ return; }	
 
-				if (block == 218) {
-					for (uint32_t i = 0; i < BlockMeshes.vertices.size(); i++) {
-						chunks[chunk].chunkMeshBuffer.SetData(offset, sizeof(Vertex), &BlockMeshes.vertices[i]);
-						offset += sizeof(Vertex);
-					}
-				}
-				else {
+				const uint32_t& texture = face.texID;
 				
-					uint32_t& texture = blockData[block].texture[(uint32_t)face.texID];
+				const glm::vec2 TexCoords[] = {
+					glm::vec2(0.f,    0.f),
+					glm::vec2(0.f,    size.y),
+					glm::vec2(size.x, size.y),
+					glm::vec2(size.x, 0.f),
+				};
+
+				const uint32_t indexArray[] = {
+					0, 1, 2,
+					2, 3, 0
+				};
 				
-					const uint8_t textureSizeX = 1;
-					const uint8_t textureSizeY = 1;
+				for (uint32_t i = 0; i < ARRAYSIZE(face.corner); i++) 
+					vertices[i] = Vertex(face.corner[i] + pos, { TexCoords[i], texture }, blockData[block].connectionType, blockData[block].color, face.normal);
 				
-					const glm::vec2 TexCoords[4] = {
-						glm::vec2(0.f, 0.f),
-						glm::vec2(0.f,          textureSizeY),
-						glm::vec2(textureSizeX, textureSizeY),
-						glm::vec2(textureSizeX, 0.f),
-					};
+				for (uint32_t i = 0; i < ARRAYSIZE(indexArray); i++)
+					indices[indIndex + i] = indexArray[i] + ioffset;
 				
-					vertices[1] = Vertex(face.corner1 + pos, { TexCoords[0], texture }, type, color, face.normal);
-					vertices[0] = Vertex(face.corner2 + pos, { TexCoords[1], texture }, type, color, face.normal);
-					vertices[3] = Vertex(face.corner3 + pos, { TexCoords[2], texture }, type, color, face.normal);
-					vertices[2] = Vertex(face.corner4 + pos, { TexCoords[3], texture }, type, color, face.normal);
-					//memset((void*)((int*)ptr + offset), (int)vertices, sizeof(vertices));
-				
-					chunks[chunk].chunkMeshBuffer.SetData(offset, sizeof(vertices), vertices);
-					chunks[chunk].IndexCount += 6;
-					offset += sizeof(vertices);
-				}
+
+				ioffset += ARRAYSIZE(face.corner);
+				indIndex += ARRAYSIZE(indexArray);
+				chunks[chunk].meshBuffer.SetData(offset, sizeof(vertices), vertices);
+				offset += sizeof(vertices);		
 			};
 
-			uint8_t y = 0, x = 0, z = 0;
-					for (; y < chunkSize; y++)
-					for (x = 0; x < chunkSize; x++)
-					for (z = 0; z < chunkSize; z++)
-					{
-						BlockID block = chunks[chunk].chunkData[x][y][z];
-						if (block > 0)
-						{
-							BlockID checkBlock = 0;
-							auto type = blockData[block].blockConnectionType;
-							glm::vec3 pos = (glm::vec3(x, y, z) + glm::vec3(chunkPos)) * blockSize;
-
-							if (type == ConnectionType::CONNECT_DEFAULT) // Can make block face
-							{
-								//Positive
-								if (y + 1 < chunkSize) 
-								{
-									checkBlock = chunks[chunk].chunkData[x][y + 1][z];
-									if (checkBlock == 0 || type != blockData[checkBlock].blockConnectionType)
-										addFace(TOP_FACE, pos, block, 0);
-								}
-								else if (chunks[chunk].neighborYpos >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborYpos].chunkData[x][0][z];
-									if (checkBlock == 0 || type != blockData[checkBlock].blockConnectionType)
-										addFace(TOP_FACE, pos, block, 0);
-								}
-
-								if (z + 1 < chunkSize) {
-									checkBlock = chunks[chunk].chunkData[x][y][z + 1];
-									if (checkBlock == 0 || type != blockData[checkBlock].blockConnectionType)
-										addFace(FRONT_FACE, pos, block, 0);
-								}
-								else if (chunks[chunk].neighborZpos >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborZpos].chunkData[x][y][0];
-									if (checkBlock == 0 || type != blockData[checkBlock].blockConnectionType)
-										addFace(FRONT_FACE, pos, block, 0);
-								}
-
-								if (x + 1 < chunkSize) {
-									checkBlock = chunks[chunk].chunkData[x + 1][y][z];
-									if (checkBlock == 0 || type != blockData[checkBlock].blockConnectionType)
-										addFace(RIGHT_FACE, pos, block, 0);
-								}
-								else if (chunks[chunk].neighborXpos >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborXpos].chunkData[0][y][z];
-									if (checkBlock == 0 || type != blockData[checkBlock].blockConnectionType)
-										addFace(RIGHT_FACE, pos, block, 0);
-								}
-
-								//Negative	   																										 					  															    						 
-								if (y - 1 >= 0) {
-									checkBlock = chunks[chunk].chunkData[x][y - 1][z];
-									if (checkBlock == 0 || type != blockData[checkBlock].blockConnectionType)
-										addFace(BOTTOM_FACE, pos, block, 0);
-								}
-								else if (chunks[chunk].neighborYneg >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborYneg].chunkData[x][chunkSize - 1][z];
-									if (checkBlock == 0 || type != blockData[checkBlock].blockConnectionType)
-										addFace(BOTTOM_FACE, pos, block, 0);
-								}
-
-								if (z - 1 >= 0) {
-									checkBlock = chunks[chunk].chunkData[x][y][z - 1];
-									if (checkBlock == 0 || type != blockData[checkBlock].blockConnectionType)
-										addFace(BACK_FACE, pos, block, 0);
-								}
-								else if (chunks[chunk].neighborZneg >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborZneg].chunkData[x][y][chunkSize - 1];
-									if (checkBlock == 0 || type != blockData[checkBlock].blockConnectionType)
-										addFace(BACK_FACE, pos, block, 0);
-								}
-
-								if (x - 1 >= 0) {
-									checkBlock = chunks[chunk].chunkData[x - 1][y][z];
-									if (checkBlock == 0 || type != blockData[checkBlock].blockConnectionType)
-										addFace(LEFT_FACE, pos, block, 0);
-								}
-								else if (chunks[chunk].neighborXneg >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborXneg].chunkData[chunkSize - 1][y][z];
-									if (checkBlock == 0 || type != blockData[checkBlock].blockConnectionType)
-										addFace(LEFT_FACE, pos, block, 0);
-								}
-							}
-
-							else if (type == ConnectionType::NO_CONNECT) // Can make block face
-							{
-								//Positive
-								if (y + 1 < chunkSize) {
-									checkBlock = chunks[chunk].chunkData[x][y + 1][z];
-									if (checkBlock == 0 || (type != blockData[checkBlock].blockConnectionType && type != ConnectionType::X_CONNECT))
-										addFace(TOP_FACE, pos, block, 0);
-								}
-								else if (chunks[chunk].neighborYpos >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborYpos].chunkData[x][0][z];
-									if (checkBlock == 0 || (type != blockData[checkBlock].blockConnectionType && type != ConnectionType::X_CONNECT))
-										addFace(TOP_FACE, pos, block, 0);
-								}
-
-								if (z + 1 < chunkSize) {
-									checkBlock = chunks[chunk].chunkData[x][y][z + 1];
-									if (checkBlock == 0 || (type != blockData[checkBlock].blockConnectionType && type != ConnectionType::X_CONNECT))
-										addFace(FRONT_FACE, pos, block, 0);
-								}
-								else if (chunks[chunk].neighborZpos >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborZpos].chunkData[x][y][0];
-									if (checkBlock == 0 || (type != blockData[checkBlock].blockConnectionType && type != ConnectionType::X_CONNECT))
-										addFace(FRONT_FACE, pos, block, 0);
-								}
-
-								if (x + 1 < chunkSize) {
-									checkBlock = chunks[chunk].chunkData[x + 1][y][z];
-									if (checkBlock == 0 || (type != blockData[checkBlock].blockConnectionType && type != ConnectionType::X_CONNECT))
-										addFace(RIGHT_FACE, pos, block, 0);
-								}
-								else if (chunks[chunk].neighborXpos >= 0) {
-									BlockID checkBlock = chunks[chunks[chunk].neighborXpos].chunkData[0][y][z];
-									if (checkBlock == 0 || (type != blockData[checkBlock].blockConnectionType && type != ConnectionType::X_CONNECT))
-										addFace(RIGHT_FACE, pos, block, 0);
-								}
-								//Negative	   																										 					  															    						 
-								if (y - 1 >= 0) {
-									checkBlock = chunks[chunk].chunkData[x][y - 1][z];
-									if (checkBlock == 0 || (type != blockData[checkBlock].blockConnectionType && type != ConnectionType::X_CONNECT))
-										addFace(BOTTOM_FACE, pos, block, 0);
-								}
-								else if (chunks[chunk].neighborYneg >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborYneg].chunkData[x][chunkSize - 1][z];
-									if (checkBlock == 0 || (type != blockData[checkBlock].blockConnectionType && type != ConnectionType::X_CONNECT))
-										addFace(BOTTOM_FACE, pos, block, 0);
-								}
-
-								if (z - 1 >= 0) {
-									checkBlock = chunks[chunk].chunkData[x][y][z - 1];
-									if (checkBlock == 0 || (type != blockData[checkBlock].blockConnectionType && type != ConnectionType::X_CONNECT))
-										addFace(BACK_FACE, pos, block, 0);
-								}
-								else if (chunks[chunk].neighborZneg >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborZneg].chunkData[x][y][chunkSize - 1];
-									if (checkBlock == 0 || (type != blockData[checkBlock].blockConnectionType && type != ConnectionType::X_CONNECT))
-										addFace(BACK_FACE, pos, block, 0);
-								}
-
-								if (x - 1 >= 0) {
-									checkBlock = chunks[chunk].chunkData[x - 1][y][z];
-									if (checkBlock == 0 || (type != blockData[checkBlock].blockConnectionType && type != ConnectionType::X_CONNECT))
-										addFace(LEFT_FACE, pos, block, 0);
-								}
-								else if (chunks[chunk].neighborXneg >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborXneg].chunkData[chunkSize - 1][y][z];
-									if (checkBlock == 0 || (type != blockData[checkBlock].blockConnectionType && type != ConnectionType::X_CONNECT))
-										addFace(LEFT_FACE, pos, block, 0);
-								}
-							}
-
-							else if (type == ConnectionType::FLUID_CONNECT) // Can make a fluid face
-							{
-								glm::vec4 col = glm::vec4(1.f);
-								if (block == 5) col.a = 0.8f;
-								uint32_t color = convertColor(col);
-								if (y + 1 < chunkSize) {
-									checkBlock = chunks[chunk].chunkData[x][y + 1][z];
-									if (type != blockData[checkBlock].blockConnectionType)
-										addFace(TOP_FACE, pos, block, 1, color);
-								}
-								else if (chunks[chunk].neighborYpos >= 0) {// temp
-									checkBlock = chunks[chunks[chunk].neighborYpos].chunkData[x][0][z];
-									if (type != blockData[checkBlock].blockConnectionType)
-										addFace(TOP_FACE, pos, block, 1, color);
-								}
-
-								if (x + 1 < chunkSize) {
-									checkBlock = chunks[chunk].chunkData[x + 1][y][z];
-									if (type != blockData[checkBlock].blockConnectionType && checkBlock == 0) // Temp
-										addFace(RIGHT_FACE, pos, block, 1, color);
-								}
-								else if (chunks[chunk].neighborXpos >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborXpos].chunkData[0][y][z];
-									if (type != blockData[checkBlock].blockConnectionType && checkBlock == 0)
-										addFace(RIGHT_FACE, pos, block, 1, color);
-								}
-
-								if (z + 1 < chunkSize) {
-									checkBlock = chunks[chunk].chunkData[x][y][z + 1];
-									if (type != blockData[checkBlock].blockConnectionType && checkBlock == 0)
-										addFace(FRONT_FACE, pos, block, 1, color);
-								}
-								else if (chunks[chunk].neighborZpos >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborZpos].chunkData[x][y][0];
-									if (type != blockData[checkBlock].blockConnectionType && checkBlock == 0)
-										addFace(FRONT_FACE, pos, block, 1, color);
-								}
-
-								//Negative	   																										 					  															    						 
-								if (y - 1 >= 0) {
-									checkBlock = chunks[chunk].chunkData[x][y - 1][z];
-									if (type != blockData[checkBlock].blockConnectionType && checkBlock == 0)
-										addFace(BOTTOM_FACE, pos, block, 1, color);
-								}
-								else if (chunks[chunk].neighborYneg >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborYneg].chunkData[x][chunkSize - 1][z];
-									if (type != blockData[checkBlock].blockConnectionType && checkBlock == 0)
-										addFace(BOTTOM_FACE, pos, block, 1, color);
-								}
-
-								if (z - 1 >= 0) {
-									checkBlock = chunks[chunk].chunkData[x][y][z - 1];
-									if (type != blockData[checkBlock].blockConnectionType && checkBlock == 0)
-										addFace(BACK_FACE, pos, block, 1, color);
-								}
-								else if (chunks[chunk].neighborZneg >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborZneg].chunkData[x][y][chunkSize - 1];
-									if (type != blockData[checkBlock].blockConnectionType && checkBlock == 0)
-										addFace(BACK_FACE, pos, block, 1, color);
-								}
-
-								if (x - 1 >= 0) {
-									checkBlock = chunks[chunk].chunkData[x - 1][y][z];
-									if (type != blockData[checkBlock].blockConnectionType && checkBlock == 0)
-										addFace(LEFT_FACE, pos, block, 1, color);
-								}
-								else if (chunks[chunk].neighborXneg >= 0) {
-									checkBlock = chunks[chunks[chunk].neighborXneg].chunkData[chunkSize - 1][y][z];
-									if (type != blockData[checkBlock].blockConnectionType && checkBlock == 0)
-										addFace(LEFT_FACE, pos, block, 1, color);
-								}
-							}
-
-							else if (type == ConnectionType::X_CONNECT) // Can make a fluid face
-							{
-								addFace(X_FACE1, pos, block, 2);
-								addFace(X_FACE2, pos, block, 2);
-							}
+			bool done = false;
+			uint32_t i = 0, j = 0, k = 0, l = 0, w = 0, h = 0, d = 0, u = 0, v = 0, n = 0;
+			uint8_t type = ConnectionType::NON_EXISTENT, checkType = ConnectionType::NON_EXISTENT;
+			BlockID mask[chunkSize * chunkSize];
+			uint32_t textureMask[chunkSize * chunkSize];
+			BlockID block = 0, checkBlock = 0;
+			glm::ivec3 x = glm::ivec3(0);
+			glm::ivec3 q = glm::ivec3(0);
+			glm::ivec3 du = glm::ivec3(0);
+			glm::ivec3 dv = glm::ivec3(0);
+			// ChunkLogic
+			for (uint32_t x = 0; x < chunkSize; x++)
+				for (uint32_t y = 0; y < chunkSize; y++)
+					for (uint32_t z = 0; z < chunkSize; z++) {
+						if (y + 1 < chunkSize && chunks[chunk].data[x][y][z] == 0) {
+							if (chunks[chunk].data[x][y + 1][z] == 14 || chunks[chunk].data[x][y + 1][z] == 10
+								|| chunks[chunk].data[x][y + 1][z] == 15 || chunks[chunk].data[x][y + 1][z] == 13) chunks[chunk].data[x][y + 1][z] = 0;
 						}
-						else { // Chunk logic
-							if (y + 1 < chunkSize) {
-							if (chunks[chunk].chunkData[x][y + 1][z] == 14 || chunks[chunk].chunkData[x][y + 1][z] == 10
-								|| chunks[chunk].chunkData[x][y + 1][z] == 15 || chunks[chunk].chunkData[x][y + 1][z] == 13) chunks[chunk].chunkData[x][y + 1][z] = 0;
+					}
+			// Sweep over each axis (X, Y and Z)
+			for (d = 0; d < 3; d++)
+			{
+				i = 0, j = 0, k = 0, l = 0, w = 0, h = 0;
+				u = (d + 1) % 3;
+				v = (d + 2) % 3;
+				x[u] = 0;
+				x[v] = 0;
+				x[d] = -1;
+			
+				memset(mask, 0, sizeof(mask));
+				memset(textureMask, 0, sizeof(textureMask));
+				q[d] = 1;
+				q[u] = 0;
+				q[v] = 0;
+			
+				// Check each slice of the chunk one at a time
+				for (; x[d] < chunkSize;)
+				{
+					// Compute the mask
+					n = 0;
+					for (x[v] = 0; x[v] < chunkSize; x[v]++)
+					{
+						for (x[u] = 0; x[u] < chunkSize; x[u]++)
+						{
+							// q determines the direction (X, Y or Z) that we are searching
+							// m.IsBlockAt(x,y,z) takes global map positions and returns true if a block exists there
+							block = 0;
+							type = ConnectionType::NON_EXISTENT;
+							checkBlock = 0;
+							checkType = ConnectionType::NON_EXISTENT;
+
+							if (x[d] >= 0) {
+								block = chunks[chunk].data[x[0]][x[1]][x[2]];
+								type = blockData[block].connectionType;
+							}
+							else if (chunks[chunk].neighborNeg[d] > -1) {
+								int x1 = x[d];
+								x[d] = chunkSize - 1;
+								block = chunks[chunks[chunk].neighborNeg[d]].data[x[0]][x[1]][x[2]];
+								type = blockData[block].connectionType;
+								x[d] = x1;
+							}
+
+							glm::ivec3 xq = x + q;
+							if (xq[d] < chunkSize) {
+								checkBlock = chunks[chunk].data[xq.x][xq.y][xq.z];
+								checkType = blockData[checkBlock].connectionType;
+							}
+							else if(chunks[chunk].neighborPos[d] > -1) {
+								xq[d] = 0;
+								checkBlock = chunks[chunks[chunk].neighborPos[d]].data[xq.x][xq.y][xq.z];
+								checkType = blockData[checkBlock].connectionType;
+							}
+							// The mask is set to true if there is a visible face between two blocks, i.e. both aren't empty and both aren't blocks
+
+							if (type == ConnectionType::X_CONNECT) {
+								Face face1 = X_FACE1;
+								Face face2 = X_FACE2;
+								face1.texID = blockData[block].texture[(int)BlockTexture::TOP];
+								face2.texID = blockData[block].texture[(int)BlockTexture::TOP];
+								addMesh(face1, chunkPos + x, block);
+								addMesh(face2, chunkPos + x, block);
+							}
+							
+							if (type != checkType && type != ConnectionType::NON_EXISTENT && checkType != ConnectionType::NON_EXISTENT) {
+								if (block != checkBlock && type == ConnectionType::CONNECT_DEFAULT) { mask[n] = block + 1; textureMask[n] = blockData[block].texture[d]; }
+								else if ((block == 0 || type != ConnectionType::CONNECT_DEFAULT) && checkType == ConnectionType::CONNECT_DEFAULT) { mask[n] = checkBlock + 1; textureMask[n] = blockData[checkBlock].texture[d + 3]; }
+
+								else if (block != checkBlock && type == ConnectionType::NO_CONNECT) { mask[n] = block + 1; textureMask[n] = blockData[block].texture[d]; }
+								else if (block == 0 && checkType == ConnectionType::NO_CONNECT)		{ mask[n] = checkBlock + 1; textureMask[n] = blockData[checkBlock].texture[d + 3]; }
+
+								else if (checkBlock == 0 && type == ConnectionType::FLUID_CONNECT)  { mask[n] = block + 1; textureMask[n] = blockData[block].texture[d]; }
+								else if (block == 0 && checkType == ConnectionType::FLUID_CONNECT)  { mask[n] = checkBlock + 1; textureMask[n] = blockData[checkBlock].texture[d + 3]; }
+							}
+							n++;
+						}
+					}
+			
+					++x[d];
+			
+					n = 0;
+			
+					// Generate a mesh from the mask using lexicographic ordering,      
+					//   by looping over each block in this slice of the chunk
+					for (j = 0; j < chunkSize; j++)
+					{
+						for (i = 0; i < chunkSize;)
+						{
+							if (textureMask[n])
+							{
+								// Compute the width of this quad and store it in w                        
+								//   This is done by searching along the current axis until mask[n + w] is false
+								for (w = 1; i + w < chunkSize && textureMask[n + w] && textureMask[n + w] == textureMask[n]; w++) {}
+			
+								// Compute the height of this quad and store it in h                        
+								//   This is done by checking if every block next to this row (range 0 to w) is also part of the mask.
+								//   For example, if w is 5 we currently have a quad of dimensions 1 x 5. To reduce triangle count,
+								//   greedy meshing will attempt to expand this quad out to CHUNK_SIZE x 5, but will stop if it reaches a hole in the mask
+								done = false;
+								for (h = 1; j + h < chunkSize; h++)
+								{
+									// Check each block next to this quad
+									for (k = 0; k < w; ++k)
+									{
+										// If there's a hole in the mask, exit
+										if (!textureMask[n + k + h * chunkSize] || textureMask[n + k + h * chunkSize] != textureMask[n])
+										{
+											done = true;
+											break;
+										}
+									}
+			
+									if (done)
+										break;
+								}
+			
+								x[u] = i;
+								x[v] = j;
+			
+								// du and dv determine the size and orientation of this face
+								du[u] = w;
+								du[d] = 0;
+								du[v] = 0;
+
+								dv[v] = h;
+								dv[d] = 0;
+								dv[u] = 0;
+								float h1 = h, w1 = w;
+								// Create a quad for this face. Colour, normal or textures are not stored in this block vertex format.
+								Face face;
+								if (d == 0) {
+									face.corner[2] = x;           // Top-left vertice position
+									face.corner[3] = x + du;      // Top right vertice position
+									face.corner[1] = x + dv;      // Bottom left vertice position
+									face.corner[0] = x + du + dv; // Bottom right vertice position
+									/*									
+									face.corner[v] = x;           // Top-left vertice position
+									face.corner[v + 1] = x + du;      // Top right vertice position
+									face.corner[u] = x + dv;      // Bottom left vertice position
+									face.corner[d] = x + du + dv; // Bottom right vertice position
+									*/
+								}
+								else if (d == 1) {
+									face.corner[0] = x;                 // Top-left vertice position
+									face.corner[1] = x + du;         // Top right vertice position
+									face.corner[3] = x + dv;         // Bottom left vertice position
+									face.corner[2] = x + du + dv; // Bottom right vertice position
+								}
+								else if (d == 2) {
+									face.corner[2] = x;                 // Top-left vertice position
+									face.corner[1] = x + du;         // Top right vertice position
+									face.corner[3] = x + dv;         // Bottom left vertice position
+									face.corner[0] = x + du + dv; // Bottom right vertice position
+									std::swap(h1, w1);
+								}
+								face.CalculateNormal();
+								face.texID = textureMask[n];
+								
+								addMesh(face, chunkPos, mask[n] - 1, glm::vec2(h1, w1));
+								// Clear this part of the mask, so we don't add duplicate faces
+								for (l = 0; l < h; l++)
+									for (k = 0; k < w; k++) {
+										mask[n + k + l * chunkSize] = 0;
+										textureMask[n + k + l * chunkSize] = 0;
+									}
+
+								// Increment counters and continue
+								i += w;
+								n += w;
+							}
+							else
+							{
+								i++;
+								n++;
 							}
 						}
 					}
-					//chunks[chunk].chunkMeshBuffer.UnMap();
-					chunks[chunk].empty = chunks[chunk].IndexCount == 0;
+				}
+			}
+			//chunks[chunk].meshBuffer.UnMap();
+			chunks[chunk].indexBuffer.SetData(0, sizeof(indices), indices);
+			chunks[chunk].empty = chunks[chunk].IndexCount == 0;
 		}
 		 
 		BlockID getBlock(const glm::ivec3& pos) {
 			int16_t chunk = getChunkID(getChunkPos(pos));
 			glm::ivec3 blockPos = getBlockPos(pos);
 			if (chunk < 0) return 0;
-			return chunks[chunk].chunkData[blockPos.x][blockPos.y][blockPos.z];
+			return chunks[chunk].data[blockPos.x][blockPos.y][blockPos.z];
 		}
 
 		int16_t getChunkID(const chunkPosV& pos) {
 			for (ChunkID i = 0; i < chunks.size(); i++) {
-					if (chunks[i].chunkPos == pos) 
+					if (chunks[i].position == pos) 
 						return i;				
 			}
 			return -1;

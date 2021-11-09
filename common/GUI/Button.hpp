@@ -1,16 +1,16 @@
 #pragma once
 
-#include "../Utils/Mouse.hpp"
+#include "../Utils/Window.hpp"
 
 namespace wc {
 
 class Button {
 public:
-	glm::vec2 position;
-	glm::vec2 size;
+	glm::ivec2 position;
+	glm::ivec2 size;
 
-	bool isMouseOver(const glm::vec2& windowPos) {
-		glm::vec2 mousepos = wc::Mouse::GetMousePosToWindow(windowPos);
+	bool isMouseOver() {
+		glm::ivec2 mousepos = wc::Mouse::GetMousePosToWindow();
 		if (position.x < mousepos.x && position.y < mousepos.y && position.x + size.x > mousepos.x && position.y + size.y > mousepos.y) return true;
 		return false;
 	}
@@ -18,14 +18,14 @@ public:
 
 struct DragButton : public Button {
 	bool attached = false;
-	glm::vec2 offset;
+	glm::ivec2 offset;
 
-	inline void attach(const glm::vec2& Position, const bool& attachment = true) {
+	inline void attach(const glm::ivec2& Position, const bool& attachment = true) {
 		attached = attachment;
 		offset = position - Position;
 	}
 
-	inline void updatePosition(const glm::vec2& Position) {
+	inline void updatePosition(const glm::ivec2& Position) {
 		if (attached) position = Position + offset;
 	}
 };

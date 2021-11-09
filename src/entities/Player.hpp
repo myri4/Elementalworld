@@ -9,7 +9,7 @@ class Player{
 public:	
 	float MovementSpeed = 4.f;
 	glm::vec2 rotation = glm::vec2(0.f);
-	BlockID currentSlot = 0;
+	int8_t currentSlot = 0;
 	glm::vec3 Position = glm::vec3(0.f);
 	glm::vec3 Size = glm::vec3(0.48f, 0.8f, 0.48f);
 	bool m_isOnGround : 1;
@@ -18,7 +18,8 @@ public:
 	bool collision : 1;
 	glm::vec3 velocity = glm::vec3(0.f);
 	glm::vec3 acceleration = glm::vec3(0.f);
-	Inventory<inventorySizeX * inventorySizeY, inventorySizeX, inventorySizeY, 48> inventory;
+	InventoryMenu<inventorySizeX, inventorySizeY, inventorySizeX * inventorySizeY> inventory;
+	Crafter<2> crafting;
 	float health = 10.f;
 
 	Player() {

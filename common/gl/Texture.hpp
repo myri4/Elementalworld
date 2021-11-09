@@ -23,25 +23,24 @@ namespace gl {
 		void SetSize(const glm::ivec2& size) { Width = size.x; Height = size.y; }
 	};
 
-	class Texture {		
+	class Texture {
 	public:
 		Texture() {}
 		//~Texture() { Destroy(); }		
 
-		inline void Create(const unsigned char* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {  CreateMode(data, Width, Height, nrComponents, GL_UNSIGNED_BYTE);	}
-		inline void Create(const char* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {			 CreateMode(data, Width, Height, nrComponents, GL_BYTE); }
-		inline void Create(const float* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {			 CreateMode(data, Width, Height, nrComponents, GL_FLOAT); }
-		inline void Create(const int* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {			 CreateMode(data, Width, Height, nrComponents, GL_INT); }
-		inline void Create(const unsigned int* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {   CreateMode(data, Width, Height, nrComponents, GL_UNSIGNED_INT); }
-		inline void Create(const short* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) {			 CreateMode(data, Width, Height, nrComponents, GL_SHORT); }
+		inline void Create(const unsigned char* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_UNSIGNED_BYTE); }
+		inline void Create(const char* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_BYTE); }
+		inline void Create(const float* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_FLOAT); }
+		inline void Create(const int* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_INT); }
+		inline void Create(const unsigned int* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_UNSIGNED_INT); }
+		inline void Create(const short* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_SHORT); }
 		inline void Create(const unsigned short* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_UNSIGNED_SHORT); }
 
 		void Create(const TextureProps& props) {
-			if(props.samples)
+			if (props.samples)
 				glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &m_RendererID);
 			else {
 				glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
-				//glGenerateTextureMipmap(m_RendererID);
 
 				glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, props.min_filter);
 				glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, props.mag_filter);
@@ -59,17 +58,17 @@ namespace gl {
 		}
 
 
-		void SetData(const unsigned char* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const {  if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_UNSIGNED_BYTE); }
-		void SetData(const char* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const {			  if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_BYTE); }
-		void SetData(const float* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const {		  if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_FLOAT); }
-		void SetData(const int* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const {			  if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_INT); }
-		void SetData(const unsigned int* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const {   if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_UNSIGNED_INT); }
-		void SetData(const short* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const {		  if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_SHORT); }
+		void SetData(const unsigned char* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const { if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_UNSIGNED_BYTE); }
+		void SetData(const char* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const { if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_BYTE); }
+		void SetData(const float* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const { if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_FLOAT); }
+		void SetData(const int* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const { if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_INT); }
+		void SetData(const unsigned int* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const { if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_UNSIGNED_INT); }
+		void SetData(const short* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const { if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_SHORT); }
 		void SetData(const unsigned short* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const { if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_UNSIGNED_SHORT); }
 
 		void Destroy() const { glDeleteTextures(1, &m_RendererID); }
 
-		void Bind(const uint8_t& textureUnit = 0) const {			
+		void Bind(const uint8_t& textureUnit = 0) const {
 			glBindTextureUnit(textureUnit, m_RendererID);
 		}
 
@@ -78,11 +77,11 @@ namespace gl {
 		inline operator uint32_t& () { return m_RendererID; }
 		inline operator const uint32_t& () const { return m_RendererID; }
 
-		glm::ivec2 GetSize() const { 
+		glm::ivec2 GetSize() const {
 			int w, h;
 			glGetTextureLevelParameteriv(m_RendererID, 0, GL_TEXTURE_WIDTH, &w);
 			glGetTextureLevelParameteriv(m_RendererID, 0, GL_TEXTURE_HEIGHT, &h);
-			return glm::ivec2(w, h); 
+			return glm::ivec2(w, h);
 		}
 
 		uint32_t GetFormat() const {
@@ -93,13 +92,11 @@ namespace gl {
 
 	private:
 		uint32_t m_RendererID = 0;
-		
 
 		void CreateMode(const void* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents, const uint32_t& type) {
-			int format = 0;
-			int internalFormat = 0;
-			if (nrComponents == 1) { format = GL_RED; }
-			else if (nrComponents == 3)	{ format = GL_RGB;  internalFormat = GL_RGB8;  }
+			int format = GL_RGB;
+			int internalFormat = GL_RGB8;
+			if (nrComponents == 1) { format = GL_RED; internalFormat = GL_R8; }
 			else if (nrComponents == 4) { format = GL_RGBA; internalFormat = GL_RGBA8; }
 
 			glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
@@ -123,7 +120,7 @@ namespace gl {
 			glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
 			glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);	
+			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		}
 	};
 

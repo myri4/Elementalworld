@@ -7,7 +7,7 @@ class Random
 {
 public:
 
-	uint32_t seed;
+	uint32_t seed = 0;
 	uint32_t asInt()
 	{
 		seed += 0xe120fc15;

@@ -1,9 +1,7 @@
 #pragma once
 
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <Utils/Window.hpp>
-#include "../Utils/Mouse.hpp"
 
 namespace wc{
 
@@ -12,8 +10,12 @@ public:
 	// camera Attributes
 	glm::vec3 Position = glm::vec3(0.f);
 	glm::vec3 Front = glm::vec3(0.f, 0.f, -1.f);
-	glm::vec3 Up = glm::vec3(0.f, 1.f, 0.f);
-	glm::vec3 Right = glm::vec3(0.f);
+	glm::vec3 Up = glm::vec3(0.f, 1.f, 0.f); // v
+	glm::vec3 Right = glm::vec3(0.f); // u
+	// Ray tracing attributes
+	glm::vec3 lower_left_corner = glm::vec3(0.f);
+	glm::vec3 horizontal = glm::vec3(0.f);
+	glm::vec3 vertical = glm::vec3(0.f);
 	float distanceFromCenter = 5.f;
 	// euler Angles
 	float Yaw = 0.f;
@@ -45,7 +47,7 @@ public:
 	// returns the view matrix calculated using Euler Angles and the LookAt Matrix
 	glm::mat4 GetViewMatrix() const { return glm::lookAt(Position, Position + Front, Up); }
 
-	void UpdateCameraAngles() {
+	void UpdateCameraAngles(const float& aspect_ratio) {
 		// update Front, Right and Up Vectors using the updated Euler angles
 		// calculates the new Front vector from the Camera's (updated) Euler Angles
 		float yaw = glm::radians(Yaw);
@@ -57,8 +59,16 @@ public:
 		Front = glm::normalize(front);
 
 		// also re-calculate the Right and Up vector
-		Right = glm::normalize(glm::cross(Front, glm::vec3(0.f, 1.f, 0.f)));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-		Up = glm::normalize(glm::cross(Right, Front));
+		Right = normalize(cross(Front, glm::vec3(0.f, 1.f, 0.f)));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+		Up = normalize(cross(Right, Front));
+
+		float theta = glm::tan(glm::radians(FOV) * 0.5f);
+		float viewport_height = 2.f * theta;
+		float viewport_width = aspect_ratio * viewport_height;
+
+		horizontal = viewport_width * Right;
+		vertical = viewport_height * Up;
+		lower_left_corner = Position - horizontal * 0.5f - vertical * 0.5f + Front;
 	}
 };
 }

@@ -4,6 +4,15 @@
 #define Epsilon 1.192092896e-07F
 const float PI = 3.14159265358979323846264338327950288f;
 
+#define CONNECT_DEFAULT 0
+#define FLUID_CONNECT 1
+#define NO_CONNECT 2
+#define X_CONNECT 3
+#define CANT_CONNECT 4
+#define CUSTOM_MODEL 5
+#define AIR 6
+#define NON_EXISTENT 7
+
 vec3 getNormalFromMap(const in vec3 TN, const in vec3 N, const in vec3 p0, const in vec2 TexCoords)
 {
     vec3 tangentNormal = TN * 2.f - 1.f;
@@ -62,9 +71,12 @@ layout (std140, binding = 0) uniform Transforms
     float deltaTime;
 	int u_numLights;
 
-	vec3 fogColor;
 	vec3 cameraPos;
-	vec3 ambientColor;
+    vec3 lower_left_corner;
+    vec3 horizontal;
+    vec3 vertical;
+	vec2 windowSize;
+	vec3 fogColor;
 	float u_Density;
 	float u_Gradient;
 };
@@ -79,6 +91,7 @@ layout (std140, binding = 1) uniform Lighting
     Light lights[1];
 };
 
+vec3 ambientColor = vec3(0.03f);
 vec3 rayTrace(const in vec3 albedo, const in vec3 N) {
 	vec3 color;
 
@@ -101,12 +114,13 @@ vec3 rayTrace(const in vec3 albedo, const in vec3 N) {
 		vec3 radiance;
 		const float c = 1.f / 255.f;
 		uint color = lights[i].color;
-		radiance.r = float((color & uint(0xff000000)) >> 24) * c;
-		radiance.g = float((color & uint(0x00ff0000)) >> 16) * c;
-		radiance.b = float((color & uint(0x0000ff00)) >> 8) * c;
-		float type = float((color & uint(0x000000ff))) * c;
+		radiance.r = float((color & uint(0x000000ff))) * c;
+		radiance.g = float((color & uint(0x0000ff00)) >> 8) * c;
+		radiance.b = float((color & uint(0x00ff0000)) >> 16) * c;
+		float type = float((color & uint(0xff000000)) >> 24) * c;
+
 		vec3 lightVector = lights[i].vector;
-		vec3 L = -lightVector;
+		vec3 L = lightVector;
 		if (type == POINT_LIGHT)
 		{
 			L = lightVector - p0;

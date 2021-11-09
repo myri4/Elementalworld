@@ -134,13 +134,7 @@
     <ClInclude Include="src\entities\Player.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\Utils\Keyboard.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\Utils\Log.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Utils\Mouse.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\Utils\NonCopyable.hpp">

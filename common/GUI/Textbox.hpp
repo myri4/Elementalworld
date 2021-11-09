@@ -1,6 +1,5 @@
 #pragma once
 #include "../Utils/Window.hpp"
-#include "../Utils/Keyboard.hpp"
 
 namespace wc {
 class Textbox {
@@ -11,9 +10,9 @@ public:
 
 	void update() {
 		if (isSelected) {
-			if (keyPressed) text += static_cast<char>(currentKeyPressed);
+			if (keyEntered) text += static_cast<char>(currKeyEntered);
 			else if (buttonPressed) {
-				if (currKey == GLFW_KEY_BACKSPACE && (Action == GLFW_PRESS || Action == GLFW_REPEAT))
+				if (Keyboard::getKey(Keyboard::Key::Backspace) != GLFW_RELEASE)
 					if (text.length() > 0)
 					{
 						std::string t = text;
@@ -22,7 +21,7 @@ public:
 						for (uint32_t i = 0; i < length; i++) text += t[i];
 					}
 
-				if (Keyboard::isKeyPressed(Keyboard::Key::V) && Keyboard::isKeyPressed(Keyboard::Key::LControl)) text += clipBoard;
+				if (Keyboard::getKey(Keyboard::Key::V) == GLFW_PRESS && Keyboard::getKey(Keyboard::Key::LControl) == GLFW_PRESS) text += clipBoard;
 			}
 		}
 	}

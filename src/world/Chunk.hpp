@@ -8,7 +8,7 @@
 const uint16_t chunkSize = 16;
 const uint32_t chunkVolume = chunkSize * chunkSize * chunkSize;
 
-const uint32_t MaxFaceCount = chunkSize * chunkSize * chunkSize;
+const uint32_t MaxFaceCount = chunkSize * chunkSize * 5;
 const uint32_t MaxVertexCount = MaxFaceCount * 4;
 
 typedef uint16_t ChunkID; // This represents the chunk id in the chunk array
@@ -30,24 +30,19 @@ glm::ivec3 to3D(const int& idx, const glm::ivec3& size = glm::ivec3(chunkSize)) 
 class Chunk {
 public: // Variables
 	uint32_t IndexCount = 0;
-	chunkPosV chunkPos = chunkPosV(0);
-	BlockID chunkData[chunkSize][chunkSize][chunkSize] = { 0 };
+	chunkPosV position = chunkPosV(0);
+	BlockID data[chunkSize][chunkSize][chunkSize] = { 0 };
+	int16_t neighborPos[3] = { -1,-1,-1 };
+	int16_t neighborNeg[3] = { -1,-1,-1 };
 
 	bool used : 1;
 	bool generated : 1;
 	bool canBeUpdated : 1;
 	bool empty : 1;
-	bool generatedStructures : 1;
+	bool generatedStructures : 1;						   
 
-	int16_t neighborXpos = -1;
-	int16_t neighborYpos = -1;
-	int16_t neighborZpos = -1;
-						   
-	int16_t neighborXneg = -1;
-	int16_t neighborYneg = -1;
-	int16_t neighborZneg = -1;
-
-	gl::VertexBuffer chunkMeshBuffer;
+	gl::VertexBuffer meshBuffer;
+	gl::IndexBuffer indexBuffer;
 public: // Functions 
 	Chunk() {
 		used = false;
@@ -82,5 +77,10 @@ glm::ivec3 getChunkPos(const int& x, const int& y, const int& z)
 glm::ivec3 getChunkPos(const glm::ivec3& pos)
 {
 	return getChunkPos(pos.x, pos.y, pos.z);
+}
+
+static uint32_t to_index(const uint32_t& u, const uint32_t& v)
+{
+	return v * chunkSize + u;
 }
 }

@@ -273,25 +273,6 @@ extern "C" {
 #define GLFW_VERSION_REVISION       2
 /*! @} */
 
-/*! @brief One.
- *
- *  This is only semantic sugar for the number 1.  You can instead use `1` or
- *  `true` or `_True` or `GL_TRUE` or `VK_TRUE` or anything else that is equal
- *  to one.
- *
- *  @ingroup init
- */
-#define GLFW_TRUE                   1
-/*! @brief Zero.
- *
- *  This is only semantic sugar for the number 0.  You can instead use `0` or
- *  `false` or `_False` or `GL_FALSE` or `VK_FALSE` or anything else that is
- *  equal to zero.
- *
- *  @ingroup init
- */
-#define GLFW_FALSE                  0
-
 /*! @name Key and button actions
  *  @{ */
 /*! @brief The key or mouse button was released.
