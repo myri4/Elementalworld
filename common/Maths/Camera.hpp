@@ -47,7 +47,7 @@ public:
 	// returns the view matrix calculated using Euler Angles and the LookAt Matrix
 	glm::mat4 GetViewMatrix() const { return glm::lookAt(Position, Position + Front, Up); }
 
-	void UpdateCameraAngles(const float& aspect_ratio) {
+	void UpdateCameraAngles() {
 		// update Front, Right and Up Vectors using the updated Euler angles
 		// calculates the new Front vector from the Camera's (updated) Euler Angles
 		float yaw = glm::radians(Yaw);
@@ -64,7 +64,8 @@ public:
 
 		float theta = glm::tan(glm::radians(FOV) * 0.5f);
 		float viewport_height = 2.f * theta;
-		float viewport_width = aspect_ratio * viewport_height;
+		glm::vec2 windSize = window.GetSize();
+		float viewport_width = windSize.x / windSize.y * viewport_height;
 
 		horizontal = viewport_width * Right;
 		vertical = viewport_height * Up;

@@ -12,7 +12,6 @@ const uint32_t MaxFaceCount = chunkSize * chunkSize * 5;
 const uint32_t MaxVertexCount = MaxFaceCount * 4;
 
 typedef uint16_t ChunkID; // This represents the chunk id in the chunk array
-typedef glm::ivec3 chunkPosV;
 
 namespace wc {
 
@@ -30,7 +29,7 @@ glm::ivec3 to3D(const int& idx, const glm::ivec3& size = glm::ivec3(chunkSize)) 
 class Chunk {
 public: // Variables
 	uint32_t IndexCount = 0;
-	chunkPosV position = chunkPosV(0);
+	glm::ivec3 position = glm::ivec3(0);
 	BlockID data[chunkSize][chunkSize][chunkSize] = { 0 };
 	int16_t neighborPos[3] = { -1,-1,-1 };
 	int16_t neighborNeg[3] = { -1,-1,-1 };

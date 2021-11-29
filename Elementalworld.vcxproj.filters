@@ -257,6 +257,9 @@
     <ClInclude Include="vendor\Include\FastNoise\FastNoiseLite.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common\GUI\Console.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\skybox.lua" />

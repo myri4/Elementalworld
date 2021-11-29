@@ -72,7 +72,7 @@ namespace wc {
 			scrProps.SetSize(window.GetSize());
 
 			scrTexture.Create(scrProps);
-			screen.Create(window.GetSize().x, window.GetSize().y, scrProps.samples);
+			screen.Create(scrProps.Width, scrProps.Height, scrProps.samples);
 			screen.addTexture(scrTexture);
 
 			float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.

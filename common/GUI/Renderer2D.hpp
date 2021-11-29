@@ -300,17 +300,13 @@ namespace wc {
 		}
 #undef DrawText
 		void DrawText(const std::string& text, const Font& font, glm::vec2 pos = glm::vec2(0.f), const float& scale = 0.4f, const glm::vec4& color = glm::vec4(1.f)) {
-
 			for (auto& c : text) {
 				Character ch = font.Characters[c];
 
 				float xpos = pos.x + ch.Bearing.x * scale;
 				float ypos = pos.y - ch.Bearing.y * scale;
 
-				float w = ch.Size.x * scale;
-				float h = ch.Size.y * scale;
-				// update VBO for each character
-				Renderer2D::DrawQuad({ xpos, ypos }, { w,h }, ch.texture, color, 1.f);
+				DrawQuad({ xpos, ypos }, glm::vec2(ch.Size) * scale, ch.texture, color, 1.f);
 
 				// now advance cursors for next glyph (note that advance is number of 1/64 pixels)
 				pos.x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))

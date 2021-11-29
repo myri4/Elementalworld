@@ -97,7 +97,13 @@ void main() {
     
 	vec3 N = getNormalFromMap(texture(u_NormalMap, v_TexCoords).rgb, v_Normal, p0, v_TexCoords.xy);
 	if (gl_FrontFacing) N = -N;
-    vec4 finalColor = textureColor * vec4(rayTrace(textureColor.rgb, N), textureColor.a);
   
-    FragColor = mix(vec4(fogColor, 1.f), finalColor, v_visibility);
+    FragColor = mix(vec4(fogColor, 1.f), textureColor * vec4(rayTrace(textureColor.rgb, N), textureColor.a), v_visibility);
+
+    
+    //float brightness = dot(fragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    //if(brightness > 1.0)
+    //    FragColor = vec4(FragColor.rgb, 1.0);
+    //else
+    //    FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 }

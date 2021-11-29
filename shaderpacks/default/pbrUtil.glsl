@@ -53,13 +53,15 @@ float GeometrySchlickGGX(const in float NdotV, const in float roughness)
 	//	   nom   / denom
 	return NdotV / (NdotV - NdotV * k + k);
 }
-// ----------------------------------------------------------------------------
-float GeometrySmith(const in float NdotL, const in float NdotV, const in float roughness)
-{
-	float ggx2 = GeometrySchlickGGX(NdotV, roughness);
-	float ggx1 = GeometrySchlickGGX(NdotL, roughness);
 
-	return ggx1 * ggx2;
+vec3 fresnelSchlick(const in float cosTheta, const in vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+// ----------------------------------------------------------------------------
+vec3 fresnelSchlickRoughness(const in float cosTheta, const in vec3 F0, const in float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 #define POINT_LIGHT 1
@@ -103,8 +105,7 @@ vec3 rayTrace(const in vec3 albedo, const in vec3 N) {
 
 	// calculate reflectance at normal incidence; if dia-electric (like plastic) use F0
 	// of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
-	vec3 F0 = vec3(0.04f);
-	F0 = mix(F0, albedo, metallic);
+	vec3 F0 = mix(vec3(0.04f), albedo, metallic);
 
 	// reflectance equation
 	vec3 Lo = vec3(0.f);
@@ -117,48 +118,31 @@ vec3 rayTrace(const in vec3 albedo, const in vec3 N) {
 		radiance.r = float((color & uint(0x000000ff))) * c;
 		radiance.g = float((color & uint(0x0000ff00)) >> 8) * c;
 		radiance.b = float((color & uint(0x00ff0000)) >> 16) * c;
-		float type = float((color & uint(0xff000000)) >> 24) * c;
+		float radius = float((color & uint(0xff000000)) >> 24) * c;
 
-		vec3 lightVector = lights[i].vector;
-		vec3 L = lightVector;
-		if (type == POINT_LIGHT)
-		{
-			L = lightVector - p0;
-			float Distance = length(L);
-			float attenuation = Distance * Distance / 4.f;
-			radiance /= attenuation;
+		vec3 L = lights[i].vector;
+		if (radius > 0.f){
+			L -= p0;
+			radiance /= dot(L, L) * radius; // radiance / attenuation
 		}
-
 		L = normalize(L);
 
-		vec3 H = normalize(V + L);
+		vec3 H = normalize(L + V);
 
 		float NdotL = max(dot(N, L), 0.f);
 		float NdotV = max(dot(N, V), 0.f);
 		// Cook-Torrance BRDF
 		float NDF = DistributionGGX(N, H, roughness);
-		float G = GeometrySmith(NdotL, NdotV, roughness);
+		float G = GeometrySchlickGGX(NdotV, roughness) * GeometrySchlickGGX(NdotL, roughness);
 		// fresnelSchlick
-		// @TODO: check if its ok to use this formula
-		vec3 F = F0 + (max(vec3(1.f - roughness), F0) - F0) * pow(max(1.f - max(dot(H, V), 0.f), 0.f), 5.f);
+		vec3 F = fresnelSchlick(max(dot(H, V), 0.f), F0);
 
 		vec3 numerator = NDF * G * F;
 		float denominator = 4.f * NdotV * NdotL + 0.001f; // 0.001 to prevent divide by zero.
 		vec3 specular = numerator / denominator;
 
-		// kS is equal to Fresnel
-		vec3 kS = F; // specular
-		// for energy conservation, the diffuse and specular light can't
-		// be above 1.0 (unless the surface emits light); to preserve this
-		// relationship the diffuse component (kD) should equal 1.0 - kS.
-		vec3 kD = vec3(1.f) - kS; // diffuse
-		// multiply kD by the inverse metalness such that only non-metals
-		// have diffuse lighting, or a linear blend if partly metal (pure metals
-		// have no diffuse light).
-		kD *= 1.f - metallic;
-
-		// add to outgoing radiance Lo
-		Lo += (kD * albedo / PI + specular) * radiance * NdotL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+		vec3 kD = (1.f - F) * (1.f - metallic); // diffuse
+		Lo += ((kD * albedo / PI + specular) * radiance * NdotL);  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
 	}
 
 	// ambient lighting (note that the next IBL tutorial will replace
