@@ -15,9 +15,9 @@ enum class BlockTexture : uint8_t { RIGHT, TOP, FRONT, LEFT, BOTTOM, BACK };
 const float blockSize = 1.f;
 
 struct Face {
-	glm::vec3 corner[4];
-	uint32_t texID;
-	glm::vec3 normal;
+	glm::vec3 corner[4] = { glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.f) , glm::vec3(0.f) };
+	uint32_t texID = 0;
+	glm::vec3 normal = glm::vec3(0.f);
 
 	void CalculateNormal() {
 		normal = glm::normalize(glm::cross(corner[2] - corner[0], corner[1] - corner[0]));		

@@ -14,6 +14,7 @@
 //#include "files.hpp"
 #include <wc/Skybox.hpp>
 #include "../Game Mechanics/LineBatcher.hpp"
+#include "../Game Mechanics/CommandParser.hpp"
 #include <GUI/Console.hpp>
 #include <GUI/Button.hpp>
 #include <ppl.h>
@@ -83,6 +84,7 @@ namespace wc {
 
 		//GUI
 		Console console;
+		Textbox textbox;
 #ifdef MODEL
 		gl::Shader modelShader;
 		Animation animation;
@@ -347,10 +349,11 @@ namespace wc {
 			//blockData[18].connectionType = ConnectionType::CUSTOM_MODEL;
 		}
 		
-		void Update(const glm::vec2& windsize, const float& deltaTime) {
+		void Update(const float& deltaTime) {
+			glm::vec2 windSize = window.GetSize();
 			// camera/view transformation
 			TransformData data;
-			data.proj = glm::perspective(glm::radians(camera.FOV), windsize.x / windsize.y, 0.1f, Far);
+			data.proj = glm::perspective(glm::radians(camera.FOV), windSize.x / windSize.y, 0.1f, Far);
 			data.view = camera.GetViewMatrix();
 			data.dt = deltaTime;
 			data.cameraPos = camera.Position;
@@ -358,7 +361,7 @@ namespace wc {
 			data.vertical = camera.vertical;
 			data.horizontal = camera.horizontal;
 			data.numLights = currentLightID;
-			data.windowSize = windsize;
+			data.windowSize = windSize;
 
 			lighting[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(skybox.angle), glm::vec3(0.f, 0.f, 1.f)));
 			lighting[0].color = convertColor(glm::vec4(glm::vec3(glm::dot(lighting[0].vector, glm::vec3(0.f, 1.f, 0.f))), 0.f));
@@ -415,6 +418,7 @@ namespace wc {
 				}
 			}	
 			DrawOtlineCube(sStart, sEnd - sStart, glm::vec4(1.f));
+			DrawOtlineCube(p.Position - glm::vec3(0.5f, 0.f, 0.5f), glm::vec3(1.f, 2.f, 1.f), glm::vec4(1.f));
 			lineBatcher.Flush();
 #ifdef MODEL
 			modelShader.use();
@@ -441,12 +445,12 @@ namespace wc {
 			//Inventory
 			const float hotbarSize = 48.f;
 			float oneSixth = hotbarSize / 6.f;
-			glm::vec2 hotbarStart = glm::vec2((windsize.x - inventorySizeX * hotbarSize) * 0.5f, windsize.y - hotbarSize); // Temp until inventory
+			glm::vec2 hotbarStart = glm::vec2((windSize.x - inventorySizeX * hotbarSize) * 0.5f, windSize.y - hotbarSize); // Temp until inventory
 
 			//Health
 			glm::vec2 offset = glm::vec2(0.f);
 			glm::vec2 healthSize = glm::vec2(20.f);
-			glm::vec2 healthStart = glm::vec2(hotbarStart.x, windsize.y - hotbarSize - 2.f - healthSize.y) - (glm::vec2(3.f, -healthSize.x) + healthSize);
+			glm::vec2 healthStart = glm::vec2(hotbarStart.x, windSize.y - hotbarSize - 2.f - healthSize.y) - (glm::vec2(3.f, -healthSize.x) + healthSize);
 
 			for (uint8_t i = 0; i < (int8_t)p.health; i++) {
 				offset += glm::vec2(3.f, -healthSize.x) + healthSize;
@@ -459,7 +463,7 @@ namespace wc {
 			console.start = { 25.f, 0.f };
 			console.DrawTextLine("FPS: " + std::to_string((int)(1.f / deltaTime)) + " Frametime: " + std::to_string(deltaTime * 1000), font);
 			console.DrawTextLine("X: " + std::to_string(p.Position.x) + " Y: " + std::to_string(p.Position.y) + " Z: " + std::to_string(p.Position.z), font);
-			console.DrawTextLine("Pitch: " + std::to_string(p.rotation.x) + " Yaw: " + std::to_string(p.rotation.y), font);
+			console.DrawTextLine("Pitch: " + std::to_string(p.rotation.x) + " Yaw: " + std::to_string(p.rotation.y) + " Roll: " + std::to_string(camera.Roll), font);
 			console.DrawTextLine(
 				"ChunkX: " + std::to_string(currentPlayerPos.x) +
 				" ChunkY: " + std::to_string(currentPlayerPos.y) +
@@ -478,6 +482,9 @@ namespace wc {
 				+ std::to_string((int)floor(m_rayEnd.z)) + " Looking at block: " 
 				+ std::to_string(getBlock(m_rayEnd)), font);
 
+			console.line += 10;
+			console.DrawTextLine(textbox.text, font);
+
 			console.Reset();
 			
 			for (uint8_t i = 0; i < inventorySizeX; i++) {
@@ -492,7 +499,7 @@ namespace wc {
 					Renderer2D::DrawText(std::to_string(amount), font, hotbarStart + glm::vec2(hotbarSize * i + 4.f, 44.f), 0.4f, glm::vec4(1.f));
 			}
 			glm::vec2 cursorSize = (glm::vec2)assets.textures[0].GetSize() * 1.4f;
-			glm::vec2 cursorPos = glm::vec2(windsize.x - cursorSize.x, windsize.y - cursorSize.y) * 0.5f;
+			glm::vec2 cursorPos = glm::vec2(windSize.x - cursorSize.x, windSize.y - cursorSize.y) * 0.5f;
 			Renderer2D::DrawQuad(cursorPos, cursorSize, assets.textures[0]);
 			glEnable(GL_DEPTH_TEST);
 		}
@@ -503,11 +510,30 @@ namespace wc {
 		glm::ivec3 sEnd;
 		//float modelScale = 0.3000f;
 
-		void OnInput(const glm::ivec2& windpos, const glm::ivec2& windSize, bool& HasFocus, const float& deltaTime) {
-
+		void OnInput(bool& HasFocus, const float& deltaTime) {
+			glm::ivec2 windpos = window.GetPos();
+			glm::ivec2 windSize = window.GetSize();
 			// MENU MANAGMENT
-			if (Keyboard::getKey(Keyboard::Key::E) == GLFW_PRESS)
-					mode = MenuMode::INVENTORY;
+			if (Keyboard::getKey(Keyboard::Key::E) == GLFW_PRESS && !textbox.isSelected) mode = MenuMode::INVENTORY;
+
+			if (Keyboard::getKey(Keyboard::Key::Escape) == GLFW_PRESS) mode = MenuMode::ESCMENU;
+
+			if (Keyboard::getKey(Keyboard::Key::Enter) && !textbox.isSelected) 
+				textbox.isSelected = true;			
+			else if (Keyboard::getKey(Keyboard::Key::Enter) && textbox.isSelected) {
+				textbox.isSelected = false;
+				std::string args;
+				auto commandType = getCommandType(textbox.text, args);
+				if (commandType == CommandType::textMessage) WC_INFO(textbox.text);
+				else if (commandType == CommandType::fly) p.flying = getArgs(args, 0);
+				else if (commandType == CommandType::collide) p.collision = getArgs(args, 0);
+				else if (commandType == CommandType::UNKNOWN) WC_ERROR("Unknow command!");
+				textbox.text = "";
+			}
+			textbox.update();
+
+			if (Keyboard::getKey(Keyboard::Key::Left)) camera.Roll += 0.5f;
+			if (Keyboard::getKey(Keyboard::Key::Right)) camera.Roll -= 0.5f;
 
 			// GAMEPLAY
 			float yaw = glm::radians(p.rotation.x);
@@ -572,11 +598,8 @@ namespace wc {
 
 			float ms = 1.f / MouseSensitivity;
 
-			bool invertMouse = false;
-			if (invertMouse) p.rotation.x += (xt - pos.x) * ms;
-			else p.rotation.x -= (xt - pos.x) * ms;
-
-			p.rotation.y += (yt - pos.y) * ms;
+			p.rotation.x -= (xt - pos.x) * ms;
+			p.rotation.y += (yt - pos.y) * ms;			
 
 			// make sure that when pitch is out of bounds, screen doesn't get flipped
 			if (p.rotation.y > 89.f)p.rotation.y =  89.f;
@@ -906,8 +929,8 @@ namespace wc {
 		void GenerateChunkTerrain(const ChunkID& chunk) {
 			const float temperature_loss = 0.00003f;
 				memset(&chunks[chunk].data, 0, sizeof(chunks[chunk].data));
-				concurrency::parallel_for(ChunkID(0), (ChunkID)chunkSize, [&](ChunkID z){
-					for (uint8_t x = 0; x < chunkSize; x++) {
+				concurrency::parallel_for(uint32_t(0), (uint32_t)chunkSize, [&](uint32_t z){
+					for (uint32_t x = 0; x < chunkSize; x++) {
 						glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
 						int heightMap =	(int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
 						float floraGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);

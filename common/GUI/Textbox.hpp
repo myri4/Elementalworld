@@ -5,7 +5,6 @@ namespace wc {
 class Textbox {
 public:
 	std::string text;
-	const char* clipBoard;
 	bool isSelected = false;
 
 	void update() {
@@ -21,7 +20,7 @@ public:
 						for (uint32_t i = 0; i < length; i++) text += t[i];
 					}
 
-				if (Keyboard::getKey(Keyboard::Key::V) == GLFW_PRESS && Keyboard::getKey(Keyboard::Key::LControl) == GLFW_PRESS) text += clipBoard;
+				if (Keyboard::getKey(Keyboard::Key::V) == GLFW_PRESS && Keyboard::getKey(Keyboard::Key::LControl) == GLFW_PRESS) text += window.getClipboard();
 			}
 		}
 	}

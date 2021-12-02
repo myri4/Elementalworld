@@ -18,25 +18,31 @@ namespace wc {
 		gl::FrameBuffer screen;
 		gl::Shader screenShader;
 		gl::Texture scrTexture;
+		gl::Texture mouseCursor;
+
+		//Menus
+		MainMenu mainMenu;
+		EscMenu escMenu;
 
 		Singleplayer world;
 
 		//----------------------------------------------------------------------------------------------------------------------
 		bool IsEngineOK() override {
-
-			if (window.isOpen()) return true;
-
-			return false;
+			return window.isOpen();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnInput() override {
 			bool hasFocus = window.hasFocus();
 			if (hasFocus) {
-				if (mode == MenuMode::GAME) world.OnInput(window.GetPos(), window.GetSize(), hasFocus, deltaTime);
-				else { 
+				if (mode == MenuMode::GAME) world.OnInput(hasFocus, deltaTime);
+				else if (mode == MenuMode::INVENTORY) {
 					world.p.inventory.OnInput(); 
 					world.p.crafting.OnInput();
 				}
+				else if (mode == MenuMode::MAINMENU) 
+					mainMenu.OnInput();
+				else if (mode == MenuMode::ESCMENU)
+					escMenu.OnInput();
 			}
 
 			if (resized) { 
@@ -48,8 +54,6 @@ namespace wc {
 				screen.Create(scrProps.Width, scrProps.Height, scrProps.samples);
 				screen.addTexture(scrTexture);
 			}
-			if (wc::Keyboard::isKeyPressed(Keyboard::Key::F)) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() override {
@@ -98,6 +102,9 @@ namespace wc {
 			world.Create();
 			world.p.inventory.Create();
 			world.p.crafting.Create();
+			mainMenu.OnCreate(world.font, 0.4f);
+			escMenu.OnCreate(world.font, 0.4f);
+			load("assets/textures/misc/mouse_cursor.png", mouseCursor);
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnUpdate() override {
@@ -108,11 +115,21 @@ namespace wc {
 			glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
 			Renderer::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
-			if (mode == MenuMode::GAME) world.Update(windsize, deltaTime);
-			else { 
+			if (mode == MenuMode::GAME) world.Update(deltaTime);
+			else if(mode == MenuMode::INVENTORY) {
+				TextButton button;
 				world.p.inventory.Update(windsize, window.GetPos(), deltaTime, world.font); 
 				world.p.crafting.Update(windsize, window.GetPos(), deltaTime, world.font);
 			}
+			else if (mode == MenuMode::MAINMENU) {
+				mainMenu.OnUpdate(world.font, 0.4f);
+				window.ShowMouse(true);
+			}
+			else if (mode == MenuMode::ESCMENU) {
+				escMenu.OnUpdate(world.font, 0.4f);
+				window.ShowMouse(true);
+			}
+			
 			
 			glDisable(GL_DEPTH_TEST);
 			screen.blit(windsize.x, windsize.y);
@@ -124,7 +141,7 @@ namespace wc {
 			scrTexture.Bind(); // use the color attachment texture as the texture of the quad plane			
 			
 			Renderer::DrawArrays(6);			
-			
+			if (window.showCursor) Renderer2D::DrawQuad(Mouse::GetMousePos() - window.GetPos(), {32, 48}, mouseCursor);
 			Renderer2D::Flush();
 			Renderer2D::FlushLines();
 			window.display();

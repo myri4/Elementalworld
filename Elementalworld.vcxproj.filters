@@ -21,9 +21,6 @@
     <ClCompile Include="src\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="common\gl\CubeMap.hpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="common\Maths\AssimpGLMHelpers.hpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -258,6 +255,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common\GUI\Console.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common\Utils\YAML.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Menus\Menus.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game Mechanics\CommandParser.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

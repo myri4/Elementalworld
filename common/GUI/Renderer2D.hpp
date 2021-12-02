@@ -301,7 +301,7 @@ namespace wc {
 #undef DrawText
 		void DrawText(const std::string& text, const Font& font, glm::vec2 pos = glm::vec2(0.f), const float& scale = 0.4f, const glm::vec4& color = glm::vec4(1.f)) {
 			for (auto& c : text) {
-				Character ch = font.Characters[c];
+				const Character& ch = font.Characters[c];
 
 				float xpos = pos.x + ch.Bearing.x * scale;
 				float ypos = pos.y - ch.Bearing.y * scale;

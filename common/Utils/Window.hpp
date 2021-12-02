@@ -28,7 +28,10 @@ namespace wc {
 			windowScript.script_file(luaScript);
 
 			GLFWmonitor* mode = nullptr;
-			if (windowScript["fullscreen"]) mode = glfwGetPrimaryMonitor();
+            if (windowScript["fullscreen"])
+            {
+                mode = glfwGetPrimaryMonitor();
+            }
 
 			window = glfwCreateWindow(windowScript["screenWidth"], windowScript["screenHeight"], title, mode, nullptr);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -40,7 +43,7 @@ namespace wc {
 			bool vsync = windowScript["vsync"];
 			glfwMakeContextCurrent(window);
 			if (!vsync) glfwSwapInterval(0);
-			glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {glViewport(0, 0, width, height); resized = true; });
+            glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {glViewport(0, 0, width, height); resized = true; });
 			glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) { scrollX = xoffset; scrollY = yoffset; mouseScrolled = true; });
 			glfwSetCharCallback(window, [](GLFWwindow* window, uint32_t codepoint) { currKeyEntered = codepoint; keyEntered = true; });
 			glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -53,6 +56,8 @@ namespace wc {
 				});
 
 			if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) WC_ERROR("Failed to initialize GLAD");
+
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 		}
 
 		void Destroy() const {
@@ -111,10 +116,11 @@ namespace wc {
 		}
 
 		void ShowMouse(const bool& show) {
-			if (show) 
-				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);			
-			else
-				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+			//if (show) 
+			//	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);			
+			//else
+			//	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+            showCursor = show;
 		}
 
         int getKey(const int& key) {
@@ -130,6 +136,12 @@ namespace wc {
 			glfwGetCursorPos(window, &x, &y);
 			return glm::ivec2(x, y);
 		}
+
+        inline operator GLFWwindow* () { return window; }
+        inline operator GLFWwindow* () const { return window; }
+
+        bool showCursor = true;
+        bool fullScreen = false;
 	private:
 		GLFWwindow* window = nullptr;
 	}window;

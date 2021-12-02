@@ -62,7 +62,4 @@ private:
 	gl::TextureArray texArr;
 	gl::TextureArray normalTexArr;
 }assets;
-
-enum class MenuMode { GAME, INVENTORY };
-MenuMode mode = MenuMode::GAME; // @TODO: Remove it from here and make a file that needs to be include everywhere
 }

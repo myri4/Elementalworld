@@ -60,18 +60,18 @@ public:
         m_planes[1].distance = mat[3][3] - mat[3][2];
     }
 
-    void update(const Camera& cam, const float& aspect, const float& zNear, const float& zFar){
-        const float halfVSide = zFar * glm::tan(cam.FOV * 0.5f);
-        const float halfHSide = halfVSide * aspect;
-        const glm::vec3 frontMultFar = zFar * cam.Front;
-    
-        m_planes[0] = { cam.Position + zNear * cam.Front, cam.Front };
-        m_planes[1] = { cam.Position + frontMultFar, -cam.Front };
-        m_planes[2] = { cam.Position, glm::cross(frontMultFar - cam.Right * halfHSide, cam.Up) };
-        m_planes[3] = { cam.Position, glm::cross(cam.Up,frontMultFar + cam.Right * halfHSide) };
-        m_planes[4] = { cam.Position, glm::cross(cam.Right, frontMultFar - cam.Up * halfVSide) };
-        m_planes[5] = { cam.Position, glm::cross(frontMultFar + cam.Up * halfVSide, cam.Right) };
-    }
+    //void update(const Camera& cam, const float& aspect, const float& zNear, const float& zFar){
+    //    const float halfVSide = zFar * glm::tan(cam.FOV * 0.5f);
+    //    const float halfHSide = halfVSide * aspect;
+    //    const glm::vec3 frontMultFar = zFar * cam.Front;
+    //
+    //    m_planes[0] = { cam.Position + zNear * cam.Front, cam.Front };
+    //    m_planes[1] = { cam.Position + frontMultFar, -cam.Front };
+    //    m_planes[2] = { cam.Position, glm::cross(frontMultFar - cam.Right * halfHSide, cam.Up) };
+    //    m_planes[3] = { cam.Position, glm::cross(cam.Up,frontMultFar + cam.Right * halfHSide) };
+    //    m_planes[4] = { cam.Position, glm::cross(cam.Right, frontMultFar - cam.Up * halfVSide) };
+    //    m_planes[5] = { cam.Position, glm::cross(frontMultFar + cam.Up * halfVSide, cam.Right) };
+    //}
 
     bool isBoxInFrustum(const glm::vec3& center, const float& radius = 0.f) const {
         // Loop through each plane that comprises the frustum.

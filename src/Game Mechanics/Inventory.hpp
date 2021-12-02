@@ -3,6 +3,7 @@
 #include <GUI/Renderer2D.hpp>
 #include <GUI/Button.hpp>
 #include <GUI/AssetManager.hpp>
+#include "../Menus/Menus.hpp"
 
 namespace wc {
 

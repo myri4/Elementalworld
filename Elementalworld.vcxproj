@@ -172,7 +172,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="common\gl\CubeMap.hpp" />
     <ClCompile Include="common\Maths\AssimpGLMHelpers.hpp" />
     <ClCompile Include="src\glad.c" />
     <ClCompile Include="src\main.cpp" />
@@ -205,6 +204,7 @@
     <ClInclude Include="common\net\wc_net.hpp" />
     <ClInclude Include="common\Renderer\Renderer.hpp" />
     <ClInclude Include="common\Utils\Bits.hpp" />
+    <ClInclude Include="common\Utils\YAML.hpp" />
     <ClInclude Include="common\wc\Model\Animation.hpp" />
     <ClInclude Include="common\wc\Model\Bone.hpp" />
     <ClInclude Include="common\wc\Model\Mesh.hpp" />
@@ -236,10 +236,12 @@
     <ClInclude Include="common\Utils\NonCopyable.hpp" />
     <ClInclude Include="src\Block.h" />
     <ClInclude Include="common\Maths\Ray.hpp" />
+    <ClInclude Include="src\Game Mechanics\CommandParser.hpp" />
     <ClInclude Include="src\Game Mechanics\Inventory.hpp" />
     <ClInclude Include="src\Game Mechanics\Item.hpp" />
     <ClInclude Include="src\Game Mechanics\LineBatcher.hpp" />
     <ClInclude Include="src\Game Mechanics\ParticleSystem.hpp" />
+    <ClInclude Include="src\Menus\Menus.hpp" />
     <ClInclude Include="src\world\Biome.hpp" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\Application.hpp" />

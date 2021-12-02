@@ -3,8 +3,6 @@
 #include <gl/Buffer.hpp>
 #include <gl/Shaders.hpp>
 #include <gl/VertexArray.hpp>
-#include <gl/CubeMap.hpp>
-#include <sol/sol.hpp>
 #include <Renderer/Renderer.hpp>
 
 namespace gl {
