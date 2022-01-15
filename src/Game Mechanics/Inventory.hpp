@@ -17,7 +17,7 @@ namespace wc {
 		bool AddItem(const uint8_t& itemID, const uint8_t& slot, const uint8_t& amount = 1) {
 			auto findSlot = [&]() {
 				for (uint8_t i = 0; i < inventorySize; i++) {
-					if (data[i].itemID == -1) { // if empty
+					if (data[i].itemID == 0) { // if empty
 						data[i].itemID = itemID;
 						if (data[i].stack_size + amount <= items[itemID].maxStackSize) {
 							data[i].stack_size += amount;
@@ -34,7 +34,7 @@ namespace wc {
 				return false;
 			};
 
-			if (data[slot].itemID == -1) { // if empty
+			if (data[slot].itemID == 0) { // if empty
 				data[slot].itemID = itemID;
 				if (data[slot].stack_size + amount <= items[itemID].maxStackSize) {
 					data[slot].stack_size += amount;
@@ -58,11 +58,11 @@ namespace wc {
 		}
 
 		bool RemoveItem(const uint32_t& slot, const uint32_t& amount = 1) {
-			if (data[slot].itemID == -1) return false;
+			if (data[slot].itemID == 0) return false;
 			if ((int)(data[slot].stack_size - amount) >= 0) {
 				data[slot].stack_size -= amount;
 
-				if (data[slot].stack_size == 0) data[slot].itemID = -1;
+				if (data[slot].stack_size == 0) data[slot].itemID = 0;
 				return true;
 			}
 			return false;
@@ -93,9 +93,9 @@ namespace wc {
 
 		virtual void UpdateButtonInput(const uint32_t& i, ItemSlot* data) {
 			if (buttons[i].isMouseOver() && (Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)) {
-				if (buttonSlot.first.itemID == -1) { // Removes the item if the slot is empty 
+				if (buttonSlot.first.itemID == 0) { // Removes the item if the slot is empty 
 					buttonSlot.first = data[i];
-					data[i].itemID = -1;
+					data[i].itemID = 0;
 					data[i].stack_size = 0;
 					buttonSlot.second.position = buttons[i].position;
 					buttonSlot.second.attach(Mouse::GetMousePosToWindow());
@@ -109,20 +109,20 @@ namespace wc {
 					else {
 						data[i].stack_size += buttonSlot.first.stack_size;
 						buttonSlot.first.stack_size = 0;
-						buttonSlot.first.itemID = -1;
+						buttonSlot.first.itemID = 0;
 					}
 				}
 			}
 
 			if (buttons[i].isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS && buttonSlot.first.itemID != -1) {
-				if (data[i].itemID == -1) data[i].itemID = buttonSlot.first.itemID;
+				if (data[i].itemID == 0) data[i].itemID = buttonSlot.first.itemID;
 				if (buttonSlot.first.stack_size > 0) {
 
 					data[i].stack_size++;
 					buttonSlot.first.stack_size--;
 				}
 				if (buttonSlot.first.stack_size == 0)
-					buttonSlot.first.itemID = -1;
+					buttonSlot.first.itemID = 0;
 			}
 		}
 
@@ -165,8 +165,8 @@ namespace wc {
 	template<uint32_t size>
 	class Recipe {
 	public:
-		int8_t data[size * size] = { -1 };
-		int8_t result = -1;
+		ItemID data[size * size] = { 0 };
+		ItemID result = 0;
 		uint8_t amount = 0;
 	
 	};
@@ -194,7 +194,7 @@ namespace wc {
 				data[size * size].stack_size = recipes[recipeID].amount;
 			}
 			else {
-				data[size * size].itemID = -1;
+				data[size * size].itemID = 0;
 				data[size * size].stack_size = 0;
 			}
 
@@ -209,7 +209,7 @@ namespace wc {
 		void UpdateButtonInput(const uint32_t& i, ItemSlot* data) override {
 			auto& buttons = this->buttons;
 			if (buttons[i].isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-				if (buttonSlot.first.itemID == -1) { // Removes the item if the slot is empty 
+				if (buttonSlot.first.itemID == 0) { // Removes the item if the slot is empty 
 					if (i == size * size && data[i].itemID != -1) {
 						for (uint32_t j = 0; j < size * size; j++) {
 							if (data[j].stack_size > 0) data[j].stack_size--;
@@ -218,21 +218,21 @@ namespace wc {
 					}
 					buttonSlot.second.attach(Mouse::GetMousePosToWindow());
 					buttonSlot.first = data[i];
-					data[i].itemID = -1;
+					data[i].itemID = 0;
 					data[i].stack_size = 0;
 					buttonSlot.second.position = buttons[i].position;
 				}
 			}
 
 			if (buttons[i].isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS && buttonSlot.first.itemID != -1 && i != size * size) {
-				if (data[i].itemID == -1) data[i].itemID = buttonSlot.first.itemID;
+				if (data[i].itemID == 0) data[i].itemID = buttonSlot.first.itemID;
 				if (buttonSlot.first.stack_size > 0) {
 
 					data[i].stack_size++;
 					buttonSlot.first.stack_size--;
 				}
 				if (buttonSlot.first.stack_size == 0)
-					buttonSlot.first.itemID = -1;
+					buttonSlot.first.itemID = 0;
 			}
 		}
 	};

@@ -25,24 +25,14 @@ local NoiseType =
 
 seed = 2895
 noise = Noise:new()
---noise:SetNoiseType(NoiseType.OpenSimplex2S)
---noise:SetFractalType(FractalType.FBm)
---noise:SetOctaves(9)
---noise:SetMultiplier(512)
---noise:SetFrequency(1 / 90) -- scale 
---noise:SetLacunarity(5)
---noise:SetGain(0.3) -- persistance, roughness
---noise:SetSeed(seed)
-
--- Must not use this settings
-frequency = 300
-noise:SetNoiseType(NoiseType.OpenSimplex2S)
+frequency = 2000
+noise:SetNoiseType(NoiseType.Ridged)
 noise:SetFractalType(FractalType.FBm)
 noise:SetOctaves(9)
-noise:SetMultiplier(128)
+noise:SetMultiplier(512)
 noise:SetFrequency(1 / frequency) -- scale 
-noise:SetLacunarity(frequency / 300)
-noise:SetGain(0.15) -- persistance, roughness, advice: use gain that is 1 / 1000 of the frequency
+noise:SetLacunarity(5)
+noise:SetGain(0.25) -- persistance, roughness
 noise:SetSeed(seed)
 
 TempNoise = Noise:new()
@@ -54,6 +44,16 @@ TempNoise:SetLacunarity(2)
 TempNoise:SetFrequency(1 / frequency)
 TempNoise:SetGain(frequency * 0.001)
 TempNoise:SetMultiplier(48)
+
+MoistureNoise = Noise:new()
+MoistureNoise:SetNoiseType(NoiseType.OpenSimplex2S)
+MoistureNoise:SetFractalType(FractalType.FBm)
+MoistureNoise:SetOctaves(3)
+MoistureNoise:SetSeed(seed + 1289)
+MoistureNoise:SetLacunarity(2)
+MoistureNoise:SetFrequency(1 / frequency)
+MoistureNoise:SetGain(frequency * 0.001)
+MoistureNoise:SetMultiplier(48)
 
 TreeNoise = Noise:new()
 TreeNoise:SetNoiseType(NoiseType.Perlin)

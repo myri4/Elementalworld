@@ -7,6 +7,7 @@ namespace wc {
 
 	class Biome {
 	public:
+		uint8_t numberFloraBlocks = 0;
 		Biome() {}
 
 		BlockID topBlock = 0;
@@ -17,5 +18,13 @@ namespace wc {
 		float maxMois = 1.f;
 
 		bool trees = false; //for now
+		bool underWater = false;
+		
+		//RarityTable floraTables[8];
+		
+		void addFloraTable(const RarityTable& table) {
+		//	floraTables[numberFloraBlocks] = table;
+			numberFloraBlocks++;
+		}
 	};	
 }

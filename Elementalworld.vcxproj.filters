@@ -298,5 +298,6 @@
     <None Include="shaderpacks\default\pbrUtil.glsl" />
     <None Include="scripts\green_coral.lua" />
     <None Include="scripts\requirements.lua" />
+    <None Include="scripts\biomes.lua" />
   </ItemGroup>
 </Project>

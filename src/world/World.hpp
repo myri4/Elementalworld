@@ -25,6 +25,8 @@ namespace wc {
 	static const uint16_t RenderDistance = 16;	
 	Block blockData[255];
 	uint32_t currentTexture = 0;
+	uint32_t currentBiomeID = 1;
+	std::array<Biome, 3> biomeMap;
 
 	class Singleplayer {
 	private:
@@ -62,20 +64,13 @@ namespace wc {
 
 		gl::VertexArray chunkMeshArray;
 		std::array<Chunk, RenderDistance * RenderDistance * RenderDistance> chunks;
+
 		FastNoiseLite worldNoise;
 		FastNoiseLite temperatureNoise;
+		FastNoiseLite moistureNoise;
 		FastNoiseLite treeNoise;
 		FastNoiseLite caveNoise;
 
-		int32_t farChunkPosX;
-		int32_t farChunkPosY;
-		int32_t farChunkPosZ;
-
-		int32_t farChunkNegX;
-		int32_t farChunkNegY;
-		int32_t farChunkNegZ;
-
-		std::array<Biome, 3> biomeMap;
 		bool gnerateTerrain : 1;
 		//std::pair<BlockID, glm::ivec3> missingBlocks[1000];
 		//uint32_t numberMissingBlocks = 0;
@@ -93,13 +88,14 @@ namespace wc {
 #endif
 
 		static void AddBlockScript(const char* script) {
-			Block block;
-
 			std::string conType;
 			sol::state blockState;
 			blockState.script_file(script);
 			BlockID blockID = 0;
 			if (blockState["id"].valid()) blockID = blockState["id"];
+
+			Block& block = blockData[blockID];
+
 			if (blockState["isCollidable"].valid()) block.isCollidable = blockState["isCollidable"];
 			if (blockState["ConnectionType"].valid()) conType = blockState["ConnectionType"];
 			if (blockState["color"].valid()) block.color = blockState["color"];
@@ -129,21 +125,18 @@ namespace wc {
 				block.normalTexture[(int)BlockTexture::RIGHT] =  block.normalTexture[(int)BlockTexture::TOP];
 
 				load((diffusePath + path).c_str(), items[currentTexture].texture);
-				items[currentTexture].block = blockID;
-				items[currentTexture].id = currentTexture;
-				currentTexture++;
 			}
 			else {
 				std::string itemPath;
 				std::string path;
-				if (blockState["top"].valid()) { 
-				itemPath = blockState["top"];  
-				path = blockState["top"]; block.texture[(int)BlockTexture::TOP] = assets.LoadTexture(diffusePath + path); 
-				block.normalTexture[(int)BlockTexture::TOP] = assets.LoadNormalTexture(normalPath + path);
+				if (blockState["top"].valid()) {
+					itemPath = blockState["top"];
+					path = blockState["top"]; block.texture[(int)BlockTexture::TOP] = assets.LoadTexture(diffusePath + path);
+					block.normalTexture[(int)BlockTexture::TOP] = assets.LoadNormalTexture(normalPath + path);
 				}
-				if (blockState["bottom"].valid()) { 
-				path = blockState["bottom"]; block.texture[(int)BlockTexture::BOTTOM] = assets.LoadTexture(diffusePath + path);
-				block.normalTexture[(int)BlockTexture::BOTTOM] = assets.LoadNormalTexture(normalPath + path);
+				if (blockState["bottom"].valid()) {
+					path = blockState["bottom"]; block.texture[(int)BlockTexture::BOTTOM] = assets.LoadTexture(diffusePath + path);
+					block.normalTexture[(int)BlockTexture::BOTTOM] = assets.LoadNormalTexture(normalPath + path);
 				}
 				if (blockState["front"].valid())  { 
 					path = blockState["front"];  block.texture[(int)BlockTexture::FRONT]  = assets.LoadTexture(diffusePath + path);  
@@ -164,14 +157,16 @@ namespace wc {
 
 				itemPath = diffusePath + itemPath;
 				load(itemPath.c_str(), items[currentTexture].texture);
-				items[currentTexture].block = blockID;
-				items[currentTexture].id = currentTexture;
-				currentTexture++;
 			}
+			
+			items[currentTexture].block = blockID;
+			currentTexture++;
 
 			if (blockState["emitLight"].valid()) block.emitLight = blockState["emitLight"];
-
-			blockData[blockID] = block;
+		}
+		static void AddBiome(const Biome biome) {			
+			biomeMap[currentBiomeID] = biome;
+			currentBiomeID++;
 		}
 
 		void SaveStructure(const char* outFile, const glm::ivec3& Start, const glm::ivec3& End) {
@@ -252,6 +247,7 @@ namespace wc {
 			worldGenState.script_file("scripts/worldGen.lua");
 			if (worldGenState["noise"].valid()) worldNoise = worldGenState["noise"];
 			if (worldGenState["TempNoise"].valid()) temperatureNoise = worldGenState["TempNoise"];
+			if (worldGenState["MoistureNoise"].valid()) moistureNoise = worldGenState["MoistureNoise"];
 			if (worldGenState["TreeNoise"].valid()) treeNoise = worldGenState["TreeNoise"];
 			if (worldGenState["CaveNoise"].valid()) caveNoise = worldGenState["CaveNoise"];
 
@@ -271,6 +267,18 @@ namespace wc {
 			//worldGenState.open_libraries(sol::lib::base);
 
 			worldGenState.script_file("scripts/blocks.lua");
+
+			worldGenState.new_usertype<Biome>("Biome", sol::constructors<void()>(),
+				"maxMois", &Biome::maxMois,
+				"maxTemp", &Biome::maxTemp,
+				"minMois", &Biome::minMois,
+				"minTemp", &Biome::minTemp,
+				"topBlock", &Biome::topBlock,
+				"trees", &Biome::trees,
+				"addFloraTable", &Biome::addFloraTable
+				);
+			worldGenState.set_function("AddBiome", &Singleplayer::AddBiome);
+			worldGenState.script_file("scripts/biomes.lua");
 			assets.Free();
 
 			load("assets/textures/misc/cursor2.png", assets.textures[0]);
@@ -293,14 +301,6 @@ namespace wc {
 				chunks[chunkID].indexBuffer.Create(nullptr, sizeof(uint32_t) * MaxFaceCount * 6, GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
 
 				chunks[chunkID].position = to3D(chunkID, glm::ivec3(RenderDistance));
-				if (chunks[chunkID].position.x > farChunkPosX) farChunkPosX = chunks[chunkID].position.x;
-				else if (chunks[chunkID].position.x < farChunkNegX) farChunkNegX = chunks[chunkID].position.x;
-
-				if (chunks[chunkID].position.y > farChunkPosY) farChunkPosY = chunks[chunkID].position.y;
-				else if (chunks[chunkID].position.y < farChunkNegY) farChunkNegY = chunks[chunkID].position.y;
-
-				if (chunks[chunkID].position.z > farChunkPosZ) farChunkPosZ = chunks[chunkID].position.z;
-				else if (chunks[chunkID].position.z < farChunkNegZ) farChunkNegZ = chunks[chunkID].position.z;
 
 				UpdateNeighbours(chunkID);
 			}
@@ -315,28 +315,10 @@ namespace wc {
 
 			X_FACE1.CalculateNormal();
 			X_FACE2.CalculateNormal();
-			p.inventory.AddItem(10, 0, 50);
-			p.inventory.AddItem(18, 1, 50);
-			p.inventory.AddItem(5, 2, 50);
-			p.inventory.AddItem(6, 3, 50);
-			p.inventory.AddItem(19, 4, 50);
 
-			biomeMap[DESERT].topBlock = 4;
-			biomeMap[DESERT].trees = false;
-			biomeMap[DESERT].minTemp = 0.21f;
-			biomeMap[DESERT].maxTemp = 0.6f;
-			biomeMap[PLAINS].trees = true;
-			biomeMap[PLAINS].topBlock = 1;
-			biomeMap[PLAINS].minTemp = 0.61f;
-			biomeMap[PLAINS].maxTemp = 1.f;
-			biomeMap[SNOW_PEAK].trees = false;
-			biomeMap[SNOW_PEAK].topBlock = 8;
-			biomeMap[SNOW_PEAK].minTemp = -1.f;
-			biomeMap[SNOW_PEAK].maxTemp = 0.2f;
 			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f)));
-			//addLight(modelPos, convertColor(glm::vec4(1.f)));
-			recipes[0].data[0] = 6; recipes[0].data[1] = -1;
-			recipes[0].data[2] = -1; recipes[0].data[3] = -1;
+			recipes[0].data[0] = 6; recipes[0].data[1] = 0;
+			recipes[0].data[2] = 0; recipes[0].data[3] = 0;
 			recipes[0].amount = 4;
 			recipes[0].result = 18;
 
@@ -394,6 +376,7 @@ namespace wc {
 			}
 
 			if (gnerateTerrain) {
+
 				for (ChunkID chunk = 0; chunk < chunks.size(); chunk++)
 					if (!chunks[chunk].generated) { GenerateChunkTerrain(chunk); chunks[chunk].generated = true; }
 
@@ -407,18 +390,19 @@ namespace wc {
 			//assets.BindNormal(1);
 			for (ChunkID i = 0; i < chunks.size(); i++) {
 			
-				if (chunks[i].canBeUpdated && !chunks[i].empty) { UpdateMesh(i); chunks[i].canBeUpdated = false; }
+				if (chunks[i].canBeUpdated) { UpdateMesh(i); chunks[i].canBeUpdated = false; }
 			
-				if (!chunks[i].empty && ShowChunk(i) && chunks[i].IndexCount > 0) {
+				if (!chunks[i].empty && viewFrustum.isBoxInFrustum(AABB(chunks[i].position * glm::ivec3(chunkSize), glm::vec3(chunkSize)))) {
+
 					chunkMeshArray.AddVertexBuffer(chunks[i].meshBuffer, sizeof(Vertex));
 					chunkMeshArray.AddIndexBuffer(chunks[i].indexBuffer);
 					chunkMeshArray.Bind();
 					Renderer::DrawIndexed(chunks[i].IndexCount);
-					//DrawOtlineCube(chunks[i].position, glm::vec3(chunkSize), glm::vec4(1.f));
 				}
 			}	
 			DrawOtlineCube(sStart, sEnd - sStart, glm::vec4(1.f));
-			DrawOtlineCube(p.Position - glm::vec3(0.5f, 0.f, 0.5f), glm::vec3(1.f, 2.f, 1.f), glm::vec4(1.f));
+			if (thirdPerson)
+				DrawOtlineCube(p.Position - p.Size, p.Size * 2.f, glm::vec4(1.f));
 			lineBatcher.Flush();
 #ifdef MODEL
 			modelShader.use();
@@ -504,11 +488,12 @@ namespace wc {
 			glEnable(GL_DEPTH_TEST);
 		}
 
-		Ray ray;
 		glm::vec3 m_rayEnd;
+		glm::vec3 m_rayStart;
 		glm::ivec3 sStart;
 		glm::ivec3 sEnd;
 		//float modelScale = 0.3000f;
+		bool thirdPerson = false;
 
 		void OnInput(bool& HasFocus, const float& deltaTime) {
 			glm::ivec2 windpos = window.GetPos();
@@ -521,93 +506,120 @@ namespace wc {
 			if (Keyboard::getKey(Keyboard::Key::Enter) && !textbox.isSelected) 
 				textbox.isSelected = true;			
 			else if (Keyboard::getKey(Keyboard::Key::Enter) && textbox.isSelected) {
+				// Command parsing
 				textbox.isSelected = false;
 				std::string args;
 				auto commandType = getCommandType(textbox.text, args);
+				args += ' ';
 				if (commandType == CommandType::textMessage) WC_INFO(textbox.text);
-				else if (commandType == CommandType::fly) p.flying = getArgs(args, 0);
-				else if (commandType == CommandType::collide) p.collision = getArgs(args, 0);
+				else if (commandType == CommandType::fly) p.flying = getArgument(args);
+				else if (commandType == CommandType::collide) p.collision = getArgument(args);
+				else if (commandType == CommandType::setBlock) setBlock({ getArgument(args, 1) , getArgument(args, 2) , getArgument(args, 3) }, getArgument(args));
+				else if (commandType == CommandType::give) p.inventory.AddItem(getArgument(args, 0), 0, getArgument(args, 1)); 
+				else if (commandType == CommandType::setSpeed) p.MovementSpeed = getArgument(args, 0);
+				else if (commandType == CommandType::setTime) skybox.angle = getArgument(args, 0);
+				else if (commandType == CommandType::capture) {
+					m_rayStart = p.Position;
+					m_rayEnd = camera.Front;
+				}
 				else if (commandType == CommandType::UNKNOWN) WC_ERROR("Unknow command!");
 				textbox.text = "";
 			}
 			textbox.update();
 
-			if (Keyboard::getKey(Keyboard::Key::Left)) camera.Roll += 0.5f;
-			if (Keyboard::getKey(Keyboard::Key::Right)) camera.Roll -= 0.5f;
+			if (!textbox.isSelected) {
 
-			// GAMEPLAY
-			float yaw = glm::radians(p.rotation.x);
-			float yaw90 = glm::radians(p.rotation.x + 90.f);
-			float addFOV = 0.f;
-			if (Keyboard::isKeyPressed(Keyboard::Key::W)) { // Front
-				float adder = 0.f;
-				if (Keyboard::isKeyPressed(Keyboard::Key::LControl)) { adder = 40.f; /*addFOV = 10.f;*/ }
-				else if (Keyboard::isKeyPressed(Keyboard::Key::LShift) && !p.flying) { adder = -2.f; }
-				p.acceleration.x += glm::cos(yaw) * (p.MovementSpeed + adder);
-				p.acceleration.z += glm::sin(yaw) * (p.MovementSpeed + adder);
-			}
+				if (Keyboard::getKey(Keyboard::Key::Left)) camera.Roll += 0.5f;
+				if (Keyboard::getKey(Keyboard::Key::Right)) camera.Roll -= 0.5f;
 
-			else if (Keyboard::isKeyPressed(Keyboard::Key::S)) { // Back
-				p.acceleration.x -= glm::cos(yaw) * p.MovementSpeed;
-				p.acceleration.z -= glm::sin(yaw) * p.MovementSpeed;
-			}
-			if (Keyboard::isKeyPressed(Keyboard::Key::A)) { // Left
-				p.acceleration.x -= glm::cos(yaw90) * p.MovementSpeed;
-				p.acceleration.z -= glm::sin(yaw90) * p.MovementSpeed;
-			}
-			else if (Keyboard::isKeyPressed(Keyboard::Key::D)) { // Right
-				p.acceleration.x += glm::cos(yaw90) * p.MovementSpeed;
-				p.acceleration.z += glm::sin(yaw90) * p.MovementSpeed;
-			}
-
-			if (Keyboard::isKeyPressed(Keyboard::Key::Space))
-			{
-				if (!p.flying) {
-					if (p.m_isOnGround)
-					{
-						p.acceleration.y = p.MovementSpeed * 2.f;
-						p.m_isOnGround = false;
-					}
+				// GAMEPLAY
+				float yaw = glm::radians(p.rotation.x);
+				float yaw90 = glm::radians(p.rotation.x + 90.f);
+				float addFOV = 0.f;
+				if (Keyboard::isKeyPressed(Keyboard::Key::W)) { // Front
+					float adder = 0.f;
+					if (Keyboard::isKeyPressed(Keyboard::Key::LControl)) { adder = 40.f; /*addFOV = 10.f;*/ }
+					else if (Keyboard::isKeyPressed(Keyboard::Key::LShift) && !p.flying) { adder = -2.f; }
+					p.acceleration.x += glm::cos(yaw) * (p.MovementSpeed + adder);
+					p.acceleration.z += glm::sin(yaw) * (p.MovementSpeed + adder);
 				}
-				else p.acceleration.y += p.MovementSpeed;
+
+				else if (Keyboard::isKeyPressed(Keyboard::Key::S)) { // Back
+					p.acceleration.x -= glm::cos(yaw) * p.MovementSpeed;
+					p.acceleration.z -= glm::sin(yaw) * p.MovementSpeed;
+				}
+				if (Keyboard::isKeyPressed(Keyboard::Key::A)) { // Left
+					p.acceleration.x -= glm::cos(yaw90) * p.MovementSpeed;
+					p.acceleration.z -= glm::sin(yaw90) * p.MovementSpeed;
+				}
+				else if (Keyboard::isKeyPressed(Keyboard::Key::D)) { // Right
+					p.acceleration.x += glm::cos(yaw90) * p.MovementSpeed;
+					p.acceleration.z += glm::sin(yaw90) * p.MovementSpeed;
+				}
+
+				if (Keyboard::getKey(Keyboard::Key::F5) == GLFW_PRESS && !thirdPerson) {
+					camera.distanceFromCamera = 3.f;
+					thirdPerson = true;
+				}
+				else if (Keyboard::getKey(Keyboard::Key::F5) == GLFW_PRESS && thirdPerson) {
+					camera.distanceFromCamera = 0.f;
+					thirdPerson = false;
+				}
+
+				if (Keyboard::isKeyPressed(Keyboard::Key::F))
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				else
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+				if (Keyboard::isKeyPressed(Keyboard::Key::Space))
+				{
+					if (!p.flying) {
+						if (p.m_isOnGround)
+						{
+							p.acceleration.y = p.MovementSpeed * 2.f;
+							p.m_isOnGround = false;
+						}
+					}
+					else p.acceleration.y += p.MovementSpeed;
+				}
+				else if (Keyboard::isKeyPressed(Keyboard::Key::LShift) && p.flying)
+					p.acceleration.y -= p.MovementSpeed;
+
+				if (Keyboard::isKeyPressed(Keyboard::Key::C)) { addFOV = -80.f; MouseSensitivity = 18; }
+				else
+					MouseSensitivity = 5;
+
+				camera.FOV = addFOV + 90.f;
+
+				if (mouseScrolled) {
+					if (scrollY < 0) p.currentSlot++;
+					else p.currentSlot--;
+					if (p.currentSlot < 0) p.currentSlot = inventorySizeX - 1;
+					else if (p.currentSlot > inventorySizeX - 1) p.currentSlot = 0;
+				}
+
+				int16_t xt, yt;
+
+				glm::ivec2 pos = Mouse::GetMousePosToWindow();
+
+				xt = windSize.x / 2;
+				yt = windSize.y / 2;
+
+				float ms = 1.f / MouseSensitivity;
+
+				p.rotation.x -= (xt - pos.x) * ms;
+				p.rotation.y += (yt - pos.y) * ms;
+
+				// make sure that when pitch is out of bounds, screen doesn't get flipped
+				if (p.rotation.y > 89.f)p.rotation.y = 89.f;
+				else if (p.rotation.y < -89.f)p.rotation.y = -89.f;
+
+				if (p.rotation.x > 360.f) p.rotation.x = 0.f;
+				else if (p.rotation.x < 0.f) p.rotation.x = 360.f;
+
+				Mouse::SetMousePosition(xt, yt);
 			}
-			else if (Keyboard::isKeyPressed(Keyboard::Key::LShift) && p.flying)
-				p.acceleration.y -= p.MovementSpeed;
-			
-			if (Keyboard::isKeyPressed(Keyboard::Key::C)) { addFOV = -80.f; MouseSensitivity = 18;}
-			else 
-				MouseSensitivity = 5;
-			
-			camera.FOV = addFOV + 90.f;
 
-			if (Keyboard::getKey(Keyboard::Key::T) == GLFW_PRESS) p.collision = !p.collision;
-
-			if (mouseScrolled) {
-				if (scrollY < 0) p.currentSlot++;
-				else p.currentSlot--;
-				if (p.currentSlot < 0) p.currentSlot = inventorySizeX - 1;
-				else if (p.currentSlot > inventorySizeX - 1) p.currentSlot = 0;
-			}
-			
-			int16_t xt, yt;
-
-			glm::ivec2 pos = Mouse::GetMousePosToWindow();
-
-			xt = windSize.x / 2;
-			yt = windSize.y / 2;
-
-			float ms = 1.f / MouseSensitivity;
-
-			p.rotation.x -= (xt - pos.x) * ms;
-			p.rotation.y += (yt - pos.y) * ms;			
-
-			// make sure that when pitch is out of bounds, screen doesn't get flipped
-			if (p.rotation.y > 89.f)p.rotation.y =  89.f;
-			else if (p.rotation.y < -89.f)p.rotation.y = -89.f;
-			
-			if (p.rotation.x > 360.f) p.rotation.x = 0.f;
-			else if (p.rotation.x < 0.f) p.rotation.x = 360.f;
-						
 			// PLAYER RELATED
 			p.velocity += p.acceleration;
 			p.acceleration = { 0.f,0.f,0.f };
@@ -641,52 +653,53 @@ namespace wc {
 			//////////////
 
 			camera.UpdateCameraAngles();
-			Mouse::SetMousePosition(xt, yt);
 			
 			Mouse::ShowMouse(!HasFocus);
-
-			if (Keyboard::getKey(Keyboard::Key::G) == GLFW_PRESS) p.flying = !p.flying;
 
 			bool bBreak = Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)  == GLFW_PRESS;
 			bool bPlace = Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 
-			ray.m_rayOrigin = camera.Position;
-			ray.m_rayDir = camera.Front;
 			glm::vec3 m_rayLastPos;
 			bool bShow = true;
-			
-			m_rayEnd = ray.m_rayOrigin;
-			while (glm::distance(ray.m_rayOrigin, m_rayEnd) < 6.f)
+			m_rayStart = p.Position;
+			m_rayEnd = m_rayStart;
+
+			while (glm::length(p.Position - m_rayEnd) < 6.f)
 			{
-				m_rayEnd += ray.m_rayDir * 0.5f;
-				BlockID block = getBlock(m_rayEnd);
+				m_rayEnd += camera.Front * 0.5f;
+				glm::ivec3 pos = static_cast<glm::ivec3>(m_rayEnd);
+				if (pos.x < 0 && pos.x % (chunkSize - 1) != 0) pos.x--;
+				if (pos.y < 0 && pos.y % (chunkSize - 1) != 0) pos.y--;
+				if (pos.z < 0 && pos.z % (chunkSize - 1) != 0) pos.z--;
+
+				DrawOtlineCube(pos, glm::vec3(1.f), glm::vec4(1.f, 0.f, 0.f, 1.f));
+				lineBatcher.DrawLine(p.Position, m_rayEnd);
+				BlockID block = getBlock(pos);
 				if (block > 0 && block != 5)
 				{
 					if (bShow) {
-						DrawOtlineCube(glm::floor(m_rayEnd), glm::vec3(1.f), glm::vec4(0.f, 0.f, 0.f, 1.f));
 						bShow = false;
 
 						//if (bPick)
 						//	p.currentSlot = getBlock(m_rayEnd);
 
 						if (bBreak) {
-							int itemID = block - 1;
+							ItemID itemID = block - 1;
 							p.inventory.AddItem(itemID, p.currentSlot);
-							setBlock(floor(m_rayEnd), 0);
+							setBlock(pos, 0);
 						}
 						else if (bPlace) {
-							if (getBlock(floor(m_rayEnd)) == 20) {
+							if (block == 20) {
 								if (Keyboard::isKeyPressed(Keyboard::Key::LShift)) {
-									int itemID = p.inventory.data[p.currentSlot].itemID;
+									ItemID itemID = p.inventory.data[p.currentSlot].itemID;
 									if (p.inventory.RemoveItem(p.currentSlot))
 										setBlock(m_rayLastPos, items[itemID].block);
 								}
-								else {
-									mode = MenuMode::INVENTORY;
-								}
+								else 
+									mode = MenuMode::INVENTORY;								
 							}
 							else {
-								int itemID = p.inventory.data[p.currentSlot].itemID;
+								ItemID itemID = p.inventory.data[p.currentSlot].itemID;
 								if (p.inventory.RemoveItem(p.currentSlot))
 									setBlock(m_rayLastPos, items[itemID].block);
 							}
@@ -694,18 +707,29 @@ namespace wc {
 						break;
 					}
 				}
-				m_rayLastPos = m_rayEnd;
-			}			
-		}
+				m_rayLastPos = pos;
+			}
+		}		
 
 	private:
 		//Chunk managing
 
+		void roundIfNegative(glm::vec3& vec) {
+			if (vec.x < 0) vec.x--;
+			if (vec.y < 0) vec.y--;
+			if (vec.z < 0) vec.z--;
+		}
+
 		void collide(const glm::vec3& vel) {
-			for (int x = (int)(p.Position.x - p.Size.x); x < p.Position.x + p.Size.x; x++) 
-			for (int y = (int)(p.Position.y - p.Size.y); y < p.Position.y + p.Size.y; y++) 
-			for (int z = (int)(p.Position.z - p.Size.z); z < p.Position.z + p.Size.z; z++) {
-				BlockID blockID = getBlock({ x, y, z });
+			glm::vec3 startPos = (p.Position - p.Size);
+			glm::vec3 endPos = p.Position + p.Size;
+
+			roundIfNegative(startPos);
+
+			for (int x = startPos.x; x < endPos.x; x++)
+			for (int y = startPos.y; y < endPos.y; y++)
+			for (int z = startPos.z; z < endPos.z; z++) {
+				BlockID blockID = getBlock(glm::ivec3(x, y, z));
 				Block block = blockData[blockID];
 				if (blockID != 0u && block.isCollidable) {
 					if (vel.y > 0) {
@@ -718,44 +742,18 @@ namespace wc {
 						p.velocity.y = 0.f;
 					}
 
-					if (vel.x > 0) 
-						p.Position.x = x - p.Size.x;								
-					else if (vel.x < 0) 
+					if (vel.x > 0)
+						p.Position.x = x - p.Size.x;
+					else if (vel.x < 0)
 						p.Position.x = x + p.Size.x + blockSize;
 
-					if (vel.z > 0) 
-						p.Position.z = z - p.Size.z;								
-					else if (vel.z < 0) 
+					if (vel.z > 0)
+						p.Position.z = z - p.Size.z;
+					else if (vel.z < 0)
 						p.Position.z = z + p.Size.z + blockSize;
-					
+
 				}
-			}			
-		}
-
-		bool ShowChunk(const ChunkID& chunk) { //@TODO: Optimize
-			glm::vec3 pos1 = chunks[chunk].position * glm::ivec3(chunkSize);
-			glm::vec3 pos = pos1;
-			if (viewFrustum.isBoxInFrustum(pos)) return true;
-			
-			pos = pos1 + glm::vec3(chunkSize, 0, 0);
-			if (viewFrustum.isBoxInFrustum(pos)) return true;
-			pos = pos1 + glm::vec3(0, chunkSize, 0);
-			if (viewFrustum.isBoxInFrustum(pos)) return true;
-			pos = pos1 + glm::vec3(0, 0, chunkSize);
-			if (viewFrustum.isBoxInFrustum(pos)) return true;
-			
-			pos = pos1 + glm::vec3(chunkSize, chunkSize, 0);
-			if (viewFrustum.isBoxInFrustum(pos)) return true;
-			pos = pos1 + glm::vec3(chunkSize, 0, chunkSize);
-			if (viewFrustum.isBoxInFrustum(pos)) return true;
-			
-			pos = pos1 + glm::vec3(0, chunkSize, chunkSize);
-			if (viewFrustum.isBoxInFrustum(pos)) return true;
-			
-			pos = pos1 + glm::vec3(chunkSize);
-			if (viewFrustum.isBoxInFrustum(pos)) return true;
-
-			return false;
+			}
 		}
 
 		/*void SaveChunk(const ChunkID& chunk) {
@@ -847,15 +845,6 @@ namespace wc {
 		void ResetChunk(const ChunkID& chunkID, const glm::ivec3& newChunkPos) {
 			chunks[chunkID].position = newChunkPos;
 
-			if (chunks[chunkID].position.x > farChunkPosX) farChunkPosX = chunks[chunkID].position.x;
-			else if (chunks[chunkID].position.x < farChunkNegX) farChunkNegX = chunks[chunkID].position.x;
-
-			if (chunks[chunkID].position.y > farChunkPosY) farChunkPosY = chunks[chunkID].position.y;
-			else if (chunks[chunkID].position.y < farChunkNegY) farChunkNegY = chunks[chunkID].position.y;
-
-			if (chunks[chunkID].position.z > farChunkPosZ) farChunkPosZ = chunks[chunkID].position.z;
-			else if (chunks[chunkID].position.z < farChunkNegZ) farChunkNegZ = chunks[chunkID].position.z;
-
 			UpdateNeighbours(chunkID);
 
 			//uint8_t y = 0, x = 0, z = 0;
@@ -873,7 +862,6 @@ namespace wc {
 			//					}
 			//			}
 			//		}
-			//GenerateChunkTerrain(chunk);
 			chunks[chunkID].generated = false;
 			chunks[chunkID].generatedStructures = false;
 			gnerateTerrain = true;
@@ -889,13 +877,13 @@ namespace wc {
 			glm::ivec3 neighborYneg = chunks[chunk].position - glm::ivec3{ 0,1,0 };
 			glm::ivec3 neighborZneg = chunks[chunk].position - glm::ivec3{ 0,0,1 };
 
-			chunks[chunk].neighborPos[0] = -1;
-			chunks[chunk].neighborPos[1] = -1;
-			chunks[chunk].neighborPos[2] = -1;
+			if (chunks[chunks[chunk].neighborPos[0]].position != neighborXpos) { if (chunks[chunk].neighborPos[0] != -1) chunks[chunks[chunk].neighborPos[0]].neighborNeg[0] = -1; chunks[chunk].neighborPos[0] = -1; }
+			if (chunks[chunks[chunk].neighborPos[1]].position != neighborYpos) { if (chunks[chunk].neighborPos[1] != -1) chunks[chunks[chunk].neighborPos[1]].neighborNeg[1] = -1; chunks[chunk].neighborPos[1] = -1; }
+			if (chunks[chunks[chunk].neighborPos[2]].position != neighborZpos) { if (chunks[chunk].neighborPos[2] != -1) chunks[chunks[chunk].neighborPos[2]].neighborNeg[2] = -1; chunks[chunk].neighborPos[2] = -1; }
 
-			chunks[chunk].neighborNeg[0] = -1;
-			chunks[chunk].neighborNeg[1] = -1;
-			chunks[chunk].neighborNeg[2] = -1;
+			if (chunks[chunks[chunk].neighborNeg[0]].position != neighborXneg) { if (chunks[chunk].neighborNeg[0] != -1) chunks[chunks[chunk].neighborNeg[0]].neighborPos[0] = -1; chunks[chunk].neighborNeg[0] = -1; }
+			if (chunks[chunks[chunk].neighborNeg[1]].position != neighborYneg) { if (chunks[chunk].neighborNeg[1] != -1) chunks[chunks[chunk].neighborNeg[1]].neighborPos[1] = -1; chunks[chunk].neighborNeg[1] = -1; }
+			if (chunks[chunks[chunk].neighborNeg[2]].position != neighborZneg) { if (chunks[chunk].neighborNeg[2] != -1) chunks[chunks[chunk].neighborNeg[2]].neighborPos[2] = -1; chunks[chunk].neighborNeg[2] = -1; }
 
 			concurrency::parallel_for(ChunkID(0), (ChunkID)chunks.size(), [&](ChunkID i) {
 				if (chunks[i].position == neighborXpos) { chunks[chunk].neighborPos[0] = i; chunks[chunks[chunk].neighborPos[0]].neighborNeg[0] = chunk; }
@@ -932,28 +920,28 @@ namespace wc {
 				concurrency::parallel_for(uint32_t(0), (uint32_t)chunkSize, [&](uint32_t z){
 					for (uint32_t x = 0; x < chunkSize; x++) {
 						glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
-						int heightMap =	(int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-						float floraGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-						float baseTemperature = 0.f;// temperatureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-						float moisture = 0.f;
+						int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+						float floraGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+						float baseTemperature = temperatureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+						float moisture = moistureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 						int dirtDepth = (int)(floraGen * 3.f) + 2;
 
 						for (uint8_t y = 0; y < chunkSize; y++) {
 								glm::ivec3 pos = chunks[chunk].position * glm::ivec3(chunkSize) + glm::ivec3(x, y, z);
-								float temperature = 1.f - (pos.y * temperature_loss + baseTemperature);
+								float temperature = 0.6f;// 1.f - (pos.y * temperature_loss + baseTemperature);
 								//temperature *= (1.f - (pos.y / worldNoise.GetMultiplier()));
-								temperature = glm::mix(temperature, 1.f, (pos.y / worldNoise.GetMultiplier()));
-								uint32_t type = getBiome(temperature, moisture);
+								//temperature = glm::mix(temperature, 1.f, (pos.y / worldNoise.GetMultiplier()));
+								uint32_t biome = getBiome(temperature, moisture);
 								//float noise = -pos.y + worldNoise.get3DNoiseFor(pos.x, pos.y, pos.z);
 								//if (noise < 10.f && noise > -0.1f) setBlock({x,y,z}, 3, chunk);
-								float CaveNoise = caveNoise.GetNoise((float)pos.x, (float)pos.y, (float)pos.z);
+								float CaveNoise = 0.f;// caveNoise.GetNoise((float)pos.x, (float)pos.y, (float)pos.z);
 								if (!(CaveNoise >= 0.25f && CaveNoise <= 0.99f)) {
 									bool onSand = (pos.y <= water_level + (int)(floraGen * 3.f) && pos.y == heightMap);
 									if (pos.y == heightMap) {
 										if (onSand)
 											setBlock(glm::ivec3(x, y, z), 4, chunk);
-										else
-											setBlock(glm::ivec3(x, y, z), biomeMap[type].topBlock, chunk);
+										else 
+											setBlock(glm::ivec3(x, y, z), biomeMap[biome].topBlock, chunk);
 									}
 
 									if (pos.y < heightMap && pos.y >= heightMap - dirtDepth) setBlock(glm::ivec3(x, y, z), 2, chunk);
@@ -974,7 +962,7 @@ namespace wc {
 											if (floraGen > 0.69f && floraGen <= 0.7f && heightMap > water_level) { setBlock(glm::ivec3(x, y, z), 13, chunk); }
 											if (floraGen > 0.59f && floraGen <= 0.6f && heightMap > water_level) { setBlock(glm::ivec3(x, y, z), 10, chunk); }
 										}
-										if (floraGen > 0.95f && floraGen <= 0.98f && onSand) { setBlock(glm::ivec3(x, y, z), 15, chunk); }
+										else if (floraGen > 0.95f && floraGen <= 0.98f) { setBlock(glm::ivec3(x, y, z), 15, chunk); }
 									}
 								}
 						}
@@ -1032,7 +1020,7 @@ namespace wc {
 
 					for (uint8_t y = 0; y < chunkSize; y++) {
 						glm::ivec3 pos = chunks[chunk].position * glm::ivec3(chunkSize) + glm::ivec3(x, y, z);
-						uint32_t type = getBiome(baseTemperature, 0.f);
+						uint32_t type = getBiome(0.75f, 0.f);
 						float CaveNoise = caveNoise.GetNoise((float)pos.x, (float)pos.y, (float)pos.z);
 						bool onGrass = !(pos.y <= water_level + (int)(treeGen * 2.f) && pos.y == heightMap);
 
@@ -1094,7 +1082,7 @@ namespace wc {
 			int16_t chunk = getChunkID(getChunkPos(pos));
 
 			glm::ivec3 blockPos = getBlockPos(pos);
-			if (chunk > -1 && chunks[chunk].generated) setBlock(blockPos, block, chunk);
+			if (chunk > -1 /*&& chunks[chunk].generated*/) setBlock(blockPos, block, chunk);
 			//else { 
 			//	missingBlocks[numberMissingBlocks] = { block, pos };
 			//	numberMissingBlocks++;
@@ -1192,13 +1180,13 @@ namespace wc {
 								block = chunks[chunk].data[x[0]][x[1]][x[2]];
 								type = blockData[block].connectionType;
 							}
-							else if (chunks[chunk].neighborNeg[d] > -1) {
-								int x1 = x[d];
-								x[d] = chunkSize - 1;
-								block = chunks[chunks[chunk].neighborNeg[d]].data[x[0]][x[1]][x[2]];
-								type = blockData[block].connectionType;
-								x[d] = x1;
-							}
+							//else if (chunks[chunk].neighborNeg[d] > -1) {
+							//	int x1 = x[d];
+							//	x[d] = chunkSize - 1;
+							//	block = chunks[chunks[chunk].neighborNeg[d]].data[x[0]][x[1]][x[2]];
+							//	type = blockData[block].connectionType;
+							//	x[d] = x1;
+							//}
 
 							glm::ivec3 xq = x + q;
 							if (xq[d] < chunkSize) {
@@ -1360,10 +1348,12 @@ namespace wc {
 		}
 
 		uint32_t getBiome(const float& temperature, const float& moisture = 0.f) {
-			for (uint32_t i = 0; i < biomeMap.size(); i++) {
-				if (temperature >= biomeMap[i].minTemp && temperature <= biomeMap[i].maxTemp) return i;
+			for (uint32_t i = 1; i < biomeMap.size(); i++) {
+				if (temperature >= biomeMap[i].minTemp && temperature <= biomeMap[i].maxTemp 
+					//&& moisture >= biomeMap[i].minMois && moisture <= biomeMap[i].maxMois
+					) return i;
 			}
-			return PLAINS;
+			return 0;
 		}
 
 		void DrawOtlineCube(const glm::vec3& pos, const glm::vec3& size, const glm::vec4& color) {

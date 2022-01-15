@@ -20,7 +20,7 @@ namespace wc{
 		glm::vec3 lower_left_corner = glm::vec3(0.f);
 		glm::vec3 horizontal = glm::vec3(0.f);
 		glm::vec3 vertical = glm::vec3(0.f);
-		float distanceFromCamera = 3.f;
+		float distanceFromCamera = 0.f;
 		// euler Angles
 		float Yaw = 0.f;
 		float Pitch = 0.f;

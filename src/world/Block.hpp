@@ -57,8 +57,7 @@ Face X_FACE2 = {
 	glm::vec3(0.f,  blockSize, 0.f),  // top-left
 };
 
-class Vertex {
-public:
+struct Vertex {
 	glm::vec3 Position = { 0,0,0 };
 	uint32_t TexCoords = 0;
 	uint32_t color = 0xFFFFFFFF;
@@ -120,7 +119,7 @@ struct BlockMesh {
 	}
 }BlockMeshes;
 
-typedef int8_t BlockID;
+typedef uint8_t BlockID;
 
 struct Block{
 	bool isCollidable : 1;
@@ -136,5 +135,12 @@ struct Block{
 		isCollidable = true;
 		emitLight = false;
 	}
+};
+
+struct RarityTable {
+	BlockID block = 0;
+
+	float start = 0.f;
+	float end = 0.f;
 };
 }

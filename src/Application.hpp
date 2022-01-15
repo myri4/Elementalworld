@@ -49,6 +49,7 @@ namespace wc {
 				screen.Destroy();
 				scrTexture.Destroy(); 
 				gl::TextureProps scrProps;
+				scrProps.internalFormat = GL_RGB16F;
 				scrProps.SetSize(window.GetSize());
 				scrTexture.Create(scrProps);
 				screen.Create(scrProps.Width, scrProps.Height, scrProps.samples);
@@ -65,7 +66,7 @@ namespace wc {
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 			//Anti aliasing
-			//glEnable(GL_MULTISAMPLE);
+			glEnable(GL_MULTISAMPLE);
 
 			//Depth testing
 			glEnable(GL_DEPTH_TEST);
@@ -73,6 +74,7 @@ namespace wc {
 			screenShader.Create("shaderpacks/default/screenShader.glsl");
 
 			gl::TextureProps scrProps;
+			scrProps.internalFormat = GL_RGB16F;
 			scrProps.SetSize(window.GetSize());
 
 			scrTexture.Create(scrProps);
