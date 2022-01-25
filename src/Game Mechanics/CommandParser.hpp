@@ -5,7 +5,7 @@
 
 namespace wc {
 
-	enum class CommandType { UNKNOWN = -1, textMessage, fly, collide, setTime, setBlock, give, setSpeed, capture, Length };
+	enum class CommandType { UNKNOWN = -1, textMessage, fly, collide, setTime, setBlock, give, setSpeed, tpModel, capture, Length };
 
 	CommandType getCommandType(const std::string& text, std::string& args) {
 		if (text[0] == '/') {

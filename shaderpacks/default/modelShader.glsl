@@ -14,9 +14,12 @@ layout (std140, binding = 0) uniform Transforms
     float deltaTime;
 	int u_numLights;
 
-	vec3 fogColor;
 	vec3 cameraPos;
-	vec3 ambientColor;
+    vec3 lower_left_corner;
+    vec3 horizontal;
+    vec3 vertical;
+	vec2 windowSize;
+	vec3 fogColor;
 	float u_Density;
 	float u_Gradient;
 };

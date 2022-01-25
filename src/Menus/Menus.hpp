@@ -46,10 +46,15 @@ namespace wc {
 		}
 	};
 
+	bool bReloadChunkShader = false;
+	bool bReloadModelShader = false;
+
 	class EscMenu {
 		TextButton resume;
 		TextButton mainMenu;
 		TextButton quitGame;
+		TextButton reloadChunkShader;
+		TextButton reloadModelShader;
 	public:
 		void OnCreate(const Font& font, const float& scale) {
 			resume.text = "Resume";
@@ -69,18 +74,34 @@ namespace wc {
 
 			quitGame.position = { 0,200 };
 			quitGame.size = { 500,100 };
+
+			reloadChunkShader.text = "Reload chunk shader";
+			reloadChunkShader.CenterText(font, scale);
+
+			reloadChunkShader.position = { 500,0 };
+			reloadChunkShader.size = { 500,100 };
+
+			reloadModelShader.text = "Reload model shader";
+			reloadModelShader.CenterText(font, scale);
+
+			reloadModelShader.position = { 500,100 };
+			reloadModelShader.size = { 500,100 };
 		}
 
 		void OnInput() {
 			if (resume.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) mode = MenuMode::GAME;
 			else if (mainMenu.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) mode = MenuMode::MAINMENU;
 			else if (quitGame.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) window.close();
+			else if (reloadChunkShader.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) bReloadChunkShader = true;
+			else if (reloadModelShader.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) bReloadModelShader = true;
 		}
 
 		void OnUpdate(const Font& font, const float& scale) {
 			resume.Render(font, scale);
 			mainMenu.Render(font, scale);
 			quitGame.Render(font, scale);
+			reloadChunkShader.Render(font, scale);
+			reloadModelShader.Render(font, scale);
 		}
 	};
 

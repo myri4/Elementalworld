@@ -34,7 +34,7 @@ public: // Variables
 	int16_t neighborPos[3] = { -1,-1,-1 };
 	int16_t neighborNeg[3] = { -1,-1,-1 };
 
-	bool used : 1;
+	bool used : 1; // Should the chunk be saved
 	bool generated : 1;
 	bool canBeUpdated : 1;
 	bool empty : 1;

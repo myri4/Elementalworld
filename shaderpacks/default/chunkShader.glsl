@@ -93,6 +93,7 @@ void main() {
     vec3 Normal = normalize(cross(dFdxPos,dFdyPos)) * -0.5 - 0.5;
 
     vec4 textureColor = texture(u_Texture, v_TexCoords) * v_Color;
+    //textureColor.rgb = pow(textureColor.rgb, vec3(2.2f));
     if ((!true && v_Type != FLUID_CONNECT && v_Type != X_CONNECT) || textureColor.a < 0.1) discard;
     
 	vec3 N = getNormalFromMap(texture(u_NormalMap, v_TexCoords).rgb, v_Normal, p0, v_TexCoords.xy);

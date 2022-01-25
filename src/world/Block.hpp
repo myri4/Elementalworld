@@ -20,7 +20,7 @@ struct Face {
 	glm::vec3 normal = glm::vec3(0.f);
 
 	void CalculateNormal() {
-		normal = glm::normalize(glm::cross(corner[2] - corner[0], corner[1] - corner[0]));		
+		normal = glm::cross(corner[2] - corner[0], corner[1] - corner[0]);		
 	}
 };
 

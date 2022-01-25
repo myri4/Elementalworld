@@ -1,23 +1,17 @@
 plains = Biome:new()
-plains.trees = true
 plains.topBlock = 1
-plains.minTemp = 0.21
-plains.maxTemp = 0.6
---plains:addFloraBlock(10)
---plains:addFloraBlock(14)
---plains:addFloraBlock(13)
+plains.minTemp = 10
+plains.maxTemp = 40
 
 desert = Biome:new()
 desert.topBlock = 4
-desert.trees = false
-desert.minTemp = 0.61
-desert.maxTemp = 1
+desert.minTemp = 41
+desert.maxTemp = 100
 
 snowPeak = Biome:new()
-snowPeak.trees = false
 snowPeak.topBlock = 8
-snowPeak.minTemp = -1
-snowPeak.maxTemp = 0.2
+snowPeak.minTemp = -100
+snowPeak.maxTemp = 9
 
 AddBiome(plains)
 AddBiome(desert)

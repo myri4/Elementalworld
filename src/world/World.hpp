@@ -23,10 +23,10 @@
 
 namespace wc {
 	static const uint16_t RenderDistance = 16;	
-	Block blockData[255];
+	Block blockData[256];
 	uint32_t currentTexture = 0;
-	uint32_t currentBiomeID = 1;
-	std::array<Biome, 3> biomeMap;
+	uint8_t currentBiomeID = 0;
+	Biome biomeMap[256];
 
 	class Singleplayer {
 	private:
@@ -82,7 +82,7 @@ namespace wc {
 		Textbox textbox;
 #ifdef MODEL
 		gl::Shader modelShader;
-		Animation animation;
+		//Animation animation;
 		Model model;
 		glm::vec3 modelPos = { (RenderDistance * RenderDistance * 0.5f + RenderDistance), 51.f , (RenderDistance * RenderDistance * 0.5f) };
 #endif
@@ -273,9 +273,7 @@ namespace wc {
 				"maxTemp", &Biome::maxTemp,
 				"minMois", &Biome::minMois,
 				"minTemp", &Biome::minTemp,
-				"topBlock", &Biome::topBlock,
-				"trees", &Biome::trees,
-				"addFloraTable", &Biome::addFloraTable
+				"topBlock", &Biome::topBlock
 				);
 			worldGenState.set_function("AddBiome", &Singleplayer::AddBiome);
 			worldGenState.script_file("scripts/biomes.lua");
@@ -294,7 +292,6 @@ namespace wc {
 			chunkMeshArray.VertexAttribPointer(1, 1, offsetof(Vertex, TexCoords)); // texture coord attribute
 			chunkMeshArray.VertexAttribPointer(2, 3, offsetof(Vertex, Normal)); // type attribute
 			chunkMeshArray.VertexAttribPointer(3, 1, offsetof(Vertex, color)); // color attribute
-			WC_INFO(MaxVertexCount * sizeof(Vertex));
 			for (ChunkID chunkID = 0; chunkID < chunks.size(); chunkID++) {
 				//Configuring the vertex array
 				chunks[chunkID].meshBuffer.Create(nullptr, MaxVertexCount * sizeof(Vertex), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
@@ -308,15 +305,15 @@ namespace wc {
 			skybox.Create("shaderpacks/default/skybox.glsl");
 #ifdef MODEL
 			modelShader.Create("shaderpacks/default/modelShader.glsl");
-			model.Create("assets/models/dancing_vampire.dae");
-			animation.Create("assets/models/dancing_vampire.dae", model);
+			model.Create("assets/models/deccer cubes/SM_Deccer_Cubes_Textured.obj");
+			//animation.Create("assets/models/dancing_vampire.dae", model);
 #endif // MODEL
 			numberGen.seed = worldNoise.GetSeed();
 
 			X_FACE1.CalculateNormal();
 			X_FACE2.CalculateNormal();
 
-			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f)));
+			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 1.f, 1.f, 0.f)));
 			recipes[0].data[0] = 6; recipes[0].data[1] = 0;
 			recipes[0].data[2] = 0; recipes[0].data[3] = 0;
 			recipes[0].amount = 4;
@@ -346,7 +343,7 @@ namespace wc {
 			data.windowSize = windSize;
 
 			lighting[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(skybox.angle), glm::vec3(0.f, 0.f, 1.f)));
-			lighting[0].color = convertColor(glm::vec4(glm::vec3(glm::dot(lighting[0].vector, glm::vec3(0.f, 1.f, 0.f))), 0.f));
+			//lighting[0].color = convertColor(glm::vec4(glm::vec3(glm::dot(lighting[0].vector, glm::vec3(0.f, 1.f, 0.f))), 0.f));
 			transforms.SetData(0, sizeof(TransformData), &data);
 			if (lightUpdate) {
 				lights.SetData(0, sizeof(Light) * currentLightID, lighting);
@@ -385,7 +382,6 @@ namespace wc {
 				gnerateTerrain = false;
 			}
 
-			chunkShader.use();
 			assets.Bind(0);
 			//assets.BindNormal(1);
 			for (ChunkID i = 0; i < chunks.size(); i++) {
@@ -393,7 +389,8 @@ namespace wc {
 				if (chunks[i].canBeUpdated) { UpdateMesh(i); chunks[i].canBeUpdated = false; }
 			
 				if (!chunks[i].empty && viewFrustum.isBoxInFrustum(AABB(chunks[i].position * glm::ivec3(chunkSize), glm::vec3(chunkSize)))) {
-
+					if (chunks[i].used) DrawOtlineCube(chunks[i].position * glm::ivec3(chunkSize), glm::ivec3(chunkSize), glm::vec4(1.f));
+					chunkShader.use();
 					chunkMeshArray.AddVertexBuffer(chunks[i].meshBuffer, sizeof(Vertex));
 					chunkMeshArray.AddIndexBuffer(chunks[i].indexBuffer);
 					chunkMeshArray.Bind();
@@ -407,10 +404,10 @@ namespace wc {
 #ifdef MODEL
 			modelShader.use();
 
-			modelShader.setMat4Array(1, animation.GetPoseTransforms(), MAX_BONE_WEIGHTS);
+			//modelShader.setMat4Array(1, animation.GetPoseTransforms(), MAX_BONE_WEIGHTS);
 			
 			// render the loaded model
-			animation.Update(deltaTime);
+			//animation.Update(deltaTime);
 			glm::mat4 Model = glm::mat4(1.f);
 			Model = glm::translate(Model, modelPos);    // translate it down so it's at the center of the scene
 			Model = glm::scale(Model, glm::vec3(0.3f));
@@ -503,6 +500,20 @@ namespace wc {
 
 			if (Keyboard::getKey(Keyboard::Key::Escape) == GLFW_PRESS) mode = MenuMode::ESCMENU;
 
+			if (wc::bReloadChunkShader) { 
+				chunkShader.Destroy(); 
+				chunkShader.Create("shaderpacks/default/chunkShader.glsl");
+				wc::bReloadChunkShader = false;
+			}
+
+			if (wc::bReloadModelShader) {
+#ifdef MODEL
+				modelShader.Destroy();
+				modelShader.Create("shaderpacks/default/modelShader.glsl");
+#endif // MODEL
+				wc::bReloadModelShader = false;
+			}
+
 			if (Keyboard::getKey(Keyboard::Key::Enter) && !textbox.isSelected) 
 				textbox.isSelected = true;			
 			else if (Keyboard::getKey(Keyboard::Key::Enter) && textbox.isSelected) {
@@ -512,16 +523,25 @@ namespace wc {
 				auto commandType = getCommandType(textbox.text, args);
 				args += ' ';
 				if (commandType == CommandType::textMessage) WC_INFO(textbox.text);
-				else if (commandType == CommandType::fly) p.flying = getArgument(args);
+				else if (commandType == CommandType::fly) { 
+					p.flying = getArgument(args); 
+					p.wasOnGround = false;
+					p.m_isOnGround = false;
+					p.wasFalling = false;
+				}
 				else if (commandType == CommandType::collide) p.collision = getArgument(args);
 				else if (commandType == CommandType::setBlock) setBlock({ getArgument(args, 1) , getArgument(args, 2) , getArgument(args, 3) }, getArgument(args));
-				else if (commandType == CommandType::give) p.inventory.AddItem(getArgument(args, 0), 0, getArgument(args, 1)); 
+				else if (commandType == CommandType::give) p.inventory.AddItem(getArgument(args, 0), 0, getArgument(args, 1));
 				else if (commandType == CommandType::setSpeed) p.MovementSpeed = getArgument(args, 0);
 				else if (commandType == CommandType::setTime) skybox.angle = getArgument(args, 0);
 				else if (commandType == CommandType::capture) {
 					m_rayStart = p.Position;
 					m_rayEnd = camera.Front;
 				}
+#ifdef MODEL
+				else if (commandType == CommandType::tpModel) 
+					modelPos = p.Position;
+#endif
 				else if (commandType == CommandType::UNKNOWN) WC_ERROR("Unknow command!");
 				textbox.text = "";
 			}
@@ -638,8 +658,13 @@ namespace wc {
 			}
 			else p.Position += p.velocity * deltaTime;
 
-			if (!p.wasOnGround && p.m_isOnGround && velocityY < -10.f) p.health -= 1.5f;
+			if (!p.wasFalling && p.isFalling()) p.startOfFall = p.Position.y;
+			if (!p.wasOnGround && p.m_isOnGround) 
+			if (p.startOfFall - p.Position.y > minFallDistance) p.health -= 1.5f;
+
+			
 			p.wasOnGround = p.m_isOnGround;
+			p.wasFalling = p.isFalling();
 
 			camera.Position = p.Position;
 			camera.Position.y += p.Size.y - 0.1f;
@@ -663,7 +688,7 @@ namespace wc {
 			bool bShow = true;
 			m_rayStart = p.Position;
 			m_rayEnd = m_rayStart;
-
+			
 			while (glm::length(p.Position - m_rayEnd) < 6.f)
 			{
 				m_rayEnd += camera.Front * 0.5f;
@@ -671,7 +696,7 @@ namespace wc {
 				if (pos.x < 0 && pos.x % (chunkSize - 1) != 0) pos.x--;
 				if (pos.y < 0 && pos.y % (chunkSize - 1) != 0) pos.y--;
 				if (pos.z < 0 && pos.z % (chunkSize - 1) != 0) pos.z--;
-
+			
 				DrawOtlineCube(pos, glm::vec3(1.f), glm::vec4(1.f, 0.f, 0.f, 1.f));
 				lineBatcher.DrawLine(p.Position, m_rayEnd);
 				BlockID block = getBlock(pos);
@@ -679,21 +704,21 @@ namespace wc {
 				{
 					if (bShow) {
 						bShow = false;
-
+			
 						//if (bPick)
 						//	p.currentSlot = getBlock(m_rayEnd);
-
+			
 						if (bBreak) {
 							ItemID itemID = block - 1;
 							p.inventory.AddItem(itemID, p.currentSlot);
-							setBlock(pos, 0);
+							setBlock(pos, 0, true);
 						}
 						else if (bPlace) {
 							if (block == 20) {
 								if (Keyboard::isKeyPressed(Keyboard::Key::LShift)) {
 									ItemID itemID = p.inventory.data[p.currentSlot].itemID;
 									if (p.inventory.RemoveItem(p.currentSlot))
-										setBlock(m_rayLastPos, items[itemID].block);
+										setBlock(m_rayLastPos, items[itemID].block, true);
 								}
 								else 
 									mode = MenuMode::INVENTORY;								
@@ -701,7 +726,7 @@ namespace wc {
 							else {
 								ItemID itemID = p.inventory.data[p.currentSlot].itemID;
 								if (p.inventory.RemoveItem(p.currentSlot))
-									setBlock(m_rayLastPos, items[itemID].block);
+									setBlock(m_rayLastPos, items[itemID].block, true);
 							}
 						}
 						break;
@@ -915,138 +940,75 @@ namespace wc {
 		}
 
 		void GenerateChunkTerrain(const ChunkID& chunk) {
-			const float temperature_loss = 0.00003f;
 				memset(&chunks[chunk].data, 0, sizeof(chunks[chunk].data));
 				concurrency::parallel_for(uint32_t(0), (uint32_t)chunkSize, [&](uint32_t z){
 					for (uint32_t x = 0; x < chunkSize; x++) {
 						glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
-						int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-						float floraGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
-						float baseTemperature = temperatureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-						float moisture = moistureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
-						int dirtDepth = (int)(floraGen * 3.f) + 2;
+						//int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+						//float floraGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+						//float baseTemperature = temperatureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+						//float moisture = moistureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+						//int dirtDepth = (int)(floraGen * 3.f) + 2;
 
 						for (uint8_t y = 0; y < chunkSize; y++) {
 								glm::ivec3 pos = chunks[chunk].position * glm::ivec3(chunkSize) + glm::ivec3(x, y, z);
-								float temperature = 0.6f;// 1.f - (pos.y * temperature_loss + baseTemperature);
-								//temperature *= (1.f - (pos.y / worldNoise.GetMultiplier()));
-								//temperature = glm::mix(temperature, 1.f, (pos.y / worldNoise.GetMultiplier()));
-								uint32_t biome = getBiome(temperature, moisture);
-								//float noise = -pos.y + worldNoise.get3DNoiseFor(pos.x, pos.y, pos.z);
-								//if (noise < 10.f && noise > -0.1f) setBlock({x,y,z}, 3, chunk);
-								float CaveNoise = 0.f;// caveNoise.GetNoise((float)pos.x, (float)pos.y, (float)pos.z);
-								if (!(CaveNoise >= 0.25f && CaveNoise <= 0.99f)) {
-									bool onSand = (pos.y <= water_level + (int)(floraGen * 3.f) && pos.y == heightMap);
-									if (pos.y == heightMap) {
-										if (onSand)
-											setBlock(glm::ivec3(x, y, z), 4, chunk);
-										else 
-											setBlock(glm::ivec3(x, y, z), biomeMap[biome].topBlock, chunk);
-									}
-
-									if (pos.y < heightMap && pos.y >= heightMap - dirtDepth) setBlock(glm::ivec3(x, y, z), 2, chunk);
-									if (pos.y < heightMap - dirtDepth) {
-										//if(numberGen.asInt() % 57 - 3 == 11) setBlock(glm::ivec3(x, y, z), 16, chunk);
-										//else if (numberGen.asInt() % 59 - 4 == 17) setBlock(glm::ivec3(x, y, z), 11, chunk);
-										setBlock(glm::ivec3(x, y, z), 3, chunk);
-									}
-									if (pos.y > heightMap && pos.y < water_level) {
-										setBlock(glm::ivec3(x, y, z), 5, chunk);
-										if (floraGen > 0.69f && floraGen <= 0.7f && pos.y == heightMap + 1 && heightMap + 1 < water_level - 1) { setBlock(glm::ivec3(x, y, z), 17, chunk); }
-										if (floraGen > 0.59f && floraGen <= 0.6f && pos.y == heightMap + 1 && heightMap + 1 < water_level - 1) { setBlock(glm::ivec3(x, y, z), 18, chunk); }
-									}
-									// Flowers
-									if (pos.y == heightMap + 1 && heightMap + 1 > water_level) {
-										if (!onSand) {
-											if (floraGen <= 0.4f && heightMap > water_level) { setBlock(glm::ivec3(x, y, z), 14, chunk); }
-											if (floraGen > 0.69f && floraGen <= 0.7f && heightMap > water_level) { setBlock(glm::ivec3(x, y, z), 13, chunk); }
-											if (floraGen > 0.59f && floraGen <= 0.6f && heightMap > water_level) { setBlock(glm::ivec3(x, y, z), 10, chunk); }
-										}
-										else if (floraGen > 0.95f && floraGen <= 0.98f) { setBlock(glm::ivec3(x, y, z), 15, chunk); }
-									}
-								}
+								//float temperature = baseTemperature * (1.f - pos.y / (worldNoise.GetMultiplier() - water_level));
+								//uint32_t biome = getBiome(temperature, moisture);
+								//bool onSand = (pos.y <= water_level + (int)(floraGen * 3.f) && pos.y == heightMap);
+								//if (pos.y == heightMap) {
+								//	if (onSand)
+								//		setBlock(glm::ivec3(x, y, z), 4, chunk);
+								//	else 
+								//		setBlock(glm::ivec3(x, y, z), biomeMap[biome].topBlock, chunk);
+								//}
+								//
+								//if (pos.y < heightMap && pos.y >= heightMap - dirtDepth) setBlock(glm::ivec3(x, y, z), 2, chunk);
+								//if (pos.y < heightMap - dirtDepth) setBlock(glm::ivec3(x, y, z), 3, chunk);	
+								//if (pos.y > heightMap && pos.y < water_level) setBlock(glm::ivec3(x, y, z), 5, chunk);	
+								if (pos.y == 125) setBlock(glm::ivec3(x, y, z), 1, chunk);
 						}
 					}
 					return;
 				});
-			//UpdateChunkMissedBlocks
-			//if (numberMissingBlocks > 0) {
-			//	glm::ivec3 chunkSpaceStart = chunks[chunk].position * (int)chunkSize;
-			//	glm::ivec3 chunkSpaceEnd = (int)chunkSize + chunks[chunk].position * (int)chunkSize;
-			//	glm::ivec3 chunkP = getChunkPos(missingBlocks[chunk].second);
-			//
-			//	glm::vec3 currentPlayerPos = getChunkPos(p.Position);
-			//	uint8_t chunkHalf = RenderDistance / 2;
-			//
-			//	for (uint32_t i = 0; i < numberMissingBlocks; i++) {
-			//		glm::vec3 currChunkPos = chunks[i].position;
-			//		if (currChunkPos.x < currentPlayerPos.x - chunkHalf) {numberMissingBlocks--; missingBlocks[i] = missingBlocks[numberMissingBlocks];}
-			//		if (currChunkPos.x > currentPlayerPos.x + chunkHalf) {numberMissingBlocks--; missingBlocks[i] = missingBlocks[numberMissingBlocks];}
-			//
-			//		//if (currChunkPos.y < currentPlayerPos.y - chunkHalf) ResetChunk(i, glm::vec3(currChunkPos.x, currentPlayerPos.y + chunkHalf - 1, currChunkPos.z));
-			//		//if (currChunkPos.y > currentPlayerPos.y + chunkHalf) ResetChunk(i, glm::vec3(currChunkPos.x, currentPlayerPos.y - chunkHalf + 1, currChunkPos.z));
-			//
-			//		if (currChunkPos.z < currentPlayerPos.z - chunkHalf) {numberMissingBlocks--; missingBlocks[i] = missingBlocks[numberMissingBlocks];}
-			//		if (currChunkPos.z > currentPlayerPos.z + chunkHalf) {numberMissingBlocks--; missingBlocks[i] = missingBlocks[numberMissingBlocks];}
-			//
-			//		if ((
-			//			chunkSpaceStart.x <= missingBlocks[i].second.x &&
-			//			chunkSpaceStart.y <= missingBlocks[i].second.y &&
-			//			chunkSpaceStart.z <= missingBlocks[i].second.z
-			//			)
-			//			&&
-			//			(
-			//				chunkSpaceEnd.x > missingBlocks[i].second.x &&
-			//				chunkSpaceEnd.y > missingBlocks[i].second.y &&
-			//				chunkSpaceEnd.z > missingBlocks[i].second.z
-			//				)
-			//			)
-			//		{
-			//			setBlock(getBlockPos(missingBlocks[i].second), missingBlocks[i].first, chunk);
-			//			numberMissingBlocks--;
-			//			missingBlocks[i] = missingBlocks[numberMissingBlocks];
-			//		};
-			//	}
-			//}
 		}
 
 		void GenerateChunkStructures(const ChunkID& chunk) {
-			concurrency::parallel_for(ChunkID(0), (ChunkID)chunkSize, [&](ChunkID z) {
-				for (uint8_t x = 0; x < chunkSize; x++) {
-					glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
-					int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-					float treeGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-					float baseTemperature = temperatureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-
-					for (uint8_t y = 0; y < chunkSize; y++) {
-						glm::ivec3 pos = chunks[chunk].position * glm::ivec3(chunkSize) + glm::ivec3(x, y, z);
-						uint32_t type = getBiome(0.75f, 0.f);
-						float CaveNoise = caveNoise.GetNoise((float)pos.x, (float)pos.y, (float)pos.z);
-						bool onGrass = !(pos.y <= water_level + (int)(treeGen * 2.f) && pos.y == heightMap);
-
-						if (pos.y == heightMap + 1 && heightMap + 1 > water_level && onGrass && !(CaveNoise >= 0.25f && CaveNoise <= 0.99f))
-								if (treeGen <= 0.49f && treeGen > 0.48f && x % 5 == 0 && biomeMap[type].trees) GenerateTree(x, y, z, treeGen, chunk);
-					}
-				}
-				return;
-			});
-			//UpdateChunkMissedBlocks(chunk);
+			//concurrency::parallel_for(ChunkID(0), (ChunkID)chunkSize, [&](ChunkID z) {
+			//	for (uint8_t x = 0; x < chunkSize; x++) {
+			//		glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
+			//		int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+			//		float treeGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+			//		float baseTemperature = temperatureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+			//
+			//		for (uint8_t y = 0; y < chunkSize; y++) {
+			//			glm::ivec3 pos = chunks[chunk].position * glm::ivec3(chunkSize) + glm::ivec3(x, y, z);
+			//			uint32_t type = getBiome(0.75f, 0.f);
+			//			float CaveNoise = caveNoise.GetNoise((float)pos.x, (float)pos.y, (float)pos.z);
+			//			bool onGrass = !(pos.y <= water_level + (int)(treeGen * 2.f) && pos.y == heightMap);
+			//
+			//			if (pos.y == heightMap + 1 && heightMap + 1 > water_level && onGrass && !(CaveNoise >= 0.25f && CaveNoise <= 0.99f))
+			//					if (treeGen <= 0.49f && treeGen > 0.48f && x % 5 == 0 && biomeMap[type].trees) GenerateTree(x, y, z, treeGen, chunk);
+			//		}
+			//	}
+			//	return;
+			//});
 		}
 
-		void setBlock(const glm::ivec3& pos, const BlockID& block, const ChunkID& chunk) {
+		void setBlock(const glm::ivec3& pos, const BlockID& block, const ChunkID& chunk, const bool& playerEdited = false) {
 			uint16_t x = pos.x;
 			uint16_t y = pos.y;
 			uint16_t z = pos.z;
 
 			BlockID& chunkBlock = chunks[chunk].data[x][y][z];
-			if (block == 0 && blockData[chunkBlock].emitLight) 
-				removeLight((glm::vec3)chunks[chunk].position * (float)(chunkSize)+(glm::vec3)pos + glm::vec3(0.5f));			
+			if (block == 0 && blockData[chunkBlock].emitLight)
+				removeLight((glm::vec3)chunks[chunk].position * (float)(chunkSize) + (glm::vec3)pos + glm::vec3(0.5f));
 			else if (blockData[block].emitLight) 
 				addLight((glm::vec3)chunks[chunk].position * (float)chunkSize + (glm::vec3)pos + glm::vec3(0.5f), convertColor(glm::vec4(1.f)));			
 
 			chunks[chunk].data[x][y][z] = block;
 			chunks[chunk].canBeUpdated = true;
 			chunks[chunk].empty = chunks[chunk].empty && block == 0;
+			if (playerEdited) chunks[chunk].used = true;
 
 			if (x == 0) { int16_t neg = chunks[chunk].neighborNeg[0]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
 			if (y == 0) { int16_t neg = chunks[chunk].neighborNeg[1]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
@@ -1055,6 +1017,12 @@ namespace wc {
 			if (x == chunkSize - 1) { int16_t Pos = chunks[chunk].neighborPos[0]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
 			if (y == chunkSize - 1) { int16_t Pos = chunks[chunk].neighborPos[1]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
 			if (z == chunkSize - 1) { int16_t Pos = chunks[chunk].neighborPos[2]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
+		}
+
+		void setBlock(const glm::ivec3& pos, const BlockID& block, const bool& playerEdited = false) {
+			int16_t chunk = getChunkID(getChunkPos(pos));
+
+			if (chunk > -1) setBlock(getBlockPos(pos), block, chunk, playerEdited);
 		}
 
 		uint32_t addLight(const glm::vec3& position, const uint32_t& color) {
@@ -1076,17 +1044,6 @@ namespace wc {
 					lightUpdate = true;
 					break;
 				}
-		}
-
-		void setBlock(const glm::ivec3& pos, const BlockID& block) {
-			int16_t chunk = getChunkID(getChunkPos(pos));
-
-			glm::ivec3 blockPos = getBlockPos(pos);
-			if (chunk > -1 /*&& chunks[chunk].generated*/) setBlock(blockPos, block, chunk);
-			//else { 
-			//	missingBlocks[numberMissingBlocks] = { block, pos };
-			//	numberMissingBlocks++;
-			//}
 		}
 
 		void UpdateMesh(const ChunkID& chunk) {
@@ -1348,7 +1305,7 @@ namespace wc {
 		}
 
 		uint32_t getBiome(const float& temperature, const float& moisture = 0.f) {
-			for (uint32_t i = 1; i < biomeMap.size(); i++) {
+			for (uint32_t i = 1; i < currentBiomeID; i++) {
 				if (temperature >= biomeMap[i].minTemp && temperature <= biomeMap[i].maxTemp 
 					//&& moisture >= biomeMap[i].minMois && moisture <= biomeMap[i].maxMois
 					) return i;
