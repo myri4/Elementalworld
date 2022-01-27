@@ -179,6 +179,37 @@
     <ClCompile Include="common\Maths\AssimpGLMHelpers.hpp" />
     <ClCompile Include="src\glad.c" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\binary.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\contrib\graphbuilder.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\contrib\graphbuilderadapter.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\convert.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\depthguard.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\directives.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\emit.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\emitfromevents.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\emitter.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\emitterstate.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\emitterutils.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\exceptions.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\exp.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\memory.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\node.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\nodebuilder.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\nodeevents.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\node_data.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\null.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\ostream_wrapper.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\parse.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\parser.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\regex_yaml.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\scanner.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\scanscalar.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\scantag.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\scantoken.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\simplekey.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\singledocparser.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\stream.cpp" />
+    <ClCompile Include="vendor\Include\yaml-src\tag.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\gl\Camera.h" />
@@ -261,6 +292,28 @@
     <ClInclude Include="src\world\Chunk.h" />
     <ClInclude Include="Utils\Time.hpp" />
     <ClInclude Include="vendor\Include\FastNoise\FastNoiseLite.h" />
+    <ClInclude Include="vendor\Include\yaml-src\collectionstack.h" />
+    <ClInclude Include="vendor\Include\yaml-src\contrib\graphbuilderadapter.h" />
+    <ClInclude Include="vendor\Include\yaml-src\directives.h" />
+    <ClInclude Include="vendor\Include\yaml-src\emitterstate.h" />
+    <ClInclude Include="vendor\Include\yaml-src\emitterutils.h" />
+    <ClInclude Include="vendor\Include\yaml-src\exp.h" />
+    <ClInclude Include="vendor\Include\yaml-src\indentation.h" />
+    <ClInclude Include="vendor\Include\yaml-src\nodebuilder.h" />
+    <ClInclude Include="vendor\Include\yaml-src\nodeevents.h" />
+    <ClInclude Include="vendor\Include\yaml-src\ptr_vector.h" />
+    <ClInclude Include="vendor\Include\yaml-src\regeximpl.h" />
+    <ClInclude Include="vendor\Include\yaml-src\regex_yaml.h" />
+    <ClInclude Include="vendor\Include\yaml-src\scanner.h" />
+    <ClInclude Include="vendor\Include\yaml-src\scanscalar.h" />
+    <ClInclude Include="vendor\Include\yaml-src\scantag.h" />
+    <ClInclude Include="vendor\Include\yaml-src\setting.h" />
+    <ClInclude Include="vendor\Include\yaml-src\singledocparser.h" />
+    <ClInclude Include="vendor\Include\yaml-src\stream.h" />
+    <ClInclude Include="vendor\Include\yaml-src\streamcharsource.h" />
+    <ClInclude Include="vendor\Include\yaml-src\stringsource.h" />
+    <ClInclude Include="vendor\Include\yaml-src\tag.h" />
+    <ClInclude Include="vendor\Include\yaml-src\token.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="config\window.lua" />

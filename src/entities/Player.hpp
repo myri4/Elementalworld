@@ -9,9 +9,10 @@ namespace wc {
 
 	class Player {
 	public:
+		std::string name = "Player 1";
 		float MovementSpeed = 4.f;
 		glm::vec2 rotation = glm::vec2(0.f);
-		int8_t currentSlot = 0;
+		uint8_t currentSlot = 0;
 		glm::vec3 Position = glm::vec3(0.f);
 		glm::vec3 Size = glm::vec3(0.48f, 0.8f, 0.48f);
 		bool m_isOnGround : 1;

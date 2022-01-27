@@ -45,10 +45,10 @@ public: // Variables
 public: // Functions 
 	Chunk() {
 		used = false;
-		generated = false;
+		generated = true;
 		canBeUpdated = false;
 		empty = true;
-		generatedStructures = false;
+		generatedStructures = true;
 	}
 };
 

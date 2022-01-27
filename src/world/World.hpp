@@ -11,12 +11,12 @@
 #include "../entities/Player.hpp"
 #include <wc/Model/Animation.hpp>
 #include <wc/pch.hpp>
-//#include "files.hpp"
 #include <wc/Skybox.hpp>
 #include "../Game Mechanics/LineBatcher.hpp"
 #include "../Game Mechanics/CommandParser.hpp"
 #include <GUI/Console.hpp>
 #include <GUI/Button.hpp>
+#include <Utils/YAML.hpp>
 #include <ppl.h>
 
 #define MODEL1
@@ -32,10 +32,9 @@ namespace wc {
 	private:
 		// Player related
 		Camera camera;
-		float MouseSensitivity = 5;
+		float MouseSensitivity = 5.f;
 		float gravity = 20.f;
 
-		Random numberGen;
 		LineBatcher lineBatcher;
 
 		float Far = 1100.f; // 1100
@@ -80,6 +79,10 @@ namespace wc {
 		//GUI
 		Console console;
 		Textbox textbox;
+
+		// World saving
+		std::string worldName = "New world";
+
 #ifdef MODEL
 		gl::Shader modelShader;
 		//Animation animation;
@@ -198,7 +201,7 @@ namespace wc {
 				while (!file.eof()) {
 					if (!file) break;
 					file >> block >> pos.x >> pos.y >> pos.z;
-					setBlock(pos + offset, block);
+					setBlock(pos + offset, block, false);
 				}
 			}
 		}
@@ -214,7 +217,6 @@ namespace wc {
 		} lighting[NUM_LIGHTS];
 
 		void Create() {
-			gnerateTerrain = true;
 			chunkShader.Create("shaderpacks/default/chunkShader.glsl");
 
 			transforms.Create(nullptr, sizeof(TransformData), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
@@ -284,8 +286,9 @@ namespace wc {
 			load("assets/textures/misc/hotbar_selected.png", assets.textures[2]);
 			load("assets/textures/misc/hearts.png", assets.textures[3]);
 
-			p.Position = { (RenderDistance * RenderDistance * 0.5f), (RenderDistance * RenderDistance * 0.5f), (RenderDistance * RenderDistance * 0.5f) };
-
+			p.Position = { 0, (RenderDistance * RenderDistance * 0.5f), 0 };
+			LoadPlayerState(p, p.name);
+			glm::ivec3 offset = getChunkPos(p.Position) - glm::ivec3(chunkSize / 2);
 			lineBatcher.Create();
 			chunkMeshArray.Create();
 			chunkMeshArray.VertexAttribPointer(0, 3, offsetof(Vertex, Position));  // position attribute
@@ -297,9 +300,10 @@ namespace wc {
 				chunks[chunkID].meshBuffer.Create(nullptr, MaxVertexCount * sizeof(Vertex), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
 				chunks[chunkID].indexBuffer.Create(nullptr, sizeof(uint32_t) * MaxFaceCount * 6, GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
 
-				chunks[chunkID].position = to3D(chunkID, glm::ivec3(RenderDistance));
+				chunks[chunkID].position = to3D(chunkID, glm::ivec3(RenderDistance)) + offset;
 
 				UpdateNeighbours(chunkID);
+				TryToLoadChunk(chunkID);
 			}
 
 			skybox.Create("shaderpacks/default/skybox.glsl");
@@ -308,7 +312,6 @@ namespace wc {
 			model.Create("assets/models/deccer cubes/SM_Deccer_Cubes_Textured.obj");
 			//animation.Create("assets/models/dancing_vampire.dae", model);
 #endif // MODEL
-			numberGen.seed = worldNoise.GetSeed();
 
 			X_FACE1.CalculateNormal();
 			X_FACE2.CalculateNormal();
@@ -323,6 +326,12 @@ namespace wc {
 			recipes[1].data[2] = 18; recipes[1].data[3] = 18;
 			recipes[1].amount = 1;
 			recipes[1].result = 19;
+
+			YAML::Node config = YAML::LoadFile("worlds/" + worldName + "/world.properties");
+			if (config["time"]) skybox.angle = config["time"].as<float>();
+			if (config["seed"]) worldNoise.SetSeed(config["seed"].as<int>());
+
+
 
 			//BlockMeshes.Load("assets/models/seagrass.ply");
 			//blockData[18].connectionType = ConnectionType::CUSTOM_MODEL;
@@ -384,22 +393,21 @@ namespace wc {
 
 			assets.Bind(0);
 			//assets.BindNormal(1);
+			chunkShader.use();
 			for (ChunkID i = 0; i < chunks.size(); i++) {
 			
 				if (chunks[i].canBeUpdated) { UpdateMesh(i); chunks[i].canBeUpdated = false; }
 			
 				if (!chunks[i].empty && viewFrustum.isBoxInFrustum(AABB(chunks[i].position * glm::ivec3(chunkSize), glm::vec3(chunkSize)))) {
-					if (chunks[i].used) DrawOtlineCube(chunks[i].position * glm::ivec3(chunkSize), glm::ivec3(chunkSize), glm::vec4(1.f));
-					chunkShader.use();
 					chunkMeshArray.AddVertexBuffer(chunks[i].meshBuffer, sizeof(Vertex));
 					chunkMeshArray.AddIndexBuffer(chunks[i].indexBuffer);
 					chunkMeshArray.Bind();
 					Renderer::DrawIndexed(chunks[i].IndexCount);
 				}
 			}	
-			DrawOtlineCube(sStart, sEnd - sStart, glm::vec4(1.f));
+			//DrawOtlineCube(sStart, sEnd - sStart, glm::vec4(1.f));
 			if (thirdPerson)
-				DrawOtlineCube(p.Position - p.Size, p.Size * 2.f, glm::vec4(1.f));
+				DrawOutlineCube(p.Position - p.Size, p.Size * 2.f, glm::vec4(1.f));
 			lineBatcher.Flush();
 #ifdef MODEL
 			modelShader.use();
@@ -493,7 +501,6 @@ namespace wc {
 		bool thirdPerson = false;
 
 		void OnInput(bool& HasFocus, const float& deltaTime) {
-			glm::ivec2 windpos = window.GetPos();
 			glm::ivec2 windSize = window.GetSize();
 			// MENU MANAGMENT
 			if (Keyboard::getKey(Keyboard::Key::E) == GLFW_PRESS && !textbox.isSelected) mode = MenuMode::INVENTORY;
@@ -520,7 +527,7 @@ namespace wc {
 				// Command parsing
 				textbox.isSelected = false;
 				std::string args;
-				auto commandType = getCommandType(textbox.text, args);
+				CommandType commandType = getCommandType(textbox.text, args);
 				args += ' ';
 				if (commandType == CommandType::textMessage) WC_INFO(textbox.text);
 				else if (commandType == CommandType::fly) { 
@@ -530,7 +537,7 @@ namespace wc {
 					p.wasFalling = false;
 				}
 				else if (commandType == CommandType::collide) p.collision = getArgument(args);
-				else if (commandType == CommandType::setBlock) setBlock({ getArgument(args, 1) , getArgument(args, 2) , getArgument(args, 3) }, getArgument(args));
+				else if (commandType == CommandType::setBlock) setBlock({ getArgument(args, 1) , getArgument(args, 2) , getArgument(args, 3) }, getArgument(args), true);
 				else if (commandType == CommandType::give) p.inventory.AddItem(getArgument(args, 0), 0, getArgument(args, 1));
 				else if (commandType == CommandType::setSpeed) p.MovementSpeed = getArgument(args, 0);
 				else if (commandType == CommandType::setTime) skybox.angle = getArgument(args, 0);
@@ -691,50 +698,41 @@ namespace wc {
 			
 			while (glm::length(p.Position - m_rayEnd) < 6.f)
 			{
-				m_rayEnd += camera.Front * 0.5f;
+				m_rayEnd += camera.Front * 0.05f;
 				glm::ivec3 pos = static_cast<glm::ivec3>(m_rayEnd);
-				if (pos.x < 0 && pos.x % (chunkSize - 1) != 0) pos.x--;
-				if (pos.y < 0 && pos.y % (chunkSize - 1) != 0) pos.y--;
-				if (pos.z < 0 && pos.z % (chunkSize - 1) != 0) pos.z--;
-			
-				DrawOtlineCube(pos, glm::vec3(1.f), glm::vec4(1.f, 0.f, 0.f, 1.f));
-				lineBatcher.DrawLine(p.Position, m_rayEnd);
+
 				BlockID block = getBlock(pos);
 				if (block > 0 && block != 5)
 				{
 					if (bShow) {
 						bShow = false;
-			
-						//if (bPick)
-						//	p.currentSlot = getBlock(m_rayEnd);
-			
+						DrawOutlineCube(pos, glm::vec3(1.f), glm::vec4(1.f));
 						if (bBreak) {
-							ItemID itemID = block - 1;
-							p.inventory.AddItem(itemID, p.currentSlot);
+							p.inventory.AddItem(block - 1, p.currentSlot);
 							setBlock(pos, 0, true);
 						}
 						else if (bPlace) {
-							if (block == 20) {
-								if (Keyboard::isKeyPressed(Keyboard::Key::LShift)) {
-									ItemID itemID = p.inventory.data[p.currentSlot].itemID;
-									if (p.inventory.RemoveItem(p.currentSlot))
-										setBlock(m_rayLastPos, items[itemID].block, true);
-								}
-								else 
-									mode = MenuMode::INVENTORY;								
-							}
-							else {
-								ItemID itemID = p.inventory.data[p.currentSlot].itemID;
-								if (p.inventory.RemoveItem(p.currentSlot))
-									setBlock(m_rayLastPos, items[itemID].block, true);
-							}
+							ItemID itemID = p.inventory.data[p.currentSlot].itemID;
+							if (p.inventory.RemoveItem(p.currentSlot))
+								setBlock(m_rayLastPos, items[itemID].block, true);
 						}
 						break;
 					}
 				}
 				m_rayLastPos = pos;
 			}
-		}		
+		}
+
+		void Destroy() {
+			for (ChunkID chunkID = 0; chunkID < chunks.size(); chunkID++) SaveChunk(chunkID);
+
+			YAML::Node config;
+			config["seed"] = worldNoise.GetSeed();
+			config["time"] = skybox.angle;
+			YAMLUtils::saveFile("worlds/" + worldName + "/world.properties", config);
+
+			SavePlayerState(p);
+		}
 
 	private:
 		//Chunk managing
@@ -746,7 +744,7 @@ namespace wc {
 		}
 
 		void collide(const glm::vec3& vel) {
-			glm::vec3 startPos = (p.Position - p.Size);
+			glm::vec3 startPos = p.Position - p.Size;
 			glm::vec3 endPos = p.Position + p.Size;
 
 			roundIfNegative(startPos);
@@ -779,51 +777,7 @@ namespace wc {
 
 				}
 			}
-		}
-
-		/*void SaveChunk(const ChunkID& chunk) {
-			glm::ivec3 pos = chunks[chunk].position;
-			int X = pos.x;
-			int Y = pos.y;
-			int Z = pos.z;
-			std::string filename = "r." + std::to_string(X * cs) + "." + std::to_string(Y * cs) + "." + std::to_string(Z * cs) + ".ewr";
-			
-			std::ofstream file(filename);
-			auto data = Compress(chunk);
-			for (auto& block : data) {
-				BlockID blockID = block.first;
-				uint16_t count = block.second;
-				file << (int)blockID << " " << count << "\n";
-			}
-			
-			file.close();
-		}
-
-		void LoadChunk(const glm::ivec3& pos, const ChunkID& chunk) {
-			int X = pos.x;
-			int Y = pos.y;
-			int Z = pos.z;
-			std::string filename = "r." + std::to_string(X * cs) + "." + std::to_string(Y * cs) + "." + std::to_string(Z * cs) + ".ewr";
-			
-			std::vector<std::pair<BlockID, uint16_t>> data;
-			
-			std::ifstream file(filename);
-			
-			if (file.is_open()) {
-				while (!file.eof()) {
-					BlockID block;
-					uint16_t count;
-			
-					file >> block >> count;
-			
-					data.emplace_back(block, count);
-				}
-			}
-			else WC_INFO("Cant find file!");
-			file.close();
-
-			Decompress(data, chunk);			
-		}
+		}		
 
 		std::vector<std::pair<BlockID, uint16_t>> Compress(const ChunkID& chunk) {
 			std::vector<std::pair<BlockID, uint16_t>> compressed;
@@ -835,14 +789,12 @@ namespace wc {
 			for (uint8_t x = 0; x < chunkSize; x++) // @TODO: optimize
 			{
 				BlockID block = chunks[chunk].data[x][y][z];
-				//if (block != 0) {
-					if (block == pBlockID) count++;
-					else {
-						compressed.emplace_back(pBlockID, count);
-						pBlockID = chunks[chunk].data[x][y][z];
-						count = 1;
-					}
-				//}
+				if (block == pBlockID) count++;
+				else {
+					compressed.emplace_back(pBlockID, count);
+					pBlockID = chunks[chunk].data[x][y][z];
+					count = 1;
+				}
 			}
 			compressed.emplace_back(pBlockID, count);
 			return compressed;
@@ -852,45 +804,95 @@ namespace wc {
 		{
 			uint16_t counter = 0;
 			for (auto& block : blocks) {
-				auto blockID = block.first;
-				auto count = block.second;
-				for (uint16_t i = 0; i < count; i++) {
+				for (uint16_t i = 0; i < block.second; i++) {
 					glm::ivec3 pos = to3D(counter);
 					uint8_t x = pos.x;
 					uint8_t y = pos.z;
 					uint8_t z = pos.y;
-					chunks[chunk].data[x][y][z] = blockID;
+					setBlock({x,y,z}, block.first, chunk, false);
 					counter++;
 				}
 			}
+		}
 
-			chunks[chunk].canBeUpdated = true;
-		}*/
+		std::string getChunkPath(const glm::ivec3& pos) {
+			return "worlds/" + worldName + "/Chunk data/Island 0/r." + std::to_string(pos.x) + "." + std::to_string(pos.y) + "." + std::to_string(pos.z) + ".ewr";
+		}
+
+		void TryToLoadChunk(const ChunkID& chunkID) {
+			std::ifstream file(getChunkPath(chunks[chunkID].position));
+			if (file.is_open()) {
+				std::vector<std::pair<BlockID, uint16_t>> data;
+
+				while (!file.eof()) {
+					uint32_t block;
+					uint16_t count;
+
+					file >> block >> count;
+					data.emplace_back(block, count);
+				}
+
+				data[data.size() - 1] = { 0,0 };
+				file.close();
+
+				Decompress(data, chunkID);
+			}
+			else {
+				chunks[chunkID].generated = false;
+				chunks[chunkID].generatedStructures = false;
+				gnerateTerrain = true;
+			}
+		}
+
+		void SaveChunk(const ChunkID& chunkID) {
+			if (chunks[chunkID].used) {
+
+				std::ofstream file(getChunkPath(chunks[chunkID].position));
+				auto data = Compress(chunkID);
+				for (auto& block : data) {
+					int32_t blockID = block.first;
+					uint16_t count = block.second;
+					file << blockID << " " << count << "\n";
+				}
+
+				file.close();
+				chunks[chunkID].used = false;
+			}
+		}
+
+		void SavePlayerState(const Player& player) {
+			YAML::Node config;
+			config["MovementSpeed"] = player.MovementSpeed;
+			config["rotation"] = player.rotation;
+			config["currentSlot"] = (uint32_t)player.currentSlot;
+			config["position"] = player.Position;
+			config["flying"] = (uint32_t)player.flying;
+			config["collision"] = (uint32_t)player.collision;
+			config["velocity"] = player.velocity;
+			config["acceleration"] = player.acceleration;
+			config["health"] = player.health;
+			YAMLUtils::saveFile("worlds/" + worldName + "/Entity data/" + player.name + ".ec", config);
+		}
+
+		void LoadPlayerState(Player& player, const std::string& playerName) {
+			YAML::Node config = YAML::LoadFile("worlds/" + worldName + "/Entity data/" + playerName + ".ec");
+			if (config["MovementSpeed"]) player.MovementSpeed = config["MovementSpeed"].as<float>();
+			if (config["rotation"])      player.rotation = config["rotation"].as<glm::vec2>();
+			if (config["currentSlot"])   player.currentSlot = config["currentSlot"].as<uint32_t>();
+			if (config["position"])      player.Position = config["position"].as<glm::vec3>();
+			if (config["flying"])        player.flying = config["flying"].as<uint32_t>();
+			if (config["collision"])     player.collision = config["collision"].as<uint32_t>();
+			//if (config["velocity"])      config["velocity"] = player.velocity;
+			//if (config["acceleration"])  config["acceleration"] = player.acceleration;
+			if (config["health"])        player.health = config["health"].as<float>();
+		}
 
 		void ResetChunk(const ChunkID& chunkID, const glm::ivec3& newChunkPos) {
+			SaveChunk(chunkID);
+
 			chunks[chunkID].position = newChunkPos;
-
 			UpdateNeighbours(chunkID);
-
-			//uint8_t y = 0, x = 0, z = 0;
-			//for (; y < chunkSize; y++)
-			//	for (x = 0; x < chunkSize; x++)
-			//		for (z = 0; z < chunkSize; z++) {
-			//			if (blockData[chunks[chunk].data[x][y][z]].emitLight) {
-			//				glm::vec3 testPosition = (glm::vec3)chunks[chunk].position * (float)(chunkSize) + glm::vec3(x, y, z) + glm::vec3(0.5f);
-			//				for (uint32_t i = 0u; i < NUM_LIGHTS; i++)
-			//					if (lighting[i].vector == testPosition) {
-			//						WC_INFO("Found");
-			//						currentLightID--;
-			//						lighting[i] = lighting[currentLightID];
-			//						//break;
-			//					}
-			//			}
-			//		}
-			chunks[chunkID].generated = false;
-			chunks[chunkID].generatedStructures = false;
-			gnerateTerrain = true;
-			chunks[chunkID].canBeUpdated = true; //@TODO Redo empty check
+			TryToLoadChunk(chunkID);
 		}
 
 		void UpdateNeighbours(const ChunkID& chunk) {
@@ -932,11 +934,11 @@ namespace wc {
 			for(int x2 = x - 2; x2 < x + 3; x2++)
 				for (int y2 = y - 3 + trunkHeight - 1; y2 < y + 2 + trunkHeight - 1; y2++)
 					for (int z2 = z - 2; z2 < z + 3; z2++) {
-						setBlock(glm::ivec3(x2, y2, z2) + (int)chunkSize * chunks[chunk].position, 9);
+						setBlock(glm::ivec3(x2, y2, z2) + (int)chunkSize * chunks[chunk].position, 9, false);
 					}
 			
 			for (int i = 0; i < trunkHeight; i++) 
-				setBlock(glm::ivec3(x, y + i, z) + (int)chunkSize * chunks[chunk].position, 7);			
+				setBlock(glm::ivec3(x, y + i, z) + (int)chunkSize * chunks[chunk].position, 7, false);
 		}
 
 		void GenerateChunkTerrain(const ChunkID& chunk) {
@@ -965,7 +967,7 @@ namespace wc {
 								//if (pos.y < heightMap && pos.y >= heightMap - dirtDepth) setBlock(glm::ivec3(x, y, z), 2, chunk);
 								//if (pos.y < heightMap - dirtDepth) setBlock(glm::ivec3(x, y, z), 3, chunk);	
 								//if (pos.y > heightMap && pos.y < water_level) setBlock(glm::ivec3(x, y, z), 5, chunk);	
-								if (pos.y == 125) setBlock(glm::ivec3(x, y, z), 1, chunk);
+								if (pos.y == 125) setBlock(glm::ivec3(x, y, z), 1, chunk, false);
 						}
 					}
 					return;
@@ -994,7 +996,7 @@ namespace wc {
 			//});
 		}
 
-		void setBlock(const glm::ivec3& pos, const BlockID& block, const ChunkID& chunk, const bool& playerEdited = false) {
+		void setBlock(const glm::ivec3& pos, const BlockID& block, const ChunkID& chunk, const bool& playerEdited) {
 			uint16_t x = pos.x;
 			uint16_t y = pos.y;
 			uint16_t z = pos.z;
@@ -1019,7 +1021,7 @@ namespace wc {
 			if (z == chunkSize - 1) { int16_t Pos = chunks[chunk].neighborPos[2]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
 		}
 
-		void setBlock(const glm::ivec3& pos, const BlockID& block, const bool& playerEdited = false) {
+		void setBlock(const glm::ivec3& pos, const BlockID& block, const bool& playerEdited) {
 			int16_t chunk = getChunkID(getChunkPos(pos));
 
 			if (chunk > -1) setBlock(getBlockPos(pos), block, chunk, playerEdited);
@@ -1313,7 +1315,7 @@ namespace wc {
 			return 0;
 		}
 
-		void DrawOtlineCube(const glm::vec3& pos, const glm::vec3& size, const glm::vec4& color) {
+		void DrawOutlineCube(const glm::vec3& pos, const glm::vec3& size, const glm::vec4& color) {
 			lineBatcher.DrawLine(pos,								   pos + glm::vec3(0.f,    size.y, 0.f),    color);
 			lineBatcher.DrawLine(pos,								   pos + glm::vec3(size.x, 0.f,    0.f),    color);
 			lineBatcher.DrawLine(pos + glm::vec3(size.x, 0.f,    0.f), pos + glm::vec3(size.x, size.y, 0.f),    color);

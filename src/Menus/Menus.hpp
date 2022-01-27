@@ -2,6 +2,7 @@
 #include <GUI/Button.hpp>
 #include <GUI/Textbox.hpp>
 #include <wc/pch.hpp>
+#include <Utils/Window.hpp>
 
 namespace wc {
 
@@ -34,7 +35,14 @@ namespace wc {
 		}
 
 		void OnInput() {
-			if (singlePlayer.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) mode = MenuMode::GAME;
+			if (singlePlayer.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) {
+				int16_t xt, yt;
+				glm::ivec2 windSize = window.GetSize();
+				xt = windSize.x / 2;
+				yt = windSize.y / 2;
+				Mouse::SetMousePosition(xt, yt);
+				mode = MenuMode::GAME; 
+			}
 			//else if (settings.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) mode = MenuMode::SETTINGS;
 			//else if (multiPlayer.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) mode = MenuMode::SETTINGS;
 		}
@@ -89,7 +97,14 @@ namespace wc {
 		}
 
 		void OnInput() {
-			if (resume.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) mode = MenuMode::GAME;
+			if (resume.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) {
+				int16_t xt, yt;
+				glm::ivec2 windSize = window.GetSize();
+				xt = windSize.x / 2;
+				yt = windSize.y / 2;
+				Mouse::SetMousePosition(xt, yt);
+				mode = MenuMode::GAME;
+			}
 			else if (mainMenu.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) mode = MenuMode::MAINMENU;
 			else if (quitGame.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) window.close();
 			else if (reloadChunkShader.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) bReloadChunkShader = true;
@@ -104,7 +119,4 @@ namespace wc {
 			reloadModelShader.Render(font, scale);
 		}
 	};
-
-
-
 }
