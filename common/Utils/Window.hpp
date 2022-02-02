@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <sol/sol.hpp>
 #include "Log.hpp"
+#include "YAML.hpp"
 
 namespace wc {
 
@@ -23,27 +24,33 @@ namespace wc {
 		Window() {}
 		~Window() {}
 
-		void Create(const char* luaScript, const char* title) {
-			sol::state windowScript;
-			windowScript.script_file(luaScript);
-
+		void Create(const char* Config, const char* title) {
+            int width = 1280, height = 720, antialiasinglevel = 0;
+			bool vsync = false;
 			GLFWmonitor* mode = nullptr;
-            if (windowScript["fullscreen"])
-            {
-                mode = glfwGetPrimaryMonitor();
+            YAML::Node config;
+            if (std::filesystem::exists(Config)) {
+                config = YAML::LoadFile(Config);
+
+                if (config["fullscreen"])                
+                    if (config["fullscreen"].as<bool>()) mode = glfwGetPrimaryMonitor();
+
+                if (config["screenWidth"]) width = config["screenWidth"].as<int>();
+                if (config["screenHeight"]) height = config["screenHeight"].as<int>();
+                if (config["antialiasingLevel"]) antialiasinglevel = config["antialiasingLevel"].as<int>();
+                if (config["vsync"]) vsync = config["vsync"].as<bool>();
             }
 
-			window = glfwCreateWindow(windowScript["screenWidth"], windowScript["screenHeight"], title, mode, nullptr);
+			window = glfwCreateWindow(width, height, title, mode, nullptr);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-			glfwWindowHint(GLFW_SAMPLES, windowScript["antialiasingLevel"]);
+			glfwWindowHint(GLFW_SAMPLES, antialiasinglevel);
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
-			bool vsync = windowScript["vsync"];
 			glfwMakeContextCurrent(window);
 			if (!vsync) glfwSwapInterval(0);
-            glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {glViewport(0, 0, width, height); resized = true; });
+            glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) { glViewport(0, 0, width, height); resized = true; });
 			glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) { scrollX = xoffset; scrollY = yoffset; mouseScrolled = true; });
 			glfwSetCharCallback(window, [](GLFWwindow* window, uint32_t codepoint) { currKeyEntered = codepoint; keyEntered = true; });
 			glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -59,6 +66,18 @@ namespace wc {
 
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 		}
+
+        void SaveConfig(const std::string& saveLoc) {
+            YAML::Node config;
+            config["screenWidth"] = GetSize().x;
+            config["screenHeight"] = GetSize().y;
+            config["framerateLimit"] = 0;
+            config["antialiasingLevel"] = 4;
+            config["vsync"] = false;
+            config["fullscreen"] = false;
+
+            YAMLUtils::saveFile(saveLoc, config);
+        }
 
 		void Destroy() const {
 			glfwDestroyWindow(window);
@@ -116,11 +135,10 @@ namespace wc {
 		}
 
 		void ShowMouse(const bool& show) {
-			//if (show) 
-			//	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);			
-			//else
-			//	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-            showCursor = show;
+			if (show) 
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);			
+			else
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 		}
 
         int getKey(const int& key) {
@@ -140,7 +158,6 @@ namespace wc {
         inline operator GLFWwindow* () { return window; }
         inline operator GLFWwindow* () const { return window; }
 
-        bool showCursor = true;
         bool fullScreen = false;
 	private:
 		GLFWwindow* window = nullptr;
@@ -149,8 +166,8 @@ namespace wc {
     namespace Keyboard {
 
         enum class Key {
-                Unknown = -1, ///< Unhandled key
-                A = GLFW_KEY_A,        ///< The A key
+                Unknown = -1,              ///< Unhandled key
+                A = GLFW_KEY_A,            ///< The A key
                 B = GLFW_KEY_B,            ///< The B key
                 C = GLFW_KEY_C,            ///< The C key
                 D = GLFW_KEY_D,            ///< The D key

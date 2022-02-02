@@ -285,7 +285,6 @@
     <ClInclude Include="common\Utilitiess\Log.h" />
     <ClInclude Include="src\world\Block.hpp" />
     <ClInclude Include="src\world\Chunk.hpp" />
-    <ClInclude Include="src\world\Multiplayer.hpp" />
     <ClInclude Include="src\world\World.hpp" />
     <ClInclude Include="Utils\SFMLCLock.hpp" />
     <ClInclude Include="Utils\State.h" />

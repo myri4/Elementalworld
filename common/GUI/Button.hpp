@@ -7,8 +7,8 @@ namespace wc {
 
 class Button {
 public:
-	glm::ivec2 position;
-	glm::ivec2 size;
+	glm::ivec2 position = glm::ivec2(0);
+	glm::ivec2 size = glm::ivec2(0);
 
 	bool isMouseOver() {
 		glm::ivec2 mousepos = wc::Mouse::GetMousePosToWindow();

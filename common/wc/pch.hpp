@@ -4,6 +4,7 @@
 #include <memory>
 
 #include <fstream>
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <ostream>
@@ -21,12 +22,12 @@
 #include <GLFW/glfw3.h>
 
 //Internet connection
-//#include <net/wc_net.hpp>
+#include <net/wc_net.hpp>
 
 //Custom libraries
 #include <gl/Buffer.hpp>
 #include <gl/Shaders.hpp>
-#include <gl/Texture.hpp>
+//#include <gl/Texture.hpp>
 #include <gl/VertexArray.hpp>
 #include <gl/FrameBuffer.hpp>
 #include "Skybox.hpp"
@@ -46,3 +47,7 @@
 // GUI
 #include <GUI/Renderer2D.hpp>
 #include <GUI/AssetManager.hpp>
+
+// Game idea
+// Space ship game where you go around planets, gather resources then go and fight people an invade their spaceships, until you invde all the galaxy
+// Type: strategy, fps

@@ -20,7 +20,7 @@ public:
 						for (uint32_t i = 0; i < length; i++) text += t[i];
 					}
 
-				if (Keyboard::getKey(Keyboard::Key::V) == GLFW_PRESS && Keyboard::getKey(Keyboard::Key::LControl) == GLFW_PRESS) text += window.getClipboard();
+					if (Keyboard::isKeyPressed(Keyboard::Key::V) != GLFW_RELEASE && Keyboard::isKeyPressed(Keyboard::Key::LControl) != GLFW_RELEASE) text += window.getClipboard();
 			}
 		}
 	}

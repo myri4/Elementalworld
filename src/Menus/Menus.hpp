@@ -6,7 +6,7 @@
 
 namespace wc {
 
-	enum class MenuMode { GAME, INVENTORY, MAINMENU, SETTINGS, ESCMENU };
+	enum class MenuMode { GAME, INVENTORY, MAINMENU, SETTINGS, MULTIPLAYER, ESCMENU };
 	MenuMode mode = MenuMode::MAINMENU; // @TODO: Remove it from here and make a file that needs to be include everywhere
 
 	class MainMenu {
@@ -44,7 +44,7 @@ namespace wc {
 				mode = MenuMode::GAME; 
 			}
 			//else if (settings.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) mode = MenuMode::SETTINGS;
-			//else if (multiPlayer.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) mode = MenuMode::SETTINGS;
+			else if (multiPlayer.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) mode = MenuMode::MULTIPLAYER;
 		}
 
 		void OnUpdate(const Font& font, const float& scale) {
@@ -117,6 +117,74 @@ namespace wc {
 			quitGame.Render(font, scale);
 			reloadChunkShader.Render(font, scale);
 			reloadModelShader.Render(font, scale);
+		}
+	};
+
+	class MultiplayerMenu {
+		TextButton connect;
+		TextButton ipButton;
+		TextButton playerNameButton;
+	public:
+		bool shouldConnect = false;
+		Textbox ipTextbox;
+		Textbox playerName;
+		void OnCreate(const Font& font, const float& scale) {
+			connect.text = "Connect";
+			connect.CenterText(font, scale);
+
+			connect.position = { 510,0 };
+			connect.size = { 200,100 };
+
+
+			ipButton.text = ipTextbox.text;
+			ipButton.CenterText(font, scale);
+
+			ipButton.position = { 0,0 };
+			ipButton.size = { 500,100 };
+
+
+			playerNameButton.text = playerName.text;
+			playerNameButton.CenterText(font, scale);
+
+			playerNameButton.position = { 0,200 };
+			playerNameButton.size = { 500,100 };
+		}
+
+		void OnInput() {
+			if (connect.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) {
+				int16_t xt, yt;
+				glm::ivec2 windSize = window.GetSize();
+				xt = windSize.x / 2;
+				yt = windSize.y / 2;
+				Mouse::SetMousePosition(xt, yt);
+				mode = MenuMode::GAME;
+				shouldConnect = true;
+			}
+			if (playerNameButton.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) { 
+				playerName.isSelected = !playerName.isSelected;
+				ipTextbox.isSelected = false;
+			}
+			if (ipButton.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) {
+				ipTextbox.isSelected = !ipTextbox.isSelected;
+				playerName.isSelected = false;
+			}
+
+			ipTextbox.update();
+			playerName.update();
+		}
+
+		void OnUpdate(const Font& font, const float& scale) {
+			ipButton.text = ipTextbox.text;
+			ipButton.CenterText(font, scale);
+			ipButton.textSize.x = 0;
+
+			playerNameButton.text = playerName.text;
+			playerNameButton.CenterText(font, scale);
+			playerNameButton.textSize.x = 0;
+
+			connect.Render(font, scale);
+			ipButton.Render(font, scale);
+			playerNameButton.Render(font, scale);
 		}
 	};
 }

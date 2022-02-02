@@ -41,7 +41,11 @@ namespace wc {
 
 	class PlayerDescription {
 	public:
+		std::string name = "Player 1";
 		uint32_t nUniqueID = 0;
 		glm::vec3 Position = glm::vec3(0.f);
+		glm::vec2 rotation = glm::vec2(0.f);
+		uint8_t currentSlot = 0;
+		float health = 10.f;
 	};
 }

@@ -21,10 +21,10 @@ namespace wc {
 	static const uint8_t MaxTextures = 32;
 
 	struct Vertex2D {
-		glm::vec2 Position;
-		glm::vec3 TexCoords;
-		uint32_t Color;
-		float Type;
+		glm::vec2 Position = glm::vec2(0.f);
+		glm::vec3 TexCoords = glm::vec3(0.f);
+		uint32_t Color = 0xff;
+		float Type = 0.f;
 
 		Vertex2D() {};
 		Vertex2D(const glm::vec2& pos, const glm::vec3& texCoords, const uint32_t& color, const float& type) : Position(pos), TexCoords(texCoords), Color(color), Type(type) {}

@@ -18,11 +18,11 @@ namespace wc {
 		gl::FrameBuffer screen;
 		gl::Shader screenShader;
 		gl::Texture scrTexture;
-		gl::Texture mouseCursor;
 
 		//Menus
 		MainMenu mainMenu;
 		EscMenu escMenu;
+		MultiplayerMenu multiplayerMenu;
 
 		Singleplayer world;
 
@@ -43,6 +43,8 @@ namespace wc {
 					mainMenu.OnInput();
 				else if (mode == MenuMode::ESCMENU)
 					escMenu.OnInput();
+				else if (mode == MenuMode::MULTIPLAYER)
+					multiplayerMenu.OnInput();
 			}
 
 			if (resized) { 
@@ -106,7 +108,7 @@ namespace wc {
 			world.p.crafting.Create();
 			mainMenu.OnCreate(world.font, 0.4f);
 			escMenu.OnCreate(world.font, 0.4f);
-			load("assets/textures/misc/mouse_cursor.png", mouseCursor);
+			multiplayerMenu.OnCreate(world.font, 0.4f);
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnUpdate() override {
@@ -117,9 +119,15 @@ namespace wc {
 			glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
 			Renderer::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
-			if (mode == MenuMode::GAME) world.Update(deltaTime);
+			if (mode == MenuMode::GAME) { 
+				if (multiplayerMenu.shouldConnect) {
+					world.Connect(multiplayerMenu.ipTextbox.text, multiplayerMenu.playerName.text);
+					multiplayerMenu.shouldConnect = false;
+					world.multiPlayer = true;
+				}
+				world.Update(deltaTime); 
+			}
 			else if(mode == MenuMode::INVENTORY) {
-				TextButton button;
 				world.p.inventory.Update(windsize, window.GetPos(), deltaTime, world.font); 
 				world.p.crafting.Update(windsize, window.GetPos(), deltaTime, world.font);
 			}
@@ -131,19 +139,21 @@ namespace wc {
 				escMenu.OnUpdate(world.font, 0.4f);
 				window.ShowMouse(true);
 			}
+			else if (mode == MenuMode::MULTIPLAYER) {
+				multiplayerMenu.OnUpdate(world.font, 0.4f);
+				window.ShowMouse(true);
+			}
 			
 			
 			glDisable(GL_DEPTH_TEST);
 			screen.blit(windsize.x, windsize.y);
 			screen.unbind();
-			
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 			screenShader.use();
 			scrQuadA.Bind();
 			scrTexture.Bind(); // use the color attachment texture as the texture of the quad plane			
 			
 			Renderer::DrawArrays(6);			
-			if (window.showCursor) Renderer2D::DrawQuad(Mouse::GetMousePos() - window.GetPos(), {32, 48}, mouseCursor);
 			Renderer2D::Flush();
 			Renderer2D::FlushLines();
 			window.display();
@@ -151,6 +161,7 @@ namespace wc {
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnDelete() override {
 			world.Destroy();
+			window.SaveConfig("config/window.lua");
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 	public:

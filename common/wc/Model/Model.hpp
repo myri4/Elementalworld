@@ -12,7 +12,7 @@
 namespace wc {
 
 struct BoneInfo {
-	int32_t id; //For uniquely indentifying the bone and for indexing bone transformation in shaders map from bone name to offset matrix.
+	int32_t id = -1; //For uniquely indentifying the bone and for indexing bone transformation in shaders map from bone name to offset matrix.
 	glm::mat4 offset = glm::mat4(1.f); // offset matrix transforms bone from bone space to local space
 };
 
