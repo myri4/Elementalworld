@@ -12,25 +12,21 @@ void main()
 const float PI = 3.14159265358979323846264338327950288f;
 
 struct Light {
-	uint color;
 	vec3 vector;
+	uint color;
 };
 
 layout (std140, binding = 0) uniform Transforms
 {
     mat4 u_Projection;
     mat4 u_View;
-    float deltaTime;
-	int u_numLights;
 
 	vec3 cameraPos;
     vec3 lower_left_corner;
     vec3 horizontal;
     vec3 vertical;
 	vec2 windowSize;
-	vec3 fogColor;
-	float u_Density;
-	float u_Gradient;
+	uint u_numLights;
 };
 
 layout (std140, binding = 1) uniform Lighting
@@ -205,11 +201,6 @@ void main()
 	vec3 daySky = computeIncidentLight(vec3(cameraPos.x, earthRadius + 1.f, cameraPos.z), rayDir, mixer);
 	vec3 nightSky = color1 + color2 + color3 + colorStars;
 	color = mix(daySky, nightSky, mixer);
-
-	// HDR tonemapping
-	color = color / (color + 1.f);
-	// gamma correct
-	color = pow(color, vec3(1.f / 2.2f));
 
     FragColor = vec4(color, 1.f);
 }

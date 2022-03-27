@@ -9,16 +9,13 @@ namespace gl {
         FrameBuffer() {}
 
         //~FrameBuffer() { Destroy(); }
-        void Create(const uint32_t& width, const uint32_t& height, const uint32_t& samples = 0) {
+        void Create(const uint32_t& width, const uint32_t& height) {
             glCreateFramebuffers(1, &m_RendererID);
 
             // create a renderbuffer object for depth and stencil attachment (we won't be sampling these)
             uint32_t rbo;
             glCreateRenderbuffers(1, &rbo);
-            if (samples)
-                glNamedRenderbufferStorageMultisample(rbo, samples, GL_DEPTH24_STENCIL8, width, height); // use a single renderbuffer object for both a depth AND stencil buffer.
-            else
-                glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, width, height); // use a single renderbuffer object for both a depth AND stencil buffer.
+            glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, width, height); // use a single renderbuffer object for both a depth AND stencil buffer.
             glNamedFramebufferRenderbuffer(m_RendererID, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
 
             // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
@@ -28,7 +25,7 @@ namespace gl {
         void addTexture(const uint32_t& texture) {
             glNamedFramebufferTexture(m_RendererID, GL_COLOR_ATTACHMENT0 + numTextures, texture, 0);
             numTextures++;
-		}
+        }
 
         void setUpDrawBuffers() {
             uint32_t attachments[32];

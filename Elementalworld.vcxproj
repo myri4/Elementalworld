@@ -114,7 +114,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>liblua54.a;freetype.lib;glfw3.lib;assimp-vc142-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>liblua54.a;freetype.lib;glfw3.lib;assimp-vc142-mt.lib;RmlCore.lib;RmlDebugger.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -134,7 +134,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>liblua54.a;freetype.lib;glfw3.lib;assimp-vc142-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>liblua54.a;freetype.lib;glfw3.lib;assimp-vc142-mt.lib;RmlCore.lib;RmlDebugger.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -153,7 +153,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>liblua54.a;freetype.lib;glfw3.lib;assimp-vc142-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>liblua54.a;freetype.lib;glfw3.lib;assimp-vc142-mt.lib;RmlCore.lib;RmlDebugger.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -172,7 +172,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>liblua54.a;freetype.lib;glfw3.lib;assimp-vc142-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>liblua54.a;freetype.lib;glfw3.lib;assimp-vc142-mt.lib;RmlCore.lib;RmlDebugger.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -218,6 +218,7 @@
     <ClInclude Include="common\GUI\AssetManager.hpp" />
     <ClInclude Include="common\GUI\Button.hpp" />
     <ClInclude Include="common\GUI\Console.hpp" />
+    <ClInclude Include="common\GUI\GUI.hpp" />
     <ClInclude Include="common\GUI\ParticleSystem.hpp" />
     <ClInclude Include="common\GUI\Renderer2D.hpp" />
     <ClInclude Include="common\GUI\Textbox.hpp" />
@@ -239,6 +240,8 @@
     <ClInclude Include="common\net\wc_net.hpp" />
     <ClInclude Include="common\Renderer\Renderer.hpp" />
     <ClInclude Include="common\Utils\Bits.hpp" />
+    <ClInclude Include="common\Utils\List.hpp" />
+    <ClInclude Include="common\Utils\Memory.h" />
     <ClInclude Include="common\Utils\YAML.hpp" />
     <ClInclude Include="common\wc\Model\Animation.hpp" />
     <ClInclude Include="common\wc\Model\Bone.hpp" />
@@ -257,7 +260,6 @@
     <ClInclude Include="common\Utils\Time.hpp" />
     <ClInclude Include="common\Utils\Window.hpp" />
     <ClInclude Include="common\wc\pch.hpp" />
-    <ClInclude Include="common\wc\Skybox.hpp" />
     <ClInclude Include="gl\Camera.h" />
     <ClInclude Include="gl\Cubemap.h" />
     <ClInclude Include="gl\FrameBuffer.h" />
@@ -291,6 +293,187 @@
     <ClInclude Include="src\world\Chunk.h" />
     <ClInclude Include="Utils\Time.hpp" />
     <ClInclude Include="vendor\Include\FastNoise\FastNoiseLite.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Clock.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\ComputeProperty.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\ContextInstancerDefault.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DataController.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DataControllerDefault.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DataExpression.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DataModel.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DataView.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DataViewDefault.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorGradient.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorNinePatch.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiled.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledBox.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledBoxInstancer.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledHorizontal.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledHorizontalInstancer.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledImage.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledImageInstancer.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledInstancer.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledVertical.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledVerticalInstancer.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\DocumentHeader.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\ElementAnimation.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\ElementBackgroundBorder.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\ElementDecoration.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\ElementDefinition.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\ElementHandle.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\ElementStyle.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\ElementImage.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\ElementLabel.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\ElementTextSelection.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputType.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputTypeButton.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputTypeCheckbox.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputTypeRadio.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputTypeRange.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputTypeSubmit.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputTypeText.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\WidgetDropDown.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\WidgetSlider.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\WidgetTextInput.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\WidgetTextInputMultiLine.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\WidgetTextInputSingleLine.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\WidgetTextInputSingleLinePassword.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\XMLNodeHandlerDataGrid.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\XMLNodeHandlerSelect.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\XMLNodeHandlerTabSet.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\XMLNodeHandlerTextArea.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\EventDispatcher.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\EventInstancerDefault.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\EventSpecification.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\FileInterfaceDefault.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEffectBlur.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEffectGlow.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEffectOutline.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEffectShadow.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontEngineInterfaceDefault.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontFace.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontFaceHandleDefault.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontFaceLayer.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontFamily.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontProvider.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontTypes.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FreeTypeInterface.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\GeometryBackgroundBorder.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\GeometryDatabase.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\IdNameMap.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutBlockBox.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutBlockBoxSpace.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutDetails.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutEngine.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutFlex.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutInlineBox.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutInlineBoxText.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutLineBox.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutTable.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutTableDetails.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Memory.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\PluginRegistry.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Pool.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\precompiled.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertiesIterator.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserAnimation.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserColour.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserDecorator.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserFontEffect.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserKeyword.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserNumber.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserRatio.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserString.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserTransform.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyShorthandDefinition.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StreamFile.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetFactory.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNode.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelector.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorEmpty.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorFirstChild.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorFirstOfType.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorLastChild.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorLastOfType.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorNthChild.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorNthLastChild.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorNthLastOfType.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorNthOfType.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorOnlyChild.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorOnlyOfType.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetParser.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Template.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\TemplateCache.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\TextureDatabase.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\TextureLayout.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\TextureLayoutRectangle.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\TextureLayoutRow.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\TextureLayoutTexture.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\TextureResource.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\TransformState.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\TransformUtilities.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\Utilities.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\WidgetScroll.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\XMLNodeHandlerBody.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\XMLNodeHandlerDefault.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\XMLNodeHandlerHead.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\XMLNodeHandlerTemplate.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Core\XMLParseTools.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\BeaconSource.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\CommonSource.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\DebuggerPlugin.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\DebuggerSystemInterface.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\ElementContextHook.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\ElementInfo.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\ElementLog.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\FontSource.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\Geometry.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\InfoSource.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\LogSource.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\MenuSource.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lottie\LottiePlugin.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Colourb.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Colourf.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Context.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\ContextDocumentsProxy.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Document.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Element.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\ElementAttributesProxy.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\ElementChildNodesProxy.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\ElementInstancer.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\ElementStyleProxy.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\As.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\DataFormatter.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\DataSource.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementDataGrid.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementDataGridRow.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementForm.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementFormControl.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementFormControlDataSelect.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementFormControlInput.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementFormControlSelect.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementFormControlTextArea.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementTabSet.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\LuaDataFormatter.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\LuaDataSource.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\SelectOptionsProxy.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\ElementText.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Event.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\EventParametersProxy.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\GlobalLuaFunctions.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Log.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaDataModel.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaDocument.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaDocumentElementInstancer.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaElementInstancer.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaEventListener.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaEventListenerInstancer.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaPlugin.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Pairs.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\RmlUi.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\RmlUiContextsProxy.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Vector2f.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Vector2i.h" />
+    <ClInclude Include="vendor\Include\RmlUi-src\SVG\SVGPlugin.h" />
     <ClInclude Include="vendor\Include\yaml-src\collectionstack.h" />
     <ClInclude Include="vendor\Include\yaml-src\contrib\graphbuilderadapter.h" />
     <ClInclude Include="vendor\Include\yaml-src\directives.h" />
@@ -315,12 +498,14 @@
     <ClInclude Include="vendor\Include\yaml-src\token.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="config\window.lua" />
+    <None Include="..\Elementalworld Server\Elementalworld Server.vcxproj" />
+    <None Include="config\window.yaml" />
     <None Include="scripts\biomes.lua" />
     <None Include="scripts\blocks.lua" />
     <None Include="scripts\coal_ore.lua" />
     <None Include="scripts\dead_bush.lua" />
     <None Include="scripts\green_coral.lua" />
+    <None Include="scripts\gui_scripts\test.rml" />
     <None Include="scripts\iron_ore.lua" />
     <None Include="scripts\red_flower.lua" />
     <None Include="scripts\glass.lua" />
@@ -330,7 +515,6 @@
     <None Include="scripts\leaves.lua" />
     <None Include="scripts\requirements.lua" />
     <None Include="scripts\sand.lua" />
-    <None Include="scripts\skybox.lua" />
     <None Include="scripts\small_grass.lua" />
     <None Include="scripts\snow.lua" />
     <None Include="scripts\stone.lua" />
@@ -344,8 +528,8 @@
     <None Include="shaderpacks\default\particleShader.glsl" />
     <None Include="shaderpacks\default\pbrUtil.glsl" />
     <None Include="shaderpacks\default\Renderer2D.glsl" />
-    <None Include="shaderpacks\default\screenShader.glsl" />
     <None Include="shaderpacks\default\skybox.glsl" />
+    <None Include="vendor\Include\RmlUi-src\Core\Pool.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

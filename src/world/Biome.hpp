@@ -13,5 +13,12 @@ namespace wc {
 
 		float minMois = 0.f;
 		float maxMois = 1.f;
-	};	
+	};
+	uint8_t numBiomes = 0;
+	Biome biomeMap[40];
+
+	void AddBiome(const Biome& biome) {
+		biomeMap[numBiomes] = biome;
+		numBiomes++;
+	}
 }

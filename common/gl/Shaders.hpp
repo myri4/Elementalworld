@@ -34,6 +34,7 @@ namespace wcUtil {
 	uint32_t ShaderTypeFromString(const char* type) {
 		if (type == "vertex") return GL_VERTEX_SHADER;
 		if (type == "fragment" || type == "pixel") return GL_FRAGMENT_SHADER;
+		if (type == "compute")	return GL_COMPUTE_SHADER;
 		if (type == "geometry")	return GL_GEOMETRY_SHADER;
 
 		return 0;
@@ -272,8 +273,63 @@ namespace gl {
 			glDeleteProgram(m_RendererID);
 			m_RendererID = 0;
 		}
-		// utility function for checking shader compilation/linking errors.
 		// ------------------------------------------------------------------------
+	private:
+		uint32_t m_RendererID = 0;
+	};
+
+	class ComputeShader {
+	public:
+
+		ComputeShader() {}
+
+		void Create(const char* path) {
+			if (!m_RendererID) {
+				std::ifstream file(path);
+				std::string line;
+				std::stringstream shaderFile;
+				if (file.is_open()) while (std::getline(file, line)) shaderFile << line << '\n';
+				else WC_ERROR("Can`t find file in location: {0}", path);
+				file.close();
+
+				uint32_t compute = wcUtil::CompileShader(shaderFile.str().c_str(), "compute");
+				wcUtil::checkCompileErrors(compute, "COMPUTE");
+
+				// shader Program
+				m_RendererID = glCreateProgram();
+				glAttachShader(m_RendererID, compute);
+				glLinkProgram(m_RendererID);
+				wcUtil::checkCompileErrors(m_RendererID, "PROGRAM");
+				// delete the shaders as they're linked into our program now and no longer necessary
+				glDeleteShader(compute);
+			}
+		}
+		// activate the shader
+		// ------------------------------------------------------------------------
+		void use() const
+		{
+			glUseProgram(m_RendererID);
+		}
+
+		static void unUse()
+		{
+			glUseProgram(0);
+		}
+
+		void Dispatch(const GLuint& num_groups_x, const GLuint& num_groups_y, const GLuint& num_groups_z) {
+			glDispatchCompute(num_groups_x, num_groups_y, num_groups_z);
+		}
+
+		void Dispatch(const glm::vec3& num_groups) {
+			glDispatchCompute(num_groups.x, num_groups.y, num_groups.z);
+		}
+
+		void Dispatch(const glm::vec2& num_groups) {
+			glDispatchCompute(num_groups.x, num_groups.y, 1);
+		}
+
+		inline operator uint32_t& () { return m_RendererID; }
+		inline operator const uint32_t& () const { return m_RendererID; }
 	private:
 		uint32_t m_RendererID = 0;
 	};

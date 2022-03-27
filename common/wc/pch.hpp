@@ -30,7 +30,6 @@
 //#include <gl/Texture.hpp>
 #include <gl/VertexArray.hpp>
 #include <gl/FrameBuffer.hpp>
-#include "Skybox.hpp"
 
 #include <Maths/Camera.hpp>
 
@@ -43,10 +42,14 @@
 #include <Utils/State.hpp>
 #include <Utils/Random.hpp>
 #include <Utils/Window.hpp>
+#include <Utils/List.hpp>
 
 // GUI
 #include <GUI/Renderer2D.hpp>
 #include <GUI/AssetManager.hpp>
+#include <RmlUi/Core.h>
+#include <RmlUi/Debugger.h>
+#include <GUI/GUI.hpp>
 
 // Game idea
 // Space ship game where you go around planets, gather resources then go and fight people an invade their spaceships, until you invde all the galaxy

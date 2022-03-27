@@ -1,6 +1,7 @@
-id = 5
 isCollidable = false
 ConnectionType = "FLUID_CONNECT"
 
 allTextures = "water.png"
-color = 3439329279
+color = 0xccffffff
+
+name = "water"

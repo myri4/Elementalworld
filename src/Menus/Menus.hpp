@@ -9,11 +9,13 @@ namespace wc {
 	enum class MenuMode { GAME, INVENTORY, MAINMENU, SETTINGS, MULTIPLAYER, ESCMENU };
 	MenuMode mode = MenuMode::MAINMENU; // @TODO: Remove it from here and make a file that needs to be include everywhere
 
+	bool bShouldConnect = false;
 	class MainMenu {
 		TextButton singlePlayer;
 		TextButton multiPlayer;
 		TextButton settings;
 	public:
+		bool bSinglePlayer = false;
 		void OnCreate(const Font& font, const float& scale) {
 			singlePlayer.text = "Singleplayer";
 			singlePlayer.CenterText(font, scale);
@@ -42,6 +44,7 @@ namespace wc {
 				yt = windSize.y / 2;
 				Mouse::SetMousePosition(xt, yt);
 				mode = MenuMode::GAME; 
+				bSinglePlayer = true;
 			}
 			//else if (settings.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) mode = MenuMode::SETTINGS;
 			else if (multiPlayer.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) mode = MenuMode::MULTIPLAYER;
@@ -54,15 +57,10 @@ namespace wc {
 		}
 	};
 
-	bool bReloadChunkShader = false;
-	bool bReloadModelShader = false;
-
 	class EscMenu {
 		TextButton resume;
 		TextButton mainMenu;
 		TextButton quitGame;
-		TextButton reloadChunkShader;
-		TextButton reloadModelShader;
 	public:
 		void OnCreate(const Font& font, const float& scale) {
 			resume.text = "Resume";
@@ -82,18 +80,6 @@ namespace wc {
 
 			quitGame.position = { 0,200 };
 			quitGame.size = { 500,100 };
-
-			reloadChunkShader.text = "Reload chunk shader";
-			reloadChunkShader.CenterText(font, scale);
-
-			reloadChunkShader.position = { 500,0 };
-			reloadChunkShader.size = { 500,100 };
-
-			reloadModelShader.text = "Reload model shader";
-			reloadModelShader.CenterText(font, scale);
-
-			reloadModelShader.position = { 500,100 };
-			reloadModelShader.size = { 500,100 };
 		}
 
 		void OnInput() {
@@ -107,16 +93,12 @@ namespace wc {
 			}
 			else if (mainMenu.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) mode = MenuMode::MAINMENU;
 			else if (quitGame.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) window.close();
-			else if (reloadChunkShader.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) bReloadChunkShader = true;
-			else if (reloadModelShader.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) bReloadModelShader = true;
 		}
 
 		void OnUpdate(const Font& font, const float& scale) {
 			resume.Render(font, scale);
 			mainMenu.Render(font, scale);
 			quitGame.Render(font, scale);
-			reloadChunkShader.Render(font, scale);
-			reloadModelShader.Render(font, scale);
 		}
 	};
 
@@ -125,7 +107,6 @@ namespace wc {
 		TextButton ipButton;
 		TextButton playerNameButton;
 	public:
-		bool shouldConnect = false;
 		Textbox ipTextbox;
 		Textbox playerName;
 		void OnCreate(const Font& font, const float& scale) {
@@ -141,6 +122,8 @@ namespace wc {
 
 			ipButton.position = { 0,0 };
 			ipButton.size = { 500,100 };
+			ipTextbox.text = "25.32.4.119";
+			playerName.text = "321";
 
 
 			playerNameButton.text = playerName.text;
@@ -158,7 +141,7 @@ namespace wc {
 				yt = windSize.y / 2;
 				Mouse::SetMousePosition(xt, yt);
 				mode = MenuMode::GAME;
-				shouldConnect = true;
+				bShouldConnect = true;
 			}
 			if (playerNameButton.isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)) { 
 				playerName.isSelected = !playerName.isSelected;

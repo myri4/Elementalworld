@@ -100,6 +100,8 @@ namespace wc {
 			uint32_t IndexCount = 0;
 			uint32_t TextureSlots[MaxTextures] = { 0 };
 			uint32_t byteOffset = 0;
+			uint32_t indByteOffset = 0;
+			uint32_t iOffset = 0;
 			uint8_t TextureSlotIndex = 1;
 			gl::Texture whiteTexture;
 			gl::VertexBuffer m_VBO;
@@ -116,22 +118,22 @@ namespace wc {
 
 		void Init(const bool& lines = false) {
 			// Quad Rendering
-			uint32_t indices[MaxQuadIndexCount];
-			uint32_t offset = 0;
+			//uint32_t indices[MaxQuadIndexCount];
+			//uint32_t offset = 0;
+			//
+			//for (uint32_t i = 0; i < MaxQuadIndexCount; i += 6) {
+			//	indices[i + 0] = offset;
+			//	indices[i + 1] = 1 + offset;
+			//	indices[i + 2] = 2 + offset;
+			//
+			//	indices[i + 3] = 2 + offset;
+			//	indices[i + 4] = 3 + offset;
+			//	indices[i + 5] = offset;
+			//
+			//	offset += 4;
+			//}
 
-			for (uint32_t i = 0; i < MaxQuadIndexCount; i += 6) {
-				indices[i + 0] = offset;
-				indices[i + 1] = 1 + offset;
-				indices[i + 2] = 2 + offset;
-
-				indices[i + 3] = 2 + offset;
-				indices[i + 4] = 3 + offset;
-				indices[i + 5] = offset;
-
-				offset += 4;
-			}
-
-			m_Data.m_EBO.Create(indices, sizeof(indices), GL_DYNAMIC_STORAGE_BIT);
+			m_Data.m_EBO.Create(nullptr, sizeof(uint32_t) * MaxQuadIndexCount, GL_DYNAMIC_STORAGE_BIT);
 			m_Data.m_VAO.Create();
 			m_Data.m_VBO.Create(nullptr, MaxQuadVertexCount * sizeof(Vertex2D), GL_DYNAMIC_STORAGE_BIT);
 			m_Data.m_VAO.VertexAttribPointer(0, 2, offsetof(Vertex2D, Position));
@@ -183,6 +185,8 @@ namespace wc {
 			Renderer::DrawIndexed(m_Data.IndexCount);
 			m_Data.IndexCount = 0;
 			m_Data.byteOffset = 0;
+			m_Data.indByteOffset = 0;
+			m_Data.iOffset = 0;
 			m_Data.TextureSlotIndex = 1;
 			m_Data.m_EBO.Unbind();
 			FlushLines();
@@ -199,7 +203,22 @@ namespace wc {
 			vertices[2] = Vertex2D({ pos.x,			 pos.y, }, { 0.f, 0.f, 0.f }, Color, 0.f);
 			vertices[3] = Vertex2D({ pos.x + size.x, pos.y, }, { 1.f, 0.f, 0.f }, Color, 0.f);
 
+			uint32_t indices[6];
+			
+			indices[0] = m_Data.iOffset;
+			indices[1] = 1 + m_Data.iOffset;
+			indices[2] = 2 + m_Data.iOffset;
+			
+			indices[3] = 2 + m_Data.iOffset;
+			indices[4] = 3 + m_Data.iOffset;
+			indices[5] = m_Data.iOffset;
+			
+			m_Data.iOffset += 4;
+			
+
 			m_Data.m_VBO.SetData(m_Data.byteOffset, sizeof(vertices), vertices);
+			m_Data.m_EBO.SetData(m_Data.indByteOffset, sizeof(indices), indices);
+			m_Data.indByteOffset += sizeof(indices);
 			m_Data.byteOffset += sizeof(vertices);
 			m_Data.IndexCount += 6;
 		}
@@ -232,12 +251,27 @@ namespace wc {
 			vertices[2] = Vertex2D({ pos.x,			 pos.y, },         { textureStart.x * tsx, textureStart.y * tsy, textureIndex }, Color, 0);
 			vertices[3] = Vertex2D({ pos.x + size.x, pos.y, },         { textureEnd.x   * tsx, textureStart.y * tsy, textureIndex }, Color, 0);
 
+			uint32_t indices[6];
+
+			indices[0] = m_Data.iOffset;
+			indices[1] = 1 + m_Data.iOffset;
+			indices[2] = 2 + m_Data.iOffset;
+
+			indices[3] = 2 + m_Data.iOffset;
+			indices[4] = 3 + m_Data.iOffset;
+			indices[5] = m_Data.iOffset;
+
+			m_Data.iOffset += 4;
+
+
 			m_Data.m_VBO.SetData(m_Data.byteOffset, sizeof(vertices), vertices);
+			m_Data.m_EBO.SetData(m_Data.indByteOffset, sizeof(indices), indices);
+			m_Data.indByteOffset += sizeof(indices);
 			m_Data.byteOffset += sizeof(vertices);
 			m_Data.IndexCount += 6;
 		}
 
-		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const uint32_t& texID, const glm::vec4& color = glm::vec4(1.f), const float& Type = 0) {
+		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const uint32_t& texID, const glm::vec4& color = glm::vec4(1.f), const float& Type = 0, const bool& flipped = false) {
 			if (m_Data.IndexCount >= MaxQuadIndexCount || m_Data.TextureSlotIndex > MaxTextures - 1) Flush();
 
 			float textureIndex = 0.f;
@@ -256,12 +290,35 @@ namespace wc {
 
 			uint32_t Color = (uint32_t)(color.r * 255.f) << 24 | (uint32_t)(color.g * 255.f) << 16 | (uint32_t)(color.b * 255.f) << 8 | (uint32_t)(color.a * 255.f);
 			Vertex2D vertices[4];
-			vertices[0] = Vertex2D({ pos.x + size.x, pos.y + size.y }, { 1.f, 1.f, textureIndex }, Color, Type);
-			vertices[1] = Vertex2D({ pos.x,			 pos.y + size.y }, { 0.f, 1.f, textureIndex }, Color, Type);
-			vertices[2] = Vertex2D({ pos.x,			 pos.y, }, { 0.f, 0.f, textureIndex }, Color, Type);
-			vertices[3] = Vertex2D({ pos.x + size.x, pos.y, }, { 1.f, 0.f, textureIndex }, Color, Type);
+			if (flipped) {
+				vertices[0] = Vertex2D({ pos.x + size.x, pos.y + size.y }, { 1.f, 0.f, textureIndex }, Color, Type);
+				vertices[1] = Vertex2D({ pos.x,			 pos.y + size.y }, { 0.f, 0.f, textureIndex }, Color, Type);
+				vertices[2] = Vertex2D({ pos.x,			 pos.y, }, { 0.f, 1.f, textureIndex }, Color, Type);
+				vertices[3] = Vertex2D({ pos.x + size.x, pos.y, }, { 1.f, 1.f, textureIndex }, Color, Type);
+			}
+			else {
+				vertices[0] = Vertex2D({ pos.x + size.x, pos.y + size.y }, { 1.f, 1.f, textureIndex }, Color, Type);
+				vertices[1] = Vertex2D({ pos.x,			 pos.y + size.y }, { 0.f, 1.f, textureIndex }, Color, Type);
+				vertices[2] = Vertex2D({ pos.x,			 pos.y, }, { 0.f, 0.f, textureIndex }, Color, Type);
+				vertices[3] = Vertex2D({ pos.x + size.x, pos.y, }, { 1.f, 0.f, textureIndex }, Color, Type);
+			}
+
+
+			uint32_t indices[6];
+
+			indices[0] = m_Data.iOffset;
+			indices[1] = 1 + m_Data.iOffset;
+			indices[2] = 2 + m_Data.iOffset;
+
+			indices[3] = 2 + m_Data.iOffset;
+			indices[4] = 3 + m_Data.iOffset;
+			indices[5] = m_Data.iOffset;
+
+			m_Data.iOffset += 4;
 
 			m_Data.m_VBO.SetData(m_Data.byteOffset, sizeof(vertices), vertices);
+			m_Data.m_EBO.SetData(m_Data.indByteOffset, sizeof(indices), indices);
+			m_Data.indByteOffset += sizeof(indices);
 			m_Data.byteOffset += sizeof(vertices);
 			m_Data.IndexCount += 6;
 		}
@@ -294,7 +351,22 @@ namespace wc {
 			vertices[2] = Vertex2D({ pos.x,			 pos.y, }, { ((coords.x + 1) * sprSize.x) * tsx, (coords.y * sprSize.y) * tsy, textureIndex }, Color, 0);
 			vertices[3] = Vertex2D({ pos.x + size.x, pos.y, }, { (coords.x * sprSize.x) * tsx, (coords.y * sprSize.y) * tsy, textureIndex }, Color, 0);
 
+			uint32_t indices[6];
+
+			indices[0] = m_Data.iOffset;
+			indices[1] = 1 + m_Data.iOffset;
+			indices[2] = 2 + m_Data.iOffset;
+
+			indices[3] = 2 + m_Data.iOffset;
+			indices[4] = 3 + m_Data.iOffset;
+			indices[5] = m_Data.iOffset;
+
+			m_Data.iOffset += 4;
+
+
 			m_Data.m_VBO.SetData(m_Data.byteOffset, sizeof(vertices), vertices);
+			m_Data.m_EBO.SetData(m_Data.indByteOffset, sizeof(indices), indices);
+			m_Data.indByteOffset += sizeof(indices);
 			m_Data.byteOffset += sizeof(vertices);
 			m_Data.IndexCount += 6;
 		}

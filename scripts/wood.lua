@@ -1,4 +1,3 @@
-id = 7
 isCollidable = true
 ConnectionType = "CONNECT_DEFAULT"
 
@@ -8,3 +7,5 @@ front =  "log_side.png"
 back =   front
 left =   front
 right =  front
+
+name = "wood"

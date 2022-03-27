@@ -1,4 +1,3 @@
-id = 1
 isCollidable = true
 ConnectionType = "CONNECT_DEFAULT"
 
@@ -8,3 +7,6 @@ front =  "grass_block_side.png"
 back =   front
 left =   front
 right =  front
+--color = 0xccffffff
+
+name = "grass_block"

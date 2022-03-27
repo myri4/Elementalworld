@@ -54,8 +54,7 @@ public:
 		m_TextureCache.clear();
 	}
 
-	void Bind(const uint32_t& unit = 0) { texArr.Bind(unit); }
-	void BindNormal(const uint32_t& unit = 0) { texArr.Bind(unit); }
+	void Bind() { texArr.Bind(0); }
 	gl::Texture textures[5];
 private:
 	std::unordered_map<std::string, int> m_TextureCache;

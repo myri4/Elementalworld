@@ -1,7 +1,0 @@
-right =  "assets/textures/misc/sun.png"
-left =   "assets/textures/misc/moon.png"
-top =    ""
-bottom = ""
-front =  ""
-back =   ""
-shaderPath = "shaderpacks/default/skybox.glsl"

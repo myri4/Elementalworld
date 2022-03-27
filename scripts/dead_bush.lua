@@ -1,5 +1,5 @@
-id = 15
 isCollidable = false
-ConnectionType = "X_CONNECT"
+ConnectionType = "CUSTOM_MODEL"
 
 allTextures = "dead_bush.png"
+name = "dead_bush"

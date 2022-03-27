@@ -42,6 +42,7 @@ namespace gl {
         inline operator GLuint&() { return m_RendererID; }
         inline operator GLuint&() const { return m_RendererID; }
     protected:
+        GLenum getTarget() const { return target; }
         GLuint m_RendererID = 0;
     };
 
@@ -50,12 +51,12 @@ namespace gl {
 
     class UniformBuffer : public Buffer<GL_UNIFORM_BUFFER> {
     public:
-        void BufferRange(const GLuint& index, const GLintptr& offset, const GLsizeiptr& size) { glBindBufferRange(GL_UNIFORM_BUFFER, index, m_RendererID, offset, size); }
-        void BufferBase(const GLuint& index) { glBindBufferBase(GL_UNIFORM_BUFFER, index, m_RendererID); }
+        void BufferRange(const GLuint& index, const GLintptr& offset, const GLsizeiptr& size) { glBindBufferRange(getTarget(), index, m_RendererID, offset, size); }
+        void BufferBase(const GLuint& index) { glBindBufferBase(getTarget(), index, m_RendererID); }
     };
 
     class ShaderStorageBuffer : public Buffer<GL_SHADER_STORAGE_BUFFER> {
     public:
-        void BufferBase(const GLuint& index) { glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, m_RendererID); }
+        void BufferBase(const GLuint& index) { glBindBufferBase(getTarget(), index, m_RendererID); }
     };
 }

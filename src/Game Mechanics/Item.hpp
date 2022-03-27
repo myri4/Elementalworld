@@ -5,11 +5,12 @@
 namespace wc {
 
 	typedef uint8_t ItemID;
+	uint32_t numItems = 0;
 
 	struct Item {
 		gl::Texture texture;
 		uint8_t maxStackSize = 100;
-		BlockID block = 0u;
+		uint8_t block = 0; // @TODO: BlockID
 	} items[256];
 
 	struct ItemSlot {

@@ -1,7 +1,7 @@
-id = 11
 isCollidable = true
 ConnectionType = "CONNECT_DEFAULT"
 
 allTextures = "coal_ore.png"
+name = "coal_ore"
 
 emitLight = true

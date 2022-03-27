@@ -70,25 +70,21 @@ layout (std140, binding = 0) uniform Transforms
 {
     mat4 u_Projection;
     mat4 u_View;
-    float deltaTime;
-	int u_numLights;
 
 	vec3 cameraPos;
     vec3 lower_left_corner;
     vec3 horizontal;
     vec3 vertical;
 	vec2 windowSize;
-	vec3 fogColor;
-	float u_Density;
-	float u_Gradient;
+	uint u_numLights;
 };
 
 struct Light {
-	uint color;
 	vec3 vector;
+	uint color;
 };
 
-layout (std140, binding = 1) uniform Lighting
+layout (binding = 1, std140) uniform Lighting
 {
     Light lights[1];
 };
@@ -151,10 +147,6 @@ vec3 rayTrace(const in vec3 albedo, const in vec3 N) {
 	vec3 ambient = ambientColor * ao * albedo;
 
 	color = ambient + Lo;
-	// HDR tonemapping
-	color = color / (color + 1.f);
-	// gamma correct
-	color = pow(color, vec3(1.f / 2.2f));
 	
 	return color;
 }

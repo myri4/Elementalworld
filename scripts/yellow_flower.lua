@@ -1,7 +1,8 @@
-id = 13
 isCollidable = false
-ConnectionType = "X_CONNECT"
+ConnectionType = "CUSTOM_MODEL"
 
 allTextures = "yellow_flower.png"
 
 emitLight = false
+
+name = "yellow_flower"

@@ -1,5 +1,6 @@
-id = 17
 isCollidable = false
-ConnectionType = "X_CONNECT"
+ConnectionType = "CUSTOM_MODEL"
 
 allTextures = "green_coral.png"
+
+name = "green_coral"

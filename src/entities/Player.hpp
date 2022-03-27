@@ -23,7 +23,7 @@ namespace wc {
 		bool collision : 1;
 		glm::vec3 velocity = glm::vec3(0.f);
 		glm::vec3 acceleration = glm::vec3(0.f);
-		InventoryMenu<inventorySizeX, inventorySizeY, inventorySizeX* inventorySizeY> inventory;
+		InventoryMenu<inventorySizeX, inventorySizeY, inventorySizeX * inventorySizeY> inventory;
 		Crafter<2> crafting;
 		float health = 10.f;
 
@@ -41,11 +41,13 @@ namespace wc {
 
 	class PlayerDescription {
 	public:
-		std::string name = "Player 1";
 		uint32_t nUniqueID = 0;
-		glm::vec3 Position = glm::vec3(0.f);
+		std::string name = "Player 1";
 		glm::vec2 rotation = glm::vec2(0.f);
 		uint8_t currentSlot = 0;
+		glm::vec3 Position = glm::vec3(0.f);
+		glm::vec3 velocity = glm::vec3(0.f);
+		glm::vec3 acceleration = glm::vec3(0.f);
 		float health = 10.f;
 	};
 }

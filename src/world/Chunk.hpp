@@ -83,9 +83,4 @@ namespace wc {
 	{
 		return getChunkPos(pos.x, pos.y, pos.z);
 	}
-
-	static uint32_t to_index(const uint32_t& u, const uint32_t& v)
-	{
-		return v * chunkSize + u;
-	}
 }

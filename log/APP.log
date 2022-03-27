@@ -1,6 +1,7 @@
-[02/02/22 15:49:28][info] APP: Waiting for connection
-[02/02/22 15:49:28][info] APP: Server accepted client - you're in!
-[02/02/22 15:49:28][info] APP: Waiting for connection
-[02/02/22 15:49:28][info] APP: Assigned Client ID = 1
-[02/02/22 15:49:28][info] APP: New Player Joined
-[02/02/22 15:49:28][info] APP: New Player Joined
+[03/27/22 13:00:22][info] APP: flags: 0
+[03/27/22 13:00:22][info] APP: color: 4
+[03/27/22 13:00:22][info] APP: Loaded font face 'rmlui-debugger-font' [regular] from 'memory'.
+[03/27/22 13:00:22][info] APP: Loaded font face 'rmlui-debugger-font' [italic] from 'memory'.
+[03/27/22 13:00:22][info] APP: Loaded font face 'Minecraft' [regular] from 'assets/font/Minecraft.ttf'.
+[03/27/22 13:00:22][warning] APP: No font face defined. Ensure that the specified font face 'italic' [regular] has been successfully loaded. Please see previous log messages for all successfully loaded fonts. On element #text < h1 < body < #root#main
+[03/27/22 13:00:22][warning] APP: No font face defined. Ensure that the specified font face 'italic' [regular] has been successfully loaded. Please see previous log messages for all successfully loaded fonts. On element #text < h1 < body < #root#main

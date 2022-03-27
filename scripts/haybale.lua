@@ -1,4 +1,3 @@
-id = 12
 isCollidable = true
 ConnectionType = "CONNECT_DEFAULT"
 
@@ -8,3 +7,5 @@ front =  "hay_bale_side.png"
 back =   front
 left =   front
 right =  front
+
+name = "hay_bale"
