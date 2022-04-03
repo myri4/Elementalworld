@@ -18,8 +18,8 @@ struct BoneInfo {
 
 struct Mesh {
 	gl::VertexArray m_VertexArray;
-	gl::IndexBuffer m_IndexBuffer;
-	gl::VertexBuffer m_VertexBuffer;
+	gl::Buffer m_IndexBuffer;
+	gl::Buffer m_VertexBuffer;
 
 	uint32_t indexSize = 0;
 	gl::Texture diffuseTexture;

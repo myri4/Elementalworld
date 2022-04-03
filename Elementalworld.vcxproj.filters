@@ -257,9 +257,6 @@
     <ClInclude Include="common\GUI\AssetManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\GUI\ParticleSystem.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\gl\TextureArray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -323,16 +320,10 @@
     <ClInclude Include="src\Game Mechanics\Item.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\GUI\Textbox.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common\GUI\Button.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Game Mechanics\LineBatcher.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game Mechanics\ParticleSystem.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\world\Block.hpp">
@@ -977,7 +968,6 @@
     <None Include="shaderpacks\default\skybox.glsl" />
     <None Include="config\window.yaml" />
     <None Include="scripts\dirt.lua" />
-    <None Include="shaderpacks\default\particleShader.glsl" />
     <None Include="scripts\stone.lua" />
     <None Include="scripts\sand.lua" />
     <None Include="scripts\water.lua" />

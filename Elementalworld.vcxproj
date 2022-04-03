@@ -219,9 +219,7 @@
     <ClInclude Include="common\GUI\Button.hpp" />
     <ClInclude Include="common\GUI\Console.hpp" />
     <ClInclude Include="common\GUI\GUI.hpp" />
-    <ClInclude Include="common\GUI\ParticleSystem.hpp" />
     <ClInclude Include="common\GUI\Renderer2D.hpp" />
-    <ClInclude Include="common\GUI\Textbox.hpp" />
     <ClInclude Include="common\Maths\Camera.hpp" />
     <ClInclude Include="common\gl\Cubemap.h" />
     <ClInclude Include="common\gl\FrameBuffer.h" />
@@ -277,7 +275,6 @@
     <ClInclude Include="src\Game Mechanics\Inventory.hpp" />
     <ClInclude Include="src\Game Mechanics\Item.hpp" />
     <ClInclude Include="src\Game Mechanics\LineBatcher.hpp" />
-    <ClInclude Include="src\Game Mechanics\ParticleSystem.hpp" />
     <ClInclude Include="src\Menus\Menus.hpp" />
     <ClInclude Include="src\world\Biome.hpp" />
     <ClInclude Include="src\Engine.h" />
@@ -525,7 +522,6 @@
     <None Include="shaderpacks\default\chunkShader.glsl" />
     <None Include="shaderpacks\default\Line3D.glsl" />
     <None Include="shaderpacks\default\modelShader.glsl" />
-    <None Include="shaderpacks\default\particleShader.glsl" />
     <None Include="shaderpacks\default\pbrUtil.glsl" />
     <None Include="shaderpacks\default\Renderer2D.glsl" />
     <None Include="shaderpacks\default\skybox.glsl" />

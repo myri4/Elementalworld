@@ -42,7 +42,6 @@ namespace wc {
 	};
 
 	class GameInstance {
-	private:
 		// Player related
 		Camera camera;
 		float MouseSensitivity = 5.f;
@@ -51,7 +50,7 @@ namespace wc {
 		LineBatcher lineBatcher;
 
 		gl::Shader skyShader;
-		gl::VertexBuffer skyboxVertexBuffer;
+		gl::Buffer skyboxVertexBuffer;
 		gl::VertexArray skyBoxArray;
 		float rotateSpeed = 1.f * 6.f; // one cycle is one unit (in minutes)
 		float angle = 0.f;
@@ -97,7 +96,6 @@ namespace wc {
 
 		//GUI
 		Console console;
-		Textbox textbox;
 
 		// World saving
 		std::string worldName = "New world";
@@ -146,13 +144,11 @@ namespace wc {
 		// Multiplayer
 		bool bWaitingForConnection = true;
 		net::client_interface<GameMsg> clientInstance;
-
-#define NUM_LIGHTS chunkVolume
 		
 		struct Light {
 			glm::vec3 vector;
 			uint32_t color;
-		} lighting[NUM_LIGHTS];
+		} lighting[chunkVolume];
 
 		// Composite stuff
 		gl::FrameBuffer screen;
@@ -327,8 +323,8 @@ namespace wc {
 			//WC_INFO("albedo: {0}", offsetof(Material, albedo));
 			//WC_INFO("normal: {0}", offsetof(Material, normal));
 			//WC_INFO("MRA: {0}", offsetof(Material, MRA));
-			WC_INFO("flags: {0}", offsetof(Material, flags));
-			WC_INFO("color: {0}", offsetof(Material, color));
+			//WC_INFO("flags: {0}", offsetof(Material, flags));
+			//WC_INFO("color: {0}", offsetof(Material, color));
 			
 			glm::vec3 normal1 = glm::vec3( 0.70710677f, 0.f, 0.70710677f);
 			glm::vec3 normal2 = glm::vec3(-0.70710677f, 0.f, 0.70710677f);
@@ -461,9 +457,10 @@ namespace wc {
 			for (int i = 0; i < 3; i++)
 				bloomBuffers[i].Destroy();
 		}
+
+		uint32_t getScreen() { return finalImage; }
 		
 		void Update(const float& deltaTime) {
-			glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
 			screen.Bind();
 			Renderer::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			// Multiplayer 
@@ -562,7 +559,7 @@ namespace wc {
 						}
 						}
 					}
-
+					// @WARN: glEnable(GL_DEPTH_TEST) might be needed
 					for (auto& player : players) {
 						if (player.second.nUniqueID != localPlayerID) {
 							DrawOutlineCube(player.second.Position - p.Size, p.Size * 2.f, glm::vec4(1.f));
@@ -595,7 +592,6 @@ namespace wc {
 			data.numLights = currentLightID;
 
 			lighting[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 0.f, 1.f)));
-			//lighting[0].color = convertColor(glm::vec4(glm::vec3(glm::dot(lighting[0].vector, glm::vec3(0.f, 1.f, 0.f))), 0.f));
 			transforms.SetData(0, sizeof(TransformData), &data);
 			if (lightUpdate) {
 				lights.SetData(0, sizeof(Light) * currentLightID, lighting);
@@ -605,7 +601,6 @@ namespace wc {
 				lights.SetData(0, sizeof(Light), lighting);			
 
 			// Draw sky
-			glDisable(GL_DEPTH_TEST);
 			skyShader.use();
 			skyBoxArray.Bind();
 
@@ -729,8 +724,8 @@ namespace wc {
 				+ std::to_string((int)floor(m_rayEnd.z)) + " Looking at block: " 
 				+ std::to_string(getBlock(m_rayEnd)), font);
 
-			console.line += 10;
-			console.DrawTextLine(textbox.text, font);
+			//console.line += 10;
+			//console.DrawTextLine(textbox.text, font);
 
 			console.Reset();
 			
@@ -748,17 +743,57 @@ namespace wc {
 			glm::vec2 cursorSize = (glm::vec2)assets.textures[0].GetSize() * 1.4f;
 			glm::vec2 cursorPos = glm::vec2(data.windowSize.x - cursorSize.x, data.windowSize.y - cursorSize.y) * 0.5f;
 			Renderer2D::DrawQuad(cursorPos, cursorSize, assets.textures[0]);
-			glEnable(GL_DEPTH_TEST);
 		}
 
 		glm::vec3 m_rayEnd;
 		glm::vec3 m_rayStart;
 		bool thirdPerson = false;
 
+		void ParseCommand(std::string& command) {
+			// Command parsing
+			std::string args;
+			CommandType commandType = getCommandType(command, args);
+			args += ' ';
+			if (commandType == CommandType::textMessage) WC_INFO(command);
+			else if (commandType == CommandType::fly) {
+				p.flying = getArgument(args);
+				p.wasOnGround = false;
+				p.m_isOnGround = false;
+				p.wasFalling = false;
+			}
+			else if (commandType == CommandType::collide) p.collision = getArgument(args);
+			else if (commandType == CommandType::setBlock) setBlock({ getArgument(args, 1) , getArgument(args, 2) , getArgument(args, 3) }, getArgument(args), true, true);
+			else if (commandType == CommandType::give) p.inventory.AddItem(getArgument(args, 0), 0, getArgument(args, 1));
+			else if (commandType == CommandType::setSpeed) p.MovementSpeed = getArgument(args, 0);
+			else if (commandType == CommandType::setTime) angle = getArgument(args, 0);
+			else if (commandType == CommandType::getBlockID) WC_INFO(getBlock({ getArgument(args, 0) , getArgument(args, 1) , getArgument(args, 2) }));
+			else if (commandType == CommandType::capture) {
+				glm::vec3 startPos = p.Position - p.Size;
+				glm::vec3 endPos = p.Position + p.Size;
+				WC_INFO("Normal pos: {0} {1} {2}", (int)startPos.x, (int)startPos.y, (int)startPos.z);
+				WC_INFO("Normal pos: {0} {1} {2}", (int)endPos.x, (int)endPos.y, (int)endPos.z);
+
+				p.Position = -p.Position;
+
+				startPos = p.Position - p.Size;
+				endPos = p.Position + p.Size;
+				WC_INFO("Flipped pos: {0} {1} {2}", (int)startPos.x, (int)startPos.y, (int)startPos.z);
+				WC_INFO("Flipped pos: {0} {1} {2}", (int)endPos.x, (int)endPos.y, (int)endPos.z);
+
+				p.Position = -p.Position;
+			}
+#ifdef MODEL
+			else if (commandType == CommandType::tpModel)
+				modelPos = p.Position;
+#endif
+			else if (commandType == CommandType::UNKNOWN) WC_ERROR("Unknow command!");
+			command = "";
+		}
+
 		void OnInput(bool& HasFocus, const float& deltaTime) {
 			glm::ivec2 windSize = window.GetSize();
 			// MENU MANAGMENT
-			if (Keyboard::getKey(Keyboard::Key::E) == GLFW_PRESS && !textbox.isSelected) mode = MenuMode::INVENTORY;
+			if (Keyboard::getKey(Keyboard::Key::E) == GLFW_PRESS && /*!textbox.isSelected*/true) mode = MenuMode::INVENTORY;
 
 			if (Keyboard::getKey(Keyboard::Key::Escape) == GLFW_PRESS) mode = MenuMode::ESCMENU;
 
@@ -776,52 +811,7 @@ namespace wc {
 			//	wc::bReloadModelShader = false;
 			//}
 
-			if (Keyboard::getKey(Keyboard::Key::Enter) && !textbox.isSelected) 
-				textbox.isSelected = true;			
-			else if (Keyboard::getKey(Keyboard::Key::Enter) && textbox.isSelected) {
-				// Command parsing
-				textbox.isSelected = false;
-				std::string args;
-				CommandType commandType = getCommandType(textbox.text, args);
-				args += ' ';
-				if (commandType == CommandType::textMessage) WC_INFO(textbox.text);
-				else if (commandType == CommandType::fly) {
-					p.flying = getArgument(args);
-					p.wasOnGround = false;
-					p.m_isOnGround = false;
-					p.wasFalling = false;
-				}
-				else if (commandType == CommandType::collide) p.collision = getArgument(args);
-				else if (commandType == CommandType::setBlock) setBlock({ getArgument(args, 1) , getArgument(args, 2) , getArgument(args, 3) }, getArgument(args), true, true);
-				else if (commandType == CommandType::give) p.inventory.AddItem(getArgument(args, 0), 0, getArgument(args, 1));
-				else if (commandType == CommandType::setSpeed) p.MovementSpeed = getArgument(args, 0);
-				else if (commandType == CommandType::setTime) angle = getArgument(args, 0);
-				else if (commandType == CommandType::getBlockID) WC_INFO(getBlock({ getArgument(args, 0) , getArgument(args, 1) , getArgument(args, 2) }));
-				else if (commandType == CommandType::capture) {
-					glm::vec3 startPos = p.Position - p.Size;
-					glm::vec3 endPos = p.Position + p.Size;
-					WC_INFO("Normal pos: {0} {1} {2}", (int)startPos.x, (int)startPos.y, (int)startPos.z);
-					WC_INFO("Normal pos: {0} {1} {2}", (int)endPos.x, (int)endPos.y, (int)endPos.z);
-
-					p.Position = -p.Position;
-
-					startPos = p.Position - p.Size;
-					endPos = p.Position + p.Size;
-					WC_INFO("Flipped pos: {0} {1} {2}", (int)startPos.x, (int)startPos.y, (int)startPos.z);
-					WC_INFO("Flipped pos: {0} {1} {2}", (int)endPos.x, (int)endPos.y, (int)endPos.z);
-
-					p.Position = -p.Position;
-				}
-#ifdef MODEL
-				else if (commandType == CommandType::tpModel) 
-					modelPos = p.Position;
-#endif
-				else if (commandType == CommandType::UNKNOWN) WC_ERROR("Unknow command!");
-				textbox.text = "";
-			}
-			textbox.update();
-
-			if (!textbox.isSelected) {
+			if (/*!textbox.isSelected*/true) {
 
 				if (Keyboard::getKey(Keyboard::Key::Left)) camera.Roll += 0.5f;
 				if (Keyboard::getKey(Keyboard::Key::Right)) camera.Roll -= 0.5f;
@@ -880,7 +870,7 @@ namespace wc {
 
 				camera.FOV = addFOV + 90.f;
 
-				if (mouseScrolled) {
+				if (scrollY != 0.f) {
 					if (scrollY < 0) p.currentSlot++;
 					else p.currentSlot--;
 					if (p.currentSlot < 0) p.currentSlot = inventorySizeX - 1;
@@ -948,7 +938,7 @@ namespace wc {
 
 			camera.UpdateCameraAngles();
 			
-			//Mouse::ShowMouse(!HasFocus);
+			Mouse::ShowMouse(!HasFocus);
 
 			bool bBreak = Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)  == GLFW_PRESS;
 			bool bPlace = Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
@@ -1233,7 +1223,7 @@ namespace wc {
 		// LIGHT MANAGING
 		uint32_t addLight(const glm::vec3& position, const uint32_t& color) {
 			uint32_t light = currentLightID;
-			if (currentLightID <= NUM_LIGHTS) {
+			if (currentLightID <= ARRAYSIZE(lighting)) {
 				lighting[currentLightID].vector = position;
 				lighting[currentLightID].color = color;
 				currentLightID++;
@@ -1243,7 +1233,7 @@ namespace wc {
 		}
 
 		void removeLight(const glm::vec3& position) {
-			for (uint32_t i = 0u; i < NUM_LIGHTS; i++)
+			for (uint32_t i = 0u; i < ARRAYSIZE(lighting); i++)
 				if (lighting[i].vector == position) {
 					currentLightID--;
 					lighting[i] = lighting[currentLightID];

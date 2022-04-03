@@ -1,12 +1,12 @@
 isCollidable = true
 ConnectionType = "CONNECT_DEFAULT"
 
-top =    "grass_block_top.png"
-bottom = "dirt.png"
-front =  "grass_block_side.png"
-back =   front
-left =   front
-right =  front
+TOP =    "grass_block_top.png"
+BOTTOM = "dirt.png"
+FRONT =  "grass_block_side.png"
+BACK =   FRONT
+LEFT =   FRONT
+RIGHT =  FRONT
 --color = 0xccffffff
 
 name = "grass_block"

@@ -15,7 +15,7 @@ namespace wc{
 enum ConnectionType : uint8_t { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT, 
 	SLAB_DOWN, SLAB_UP, SLAB_LEFT, SLAB_RIGHT, SLAB_FRONT, SLAB_BACK,
 	CANT_CONNECT, CUSTOM_MODEL, AIR, NON_EXISTENT};
-enum class BlockTexture : uint8_t { RIGHT, TOP, FRONT, LEFT, BOTTOM, BACK };
+enum class BlockTexture : uint8_t { RIGHT, TOP, FRONT, LEFT, BOTTOM, BACK, LENGHT };
 
 const float blockSize = 1.f;
 
@@ -24,7 +24,7 @@ struct Face {
 	glm::vec3 normal = glm::vec3(0.f);
 
 	void CalculateNormal() {
-		normal = glm::normalize(glm::cross(corner[2] - corner[0], corner[1] - corner[0]));		
+		normal = glm::normalize(glm::cross(corner[2] - corner[0], corner[1] - corner[0]));	
 	}
 };
 
@@ -185,24 +185,15 @@ void AddBlockScript(const char* script) {
 	else {
 		std::string itemPath;
 		std::string path;
-		if (blockState["top"].valid()) {
-			itemPath = blockState["top"];
-			path = blockState["top"]; block.texture[(int)BlockTexture::TOP] = assets.LoadTexture(diffusePath + path);
-		}
-		if (blockState["bottom"].valid()) {
-			path = blockState["bottom"]; block.texture[(int)BlockTexture::BOTTOM] = assets.LoadTexture(diffusePath + path);
-		}
-		if (blockState["front"].valid()) {
-			path = blockState["front"];  block.texture[(int)BlockTexture::FRONT] = assets.LoadTexture(diffusePath + path);
-		}
-		if (blockState["back"].valid()) {
-			path = blockState["back"];   block.texture[(int)BlockTexture::BACK] = assets.LoadTexture(diffusePath + path);
-		}
-		if (blockState["left"].valid()) {
-			path = blockState["left"];   block.texture[(int)BlockTexture::LEFT] = assets.LoadTexture(diffusePath + path);
-		}
-		if (blockState["right"].valid()) {
-			path = blockState["right"];  block.texture[(int)BlockTexture::RIGHT] = assets.LoadTexture(diffusePath + path);
+		if (blockState["TOP"].valid()) 
+			itemPath = blockState["TOP"];		
+
+		for (uint32_t i = 0; i < (uint32_t)BlockTexture::LENGHT; i++) {
+			auto name = magic_enum::enum_name((BlockTexture)i);
+			if (blockState[name].valid()) {
+				itemPath = blockState[name];
+				path = blockState[name]; block.texture[i] = assets.LoadTexture(diffusePath + path);
+			}
 		}
 
 		itemPath = diffusePath + itemPath;

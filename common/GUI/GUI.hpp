@@ -11,6 +11,7 @@
 #include <gl/Texture.hpp>
 #include <gl/VertexArray.hpp>
 #include <Renderer/Renderer.hpp>
+#include <GLFW/glfw3.h>
 #include "Renderer2D.hpp"
 
 namespace wc {
@@ -19,63 +20,103 @@ namespace wc {
 
 	class RenderInterface : public Rml::RenderInterface
 	{
-	private:
 		bool transformEnabled = false;
 		gl::VertexArray VAO;
-		gl::VertexBuffer VBO;
-		gl::IndexBuffer EBO;
+		gl::Buffer VBO;
+		gl::Buffer EBO;
+		gl::Shader shader;
 
 		struct RmlVertex {
-			/// Two-dimensional position of the vertex (usually in pixels).
-			glm::vec2 position;
-			/// RGBA-ordered 8-bit / channel colour.
-			glm::vec4 colour;
-			/// Texture coordinate for any associated texture.
-			glm::vec2 tex_coord;
+			glm::vec2 position = glm::vec2(0.f);
+			uint32_t color = 0;
+			glm::vec3 tex_coord = glm::vec3(0.f);
 		};
+
+		uint32_t IndexCount = 0;
+		uint32_t TextureSlots[MaxTextures] = { 0 };
+		uint32_t byteOffset = 0;
+		uint32_t indByteOffset = 0;
+		uint32_t iOffset = 0;
+		uint8_t TextureSlotIndex = 0;
+
+		float getTexture(const uint32_t& texID) {
+			float textureIndex = 0.f;
+			for (uint8_t i = 0; i < TextureSlotIndex; i++) {
+				if (TextureSlots[i] == texID) {
+					textureIndex = (float)i;
+					break;
+				}
+			}
+
+			if (textureIndex == 0.f) {
+				textureIndex = (float)TextureSlotIndex;
+				TextureSlots[TextureSlotIndex] = texID;
+				TextureSlotIndex++;
+			}
+			return textureIndex;
+		}
 	public:
-		gl::Shader shader;
-		glm::vec2 viewportSize = glm::vec2(0.f);
 
 		void Create() {
-			EBO.Create(nullptr, sizeof(uint32_t) * 10000, GL_DYNAMIC_STORAGE_BIT);
 			VAO.Create();
-			VBO.Create(nullptr, 10000 * sizeof(RmlVertex), GL_DYNAMIC_STORAGE_BIT);
+			EBO.Create(nullptr, sizeof(uint32_t) * MaxQuadIndexCount, GL_DYNAMIC_STORAGE_BIT);
+			VBO.Create(nullptr, sizeof(RmlVertex) * MaxQuadVertexCount, GL_DYNAMIC_STORAGE_BIT);
 			VAO.VertexAttribPointer(0, 2, offsetof(RmlVertex, position));
-			VAO.VertexAttribPointer(1, 4, offsetof(RmlVertex, colour));
-			VAO.VertexAttribPointer(2, 2, offsetof(RmlVertex, tex_coord));
+			VAO.VertexAttribPointer(1, 1, offsetof(RmlVertex, color));
+			VAO.VertexAttribPointer(2, 3, offsetof(RmlVertex, tex_coord));
 			VAO.AddVertexBuffer(VBO, sizeof(RmlVertex));
 			VAO.AddIndexBuffer(EBO);
 			shader.Create("shaderpacks/default/RmlRenderer.glsl");
 		}
 
 		void RenderGeometry(Rml::Vertex* vertices, int num_vertices, int* indices, int num_indices, Rml::TextureHandle texture, const Rml::Vector2f& translation) override {
-			EBO.SetData(0, num_indices * sizeof(int), indices);
-			uint32_t offset = 0;
-			for (int i = 0; i < num_vertices; i++) {
+			if (IndexCount + num_indices >= MaxQuadIndexCount || TextureSlotIndex >= MaxTextures) Flush();
+
+			glm::vec2 windowSize = glm::vec2(this->GetContext()->GetDimensions().x, this->GetContext()->GetDimensions().y);
+
+			uint32_t texID = texture;
+			if (texID == 0) texID = Renderer2D::m_Data.whiteTexture;
+			float textureIndex = getTexture(texID);
+
+			for (uint32_t i = 0; i < num_vertices; i++) {
 				RmlVertex vertex;
-				glm::vec2 pos = glm::vec2(vertices[i].position.x + translation.x, vertices[i].position.y + translation.y);
-				float x =  ((pos.x / viewportSize.x) * 2.f - 1.f);
-				float y = -((pos.y / viewportSize.y) * 2.f - 1.f);
-				vertex.position = pos;// glm::vec2(x, y);
-				vertex.colour = glm::vec4(vertices[i].colour.red, vertices[i].colour.green, vertices[i].colour.blue, vertices[i].colour.alpha);
-				vertex.tex_coord = glm::vec2(vertices[i].tex_coord.x, vertices[i].tex_coord.y);
-				VBO.SetData(offset, sizeof(RmlVertex), &vertex);
-				offset += sizeof(RmlVertex);
+				vertex.position = (glm::vec2(vertices[i].position.x + translation.x, vertices[i].position.y + translation.y) / windowSize) * 2.f - 1.f;
+				vertex.position.y = -vertex.position.y;
+
+				glm::vec4 color = glm::vec4(vertices[i].colour.red, vertices[i].colour.green, vertices[i].colour.blue, vertices[i].colour.alpha);
+				uint32_t Color = (uint32_t)(color.r) << 24 | (uint32_t)(color.g) << 16 | (uint32_t)(color.b) << 8 | (uint32_t)(color.a);
+				vertex.color = Color;
+
+				vertex.tex_coord = glm::vec3(vertices[i].tex_coord.x, vertices[i].tex_coord.y, 0.f);
+				VBO.SetData(byteOffset, sizeof(RmlVertex), &vertex);
+				byteOffset += sizeof(RmlVertex);
 			}
 
-			shader.use();
-			shader.setVec2(0, viewportSize);
+			for (uint32_t i = 0; i < num_indices; i++) {
+				EBO.SetData(indByteOffset, sizeof(uint32_t), &indices[i]);
+				indByteOffset += sizeof(uint32_t);
+			}
 
-			if (texture) 
-				glBindTextureUnit(0, texture);			
-			else 
-				Renderer2D::m_Data.whiteTexture.Bind(0);
-			
-			VBO.Bind();
-			EBO.Bind();
+			iOffset += num_vertices;
+			IndexCount += num_indices;
+
+			Flush();
+		}
+
+		void Flush() {
+			if (!IndexCount) return;
+			shader.use();
+
+			for (uint8_t i = 0; i < TextureSlotIndex; i++)
+				glBindTextureUnit(i, TextureSlots[i]);
+
 			VAO.Bind();
-			Renderer::DrawIndexed(num_indices);
+			Renderer::DrawIndexed(IndexCount);
+			TextureSlotIndex = 0;
+			IndexCount = 0;
+			indByteOffset = 0;
+			byteOffset = 0;
+			iOffset = 0;
 		}
 
 		void EnableScissorRegion(bool enable) override {
@@ -96,49 +137,45 @@ namespace wc {
 		}
 
 		void SetScissorRegion(int x, int y, int width, int height) override {
-			if (!transformEnabled)
-				glScissor(x, /*window.GetSize()*/viewportSize.y - (y + height), width, height);
-			else {
-				// clear the stencil buffer
-				glStencilMask(GLuint(-1));
-				glClear(GL_STENCIL_BUFFER_BIT);
-
-				// fill the stencil buffer
-				glColorMask(false, false, false, false);
-				glDepthMask(false);
-				glStencilFunc(GL_NEVER, 1, GLuint(-1));
-				glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
-
-				float fx = (float)x;
-				float fy = (float)y;
-				float fwidth = (float)width;
-				float fheight = (float)height;
-
-				// draw transformed quad
-				//Rml::Vertex vertices[4];
-				//vertices[0].position = Rml::Vector2f(fx, fy);// Rml::Vertex(Rml::Vector2f(fx, fy), 0, Rml::Vector2f(0, 0));
-				//vertices[1].position = Rml::Vector2f(fx, fy + fheight);//Rml::Vertex({ fx, fy + fheight }, 0, { 0,0 });
-				//vertices[2].position = Rml::Vector2f(fx + fwidth, fy + fheight);//Rml::Vertex({ fx + fwidth, fy + fheight }, 0, { 0,0 });
-				//vertices[3].position = Rml::Vector2f(fx + fwidth, fy);//Rml::Vertex({ fx + fwidth, fy }, 0, { 0,0 });
-				//
-				//vertices[0].colour = Rml::Colourb(0.f);
-				//vertices[1].colour = Rml::Colourb(0.f);
-				//vertices[2].colour = Rml::Colourb(0.f);
-				//vertices[3].colour = Rml::Colourb(0.f);
-				//
-				//GLushort indices[] = { 1, 2, 0, 3 };
-				//VBO.SetData(0, sizeof(vertices), vertices);
-				//EBO.SetData(0, sizeof(indices), indices);
-				//VAO.Bind();
-				//colorShader.use();
-				//glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_SHORT, nullptr);
-
-				// prepare for drawing the real thing
-				glColorMask(true, true, true, true);
-				glDepthMask(true);
-				glStencilMask(0);
-				glStencilFunc(GL_EQUAL, 1, GLuint(-1));
-			}
+			//WC_INFO("SetScissorRegion");
+			//if (!transformEnabled)
+			//	glScissor(x, /*window.GetSize()*/Renderer2D::m_Data.windowSize.y - (y + height), width, height);
+			//else {
+			//	// clear the stencil buffer
+			//	glStencilMask(GLuint(-1));
+			//	glClear(GL_STENCIL_BUFFER_BIT);
+			//
+			//	// fill the stencil buffer
+			//	glColorMask(false, false, false, false);
+			//	glDepthMask(false);
+			//	glStencilFunc(GL_NEVER, 1, GLuint(-1));
+			//	glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
+			//
+			//	float fx = (float)x;
+			//	float fy = (float)y;
+			//	float fwidth = (float)width;
+			//	float fheight = (float)height;
+			//
+			//	// draw transformed quad
+			//	RmlVertex vertices[4];
+			//	vertices[0].position = glm::vec2(fx, fy);
+			//	vertices[1].position = glm::vec2(fx, fy + fheight);
+			//	vertices[2].position = glm::vec2(fx + fwidth, fy + fheight);
+			//	vertices[3].position = glm::vec2(fx + fwidth, fy);
+			//	
+			//	GLushort indices[] = { 0,1,2,2,3,0 };
+			//	VBO.SetData(0, sizeof(vertices), vertices);
+			//	EBO.SetData(0, sizeof(indices), indices);
+			//	VAO.Bind();
+			//	shader.use();
+			//	Renderer::DrawIndexed(6);
+			//
+			//	// prepare for drawing the real thing
+			//	glColorMask(true, true, true, true);
+			//	glDepthMask(true);
+			//	glStencilMask(0);
+			//	glStencilFunc(GL_EQUAL, 1, GLuint(-1));
+			//}
 		}
 
 		bool LoadTexture(Rml::TextureHandle& texture_handle, Rml::Vector2i& texture_dimensions, const Rml::String& source) {
@@ -171,6 +208,7 @@ namespace wc {
 		}
 
 		void SetTransform(const Rml::Matrix4f* rmlTransform) {
+			WC_INFO("SetTransform");
 			transformEnabled = (bool)rmlTransform;
 		}
 	} render_interface;
@@ -203,15 +241,17 @@ namespace wc {
 		//virtual void SetMouseCursor(const Rml::String& cursor_name);
 
 		void SetClipboardText(const Rml::String& text) {
-			//glfwSetClipboardString(window, text.c_str());
+			glfwSetClipboardString(window, text.c_str());
 		}
 
 		void GetClipboardText(Rml::String& text) override {
-			//text = window.getClipboard();
+			text = glfwGetClipboardString(window);
 		}
 
 		//virtual void ActivateKeyboard();
 
 		//virtual void DeactivateKeyboard();
+	public:
+		GLFWwindow* window = nullptr;
 	}system_interface;
 }

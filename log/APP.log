@@ -1,7 +1,3 @@
-[03/27/22 13:00:22][info] APP: flags: 0
-[03/27/22 13:00:22][info] APP: color: 4
-[03/27/22 13:00:22][info] APP: Loaded font face 'rmlui-debugger-font' [regular] from 'memory'.
-[03/27/22 13:00:22][info] APP: Loaded font face 'rmlui-debugger-font' [italic] from 'memory'.
-[03/27/22 13:00:22][info] APP: Loaded font face 'Minecraft' [regular] from 'assets/font/Minecraft.ttf'.
-[03/27/22 13:00:22][warning] APP: No font face defined. Ensure that the specified font face 'italic' [regular] has been successfully loaded. Please see previous log messages for all successfully loaded fonts. On element #text < h1 < body < #root#main
-[03/27/22 13:00:22][warning] APP: No font face defined. Ensure that the specified font face 'italic' [regular] has been successfully loaded. Please see previous log messages for all successfully loaded fonts. On element #text < h1 < body < #root#main
+[04/03/22 22:48:48][info] APP: Loaded font face 'rmlui-debugger-font' [regular] from 'memory'.
+[04/03/22 22:48:48][info] APP: Loaded font face 'rmlui-debugger-font' [italic] from 'memory'.
+[04/03/22 22:48:48][info] APP: Loaded font face 'Minecraft' [regular] from 'assets/font/Minecraft.ttf'.

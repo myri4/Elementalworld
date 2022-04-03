@@ -13,10 +13,6 @@ namespace wc {
 	bool resized = false;
 
 	double scrollX = 0.f, scrollY = 0.f;
-	bool mouseScrolled = false;
-	uint32_t currKeyEntered = 0; 
-	bool keyEntered = false;
-	bool buttonPressed = false;
     int mouseButtons[GLFW_MOUSE_BUTTON_LAST];
     int keyButtons[GLFW_KEY_LAST];
 
@@ -255,11 +251,21 @@ namespace wc {
             return Rml::Input::KeyIdentifier::KI_UNKNOWN;
         }
 
+    int getModifications(const int& modifications) {
+        int mods = 0;
+        if (modifications & GLFW_MOD_ALT != 0) mods |= Rml::Input::KeyModifier::KM_ALT;
+        if (modifications & GLFW_MOD_CAPS_LOCK != 0) mods |= Rml::Input::KeyModifier::KM_CAPSLOCK;
+        if (modifications & GLFW_MOD_CONTROL != 0) mods |= Rml::Input::KeyModifier::KM_CTRL;
+        if (modifications & GLFW_MOD_NUM_LOCK != 0) mods |= Rml::Input::KeyModifier::KM_NUMLOCK;
+        if (modifications & GLFW_MOD_SHIFT != 0) mods |= Rml::Input::KeyModifier::KM_SHIFT;
+        return mods;
+    }
+
     int getModifications() {
         int mods = 0;
         if (keyButtons[(int)Keyboard::Key::LControl] || keyButtons[(int)Keyboard::Key::RControl]) mods |= Rml::Input::KeyModifier::KM_CTRL;
-        if (keyButtons[(int)Keyboard::Key::LShift] ||   keyButtons[(int)Keyboard::Key::RShift]) mods |= Rml::Input::KeyModifier::KM_SHIFT;
-        if (keyButtons[(int)Keyboard::Key::LAlt] ||     keyButtons[(int)Keyboard::Key::RAlt]) mods |= Rml::Input::KeyModifier::KM_ALT;
+        if (keyButtons[(int)Keyboard::Key::LShift] || keyButtons[(int)Keyboard::Key::RShift]) mods |= Rml::Input::KeyModifier::KM_SHIFT;
+        if (keyButtons[(int)Keyboard::Key::LAlt] || keyButtons[(int)Keyboard::Key::RAlt]) mods |= Rml::Input::KeyModifier::KM_ALT;
         if (keyButtons[(int)Keyboard::Key::CapsLock]) mods |= Rml::Input::KeyModifier::KM_CTRL;
         return mods;
     }
@@ -297,19 +303,16 @@ namespace wc {
 			if (!vsync) glfwSwapInterval(0);
             glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) { glViewport(0, 0, width, height); resized = true; });
 			glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
-                scrollX = xoffset; scrollY = yoffset; mouseScrolled = true; 
+                scrollX = xoffset; scrollY = yoffset;
                 context->ProcessMouseWheel(-scrollY, getModifications());
                 });
 			glfwSetCharCallback(window, [](GLFWwindow* window, uint32_t codepoint) {
-                currKeyEntered = codepoint;
-                keyEntered = true; 
                 context->ProcessTextInput((char)codepoint);
                 });
 			glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
                 keyButtons[key] = action;
-                if (action == GLFW_PRESS) { wc::context->ProcessKeyDown(convertToRmlKey((Keyboard::Key)key), getModifications()); }
-                else if (action == GLFW_RELEASE) { wc::context->ProcessKeyUp(convertToRmlKey((Keyboard::Key)key), getModifications()); }
-				buttonPressed = true;
+                if (action == GLFW_PRESS) { context->ProcessKeyDown(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
+                else if (action == GLFW_RELEASE) { context->ProcessKeyUp(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
 				});
 
             glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) {
@@ -318,8 +321,8 @@ namespace wc {
 			glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
                 mouseButtons[button] = action;
 
-                if (action == GLFW_PRESS) { wc::context->ProcessMouseButtonDown(button, getModifications()); }
-                else if (action == GLFW_RELEASE) { wc::context->ProcessMouseButtonUp(button, getModifications()); }
+                if (action == GLFW_PRESS) { context->ProcessMouseButtonDown(button, getModifications(mods)); }
+                else if (action == GLFW_RELEASE) { context->ProcessMouseButtonUp(button, getModifications(mods)); }
                 else WC_WARN("Invalid mouse button action");
 				});
 
@@ -344,11 +347,16 @@ namespace wc {
 			glfwDestroyWindow(window);
 		}
 
+        float getContentScale() {
+            float xscale, yscale;
+            glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &xscale, &yscale);
+            return xscale;
+        }
+
 		void display() const {
 			resized = false;
-            keyEntered = false;
-			buttonPressed = false;
-			mouseScrolled = false;
+            scrollY = 0.f;
+            scrollX = 0.f;
             memset(mouseButtons, GLFW_RELEASE, sizeof(mouseButtons));
             memset(keyButtons, GLFW_RELEASE, sizeof(keyButtons));
 			glfwSwapBuffers(window);

@@ -167,103 +167,10 @@ namespace gl {
 		{
 			glUseProgram(m_RendererID);
 		}
+
 		static void unUse()
 		{
 			glUseProgram(0);
-		}
-		// utility uniform functions
-		// ------------------------------------------------------------------------
-
-		void setBool(const uint32_t& loc, const bool& value) const
-		{
-			glProgramUniform1i(m_RendererID, loc, value);
-		}
-		// ------------------------------------------------------------------------
-		void setInt(const uint32_t& loc, const int32_t& value) const
-		{
-			glProgramUniform1i(m_RendererID, loc, value);
-		}
-		// ------------------------------------------------------------------------
-		void setUInt(const uint32_t& loc, const uint32_t& value) const
-		{
-			glProgramUniform1ui(m_RendererID, loc, value);
-		}
-		// ------------------------------------------------------------------------
-		void setFloat(const uint32_t& loc, const float& value) const
-		{
-			glProgramUniform1f(m_RendererID, loc, value);
-		}
-		// ------------------------------------------------------------------------
-		void setNum(const uint32_t& loc, const float& value) const
-		{
-			glProgramUniform1f(m_RendererID, loc, value);
-		}
-		// ------------------------------------------------------------------------
-		void setNum(const uint32_t& loc, const int32_t& value) const
-		{
-			glProgramUniform1i(m_RendererID, loc, value);
-		}
-		// ------------------------------------------------------------------------
-		void setNum(const uint32_t& loc, const uint32_t& value) const
-		{
-			glProgramUniform1ui(m_RendererID, loc, value);
-		}
-		// ------------------------------------------------------------------------
-		void setVec2(const uint32_t& loc, const glm::vec2& value) const
-		{
-			glProgramUniform2fv(m_RendererID, loc, 1, glm::value_ptr(value));
-		}
-		void setVec2(const uint32_t& loc, const float& x, const float& y) const
-		{
-			glProgramUniform2f(m_RendererID, loc, x, y);
-		}
-		// ------------------------------------------------------------------------
-		void setVec3(const uint32_t& loc, const glm::vec3& value) const
-		{
-			glProgramUniform3fv(m_RendererID, loc, 1, glm::value_ptr(value));
-		}
-		void setVec3(const uint32_t& loc, const float& x, const float& y, const float& z) const
-		{
-			glProgramUniform3f(m_RendererID, loc, x, y, z);
-		}
-		// ------------------------------------------------------------------------
-		void setVec4(const uint32_t& loc, const glm::vec4& value) const
-		{
-			glProgramUniform4fv(m_RendererID, loc, 1, glm::value_ptr(value));
-		}
-		void setVec4(const uint32_t& loc, const float& x, const float& y, const float& z, const float& w) const
-		{
-			glProgramUniform4f(m_RendererID, loc, x, y, z, w);
-		}
-		// ------------------------------------------------------------------------
-		void setMat2(const uint32_t& loc, const glm::mat2& mat) const
-		{
-			glProgramUniformMatrix2fv(m_RendererID, loc, 1, false, glm::value_ptr(mat));
-		}
-		// ------------------------------------------------------------------------
-		void setMat3(const uint32_t& loc, const glm::mat3& mat) const
-		{
-			glProgramUniformMatrix3fv(m_RendererID, loc, 1, false, glm::value_ptr(mat));
-		}
-		// ------------------------------------------------------------------------
-		void setMat4(const uint32_t& loc, const glm::mat4& mat) const
-		{
-			glProgramUniformMatrix4fv(m_RendererID, loc, 1, false, glm::value_ptr(mat));
-		}
-
-		void setMat4Array(const uint32_t& loc, const glm::mat4* mat, const uint32_t& size) const
-		{
-			glProgramUniformMatrix4fv(m_RendererID, loc, size, false, (float*)mat);
-		}
-
-		void SetArray(const uint32_t& loc, const size_t& size, const int* arr) const
-		{
-			glProgramUniform1iv(m_RendererID, loc, size, arr);
-		}
-
-		void SetArray(const uint32_t& loc, size_t size, const float* arr) const
-		{
-			glProgramUniform1fv(m_RendererID, loc, size, arr);
 		}
 
 		inline operator uint32_t& () { return m_RendererID; }

@@ -1,11 +1,11 @@
 isCollidable = true
 ConnectionType = "CONNECT_DEFAULT"
 
-top =    "log_top.png"
-bottom = top
-front =  "log_side.png"
-back =   front
-left =   front
-right =  front
+TOP =    "log_top.png"
+BOTTOM = TOP
+FRONT =  "log_side.png"
+BACK =   FRONT
+LEFT =   FRONT
+RIGHT =  FRONT
 
 name = "wood"

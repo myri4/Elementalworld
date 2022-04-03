@@ -6,8 +6,6 @@ layout(location = 1) in vec3 a_TexCoords;
 layout(location = 2) in uint a_Color;
 layout(location = 3) in float a_Type;
 
-layout(location = 0) uniform mat4 u_Projection = mat4(1.f);
-
 out vec3 v_TexCoords;
 out vec4 v_Color;
 out float v_Type;
@@ -22,7 +20,7 @@ void main() {
     v_Color.a = float((a_Color & uint(0x000000ff))) * c;
 
     v_Type = a_Type;
-    gl_Position = u_Projection * vec4(a_Pos, 1., 1.);
+    gl_Position = vec4(a_Pos, 1.f, 1.f);
 }
 
 #type fragment

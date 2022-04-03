@@ -40,8 +40,8 @@ namespace wc {
 		bool empty : 1;
 		bool generatedStructures : 1;
 
-		gl::VertexBuffer meshBuffer;
-		gl::IndexBuffer indexBuffer;
+		gl::Buffer meshBuffer;
+		gl::Buffer indexBuffer;
 	public: // Functions 
 		Chunk() {
 			used = false;
