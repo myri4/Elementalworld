@@ -168,8 +168,8 @@ void AddBlockScript(const char* script) {
 
 	if (block.connectionType == ConnectionType::CUSTOM_MODEL) block.meshID = 0;
 
-	std::string diffusePath = "assets/textures/block/diffuse/";
-	std::string normalPath = "assets/textures/block/normal/";
+	std::string diffusePath = "resourcepacks/default/textures/block/diffuse/";
+	std::string normalPath = "resourcepacks/default/textures/block/normal/";
 
 	if (blockState["allTextures"].valid()) {
 		std::string path = blockState["allTextures"];

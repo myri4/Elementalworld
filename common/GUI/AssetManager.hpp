@@ -55,7 +55,6 @@ public:
 	}
 
 	void Bind() { texArr.Bind(0); }
-	gl::Texture textures[5];
 private:
 	std::unordered_map<std::string, int> m_TextureCache;
 	gl::TextureArray texArr;

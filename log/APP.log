@@ -1,3 +1,4 @@
-[04/03/22 22:48:48][info] APP: Loaded font face 'rmlui-debugger-font' [regular] from 'memory'.
-[04/03/22 22:48:48][info] APP: Loaded font face 'rmlui-debugger-font' [italic] from 'memory'.
-[04/03/22 22:48:48][info] APP: Loaded font face 'Minecraft' [regular] from 'assets/font/Minecraft.ttf'.
+[04/06/22 14:04:35][info] APP: Loading Lua plugin using the provided Lua state.
+[04/06/22 14:04:35][info] APP: Loaded font face 'rmlui-debugger-font' [regular] from 'memory'.
+[04/06/22 14:04:35][info] APP: Loaded font face 'rmlui-debugger-font' [italic] from 'memory'.
+[04/06/22 14:04:35][info] APP: Loaded font face 'Minecraft' [regular] from 'resourcepacks/default/font/Minecraft.ttf'.

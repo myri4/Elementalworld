@@ -1,0 +1,1 @@
+rmlui.LoadFontFace('../font/Minecraft2.ttf')

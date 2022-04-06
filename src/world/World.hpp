@@ -10,8 +10,6 @@
 #include <wc/Model/Animation.hpp>
 #include "../Game Mechanics/LineBatcher.hpp"
 #include "../Game Mechanics/CommandParser.hpp"
-#include <GUI/Console.hpp>
-#include <GUI/Button.hpp>
 #include <Utils/YAML.hpp>
 #include <Utils/Memory.h>
 #include <ppl.h>
@@ -68,8 +66,7 @@ namespace wc {
 		bool lightUpdate = false;
 
 		struct TransformData {
-			glm::mat4 proj = glm::mat4(1.f);
-			glm::mat4 view = glm::mat4(1.f);
+			glm::mat4 ViewProj = glm::mat4(1.f);
 			alignas(16) glm::vec3 cameraPos = glm::vec3(0.f);
 			alignas(16) glm::vec3 lower_left_corner = glm::vec3(0.f);
 			alignas(16) glm::vec3 horizontal = glm::vec3(0.f);
@@ -93,9 +90,6 @@ namespace wc {
 		uint32_t localPlayerID = 0;
 
 		std::unordered_map<uint32_t, PlayerDescription> players;
-
-		//GUI
-		Console console;
 
 		// World saving
 		std::string worldName = "New world";
@@ -186,20 +180,18 @@ namespace wc {
 	public:
 		bool multiPlayer = false;
 		Player p;
-		Font font;
 
 		void Create() {
-			chunkShader.Create("shaderpacks/default/chunkShader.glsl");
-			chunkShaderTimer = std::filesystem::last_write_time("shaderpacks/default/chunkShader.glsl");
-			bloomShader.Create("shaderpacks/default/bloomShader.glsl");
-			compositeShader.Create("shaderpacks/default/composite.glsl");
+			chunkShader.Create("resourcepacks/default/shaders/chunkShader.glsl");
+			chunkShaderTimer = std::filesystem::last_write_time("resourcepacks/default/shaders/chunkShader.glsl");
+			bloomShader.Create("resourcepacks/default/shaders/bloomShader.glsl");
+			compositeShader.Create("resourcepacks/default/shaders/composite.glsl");
 
 			transforms.Create(nullptr, sizeof(TransformData), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
 			transforms.BufferBase(0);
 
 			lights.Create(nullptr, sizeof(lighting), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
 			lights.BufferBase(1);
-
 
 			bloomUBO.Create(nullptr, sizeof(BloomUBOSettings), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
 			bloomUBO.BufferBase(4);
@@ -250,11 +242,6 @@ namespace wc {
 			worldGenState.script_file("scripts/biomes.lua");
 			assets.Free();
 
-			load("assets/textures/misc/cursor.png", assets.textures[0]);
-			load("assets/textures/misc/hotbar.png", assets.textures[1]);
-			load("assets/textures/misc/hotbar_selected.png", assets.textures[2]);
-			load("assets/textures/misc/hearts.png", assets.textures[3]);
-
 			lineBatcher.Create();
 			chunkMeshArray.Create();
 			chunkMeshArray.VertexAttribPointer(0, 3, offsetof(Vertex, Position));  // position attribute
@@ -283,9 +270,9 @@ namespace wc {
 			skyBoxArray.VertexAttribPointer(0, 2, 0);
 			skyBoxArray.AddVertexBuffer(skyboxVertexBuffer, sizeof(float) * 2);
 
-			skyShader.Create("shaderpacks/default/skybox.glsl");
+			skyShader.Create("resourcepacks/default/shaders/skybox.glsl");
 #ifdef MODEL
-			modelShader.Create("shaderpacks/default/modelShader.glsl");
+			modelShader.Create("resourcepacks/default/shaders/modelShader.glsl");
 			model.Create("assets/models/Ravenkin.obj");
 			//animation.Create("assets/models/dancing_vampire.dae", model);
 #endif // MODEL
@@ -400,8 +387,6 @@ namespace wc {
 			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(-1.f, 0.f, 0.f), 0));
 			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.f, 1.f), glm::vec3(1.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(-1.f, 0.f, 0.f), 0));
 			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.5f, 1.f), glm::vec3(1.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(-1.f, 0.f, 0.f), 0));
-			p.inventory.Create();
-			p.crafting.Create();
 		}
 
 		// Common blocks
@@ -583,8 +568,7 @@ namespace wc {
 			// camera/view transformation
 			TransformData data;
 			data.windowSize = window.GetSize();
-			data.proj = glm::perspective(glm::radians(camera.FOV), data.windowSize.x / data.windowSize.y, 0.1f, 1100.f);
-			data.view = camera.GetViewMatrix();
+			data.ViewProj = glm::perspective(glm::radians(camera.FOV), data.windowSize.x / data.windowSize.y, 0.1f, 1100.f) * camera.GetViewMatrix();
 			data.cameraPos = camera.Position;
 			data.lower_left_corner = camera.lower_left_corner;
 			data.vertical = camera.vertical;
@@ -610,12 +594,12 @@ namespace wc {
 			angle = glm::mod(angle, 360.f);
 			glEnable(GL_DEPTH_TEST);
 
-			viewFrustum.update(data.proj * data.view);
+			viewFrustum.update(data.ViewProj);
 			uint32_t chunkHalf = chunkSize / 2;
-			glm::vec3 currentPlayerPos = getChunkPos(p.Position);
+			glm::vec3 currentPlayerPos = getChunkPos(p.Position); // @TODO: hmmm? why doesnt it work with glm::ivec3?
 
 			for (ChunkID i = 0; i < chunks.size(); i++) {
-				glm::vec3 currChunkPos = chunks[i].position;
+				glm::ivec3& currChunkPos = chunks[i].position;
 				if (currChunkPos.x < currentPlayerPos.x - chunkHalf) ResetChunk(i, glm::ivec3(currentPlayerPos.x + chunkHalf - 1, currChunkPos.y, currChunkPos.z));
 				if (currChunkPos.x > currentPlayerPos.x + chunkHalf) ResetChunk(i, glm::ivec3(currentPlayerPos.x - chunkHalf + 1, currChunkPos.y, currChunkPos.z));
 
@@ -627,12 +611,12 @@ namespace wc {
 			}
 
 			if (gnerateTerrain) {
-
 				for (ChunkID chunk = 0; chunk < chunks.size(); chunk++)
 					if (!chunks[chunk].generated) { GenerateChunkTerrain(chunk); chunks[chunk].generated = true; }
 
 				for (ChunkID chunk = 0; chunk < chunks.size(); chunk++)
 					if (!chunks[chunk].generatedStructures) { GenerateChunkStructures(chunk); chunks[chunk].generatedStructures = true; }
+
 				gnerateTerrain = false;
 			}
 
@@ -681,68 +665,7 @@ namespace wc {
 			compositeShader.Dispatch(glm::ceil((glm::vec2)data.windowSize / glm::vec2(m_BloomComputeWorkGroupSize)));
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-			Renderer2D::DrawQuad({ 0,0 }, data.windowSize, finalImage, glm::vec4(1.f), 0.f, true);
-			const float scale = 0.35f;			
-
-			//Inventory
-			const float hotbarSize = 48.f;
-			float oneSixth = hotbarSize / 6.f;
-			glm::vec2 hotbarStart = glm::vec2((data.windowSize.x - inventorySizeX * hotbarSize) * 0.5f, data.windowSize.y - hotbarSize); // Temp until inventory
-
-			//Health
-			glm::vec2 offset = glm::vec2(0.f);
-			glm::vec2 healthSize = glm::vec2(20.f);
-			glm::vec2 healthStart = glm::vec2(hotbarStart.x, data.windowSize.y - hotbarSize - 2.f - healthSize.y) - (glm::vec2(3.f, -healthSize.x) + healthSize);
-
-			for (uint8_t i = 0; i < (int8_t)p.health; i++) {
-				offset += glm::vec2(3.f, -healthSize.x) + healthSize;
-				Renderer2D::DrawQuad(healthStart + offset, healthSize, assets.textures[3], { 0,0 }, { 7, 7 });
-			}
-			
-			if ((float)((int)p.health) < p.health) 
-			Renderer2D::DrawQuad(healthStart + offset + healthSize + glm::vec2(3.f, -healthSize.x), { healthSize.x * 0.5f + 2.f, healthSize.y }, assets.textures[3], { 0,0 }, { 4, 7 });
-			
-			console.start = { 25.f, 0.f };
-			console.DrawTextLine("FPS: " + std::to_string((int)(1.f / deltaTime)) + " Frametime: " + std::to_string(deltaTime * 1000), font);
-			console.DrawTextLine("X: " + std::to_string(p.Position.x) + " Y: " + std::to_string(p.Position.y) + " Z: " + std::to_string(p.Position.z), font);
-			console.DrawTextLine("Pitch: " + std::to_string(p.rotation.x) + " Yaw: " + std::to_string(p.rotation.y) + " Roll: " + std::to_string(camera.Roll), font);
-			console.DrawTextLine(
-				"ChunkX: " + std::to_string(currentPlayerPos.x) +
-				" ChunkY: " + std::to_string(currentPlayerPos.y) +
-				" ChunkZ: " + std::to_string(currentPlayerPos.z), font);
-			float VelY = p.velocity.y;
-			if (p.flying) VelY /= 9.f;
-			console.DrawTextLine("Velocity: X: " + std::to_string(p.velocity.x / 9.f) +
-								 " Y: " + std::to_string(VelY) + 
-								 " Z: " + std::to_string(p.velocity.z / 9.f), font);
-			console.DrawTextLine("Time of the day: " + std::to_string(angle / 6.f * 144.f), font);
-			//Renderer2D::DrawText("Heap Memory: " + std::to_string(modelScale) + " bytes", font, { 25.f, 65.f * scale * 10.f}, scale);
-			console.DrawTextLine("Number of lights: " + std::to_string(currentLightID), font);
-			console.DrawTextLine("Look at: X: " 
-				+ std::to_string((int)floor(m_rayEnd.x)) + " Y: " 
-				+ std::to_string((int)floor(m_rayEnd.y)) + " Z: " 
-				+ std::to_string((int)floor(m_rayEnd.z)) + " Looking at block: " 
-				+ std::to_string(getBlock(m_rayEnd)), font);
-
-			//console.line += 10;
-			//console.DrawTextLine(textbox.text, font);
-
-			console.Reset();
-			
-			for (uint8_t i = 0; i < inventorySizeX; i++) {
-				uint8_t id = 0;
-				if (p.currentSlot == i) id = 1;
-				Renderer2D::DrawQuad(hotbarStart + glm::vec2(hotbarSize * i, 0.f), { hotbarSize,hotbarSize }, assets.textures[1 + id]);
-			
-				uint32_t amount = p.inventory.data[i].stack_size;
-				if (amount > 0) 
-					Renderer2D::DrawQuad(hotbarStart + glm::vec2(hotbarSize * i + 4.f, 4.f), { hotbarSize - oneSixth,hotbarSize - oneSixth }, items[p.inventory.data[i].itemID].texture);
-				if (amount > 1)
-					Renderer2D::DrawText(std::to_string(amount), font, hotbarStart + glm::vec2(hotbarSize * i + 4.f, 44.f), 0.4f, glm::vec4(1.f));
-			}
-			glm::vec2 cursorSize = (glm::vec2)assets.textures[0].GetSize() * 1.4f;
-			glm::vec2 cursorPos = glm::vec2(data.windowSize.x - cursorSize.x, data.windowSize.y - cursorSize.y) * 0.5f;
-			Renderer2D::DrawQuad(cursorPos, cursorSize, assets.textures[0]);
+			Renderer2D::DrawQuad({ 0,0 }, data.windowSize, finalImage);
 		}
 
 		glm::vec3 m_rayEnd;
@@ -763,7 +686,7 @@ namespace wc {
 			}
 			else if (commandType == CommandType::collide) p.collision = getArgument(args);
 			else if (commandType == CommandType::setBlock) setBlock({ getArgument(args, 1) , getArgument(args, 2) , getArgument(args, 3) }, getArgument(args), true, true);
-			else if (commandType == CommandType::give) p.inventory.AddItem(getArgument(args, 0), 0, getArgument(args, 1));
+			//else if (commandType == CommandType::give) p.inventory.AddItem(getArgument(args, 0), 0, getArgument(args, 1));
 			else if (commandType == CommandType::setSpeed) p.MovementSpeed = getArgument(args, 0);
 			else if (commandType == CommandType::setTime) angle = getArgument(args, 0);
 			else if (commandType == CommandType::getBlockID) WC_INFO(getBlock({ getArgument(args, 0) , getArgument(args, 1) , getArgument(args, 2) }));
@@ -790,17 +713,13 @@ namespace wc {
 			command = "";
 		}
 
-		void OnInput(bool& HasFocus, const float& deltaTime) {
+		void OnInput(const float& deltaTime) {
 			glm::ivec2 windSize = window.GetSize();
 			// MENU MANAGMENT
-			if (Keyboard::getKey(Keyboard::Key::E) == GLFW_PRESS && /*!textbox.isSelected*/true) mode = MenuMode::INVENTORY;
-
-			if (Keyboard::getKey(Keyboard::Key::Escape) == GLFW_PRESS) mode = MenuMode::ESCMENU;
-
-			if (std::filesystem::last_write_time("shaderpacks/default/chunkShader.glsl") != chunkShaderTimer) {
+			if (std::filesystem::last_write_time("resourcepacks/default/shaders/chunkShader.glsl") != chunkShaderTimer) {
 				chunkShader.Destroy();
-				chunkShader.Create("shaderpacks/default/chunkShader.glsl");
-				chunkShaderTimer = std::filesystem::last_write_time("shaderpacks/default/chunkShader.glsl");
+				chunkShader.Create("resourcepacks/default/shaders/chunkShader.glsl");
+				chunkShaderTimer = std::filesystem::last_write_time("resourcepacks/default/shaders/chunkShader.glsl");
 			}
 
 			//if (wc::bReloadModelShader) {
@@ -937,8 +856,6 @@ namespace wc {
 			//////////////
 
 			camera.UpdateCameraAngles();
-			
-			Mouse::ShowMouse(!HasFocus);
 
 			bool bBreak = Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)  == GLFW_PRESS;
 			bool bPlace = Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
@@ -960,13 +877,13 @@ namespace wc {
 						bShow = false;
 						DrawOutlineCube(pos, glm::vec3(1.f), glm::vec4(3.f));
 						if (bBreak) {
-							p.inventory.AddItem(block - 1, p.currentSlot);
+							//p.inventory.AddItem(block - 1, p.currentSlot);
 							setBlock(pos, 0, true, true);
 						}
 						else if (bPlace) {
-							ItemID itemID = p.inventory.data[p.currentSlot].itemID;
-							if (p.inventory.RemoveItem(p.currentSlot))
-								setBlock(m_rayLastPos, items[itemID].block, true, true);
+							//ItemID itemID = p.inventory.data[p.currentSlot].itemID;
+							//if (p.inventory.RemoveItem(p.currentSlot))
+								setBlock(m_rayLastPos, /*items[itemID].block*/1, true, true);
 						}
 						break;
 					}

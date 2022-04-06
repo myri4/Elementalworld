@@ -135,7 +135,7 @@ namespace gl {
 						else wcUtil::CheckForIncludes(line, shaderStream[type]);
 					}
 				}
-				else WC_ERROR("The shader was not parsed correctly! Check your filepath or your shader file!");
+				else WC_ERROR("The shader was not parsed correctly! Check your filepath or your shader file! {0}", filepath);
 				stream.close();
 
 				std::string vertexCode = shaderStream[0].str();

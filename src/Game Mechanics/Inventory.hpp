@@ -1,13 +1,11 @@
 #pragma once
 #include "Item.hpp"
 #include <GUI/Renderer2D.hpp>
-#include <GUI/Button.hpp>
 #include <GUI/AssetManager.hpp>
-#include "../Menus/Menus.hpp"
 
 namespace wc {
 
-	std::pair<ItemSlot, DragButton> buttonSlot;
+	/*std::pair<ItemSlot, DragButton> buttonSlot;
 	const uint32_t hotbarSize = 48;
 	template<size_t inventorySize>
 	class InventoryContainer {
@@ -160,7 +158,7 @@ namespace wc {
 			if (Keyboard::getKey(Keyboard::Key::E) == GLFW_PRESS)
 				mode = MenuMode::GAME;
 		}
-	};
+	};*/
 
 	template<uint32_t size>
 	class Recipe {
@@ -172,7 +170,7 @@ namespace wc {
 	};
 	Recipe<2> recipes[2];
 	
-	template<uint32_t size>
+	/*template<uint32_t size>
 	class Crafter : public InventoryMenu<size, size, size * size + 1>{
 	public:
 		void UpdateLogic(const glm::vec2& windsize, const glm::vec2& windpos, const float& deltaTime, const Font& font, ItemSlot* data) override {			
@@ -223,11 +221,11 @@ namespace wc {
 					buttonSlot.second.position = buttons[i].position;
 				}
 			}
-
+			
 			if (buttons[i].isMouseOver() && Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS && buttonSlot.first.itemID != -1 && i != size * size) {
 				if (data[i].itemID == 0) data[i].itemID = buttonSlot.first.itemID;
 				if (buttonSlot.first.stack_size > 0) {
-
+			
 					data[i].stack_size++;
 					buttonSlot.first.stack_size--;
 				}
@@ -235,5 +233,5 @@ namespace wc {
 					buttonSlot.first.itemID = 0;
 			}
 		}
-	};
+	};*/
 }

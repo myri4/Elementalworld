@@ -3,10 +3,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
-#include <sol/sol.hpp>
 #include "Log.hpp"
-#include "YAML.hpp"
-#include <GUI/GUI.hpp>
+#include <RmlUi/Core.h>
 
 namespace wc {
 
@@ -15,6 +13,7 @@ namespace wc {
 	double scrollX = 0.f, scrollY = 0.f;
     int mouseButtons[GLFW_MOUSE_BUTTON_LAST];
     int keyButtons[GLFW_KEY_LAST];
+    Rml::Context* context = nullptr;
 
     namespace Keyboard {
 
@@ -253,11 +252,11 @@ namespace wc {
 
     int getModifications(const int& modifications) {
         int mods = 0;
-        if (modifications & GLFW_MOD_ALT != 0) mods |= Rml::Input::KeyModifier::KM_ALT;
-        if (modifications & GLFW_MOD_CAPS_LOCK != 0) mods |= Rml::Input::KeyModifier::KM_CAPSLOCK;
-        if (modifications & GLFW_MOD_CONTROL != 0) mods |= Rml::Input::KeyModifier::KM_CTRL;
-        if (modifications & GLFW_MOD_NUM_LOCK != 0) mods |= Rml::Input::KeyModifier::KM_NUMLOCK;
-        if (modifications & GLFW_MOD_SHIFT != 0) mods |= Rml::Input::KeyModifier::KM_SHIFT;
+        if (modifications & GLFW_MOD_ALT)       mods |= Rml::Input::KeyModifier::KM_ALT;
+        if (modifications & GLFW_MOD_CAPS_LOCK) mods |= Rml::Input::KeyModifier::KM_CAPSLOCK;
+        if (modifications & GLFW_MOD_CONTROL)   mods |= Rml::Input::KeyModifier::KM_CTRL;
+        if (modifications & GLFW_MOD_NUM_LOCK)  mods |= Rml::Input::KeyModifier::KM_NUMLOCK;
+        if (modifications & GLFW_MOD_SHIFT)     mods |= Rml::Input::KeyModifier::KM_SHIFT;
         return mods;
     }
 
@@ -275,28 +274,15 @@ namespace wc {
 		Window() {}
 		~Window() {}
 
-		void Create(const char* Config, const char* title) {
-            int width = 1280, height = 720, antialiasinglevel = 0;
-			bool vsync = false;
+		void Create(const glm::ivec2& size, const char* title, const bool& vsync = false, const bool& fullscreen = false) {
 			GLFWmonitor* mode = nullptr;
-            YAML::Node config;
-            if (std::filesystem::exists(Config)) {
-                config = YAML::LoadFile(Config);
 
-                if (config["fullscreen"])                
-                    if (config["fullscreen"].as<bool>()) mode = glfwGetPrimaryMonitor();
+            if (fullscreen) mode = glfwGetPrimaryMonitor();            
 
-                if (config["screenWidth"]) width = config["screenWidth"].as<int>();
-                if (config["screenHeight"]) height = config["screenHeight"].as<int>();
-                if (config["antialiasingLevel"]) antialiasinglevel = config["antialiasingLevel"].as<int>();
-                if (config["vsync"]) vsync = config["vsync"].as<bool>();
-            }
-
-			window = glfwCreateWindow(width, height, title, mode, nullptr);
+			window = glfwCreateWindow(size.x, size.y, title, mode, nullptr);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-			glfwWindowHint(GLFW_SAMPLES, antialiasinglevel);
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 			glfwMakeContextCurrent(window);
@@ -304,6 +290,7 @@ namespace wc {
             glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) { glViewport(0, 0, width, height); resized = true; });
 			glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
                 scrollX = xoffset; scrollY = yoffset;
+
                 context->ProcessMouseWheel(-scrollY, getModifications());
                 });
 			glfwSetCharCallback(window, [](GLFWwindow* window, uint32_t codepoint) {
@@ -311,8 +298,9 @@ namespace wc {
                 });
 			glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
                 keyButtons[key] = action;
-                if (action == GLFW_PRESS) { context->ProcessKeyDown(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
-                else if (action == GLFW_RELEASE) { context->ProcessKeyUp(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
+
+                if (action != GLFW_RELEASE) { context->ProcessKeyDown(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
+                else { context->ProcessKeyUp(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
 				});
 
             glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) {
@@ -321,27 +309,14 @@ namespace wc {
 			glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
                 mouseButtons[button] = action;
 
-                if (action == GLFW_PRESS) { context->ProcessMouseButtonDown(button, getModifications(mods)); }
-                else if (action == GLFW_RELEASE) { context->ProcessMouseButtonUp(button, getModifications(mods)); }
-                else WC_WARN("Invalid mouse button action");
+                if (action != GLFW_RELEASE) { context->ProcessMouseButtonDown(button, getModifications(mods)); }
+                else { context->ProcessMouseButtonUp(button, getModifications(mods)); }
 				});
 
 			if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) WC_ERROR("Failed to initialize GLAD");
 
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 		}
-
-        void SaveConfig(const std::string& saveLoc) {
-            YAML::Node config;
-            config["screenWidth"] = GetSize().x;
-            config["screenHeight"] = GetSize().y;
-            config["framerateLimit"] = 0;
-            config["antialiasingLevel"] = 4;
-            config["vsync"] = false;
-            config["fullscreen"] = false;
-
-            YAMLUtils::saveFile(saveLoc, config);
-        }
 
 		void Destroy() const {
 			glfwDestroyWindow(window);
@@ -427,7 +402,6 @@ namespace wc {
         inline operator GLFWwindow* () { return window; }
         inline operator GLFWwindow* () const { return window; }
 
-        bool fullScreen = false;
 	private:
 		GLFWwindow* window = nullptr;
 	};

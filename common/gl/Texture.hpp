@@ -53,10 +53,11 @@ namespace gl {
 		// @TODO: Remove
 		void CreateRml(const glm::ivec2& size, const void* data) {
 			glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
-
+			GLint filter = GL_LINEAR;
+			if (size.x < 100 || size.y < 100) filter = GL_NEAREST;
 			glTextureStorage2D(m_RendererID, 1, GL_RGBA8, size.x, size.y);
-			Parameteri(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			Parameteri(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			Parameteri(GL_TEXTURE_MIN_FILTER, filter);
+			Parameteri(GL_TEXTURE_MAG_FILTER, filter);
 			Parameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			Parameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 

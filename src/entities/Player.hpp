@@ -23,8 +23,8 @@ namespace wc {
 		bool collision : 1;
 		glm::vec3 velocity = glm::vec3(0.f);
 		glm::vec3 acceleration = glm::vec3(0.f);
-		InventoryMenu<inventorySizeX, inventorySizeY, inventorySizeX * inventorySizeY> inventory;
-		Crafter<2> crafting;
+		//InventoryMenu<inventorySizeX, inventorySizeY, inventorySizeX * inventorySizeY> inventory;
+		//Crafter<2> crafting;
 		float health = 10.f;
 
 		Player() {

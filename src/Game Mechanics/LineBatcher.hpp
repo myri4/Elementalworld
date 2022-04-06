@@ -5,6 +5,9 @@
 
 namespace wc {
 
+	//static const uint32_t MaxLineCount = 100;
+	static const uint32_t MaxLineVertexCount = 100 * 2;
+
 	struct LineVertex {
 		glm::vec3 pos;
 		glm::vec4 color; // @Temp
@@ -21,7 +24,7 @@ namespace wc {
 
 	public:
 		void Create() {
-			shader.Create("shaderpacks/default/Line3D.glsl");
+			shader.Create("resourcepacks/default/shaders/Line3D.glsl");
 
 			lineArray.Create();
 			lineBuffer.Create(nullptr, MaxLineVertexCount * sizeof(LineVertex), GL_DYNAMIC_STORAGE_BIT);
