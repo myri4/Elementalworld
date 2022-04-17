@@ -7,13 +7,13 @@
     <body data-model="globalData">
       <div id = "center" data-if="mode == 2">
         <p id = "title">Elementalworld</p>
-        <button id = "btn" data-event-click="JoinSinglePlayer">Singleplayer</button>
-        <button id = "btn" data-event-click="JoinMultiPlayerMenu">Multiplayer</button>
+        <button id = "btn" onclick="changeMenu(0) JoinGame(false)">Singleplayer</button>
+        <button id = "btn" onclick="changeMenu(4)">Multiplayer</button>
       </div>
 
       <div id = "center" data-if="mode == 4">
         <p id = "title">Elementalworld</p>
-        <input type="text" data-value="ip" id = "textBox"/>
+        <input type="text" data-value="ip" id = "textBox" onselect="print('selected')"/>
         <input type="text" data-value="playerName" id = "textBox2"/>
         <button id = "btn" onclick="changeMenu(0) JoinGame(true)">Join</button>
       </div>
@@ -27,6 +27,8 @@
           <p6 id="debug_info"> Time of day: *</p6><br></br>
           <p7 id="debug_info"> Number of lights: *</p7><br></br>
           <p8 id="debug_info"> Look at X: * Y:* Z:*</p8><br></br>
+
+          <input type="text" data-value="chatArguments" id = "chatTextbox"/>
 
           <img src="../textures/misc/cursor.png" id="crosshair"/>
       </div>

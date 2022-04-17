@@ -7,9 +7,9 @@ namespace gl {
     class Buffer {
     public:
         Buffer() = default;
-        Buffer(const void* data, const GLsizeiptr& size, const GLenum& flags) { Create(data, size, flags); }
+        Buffer(const GLsizeiptr& size, const GLenum& flags = 0, const void* data = nullptr) { Create(size, flags, data); }
 
-        void Create(const void* data, const GLsizeiptr& size, GLbitfield flags) {
+        void Create(const GLsizeiptr& size, const GLenum& flags = 0, const void* data = nullptr) {
            glCreateBuffers(1, &m_RendererID);
            glNamedBufferStorage(m_RendererID, size, data, flags);
         }
@@ -18,12 +18,6 @@ namespace gl {
 
         void SetData(const GLintptr& offset, const GLsizeiptr& size, const void* data) {
            glNamedBufferSubData(m_RendererID, offset, size, data);
-        }
-
-        void* GetData(const GLintptr& offset, const GLsizeiptr& size) {
-            void* data = nullptr;
-            glGetNamedBufferSubData(m_RendererID, offset, size, data);
-            return data;
         }
 
         void* Map(const GLenum& access) {
@@ -46,13 +40,9 @@ namespace gl {
         IndexedBuffer() = default;
         IndexedBuffer(const void* data, const GLsizeiptr & size, const GLenum & flags) { Create(data, size, flags); }
 
-        inline void Bind() const { glBindBuffer(target, m_RendererID); }
-        inline void Unbind() const { glBindBuffer(target, 0); }
-
         void BufferRange(const GLuint& index, const GLintptr& offset, const GLsizeiptr& size) { glBindBufferRange(target, index, m_RendererID, offset, size); }
         void BufferBase(const GLuint& index) { glBindBufferBase(target, index, m_RendererID); }
     };
 
     using UniformBuffer = IndexedBuffer<GL_UNIFORM_BUFFER>;
-    using ShaderStorageBuffer = IndexedBuffer<GL_SHADER_STORAGE_BUFFER>;
 }

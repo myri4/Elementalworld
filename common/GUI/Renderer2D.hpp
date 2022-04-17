@@ -42,9 +42,9 @@ namespace wc {
 
 		void Init() {
 			// Quad Rendering
-			m_Data.m_EBO.Create(nullptr, sizeof(uint32_t) * MaxQuadIndexCount, GL_DYNAMIC_STORAGE_BIT);
+			m_Data.m_EBO.Create(MaxQuadIndexCount * sizeof(uint32_t), GL_DYNAMIC_STORAGE_BIT);
 			m_Data.m_VAO.Create();
-			m_Data.m_VBO.Create(nullptr, MaxQuadVertexCount * sizeof(Vertex2D), GL_DYNAMIC_STORAGE_BIT);
+			m_Data.m_VBO.Create(MaxQuadVertexCount * sizeof(Vertex2D), GL_DYNAMIC_STORAGE_BIT);
 			m_Data.m_VAO.VertexAttribPointer(0, 2, offsetof(Vertex2D, Position));
 			m_Data.m_VAO.VertexAttribPointer(1, 3, offsetof(Vertex2D, TexCoords));
 			m_Data.m_VAO.AddVertexBuffer(m_Data.m_VBO, sizeof(Vertex2D));

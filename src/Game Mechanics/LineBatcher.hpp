@@ -27,7 +27,7 @@ namespace wc {
 			shader.Create("resourcepacks/default/shaders/Line3D.glsl");
 
 			lineArray.Create();
-			lineBuffer.Create(nullptr, MaxLineVertexCount * sizeof(LineVertex), GL_DYNAMIC_STORAGE_BIT);
+			lineBuffer.Create(MaxLineVertexCount * sizeof(LineVertex), GL_DYNAMIC_STORAGE_BIT);
 			lineArray.AddVertexBuffer(lineBuffer, sizeof(LineVertex));
 			lineArray.VertexAttribPointer(0, 3, offsetof(LineVertex, pos));
 			lineArray.VertexAttribPointer(1, 4, offsetof(LineVertex, color));

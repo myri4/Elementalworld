@@ -1,17 +1,19 @@
 #pragma once
 #include <gl/Texture.hpp>
 #include "../world/Block.hpp"
+#include <Utils/List.hpp>
 
 namespace wc {
 
 	typedef uint8_t ItemID;
-	uint32_t numItems = 0;
 
 	struct Item {
 		gl::Texture texture;
 		uint8_t maxStackSize = 100;
 		uint8_t block = 0; // @TODO: BlockID
-	} items[256];
+	};
+
+	List<Item, 256> itemData;
 
 	struct ItemSlot {
 		ItemID itemID = 0;

@@ -187,13 +187,13 @@ namespace wc {
 			bloomShader.Create("resourcepacks/default/shaders/bloomShader.glsl");
 			compositeShader.Create("resourcepacks/default/shaders/composite.glsl");
 
-			transforms.Create(nullptr, sizeof(TransformData), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
+			transforms.Create(sizeof(TransformData), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
 			transforms.BufferBase(0);
 
-			lights.Create(nullptr, sizeof(lighting), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
+			lights.Create(sizeof(lighting), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
 			lights.BufferBase(1);
 
-			bloomUBO.Create(nullptr, sizeof(BloomUBOSettings), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
+			bloomUBO.Create(sizeof(BloomUBOSettings), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
 			bloomUBO.BufferBase(4);
 
 			sol::state worldGenState;
@@ -223,12 +223,14 @@ namespace wc {
 			blockData.push_back(airBlock);
 			Material mat;
 			materialData.push_back(mat);
+			Item noItem;
+			itemData.push_back(noItem);
 
 			//Loading blocks
 			worldGenState.set_function("AddBlockScript", &AddBlockScript);
 			worldGenState.script_file("scripts/blocks.lua");
 
-			materials.Create(materialData.data(), materialData.byte_size(), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
+			materials.Create(materialData.byte_size(), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT, materialData.data());
 			materials.BufferBase(3);
 
 			worldGenState.new_usertype<Biome>("Biome", sol::constructors<void()>(),
@@ -238,7 +240,7 @@ namespace wc {
 				"minTemp", &Biome::minTemp,
 				"topBlock", &Biome::topBlock
 				);
-			worldGenState.set_function("AddBiome", &AddBiome);
+			worldGenState.set_function("AddBiome", [&](const Biome& biome) { biomeMap.push_back(biome); });
 			worldGenState.script_file("scripts/biomes.lua");
 			assets.Free();
 
@@ -250,8 +252,8 @@ namespace wc {
 			chunkMeshArray.VertexAttribPointer(4, 1, offsetof(Vertex, materialID)); // color attribute
 			for (ChunkID chunkID = 0; chunkID < chunks.size(); chunkID++) {
 				//Configuring the vertex buffer
-				chunks[chunkID].meshBuffer.Create(nullptr, MaxVertexCount * sizeof(Vertex), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
-				chunks[chunkID].indexBuffer.Create(nullptr, sizeof(uint32_t) * MaxFaceCount * 6, GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
+				chunks[chunkID].meshBuffer.Create(MaxVertexCount * sizeof(Vertex), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
+				chunks[chunkID].indexBuffer.Create(sizeof(uint32_t) * MaxFaceCount * 6, GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
 			}
 
 			float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
@@ -265,7 +267,7 @@ namespace wc {
 				 1.f,  1.f,
 			};
 
-			skyboxVertexBuffer.Create(quadVertices, sizeof(quadVertices), 0);
+			skyboxVertexBuffer.Create(sizeof(quadVertices), 0, quadVertices);
 			skyBoxArray.Create();
 			skyBoxArray.VertexAttribPointer(0, 2, 0);
 			skyBoxArray.AddVertexBuffer(skyboxVertexBuffer, sizeof(float) * 2);
@@ -623,7 +625,7 @@ namespace wc {
 			assets.Bind();
 			chunkShader.use();
 			for (ChunkID i = 0; i < chunks.size(); i++) {
-			
+
 				if (chunks[i].canBeUpdated) { UpdateMesh(chunks[i]); chunks[i].canBeUpdated = false; }
 			
 				if (!chunks[i].empty && viewFrustum.isBoxInFrustum(AABB(chunks[i].position * glm::ivec3(chunkSize), glm::vec3(chunkSize)))) {
@@ -1129,7 +1131,7 @@ namespace wc {
 		}
 
 		uint32_t getBiome(const float& temperature, const float& moisture = 0.f) {
-			for (uint32_t i = 1; i < numBiomes; i++) {
+			for (uint32_t i = 1; i < biomeMap.size(); i++) {
 				if (temperature >= biomeMap[i].minTemp && temperature <= biomeMap[i].maxTemp
 					//&& moisture >= biomeMap[i].minMois && moisture <= biomeMap[i].maxMois
 					) return i;

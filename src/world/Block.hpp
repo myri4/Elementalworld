@@ -171,6 +171,7 @@ void AddBlockScript(const char* script) {
 	std::string diffusePath = "resourcepacks/default/textures/block/diffuse/";
 	std::string normalPath = "resourcepacks/default/textures/block/normal/";
 
+	Item item;
 	if (blockState["allTextures"].valid()) {
 		std::string path = blockState["allTextures"];
 		block.texture[(int)BlockTexture::TOP] = assets.LoadTexture(diffusePath + path);
@@ -180,7 +181,7 @@ void AddBlockScript(const char* script) {
 		block.texture[(int)BlockTexture::LEFT] = block.texture[(int)BlockTexture::TOP];
 		block.texture[(int)BlockTexture::RIGHT] = block.texture[(int)BlockTexture::TOP];
 
-		load((diffusePath + path).c_str(), items[numItems].texture);
+		load((diffusePath + path).c_str(), item.texture);
 	}
 	else {
 		std::string itemPath;
@@ -197,12 +198,12 @@ void AddBlockScript(const char* script) {
 		}
 
 		itemPath = diffusePath + itemPath;
-		load(itemPath.c_str(), items[numItems].texture);
+		load(itemPath.c_str(), item.texture);
 	}
 	if (blockState["emitLight"].valid()) block.emitLight = blockState["emitLight"];
 
-	items[numItems].block = blockData.size();
-	numItems++;
+	item.block = blockData.size();
+	itemData.push_back(item);
 	//mat.albedo[0] = block.texture[0];
 	//mat.albedo[1] = block.texture[1];
 	//mat.albedo[2] = block.texture[2];

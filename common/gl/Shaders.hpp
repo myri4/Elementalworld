@@ -35,7 +35,6 @@ namespace wcUtil {
 		if (type == "vertex") return GL_VERTEX_SHADER;
 		if (type == "fragment" || type == "pixel") return GL_FRAGMENT_SHADER;
 		if (type == "compute")	return GL_COMPUTE_SHADER;
-		if (type == "geometry")	return GL_GEOMETRY_SHADER;
 
 		return 0;
 	}
@@ -63,56 +62,13 @@ namespace wcUtil {
 
 namespace gl {
 	class Shader {
+		uint32_t m_RendererID = 0;
 	public:
 		// constructor generates the shader on the fly
 		// ------------------------------------------------------------------------
 
 		Shader() {}
 		~Shader() { Destroy(); }
-
-		Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr) { Create(vertexPath, fragmentPath, geometryPath); }
-
-		void Create(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr) {
-			if (!m_RendererID) {
-				std::ifstream file(vertexPath);
-				std::string line;
-				std::stringstream vertexFile;
-				std::stringstream fragmentFile;
-				std::stringstream geometryFile;
-				if (file.is_open()) while (std::getline(file, line)) wcUtil::CheckForIncludes(line, vertexFile); else WC_ERROR("Can`t find file in location: {0}", vertexPath);
-				file.close();
-				file.open(fragmentPath);
-				if (file.is_open()) while (std::getline(file, line)) wcUtil::CheckForIncludes(line, fragmentFile); else WC_ERROR("Can`t find file in location: {0}", fragmentPath);
-
-				file.close();
-				if (geometryPath != nullptr)
-				{
-					file.open(geometryPath);
-					if (file.is_open()) while (std::getline(file, line)) wcUtil::CheckForIncludes(line, geometryFile); else WC_ERROR("Can`t find file in location: {0}", geometryPath);
-				}
-				uint32_t vertex = wcUtil::CompileShader(vertexFile.str().c_str(), "vertex");
-				uint32_t fragment = wcUtil::CompileShader(fragmentFile.str().c_str(), "fragment");
-				wcUtil::checkCompileErrors(vertex, "VERTEX");
-				wcUtil::checkCompileErrors(fragment, "FRAGMENT");
-				uint32_t geometry = 0;
-				if (geometryPath != nullptr) {
-					geometry = wcUtil::CompileShader(geometryFile.str().c_str(), "geometry");
-					wcUtil::checkCompileErrors(geometry, "geometry");
-				}
-
-				// shader Program
-				m_RendererID = glCreateProgram();
-				glAttachShader(m_RendererID, vertex);
-				glAttachShader(m_RendererID, fragment);
-				if (geometryPath != nullptr) glAttachShader(m_RendererID, geometry);
-				glLinkProgram(m_RendererID);
-				wcUtil::checkCompileErrors(m_RendererID, "PROGRAM");
-				// delete the shaders as they're linked into our program now and no longer necessary
-				glDeleteShader(vertex);
-				glDeleteShader(fragment);
-				if (geometryPath != nullptr) glDeleteShader(geometry);
-			}
-		}
 
 		void Create(const char* filepath) {
 			if (!m_RendererID) {
@@ -130,7 +86,6 @@ namespace gl {
 						if (line.find("#shader") != std::string::npos || line.find("#type") != std::string::npos && line.find("//") == std::string::npos) {
 							if (line.find("vertex") != std::string::npos)	 type = 0; // VERTEX
 							else if (line.find("fragment") != std::string::npos) type = 1; // FRAGMENT
-							else if (line.find("geometry") != std::string::npos) type = 2; // GEOMETRY
 						}
 						else wcUtil::CheckForIncludes(line, shaderStream[type]);
 					}
@@ -140,25 +95,19 @@ namespace gl {
 
 				std::string vertexCode = shaderStream[0].str();
 				std::string fragmentCode = shaderStream[1].str();
-				std::string geometryCode = shaderStream[2].str();
 
 				uint32_t vertex = wcUtil::CompileShader(vertexCode.c_str(), "vertex");
 				uint32_t fragment = wcUtil::CompileShader(fragmentCode.c_str(), "fragment");
-				uint32_t geometry = 0;
-				if (!geometryCode.empty())geometry = wcUtil::CompileShader(geometryCode.c_str(), "geometry");
 
 				// shader Program
 				m_RendererID = glCreateProgram();
 				glAttachShader(m_RendererID, vertex);
 				glAttachShader(m_RendererID, fragment);
-				if (!geometryCode.empty())
-					glAttachShader(m_RendererID, geometry);
 				glLinkProgram(m_RendererID);
 				wcUtil::checkCompileErrors(m_RendererID, "PROGRAM");
 				// delete the shaders as they're linked into our program now and no longer necessary
 				glDeleteShader(vertex);
 				glDeleteShader(fragment);
-				if (!geometryCode.empty()) glDeleteShader(geometry);
 			}
 		}
 		// activate the shader
@@ -168,11 +117,6 @@ namespace gl {
 			glUseProgram(m_RendererID);
 		}
 
-		static void unUse()
-		{
-			glUseProgram(0);
-		}
-
 		inline operator uint32_t& () { return m_RendererID; }
 		inline operator const uint32_t& () const { return m_RendererID; }
 
@@ -180,14 +124,11 @@ namespace gl {
 			glDeleteProgram(m_RendererID);
 			m_RendererID = 0;
 		}
-		// ------------------------------------------------------------------------
-	private:
-		uint32_t m_RendererID = 0;
 	};
 
 	class ComputeShader {
+		uint32_t m_RendererID = 0;
 	public:
-
 		ComputeShader() {}
 
 		void Create(const char* path) {
@@ -218,11 +159,6 @@ namespace gl {
 			glUseProgram(m_RendererID);
 		}
 
-		static void unUse()
-		{
-			glUseProgram(0);
-		}
-
 		void Dispatch(const GLuint& num_groups_x, const GLuint& num_groups_y, const GLuint& num_groups_z) {
 			glDispatchCompute(num_groups_x, num_groups_y, num_groups_z);
 		}
@@ -237,7 +173,5 @@ namespace gl {
 
 		inline operator uint32_t& () { return m_RendererID; }
 		inline operator const uint32_t& () const { return m_RendererID; }
-	private:
-		uint32_t m_RendererID = 0;
 	};
 }

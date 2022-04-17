@@ -66,8 +66,8 @@ namespace wc {
 	public:
 		void Create() {
 			VAO.Create();
-			EBO.Create(nullptr, sizeof(uint32_t) * MaxQuadIndexCount, GL_DYNAMIC_STORAGE_BIT);
-			VBO.Create(nullptr, sizeof(RmlVertex) * MaxQuadVertexCount, GL_DYNAMIC_STORAGE_BIT);
+			EBO.Create(sizeof(uint32_t) * MaxQuadIndexCount, GL_DYNAMIC_STORAGE_BIT);
+			VBO.Create(sizeof(RmlVertex) * MaxQuadVertexCount, GL_DYNAMIC_STORAGE_BIT);
 			VAO.VertexAttribPointer(0, 2, offsetof(RmlVertex, position));
 			VAO.VertexAttribPointer(1, 1, offsetof(RmlVertex, color));
 			VAO.VertexAttribPointer(2, 3, offsetof(RmlVertex, tex_coord));

@@ -29,13 +29,13 @@ namespace gl {
 		Texture() {}
 		//~Texture() { Destroy(); }		
 
-		inline void Create(const unsigned char* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_UNSIGNED_BYTE); }
-		inline void Create(const char* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_BYTE); }
-		inline void Create(const float* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_FLOAT); }
-		inline void Create(const int* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_INT); }
-		inline void Create(const unsigned int* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_UNSIGNED_INT); }
-		inline void Create(const short* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_SHORT); }
-		inline void Create(const unsigned short* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3, const uint8_t& mipMapLevel = 4) { CreateMode(data, Width, Height, nrComponents, GL_UNSIGNED_SHORT); }
+		inline void Create(const unsigned char* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3) { CreateMode(data, Width, Height, nrComponents, GL_UNSIGNED_BYTE); }
+		inline void Create(const char* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3) { CreateMode(data, Width, Height, nrComponents, GL_BYTE); }
+		inline void Create(const float* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3) { CreateMode(data, Width, Height, nrComponents, GL_FLOAT); }
+		inline void Create(const int* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3) { CreateMode(data, Width, Height, nrComponents, GL_INT); }
+		inline void Create(const unsigned int* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3) { CreateMode(data, Width, Height, nrComponents, GL_UNSIGNED_INT); }
+		inline void Create(const short* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3) { CreateMode(data, Width, Height, nrComponents, GL_SHORT); }
+		inline void Create(const unsigned short* data, const uint32_t& Width, const uint32_t& Height, const uint8_t& nrComponents = 3) { CreateMode(data, Width, Height, nrComponents, GL_UNSIGNED_SHORT); }
 
 		void Create(const TextureProps& props) {
 			glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
@@ -45,7 +45,6 @@ namespace gl {
 			Parameteri(GL_TEXTURE_MAG_FILTER, props.mag_filter);
 			Parameteri(GL_TEXTURE_WRAP_S, props.wrap_s);
 			Parameteri(GL_TEXTURE_WRAP_T, props.wrap_t);
-
 
 			if (props.data) glTextureSubImage2D(m_RendererID, 0, 0, 0, props.Width, props.Height, props.format, props.type, props.data);
 		}
@@ -70,7 +69,6 @@ namespace gl {
 		void ParameterIiv(const GLenum& pname, const GLint* params)   const { glTextureParameterIiv(m_RendererID, pname, params); }
 		void ParameterIuiv(const GLenum& pname, const GLuint* params)  const { glTextureParameterIuiv(m_RendererID, pname, params); }
 		void Parameteriv(const GLenum& pname, const GLint* param)    const { glTextureParameteriv(m_RendererID, pname, param); }
-
 
 		void SetData(const unsigned char* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const { if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_UNSIGNED_BYTE); }
 		void SetData(const char* data, const uint32_t& width, const uint32_t& height, const uint32_t& xoffset = 0, const uint32_t& yoffset = 0) const { if (m_RendererID) SetDataMode(data, width, height, xoffset, yoffset, GL_BYTE); }
@@ -107,8 +105,6 @@ namespace gl {
 			glm::vec2 textureSize = GetSize();
 			return (int)glm::floor(glm::log2(glm::min(textureSize.x, textureSize.y)));
 		}
-
-		static void unbind() { glBindTextureUnit(0, 0); }
 
 		inline operator uint32_t& () { return m_RendererID; }
 		inline operator const uint32_t& () const { return m_RendererID; }

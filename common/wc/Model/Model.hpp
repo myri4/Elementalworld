@@ -117,9 +117,9 @@ private:
 			m.m_VertexArray.Create();
 
 			m.indexSize = indices.size();
-			m.m_VertexBuffer.Create(vertices.data(), vertices.size() * sizeof(MeshVertex), 0);
+			m.m_VertexBuffer.Create(vertices.size() * sizeof(MeshVertex), 0, vertices.data());
 
-			m.m_IndexBuffer.Create(indices.data(), m.indexSize * sizeof(uint32_t), 0);
+			m.m_IndexBuffer.Create(m.indexSize * sizeof(uint32_t), 0, indices.data());
 
 			m.m_VertexArray.AddIndexBuffer(m.m_IndexBuffer);
 			m.m_VertexArray.AddVertexBuffer(m.m_VertexBuffer, sizeof(MeshVertex));

@@ -5,6 +5,18 @@
 
 namespace gl {
 	class TextureArray {
+		uint32_t width = 32, height = 32;
+		uint8_t nrComponents = 4;
+		uint32_t GetFormat() {
+			if (nrComponents == 1) return GL_RED;
+			else if (nrComponents == 3)	return GL_RGB;
+			else if (nrComponents == 4) return GL_RGBA;
+			return 0;
+		}
+
+		uint32_t MaxTextureSize = 1;
+		uint32_t m_RendererID = 0;
+		uint32_t m_Textures = 0;
 	public:
 		TextureArray() {}
 
@@ -34,24 +46,10 @@ namespace gl {
 		}
 
 		void Bind(const uint32_t& unit = 0) { glBindTextureUnit(unit, m_RendererID); }
-		static void unbind() { glBindTextureUnit(0, 0); }
 
 		inline operator uint32_t& () { return m_RendererID; }
 		inline operator const uint32_t& () const { return m_RendererID; }
 
 		uint32_t GetGeneretedTextures() { return m_Textures; }
-	private:
-		uint32_t width = 32, height = 32;
-		uint8_t nrComponents = 4;
-		uint32_t GetFormat() {
-			if (nrComponents == 1) return GL_RED;
-			else if (nrComponents == 3)	return GL_RGB;
-			else if (nrComponents == 4) return GL_RGBA;
-			return 0;
-		}
-
-		uint32_t MaxTextureSize = 1;
-		uint32_t m_RendererID = 0;
-		uint32_t m_Textures = 0;
 	};
 }

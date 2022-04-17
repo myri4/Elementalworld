@@ -35,6 +35,12 @@
   font: Minecraft;
 }
 
+#chatTextbox{
+  background-color: red;
+  color: white;
+  font: Minecraft;
+}
+
 #crosshair {
   display: block;
   margin: auto;

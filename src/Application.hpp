@@ -11,6 +11,7 @@ namespace wc {
 		float frametime = 0.f;
 		Rml::String ip = "25.32.4.119";
 		Rml::String playerName = "321";
+		Rml::String chatArguments = "";
 		glm::ivec3 chunkPosition = glm::ivec3(0);
 	} my_data;
 
@@ -129,9 +130,7 @@ namespace wc {
 				constructor.Bind("yaw", &world.p.rotation.y);
 				constructor.Bind("ip", &my_data.ip);
 				constructor.Bind("playerName", &my_data.playerName);
-				constructor.BindEventCallback("JoinSinglePlayer", &Application::JoinSinglePlayer);
-				constructor.BindEventCallback("JoinMultiPlayer", &Application::JoinMultiPlayer);
-				constructor.BindEventCallback("JoinMultiPlayerMenu", &Application::JoinMultiPlayerMenu);
+				constructor.Bind("chatArguments", &my_data.chatArguments);
 				my_model = constructor.GetModelHandle();
 			}
 
@@ -143,21 +142,6 @@ namespace wc {
 				WC_ERROR("Failed to load document!");
 			}
 			document->Show();
-		}
-
-		static void JoinSinglePlayer(Rml::DataModelHandle model_handle, Rml::Event& ev, const Rml::VariantList& arguments) {
-			mode = MenuMode::GAME;
-			world.Join(my_data.ip.c_str(), my_data.playerName.c_str());
-		}
-
-		static void JoinMultiPlayerMenu(Rml::DataModelHandle model_handle, Rml::Event& ev, const Rml::VariantList& arguments) {
-			mode = MenuMode::MULTIPLAYER;
-		}
-
-		static void JoinMultiPlayer(Rml::DataModelHandle model_handle, Rml::Event& ev, const Rml::VariantList& arguments) {
-			mode = MenuMode::GAME;
-			world.multiPlayer = true;
-			world.Join(my_data.ip.c_str(), my_data.playerName.c_str());
 		}
 
 		Rml::DataModelHandle my_model;

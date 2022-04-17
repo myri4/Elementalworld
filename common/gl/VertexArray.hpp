@@ -5,6 +5,7 @@
 namespace gl {
 
     class VertexArray {
+        GLuint m_RendererID = 0;
     public:
         VertexArray() {}
         //~VertexArray() { Destroy(); }
@@ -39,13 +40,9 @@ namespace gl {
 
         void Bind() const { glBindVertexArray(m_RendererID); }
 
-        static void Unbind() { glBindVertexArray(0); }
-
         void Destroy() { glDeleteVertexArrays(1, &m_RendererID); }
 
         inline operator GLuint& () { return m_RendererID; }
         inline operator const GLuint& () const { return m_RendererID; }
-    private:
-        GLuint m_RendererID = 0;
     };
 }
