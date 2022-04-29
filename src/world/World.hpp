@@ -55,7 +55,6 @@ namespace wc {
 
 		Frustum viewFrustum;
 		gl::Shader chunkShader;
-		std::filesystem::file_time_type chunkShaderTimer;
 
 		gl::UniformBuffer transforms;
 
@@ -84,7 +83,7 @@ namespace wc {
 		FastNoiseLite treeNoise;
 		FastNoiseLite caveNoise;
 
-		bool gnerateTerrain : 1;
+		bool generateTerrain : 1;
 
 		int8_t water_level = 0;
 		uint32_t localPlayerID = 0;
@@ -182,10 +181,9 @@ namespace wc {
 		Player p;
 
 		void Create() {
-			chunkShader.Create("resourcepacks/default/shaders/chunkShader.glsl");
-			chunkShaderTimer = std::filesystem::last_write_time("resourcepacks/default/shaders/chunkShader.glsl");
-			bloomShader.Create("resourcepacks/default/shaders/bloomShader.glsl");
-			compositeShader.Create("resourcepacks/default/shaders/composite.glsl");
+			chunkShader.Create("resourcepacks/default/shaders/chunkShader.vert", "resourcepacks/default/shaders/chunkShader.frag");
+			bloomShader.Create("resourcepacks/default/shaders/bloomShader.comp");
+			compositeShader.Create("resourcepacks/default/shaders/composite.comp");
 
 			transforms.Create(sizeof(TransformData), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
 			transforms.BufferBase(0);
@@ -272,7 +270,7 @@ namespace wc {
 			skyBoxArray.VertexAttribPointer(0, 2, 0);
 			skyBoxArray.AddVertexBuffer(skyboxVertexBuffer, sizeof(float) * 2);
 
-			skyShader.Create("resourcepacks/default/shaders/skybox.glsl");
+			skyShader.Create("resourcepacks/default/shaders/skybox.vert", "resourcepacks/default/shaders/skybox.frag");
 #ifdef MODEL
 			modelShader.Create("resourcepacks/default/shaders/modelShader.glsl");
 			model.Create("assets/models/Ravenkin.obj");
@@ -295,6 +293,8 @@ namespace wc {
 
 			grass = getBlockID("grass_block");
 			stone = getBlockID("stone_block");
+			water = getBlockID("water");
+			sand = getBlockID("sand");
 
 			const uint32_t xMeshIndexArray[] = {
 				0, 1, 2,
@@ -394,6 +394,8 @@ namespace wc {
 		// Common blocks
 		BlockID grass = 0;
 		BlockID stone = 0;
+		BlockID water = 0;
+		BlockID sand = 0;
 
 		void Join(const std::string& ip, const std::string& playerName) {
 			if (multiPlayer) {
@@ -541,7 +543,7 @@ namespace wc {
 							chunks[chunkID].generated = false;
 							chunks[chunkID].generatedStructures = false;
 							chunks[chunkID].canBeUpdated = true;
-							gnerateTerrain = true;
+							generateTerrain = true;
 							break;
 						}
 						}
@@ -612,14 +614,14 @@ namespace wc {
 				if (currChunkPos.z > currentPlayerPos.z + chunkHalf) ResetChunk(i, glm::ivec3(currChunkPos.x, currChunkPos.y, currentPlayerPos.z - chunkHalf + 1));
 			}
 
-			if (gnerateTerrain) {
+			if (generateTerrain) {
 				for (ChunkID chunk = 0; chunk < chunks.size(); chunk++)
 					if (!chunks[chunk].generated) { GenerateChunkTerrain(chunk); chunks[chunk].generated = true; }
 
 				for (ChunkID chunk = 0; chunk < chunks.size(); chunk++)
 					if (!chunks[chunk].generatedStructures) { GenerateChunkStructures(chunk); chunks[chunk].generatedStructures = true; }
 
-				gnerateTerrain = false;
+				generateTerrain = false;
 			}
 
 			assets.Bind();
@@ -718,19 +720,6 @@ namespace wc {
 		void OnInput(const float& deltaTime) {
 			glm::ivec2 windSize = window.GetSize();
 			// MENU MANAGMENT
-			if (std::filesystem::last_write_time("resourcepacks/default/shaders/chunkShader.glsl") != chunkShaderTimer) {
-				chunkShader.Destroy();
-				chunkShader.Create("resourcepacks/default/shaders/chunkShader.glsl");
-				chunkShaderTimer = std::filesystem::last_write_time("resourcepacks/default/shaders/chunkShader.glsl");
-			}
-
-			//if (wc::bReloadModelShader) {
-#ifdef MODEL
-			//	modelShader.Destroy();
-			//	modelShader.Create("shaderpacks/default/modelShader.glsl");
-#endif // MODEL
-			//	wc::bReloadModelShader = false;
-			//}
 
 			if (/*!textbox.isSelected*/true) {
 
@@ -877,7 +866,7 @@ namespace wc {
 				{	
 					if (bShow) {
 						bShow = false;
-						DrawOutlineCube(pos, glm::vec3(1.f), glm::vec4(3.f));
+						DrawOutlineCube(pos, glm::vec3(1.f), glm::vec4(10.f));
 						if (bBreak) {
 							//p.inventory.AddItem(block - 1, p.currentSlot);
 							setBlock(pos, 0, true, true);
@@ -1004,7 +993,7 @@ namespace wc {
 				else {
 					chunks[chunkID].generated = false;
 					chunks[chunkID].generatedStructures = false;
-					gnerateTerrain = true;
+					generateTerrain = true;
 				}
 			}
 		}
@@ -1080,28 +1069,28 @@ namespace wc {
 				concurrency::parallel_for(uint32_t(0), (uint32_t)chunkSize, [&](uint32_t z){
 					for (uint32_t x = 0; x < chunkSize; x++) {
 						glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
-						//int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-						//float floraGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+						int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+						float floraGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 						//float baseTemperature = temperatureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
 						//float moisture = moistureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
-						//int dirtDepth = (int)(floraGen * 3.f) + 2;
+						int dirtDepth = (int)(floraGen * 3.f) + 2;
 
 						for (uint8_t y = 0; y < chunkSize; y++) {
 								glm::ivec3 pos = chunks[chunk].position * glm::ivec3(chunkSize) + glm::ivec3(x, y, z);
 								//float temperature = baseTemperature * (1.f - pos.y / (worldNoise.GetMultiplier() - water_level));
 								//uint32_t biome = getBiome(temperature, moisture);
-								//bool onSand = (pos.y <= water_level + (int)(floraGen * 3.f) && pos.y == heightMap);
-								//if (pos.y == heightMap) {
-								//	if (onSand)
-								//		setBlock(glm::ivec3(x, y, z), 4, chunk);
-								//	else 
-								//		setBlock(glm::ivec3(x, y, z), biomeMap[biome].topBlock, chunk);
-								//}
-								//
-								//if (pos.y < heightMap && pos.y >= heightMap - dirtDepth) setBlock(glm::ivec3(x, y, z), 2, chunk);
-								//if (pos.y < heightMap - dirtDepth) setBlock(glm::ivec3(x, y, z), 3, chunk);	
-								//if (pos.y > heightMap && pos.y < water_level) setBlock(glm::ivec3(x, y, z), 5, chunk);	
-								if (pos.y == 125) setBlockLocal(glm::ivec3(x, y, z), grass, chunk, false, false);
+								bool onSand = (pos.y <= water_level + (int)(floraGen * 3.f) && pos.y == heightMap);
+								if (pos.y == heightMap) {
+									if (onSand)
+										setBlockLocal(glm::ivec3(x, y, z), sand, chunk, false, false);
+									else 
+										setBlockLocal(glm::ivec3(x, y, z), grass, chunk, false, false);
+								}
+								
+								if (pos.y < heightMap && pos.y >= heightMap - dirtDepth) setBlockLocal(glm::ivec3(x, y, z), 2, chunk, false, false);
+								if (pos.y < heightMap - dirtDepth) setBlockLocal(glm::ivec3(x, y, z), stone, chunk, false, false);
+								if (pos.y > heightMap && pos.y < water_level) setBlockLocal(glm::ivec3(x, y, z), water, chunk, false, false);
+								//if (pos.y == 125) setBlockLocal(glm::ivec3(x, y, z), grass, chunk, false, false);
 						}
 					}
 					return;
@@ -1289,16 +1278,16 @@ namespace wc {
 
 									}
 									else {
-										for (uint32_t i = 0; i < blockMeshes[block.meshID].vertices.size(); i++) {
-											glm::vec2 texCoords = convertColor(blockMeshes[block.meshID].vertices[i].TexCoords);
-											vertices[i + offset] = Vertex(
-												blockMeshes[block.meshID].vertices[i].Position + glm::vec3(chunkPos + x),
-												{ texCoords, block.texture[(int)BlockTexture::TOP] }, block.connectionType, 
-												blockMeshes[block.meshID].vertices[i].Normal, 0);
-										}
-
-										for (uint32_t i = 0; i < blockMeshes[block.meshID].indices.size(); i++)
-											indices[chunk.IndexCount + i] = blockMeshes[block.meshID].indices[i] + ioffset;
+										//for (uint32_t i = 0; i < blockMeshes[block.meshID].vertices.size(); i++) {
+										//	glm::vec2 texCoords = convertColor(blockMeshes[block.meshID].vertices[i].TexCoords);
+										//	vertices[i + offset] = Vertex(
+										//		blockMeshes[block.meshID].vertices[i].Position + glm::vec3(chunkPos + x),
+										//		{ texCoords, block.texture[(int)BlockTexture::TOP] }, block.connectionType, 
+										//		blockMeshes[block.meshID].vertices[i].Normal, 0);
+										//}
+										//
+										//for (uint32_t i = 0; i < blockMeshes[block.meshID].indices.size(); i++)
+										//	indices[chunk.IndexCount + i] = blockMeshes[block.meshID].indices[i] + ioffset;
 									}
 
 									ioffset += blockMeshes[block.meshID].vertices.size();

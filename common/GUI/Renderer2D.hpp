@@ -49,7 +49,7 @@ namespace wc {
 			m_Data.m_VAO.VertexAttribPointer(1, 3, offsetof(Vertex2D, TexCoords));
 			m_Data.m_VAO.AddVertexBuffer(m_Data.m_VBO, sizeof(Vertex2D));
 			m_Data.m_VAO.AddIndexBuffer(m_Data.m_EBO);
-			m_Data.m_Shader.Create("resourcepacks/default/shaders/Renderer2D.glsl");
+			m_Data.m_Shader.Create("resourcepacks/default/shaders/Renderer2D.vert", "resourcepacks/default/shaders/Renderer2D.frag");
 		}
 
 		void Flush() {

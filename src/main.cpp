@@ -45,7 +45,6 @@ int main() {
 	glfwInit();
 	
 	app.Start();
-	wc::window.Destroy();
 	glfwTerminate();
 
 	return 0;

@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 #include <glm/glm.hpp>
 #include "Log.hpp"
 #include <RmlUi/Core.h>

@@ -73,7 +73,7 @@ namespace wc {
 			VAO.VertexAttribPointer(2, 3, offsetof(RmlVertex, tex_coord));
 			VAO.AddVertexBuffer(VBO, sizeof(RmlVertex));
 			VAO.AddIndexBuffer(EBO);
-			shader.Create("resourcepacks/default/shaders/RmlRenderer.glsl");
+			shader.Create("resourcepacks/default/shaders/RmlRenderer.vert", "resourcepacks/default/shaders/RmlRenderer.frag");
 
 			float color[] = { 1.f, 1.f, 1.f };
 			whiteTexture.Create(color, 1, 1);

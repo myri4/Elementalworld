@@ -24,7 +24,7 @@ namespace wc {
 
 	public:
 		void Create() {
-			shader.Create("resourcepacks/default/shaders/Line3D.glsl");
+			shader.Create("resourcepacks/default/shaders/Line3D.vert", "resourcepacks/default/shaders/Line3D.frag");
 
 			lineArray.Create();
 			lineBuffer.Create(MaxLineVertexCount * sizeof(LineVertex), GL_DYNAMIC_STORAGE_BIT);

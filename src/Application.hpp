@@ -87,15 +87,15 @@ namespace wc {
 			system_interface.window = window;
 			// Now we can initialize RmlUi.
 			Rml::Initialise();
-
+			
 			//Initialize lua
 			guiState = luaL_newstate();
-
+			
 			luaL_openlibs(guiState);
-
+			
 			lua_register(guiState, "changeMenu", changeMenu);
 			lua_register(guiState, "JoinGame", JoinGame);
-
+			
 			Rml::Lua::Initialise(guiState);
 			// Create a context next.
 			context = Rml::CreateContext("main", Rml::Vector2i(size.x, size.y));
@@ -105,16 +105,16 @@ namespace wc {
 				WC_ERROR("Failed to initialize RML UI!");
 			}
 			context->SetDensityIndependentPixelRatio(window.getContentScale());
-
+			
 			// If you want to use the debugger, initialize it now.
 			if (!Rml::Debugger::Initialise(context)) {
 				Rml::Shutdown();
 				WC_ERROR("Failed to initialize RML Debugger!");
 			}
-
+			
 			// Fonts should be loaded before any documents are loaded.
 			Rml::LoadFontFace("resourcepacks/default/font/Minecraft.ttf");
-
+			
 			Rml::DataModelConstructor constructor = context->CreateDataModel("globalData");
 			if (constructor) {
 				constructor.Bind("FPS", &my_data.fps);
@@ -133,7 +133,7 @@ namespace wc {
 				constructor.Bind("chatArguments", &my_data.chatArguments);
 				my_model = constructor.GetModelHandle();
 			}
-
+			
 			// Now we are ready to load our document.
 			document = context->LoadDocument("resourcepacks/default/gui/gui.html");
 			if (!document)
@@ -149,7 +149,7 @@ namespace wc {
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnUpdate() override {
 			deltaTime = deltaTimer.restart();
-
+			
 			//Update Rml
 			my_data.fps = (int)(1.f / deltaTime);
 			my_data.frametime = deltaTime;
@@ -165,9 +165,9 @@ namespace wc {
 			my_model.DirtyVariable("chunkZ");
 			my_model.DirtyVariable("pitch");
 			my_model.DirtyVariable("yaw");
-
+			
 			context->Update();
-
+			
 			if (mode == MenuMode::GAME)
 				world.Update(deltaTime);
 			if (mode != MenuMode::GAME) Renderer::Clear();
@@ -180,6 +180,7 @@ namespace wc {
 		void OnDelete() override {
 			world.Destroy();
 			Rml::Shutdown();
+			wc::window.Destroy();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 	public:
