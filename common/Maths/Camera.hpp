@@ -34,7 +34,7 @@ namespace wc{
 		// returns the view matrix calculated using Euler Angles and the LookAt Matrix
 		glm::mat4 GetViewMatrix() const { return glm::lookAt(Position, Position + Front, Up); }
 
-		void UpdateCameraAngles() {
+		void Update() {
 			// update Front, Right and Up Vectors using the updated Euler angles
 			// calculates the new Front vector from the Camera's (updated) Euler Angles
 			float yaw = glm::radians(Yaw);

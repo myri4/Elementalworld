@@ -171,9 +171,12 @@ namespace wc {
 			if (mode == MenuMode::GAME)
 				world.Update(deltaTime);
 			if (mode != MenuMode::GAME) Renderer::Clear();
+
+			glDisable(GL_DEPTH_TEST);
 			Renderer2D::Flush();
 			context->Render();
 			render_interface.Flush();
+
 			window.display();
 		}
 		//----------------------------------------------------------------------------------------------------------------------

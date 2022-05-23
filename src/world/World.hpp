@@ -48,9 +48,7 @@ namespace wc {
 		LineBatcher lineBatcher;
 
 		gl::Shader skyShader;
-		gl::Buffer skyboxVertexBuffer;
-		gl::VertexArray skyBoxArray;
-		float rotateSpeed = 1.f * 6.f; // one cycle is one unit (in minutes)
+		float rotateSpeed = 1.f * 0.6f; // one cycle is one unit (in minutes)
 		float angle = 0.f;
 
 		Frustum viewFrustum;
@@ -254,22 +252,6 @@ namespace wc {
 				chunks[chunkID].indexBuffer.Create(sizeof(uint32_t) * MaxFaceCount * 6, GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
 			}
 
-			float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
-				// positions 
-				-1.f, -1.f,
-				-1.f,  1.f,
-				 1.f, -1.f,
-
-				 1.f, -1.f,
-				-1.f,  1.f,
-				 1.f,  1.f,
-			};
-
-			skyboxVertexBuffer.Create(sizeof(quadVertices), 0, quadVertices);
-			skyBoxArray.Create();
-			skyBoxArray.VertexAttribPointer(0, 2, 0);
-			skyBoxArray.AddVertexBuffer(skyboxVertexBuffer, sizeof(float) * 2);
-
 			skyShader.Create("resourcepacks/default/shaders/skybox.vert", "resourcepacks/default/shaders/skybox.frag");
 #ifdef MODEL
 			modelShader.Create("resourcepacks/default/shaders/modelShader.glsl");
@@ -295,6 +277,8 @@ namespace wc {
 			stone = getBlockID("stone_block");
 			water = getBlockID("water");
 			sand = getBlockID("sand");
+			oak = getBlockID("wood");
+			leaves = getBlockID("leaves");
 
 			const uint32_t xMeshIndexArray[] = {
 				0, 1, 2,
@@ -396,6 +380,8 @@ namespace wc {
 		BlockID stone = 0;
 		BlockID water = 0;
 		BlockID sand = 0;
+		BlockID oak = 0;
+		BlockID leaves = 0;
 
 		void Join(const std::string& ip, const std::string& playerName) {
 			if (multiPlayer) {
@@ -451,7 +437,7 @@ namespace wc {
 		
 		void Update(const float& deltaTime) {
 			screen.Bind();
-			Renderer::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			Renderer::Clear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 			// Multiplayer 
 			if (multiPlayer) {
 				if (clientInstance.IsConnected())
@@ -578,30 +564,29 @@ namespace wc {
 			data.vertical = camera.vertical;
 			data.horizontal = camera.horizontal;
 			data.numLights = currentLightID;
+			transforms.SetData(sizeof(TransformData), &data);
 
 			lighting[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 0.f, 1.f)));
-			transforms.SetData(0, sizeof(TransformData), &data);
 			if (lightUpdate) {
-				lights.SetData(0, sizeof(Light) * currentLightID, lighting);
+				lights.SetData(sizeof(Light) * currentLightID, lighting);
 				lightUpdate = false;
 			}
 			else 
-				lights.SetData(0, sizeof(Light), lighting);			
+				lights.SetData(sizeof(Light), lighting);			
 
 			// Draw sky
 			skyShader.use();
-			skyBoxArray.Bind();
+			Renderer::DrawArrays(3);
 
-			Renderer::DrawArrays(6);
+			glEnable(GL_DEPTH_TEST);
 
 			angle += deltaTime * rotateSpeed;
 			angle = glm::mod(angle, 360.f);
-			glEnable(GL_DEPTH_TEST);
 
 			viewFrustum.update(data.ViewProj);
 			uint32_t chunkHalf = chunkSize / 2;
-			glm::vec3 currentPlayerPos = getChunkPos(p.Position); // @TODO: hmmm? why doesnt it work with glm::ivec3?
-
+			glm::ivec3 currentPlayerPos2 = getChunkPos(p.Position); // @TODO: hmmm? why doesnt it work with glm::ivec3?
+			glm::vec3 currentPlayerPos = currentPlayerPos2;
 			for (ChunkID i = 0; i < chunks.size(); i++) {
 				glm::ivec3& currChunkPos = chunks[i].position;
 				if (currChunkPos.x < currentPlayerPos.x - chunkHalf) ResetChunk(i, glm::ivec3(currentPlayerPos.x + chunkHalf - 1, currChunkPos.y, currChunkPos.z));
@@ -630,14 +615,14 @@ namespace wc {
 
 				if (chunks[i].canBeUpdated) { UpdateMesh(chunks[i]); chunks[i].canBeUpdated = false; }
 			
-				if (!chunks[i].empty && viewFrustum.isBoxInFrustum(AABB(chunks[i].position * glm::ivec3(chunkSize), glm::vec3(chunkSize)))) {
+				if (chunks[i].IndexCount > 0 && viewFrustum.isBoxInFrustum(AABB(chunks[i].position * glm::ivec3(chunkSize), glm::vec3(chunkSize)))) {
 					chunkMeshArray.AddVertexBuffer(chunks[i].meshBuffer, sizeof(Vertex));
 					chunkMeshArray.AddIndexBuffer(chunks[i].indexBuffer);
 					chunkMeshArray.Bind();
 					Renderer::DrawIndexed(chunks[i].IndexCount);
 				}
 			}
-			//DrawOtlineCube(sStart, sEnd - sStart, glm::vec4(1.f));
+
 			if (thirdPerson)
 				DrawOutlineCube(p.Position - p.Size, p.Size * 2.f, glm::vec4(2.f));
 			lineBatcher.Flush();
@@ -648,17 +633,14 @@ namespace wc {
 			
 			// render the loaded model
 			//animation.Update(deltaTime);
-			glm::mat4 Model = glm::mat4(1.f);
-			Model = glm::translate(Model, modelPos);    // translate it down so it's at the center of the scene
-			Model = glm::scale(Model, glm::vec3(0.3f));
-			modelShader.setMat4(0, Model);
-			glDisable(GL_BLEND);
-			model.Draw();
-			glEnable(GL_BLEND);
+			//glm::mat4 Model = glm::mat4(1.f);
+			//Model = glm::translate(Model, modelPos);    // translate it down so it's at the center of the scene
+			//Model = glm::scale(Model, glm::vec3(0.3f));
+			//modelShader.setMat4(0, Model);
+			//model.Draw();
 #endif
 			screen.unbind();
-			// GUI
-			glDisable(GL_DEPTH_TEST);
+			// GUI			
 
 			RenderBloom();
 
@@ -670,10 +652,10 @@ namespace wc {
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			Renderer2D::DrawQuad({ 0,0 }, data.windowSize, finalImage);
+			glm::vec2 pos = (data.windowSize - 15.f) / 2.f;
+			//Renderer2D::DrawQuad(pos, {15, 15}, render_interface.whiteTexture);
 		}
 
-		glm::vec3 m_rayEnd;
-		glm::vec3 m_rayStart;
 		bool thirdPerson = false;
 
 		void ParseCommand(std::string& command) {
@@ -718,14 +700,10 @@ namespace wc {
 		}
 
 		void OnInput(const float& deltaTime) {
-			glm::ivec2 windSize = window.GetSize();
 			// MENU MANAGMENT
 
-			if (/*!textbox.isSelected*/true) {
-
-				if (Keyboard::getKey(Keyboard::Key::Left)) camera.Roll += 0.5f;
-				if (Keyboard::getKey(Keyboard::Key::Right)) camera.Roll -= 0.5f;
-
+			//if (/*!textbox.isSelected*/true)
+			{
 				// GAMEPLAY
 				float yaw = glm::radians(p.rotation.x);
 				float yaw90 = glm::radians(p.rotation.x + 90.f);
@@ -751,13 +729,15 @@ namespace wc {
 					p.acceleration.z += glm::sin(yaw90) * p.MovementSpeed;
 				}
 
-				if (Keyboard::getKey(Keyboard::Key::F5) == GLFW_PRESS && !thirdPerson) {
-					camera.distanceFromCamera = 3.f;
-					thirdPerson = true;
-				}
-				else if (Keyboard::getKey(Keyboard::Key::F5) == GLFW_PRESS && thirdPerson) {
-					camera.distanceFromCamera = 0.f;
-					thirdPerson = false;
+				if (Keyboard::getKey(Keyboard::Key::F5) == GLFW_PRESS) {
+					if (!thirdPerson) {
+						camera.distanceFromCamera = 3.f;
+						thirdPerson = true;
+					}
+					else if (thirdPerson) {
+						camera.distanceFromCamera = 0.f;
+						thirdPerson = false;
+					}
 				}
 
 				if (Keyboard::isKeyPressed(Keyboard::Key::Space))
@@ -787,26 +767,25 @@ namespace wc {
 					else if (p.currentSlot > inventorySizeX - 1) p.currentSlot = 0;
 				}
 
-				int16_t xt, yt;
+				glm::ivec2 t;
 
 				glm::ivec2 pos = Mouse::GetMousePosToWindow();
 
-				xt = windSize.x / 2;
-				yt = windSize.y / 2;
+				t = window.GetSize() / 2;
 
 				float ms = 1.f / MouseSensitivity;
 
-				p.rotation.x -= (xt - pos.x) * ms;
-				p.rotation.y += (yt - pos.y) * ms;
+				p.rotation.x -= (t.x - pos.x) * ms;
+				p.rotation.y += (t.y - pos.y) * ms;
 
 				// make sure that when pitch is out of bounds, screen doesn't get flipped
-				if (p.rotation.y > 89.f)p.rotation.y = 89.f;
-				else if (p.rotation.y < -89.f)p.rotation.y = -89.f;
+				if (p.rotation.y > 89.f) p.rotation.y = 89.f;
+				else if (p.rotation.y < -89.f) p.rotation.y = -89.f;
 
 				if (p.rotation.x > 360.f) p.rotation.x = 0.f;
 				else if (p.rotation.x < 0.f) p.rotation.x = 360.f;
 
-				Mouse::SetMousePosition(xt, yt);
+				Mouse::SetMousePosition(t);
 			}
 
 			// PLAYER RELATED
@@ -837,6 +816,7 @@ namespace wc {
 
 			camera.Position = p.Position;
 			camera.Position.y += p.Size.y - 0.1f;
+			glm::vec3 vRayStart = camera.Position;
 			camera.Yaw = p.rotation.x;
 			camera.Pitch = p.rotation.y;
 
@@ -846,41 +826,69 @@ namespace wc {
 				p.velocity.y *= 0.009f;
 			//////////////
 
-			camera.UpdateCameraAngles();
+			camera.Update();
 
 			bool bBreak = Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)  == GLFW_PRESS;
 			bool bPlace = Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
-
-			glm::vec3 m_rayLastPos;
-			bool bShow = true;
-			m_rayStart = p.Position;
-			m_rayEnd = m_rayStart;
 			
-			while (glm::length(p.Position - m_rayEnd) < 6.f)
-			{
-				m_rayEnd += camera.Front * 0.05f;
-				glm::ivec3 pos = static_cast<glm::ivec3>(m_rayEnd);
+			float fMaxDistance = 6.f;
 
-				BlockID block = getBlock(pos);
-				if (block > 0 && block != 5)
-				{	
-					if (bShow) {
-						bShow = false;
-						DrawOutlineCube(pos, glm::vec3(1.f), glm::vec4(10.f));
-						if (bBreak) {
-							//p.inventory.AddItem(block - 1, p.currentSlot);
-							setBlock(pos, 0, true, true);
-						}
-						else if (bPlace) {
-							//ItemID itemID = p.inventory.data[p.currentSlot].itemID;
-							//if (p.inventory.RemoveItem(p.currentSlot))
-								setBlock(m_rayLastPos, /*items[itemID].block*/1, true, true);
-						}
-						break;
-					}
+			glm::ivec3 vMapCheck = glm::floor(vRayStart), vMapLastCheck = glm::floor(vRayStart), vStep = glm::ivec3(0);
+			glm::vec3 vRayLength1D = glm::vec3(0.f);
+			glm::vec3& vRayDir = camera.Front;
+			glm::vec3 vRayUnitStepSize = abs(1.f / vRayDir);
+
+			// Establish Starting Conditions
+			for (int i = 0; i < 3; i++) {
+				if (vRayDir[i] < 0)
+				{
+					vStep[i] = -1;
+					vRayLength1D[i] = (vRayStart[i] - float(vMapCheck[i])) * vRayUnitStepSize[i];
 				}
-				m_rayLastPos = pos;
+				else
+				{
+					vStep[i] = 1;
+					vRayLength1D[i] = (float(vMapCheck[i] + 1) - vRayStart[i]) * vRayUnitStepSize[i];
+				}
 			}
+
+			bool bTileFound = false;
+			float fDistance = 0.f;
+			while (!bTileFound && fDistance < fMaxDistance)
+			{
+				// Walk along shortest path
+				int axis = 0;
+				for (int i = 0; i < 3; i++) {
+					int nextAxis = (i + 1) % 3;
+					if (vRayLength1D[axis] > vRayLength1D[nextAxis]) axis = nextAxis;
+				}
+			
+				vMapCheck[axis] += vStep[axis];
+				fDistance = vRayLength1D[axis];
+				vRayLength1D[axis] += vRayUnitStepSize[axis];
+			
+				// Test tile at new test point
+				BlockID blockID = getBlock(vMapCheck);
+				Block& block = blockData[blockID];
+				if (blockID > 0 && block.connectionType != ConnectionType::FLUID_CONNECT)
+				{
+
+					DrawOutlineCube(vMapCheck, glm::vec3(1.f), glm::vec4(1.f));
+					DrawOutlineCube(vRayStart + vRayDir * fDistance - glm::vec3(0.05f), glm::vec3(0.1f), glm::vec4(1.f));
+					if (bBreak) {
+						//p.inventory.AddItem(block - 1, p.currentSlot);
+						setBlock(vMapCheck, 0, true, true);
+					}
+					else if (bPlace) {
+						//ItemID itemID = p.inventory.data[p.currentSlot].itemID;
+						//if (p.inventory.RemoveItem(p.currentSlot))
+							setBlock(vMapLastCheck, /*items[itemID].block*/1, true, true);
+					}
+					bTileFound = true;
+				}	
+				vMapLastCheck = vMapCheck;
+			}
+			lineBatcher.DrawLine(vRayStart, vRayStart + vRayDir * fDistance);
 		}
 
 		void Destroy() {
@@ -891,7 +899,7 @@ namespace wc {
 	private:
 
 		void collide(const glm::vec3& vel) {
-			glm::vec3 startPos = p.Position - p.Size;
+			glm::vec3 startPos = glm::floor(p.Position - p.Size);
 			glm::vec3 endPos = p.Position + p.Size;
 
 			for (int x = startPos.x; x < endPos.x; x++)
@@ -1058,10 +1066,10 @@ namespace wc {
 			for(int x2 = x - 2; x2 < x + 3; x2++)
 				for (int y2 = y - 3 + trunkHeight - 1; y2 < y + 2 + trunkHeight - 1; y2++)
 					for (int z2 = z - 2; z2 < z + 3; z2++)
-						setBlock(glm::ivec3(x2, y2, z2) + (int)chunkSize * chunks[chunk].position, 9, false, false);					
+						setBlock(glm::ivec3(x2, y2, z2) + (int)chunkSize * chunks[chunk].position, leaves, false, false);					
 			
 			for (int i = 0; i < trunkHeight; i++) 
-				setBlock(glm::ivec3(x, y + i, z) + (int)chunkSize * chunks[chunk].position, 7, false, false);
+				setBlock(glm::ivec3(x, y + i, z) + (int)chunkSize * chunks[chunk].position, oak, false, false);
 		}
 
 		void GenerateChunkTerrain(const ChunkID& chunk) {
@@ -1098,25 +1106,25 @@ namespace wc {
 		}
 
 		void GenerateChunkStructures(const ChunkID& chunk) {
-			//concurrency::parallel_for(ChunkID(0), (ChunkID)chunkSize, [&](ChunkID z) {
-			//	for (uint8_t x = 0; x < chunkSize; x++) {
-			//		glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
-			//		int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-			//		float treeGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-			//		float baseTemperature = temperatureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-			//
-			//		for (uint8_t y = 0; y < chunkSize; y++) {
-			//			glm::ivec3 pos = chunks[chunk].position * glm::ivec3(chunkSize) + glm::ivec3(x, y, z);
-			//			uint32_t type = getBiome(0.75f, 0.f);
-			//			float CaveNoise = caveNoise.GetNoise((float)pos.x, (float)pos.y, (float)pos.z);
-			//			bool onGrass = !(pos.y <= water_level + (int)(treeGen * 2.f) && pos.y == heightMap);
-			//
-			//			if (pos.y == heightMap + 1 && heightMap + 1 > water_level && onGrass && !(CaveNoise >= 0.25f && CaveNoise <= 0.99f))
-			//					if (treeGen <= 0.49f && treeGen > 0.48f && x % 5 == 0 && biomeMap[type].trees) GenerateTree(x, y, z, treeGen, chunk);
-			//		}
-			//	}
-			//	return;
-			//});
+			concurrency::parallel_for(ChunkID(0), (ChunkID)chunkSize, [&](ChunkID z) {
+				for (uint8_t x = 0; x < chunkSize; x++) {
+					glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
+					int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+					float treeGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+					float baseTemperature = temperatureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+			
+					for (uint8_t y = 0; y < chunkSize; y++) {
+						glm::ivec3 pos = chunks[chunk].position * glm::ivec3(chunkSize) + glm::ivec3(x, y, z);
+						uint32_t type = getBiome(0.75f, 0.f);
+						float CaveNoise = caveNoise.GetNoise((float)pos.x, (float)pos.y, (float)pos.z);
+						bool onGrass = !(pos.y <= water_level + (int)(treeGen * 2.f) && pos.y == heightMap);
+			
+						if (pos.y == heightMap + 1 && heightMap + 1 > water_level && onGrass && !(CaveNoise >= 0.25f && CaveNoise <= 0.99f))
+								if (treeGen <= 0.49f && treeGen > 0.48f && x % 5 == 0) GenerateTree(x, y, z, treeGen, chunk);
+					}
+				}
+				return;
+			});
 		}
 
 		uint32_t getBiome(const float& temperature, const float& moisture = 0.f) {
@@ -1164,7 +1172,6 @@ namespace wc {
 
 			chunks[chunk].data[x][y][z] = block;
 			chunks[chunk].canBeUpdated = true;
-			chunks[chunk].empty = chunks[chunk].empty && block == 0;
 
 			if (replyToServer && multiPlayer) {
 				net::message<GameMsg> msg;
@@ -1191,6 +1198,7 @@ namespace wc {
 		void UpdateMesh(Chunk& chunk) {
 			uint32_t offset = 0;
 			chunk.IndexCount = 0;
+			//WC_INFO(chunk.IndexCount);
 			uint32_t ioffset = 0;
 
 			glm::ivec3 chunkPos = chunk.position * glm::ivec3(chunkSize);
@@ -1382,7 +1390,7 @@ namespace wc {
 									std::swap(h1, w1);
 								}
 								face.CalculateNormal();
-								if (!(chunk.IndexCount >= MaxFaceCount * 6)) {
+								if (chunk.IndexCount < MaxFaceCount * 6) {
 									BlockID blockID = mask[n] - 1;
 									glm::vec2 TexCoords[] = {
 										glm::vec2(0.f, 0.f),
@@ -1421,9 +1429,11 @@ namespace wc {
 					}
 				}
 			}
+
+			//WC_WARN(chunk.IndexCount);
+
 			chunk.meshBuffer.UnMap();
 			chunk.indexBuffer.UnMap();
-			chunk.empty = chunk.IndexCount == 0;
 		}
 		 
 		BlockID getBlock(const glm::ivec3& pos) {
@@ -1446,6 +1456,8 @@ namespace wc {
 			chunks[chunkID].position = newChunkPos;
 			UpdateNeighbours(chunkID);
 			TryToLoadChunk(chunkID);
+
+			chunks[chunkID].canBeUpdated = true; // @TODO: try to remove this
 		}
 
 		void UpdateNeighbours(const ChunkID& chunk) {
@@ -1548,7 +1560,7 @@ namespace wc {
 			bloomShader.use();
 			BloomUBOSettings settings;
 			settings.Params = glm::vec4(bloomSettings.Threshold, bloomSettings.Threshold - bloomSettings.Knee, bloomSettings.Knee * 2.f, 0.25f / bloomSettings.Knee);
-			bloomUBO.SetData(0, sizeof(BloomUBOSettings), &settings);
+			bloomUBO.SetData(sizeof(BloomUBOSettings), &settings);
 			bloomBuffers[0].BindTextureImage(0, GL_WRITE_ONLY);
 			scrTexture.Bind(1);
 			bloomShader.Dispatch(glm::ceil(glm::vec2(bloomTexSize) / glm::vec2(m_BloomComputeWorkGroupSize)));
@@ -1563,7 +1575,7 @@ namespace wc {
 
 				// Ping 
 				settings.LOD = currentMip - 1;
-				bloomUBO.SetData(0, sizeof(BloomUBOSettings), &settings);
+				bloomUBO.SetData(sizeof(BloomUBOSettings), &settings);
 
 				bloomBuffers[1].BindTextureImage(0, GL_WRITE_ONLY, currentMip);
 				bloomShader.Dispatch(mipSize);
@@ -1571,7 +1583,7 @@ namespace wc {
 
 				// Pong 
 				settings.LOD = currentMip;
-				bloomUBO.SetData(0, sizeof(BloomUBOSettings), &settings);
+				bloomUBO.SetData(sizeof(BloomUBOSettings), &settings);
 
 				bloomBuffers[0].BindTextureImage(0, GL_WRITE_ONLY, currentMip);
 				bloomBuffers[1].Bind(1);
@@ -1582,7 +1594,7 @@ namespace wc {
 			// First Upsample		
 			settings.LOD = mips - 2;
 			settings.Mode = (int)BloomMode::UpsampleFirst;
-			bloomUBO.SetData(0, sizeof(BloomUBOSettings), &settings);
+			bloomUBO.SetData(sizeof(BloomUBOSettings), &settings);
 
 			bloomBuffers[2].BindTextureImage(0, GL_WRITE_ONLY, mips - 1);
 			bloomBuffers[0].Bind(1);
@@ -1595,7 +1607,7 @@ namespace wc {
 			for (int currentMip = mips - 2; currentMip >= 0; currentMip--)
 			{
 				settings.LOD = currentMip;
-				bloomUBO.SetData(0, sizeof(BloomUBOSettings), &settings);
+				bloomUBO.SetData(sizeof(BloomUBOSettings), &settings);
 
 				bloomBuffers[2].BindTextureImage(0, GL_WRITE_ONLY, currentMip);
 

@@ -167,11 +167,12 @@
       <ConformanceMode>true</ConformanceMode>
       <PreprocessorDefinitions>RMLUI_STATIC_LIB</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -230,10 +231,11 @@
       <ConformanceMode>true</ConformanceMode>
       <PreprocessorDefinitions>RMLUI_STATIC_LIB</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

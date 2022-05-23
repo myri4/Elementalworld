@@ -114,8 +114,8 @@ namespace wc {
 			indices[4] = 3 + m_Data.iOffset;
 			indices[5] = m_Data.iOffset;
 
-			m_Data.m_VBO.SetData(m_Data.byteOffset, sizeof(vertices), vertices);
-			m_Data.m_EBO.SetData(m_Data.indByteOffset, sizeof(indices), indices);
+			m_Data.m_VBO.SetData(sizeof(vertices), vertices, m_Data.byteOffset);
+			m_Data.m_EBO.SetData(sizeof(indices), indices, m_Data.indByteOffset);
 			m_Data.indByteOffset += sizeof(indices);
 			m_Data.byteOffset += sizeof(vertices);
 			m_Data.iOffset += ARRAYSIZE(vertices);

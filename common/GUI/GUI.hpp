@@ -43,7 +43,6 @@ namespace wc {
 		uint32_t iOffset = 0;
 		uint8_t TextureSlotIndex = 0;
 
-		gl::Texture whiteTexture;
 
 		uint32_t getTexture(const uint32_t& texID) {
 			uint32_t textureIndex = 0;
@@ -64,6 +63,7 @@ namespace wc {
 		}
 
 	public:
+		gl::Texture whiteTexture;
 		void Create() {
 			VAO.Create();
 			EBO.Create(sizeof(uint32_t) * MaxQuadIndexCount, GL_DYNAMIC_STORAGE_BIT);
@@ -98,12 +98,12 @@ namespace wc {
 				vertex.color = Color;
 
 				vertex.tex_coord = glm::vec3(vertices[i].tex_coord.x, vertices[i].tex_coord.y, 0.f);
-				VBO.SetData(byteOffset, sizeof(RmlVertex), &vertex);
+				VBO.SetData(sizeof(RmlVertex), &vertex, byteOffset);
 				byteOffset += sizeof(RmlVertex);
 			}
 
 			for (uint32_t i = 0; i < num_indices; i++) {
-				EBO.SetData(indByteOffset, sizeof(uint32_t), &indices[i]);
+				EBO.SetData(sizeof(uint32_t), &indices[i], indByteOffset);
 				indByteOffset += sizeof(uint32_t);
 			}
 
@@ -174,8 +174,8 @@ namespace wc {
 				vertices[3].position = glm::vec2(fx + fwidth, fy);
 				
 				GLushort indices[] = { 0,1,2,2,3,0 };
-				VBO.SetData(0, sizeof(vertices), vertices);
-				EBO.SetData(0, sizeof(indices), indices);
+				VBO.SetData(sizeof(vertices), vertices);
+				EBO.SetData(sizeof(indices), indices);
 				VAO.Bind();
 				shader.use();
 				Renderer::DrawIndexed(6);

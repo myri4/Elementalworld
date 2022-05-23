@@ -1,26 +1,14 @@
 #pragma once
 
 #include <glad/glad.h>
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include <string>
 #include <fstream>
-#include <sstream>
 
 #include <Utils/Log.hpp>
 
 namespace wcUtil {
-	void checkCompileErrors(const uint32_t& shader) {
-		int success;
-		char infoLog[1024];
-		glGetProgramiv(shader, GL_LINK_STATUS, &success);
-		if (!success) {
-			glGetProgramInfoLog(shader, 1024, nullptr, infoLog);
-			WC_ERROR("PROGRAM_LINKING_ERROR: \n{1}", infoLog);
-		}
-	}
 
 	std::vector<char> readFile(const std::string& filename) {
 		std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -65,7 +53,14 @@ namespace gl {
 				glAttachShader(m_RendererID, vertex);
 				glAttachShader(m_RendererID, fragment);
 				glLinkProgram(m_RendererID);
-				wcUtil::checkCompileErrors(m_RendererID);
+
+				int success;
+				char infoLog[1024];
+				glGetProgramiv(m_RendererID, GL_LINK_STATUS, &success);
+				if (!success) {
+					glGetProgramInfoLog(m_RendererID, 1024, nullptr, infoLog);
+					WC_ERROR("PROGRAM_LINKING_ERROR: \n{1}", infoLog);
+				}
 				// delete the shaders as they're linked into our program now and no longer necessary
 				glDeleteShader(vertex);
 				glDeleteShader(fragment);
@@ -96,13 +91,22 @@ namespace gl {
 			if (!m_RendererID) {
 				std::vector<char> code = wcUtil::readFile(path);
 
-				uint32_t compute = wcUtil::CompileShader(code, GL_COMPUTE_SHADER);
+				uint32_t compute = glCreateShader(GL_COMPUTE_SHADER);
+				glShaderBinary(1, &compute, GL_SHADER_BINARY_FORMAT_SPIR_V, reinterpret_cast<const uint32_t*>(code.data()), code.size());
+				glSpecializeShader(compute, "main", 0, nullptr, nullptr);
 
 				// shader Program
 				m_RendererID = glCreateProgram();
 				glAttachShader(m_RendererID, compute);
 				glLinkProgram(m_RendererID);
-				wcUtil::checkCompileErrors(m_RendererID);
+
+				int success;
+				char infoLog[1024];
+				glGetProgramiv(m_RendererID, GL_LINK_STATUS, &success);
+				if (!success) {
+					glGetProgramInfoLog(m_RendererID, 1024, nullptr, infoLog);
+					WC_ERROR("PROGRAM_LINKING_ERROR: \n{1}", infoLog);
+				}
 				// delete the shaders as they're linked into our program now and no longer necessary
 				glDeleteShader(compute);
 			}

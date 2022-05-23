@@ -16,7 +16,7 @@ namespace gl {
 
         inline void Destroy() { glDeleteBuffers(1, &m_RendererID); }
 
-        void SetData(const GLintptr& offset, const GLsizeiptr& size, const void* data) {
+        void SetData(const GLsizeiptr& size, const void* data, const GLintptr& offset = 0) {
            glNamedBufferSubData(m_RendererID, offset, size, data);
         }
 

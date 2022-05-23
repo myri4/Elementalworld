@@ -5,8 +5,7 @@
 
 namespace wc {
 
-	//static const uint32_t MaxLineCount = 100;
-	static const uint32_t MaxLineVertexCount = 100 * 2;
+	static const uint32_t MaxLineVertexCount = 1000 * 2;
 
 	struct LineVertex {
 		glm::vec3 pos;
@@ -42,7 +41,7 @@ namespace wc {
 				end.x,   end.y,   end.z  , color.r, color.g, color.b, color.a
 			};
 
-			lineBuffer.SetData(byteOffset, sizeof(vertices), vertices);
+			lineBuffer.SetData(sizeof(vertices), vertices, byteOffset);
 			byteOffset += sizeof(vertices);
 			IndexCount += 2;
 		}

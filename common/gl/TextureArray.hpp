@@ -37,12 +37,10 @@ namespace gl {
 		~TextureArray() { glDeleteTextures(1, &m_RendererID); }
 
 		void AddTexture(const void* data) {
-			if (m_Textures <= MaxTextureSize && m_RendererID && data) {
-				glTextureSubImage3D(m_RendererID, 0, 0, 0, m_Textures, width, height, 1, GetFormat(), GL_UNSIGNED_BYTE, data);
+			glTextureSubImage3D(m_RendererID, 0, 0, 0, m_Textures, width, height, 1, GetFormat(), GL_UNSIGNED_BYTE, data);
 
-				glGenerateTextureMipmap(m_RendererID);
-				m_Textures++;
-			}
+			glGenerateTextureMipmap(m_RendererID);
+			m_Textures++;			
 		}
 
 		void Bind(const uint32_t& unit = 0) { glBindTextureUnit(unit, m_RendererID); }

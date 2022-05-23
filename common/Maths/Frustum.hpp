@@ -81,7 +81,9 @@ namespace wc {
             bool result = true;
             for (auto& plane : m_planes) {
                 if (plane.distanceToPoint(box.getVP(plane.normal)) < 0.f)
+                {
                     return false;
+                }
                 else if (plane.distanceToPoint(box.getVN(plane.normal)) < 0.f)
                     result = true;
 

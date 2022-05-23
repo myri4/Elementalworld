@@ -42,10 +42,7 @@
 }
 
 #crosshair {
-    display: block;
-    position: fixed;
-    top: 50vh;
-    left: 50vw;
+    cursor: auto;
 }
 
 #debug_info {

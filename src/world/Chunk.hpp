@@ -37,7 +37,6 @@ namespace wc {
 		bool used : 1; // Should the chunk be saved
 		bool generated : 1;
 		bool canBeUpdated : 1;
-		bool empty : 1;
 		bool generatedStructures : 1;
 
 		gl::Buffer meshBuffer;
@@ -47,7 +46,6 @@ namespace wc {
 			used = false;
 			generated = true;
 			canBeUpdated = false;
-			empty = true;
 			generatedStructures = true;
 		}
 	};
