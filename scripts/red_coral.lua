@@ -1,6 +1,0 @@
-isCollidable = false
-ConnectionType = "CUSTOM_MODEL"
-
-allTextures = "red_coral.png"
-
-name = "red_coral"

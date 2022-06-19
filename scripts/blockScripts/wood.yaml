@@ -1,0 +1,11 @@
+isCollidable: true
+ConnectionType: "CONNECT_DEFAULT"
+
+TOP:    "log_top.png"
+BOTTOM: "log_top.png"
+FRONT:  "log_side.png"
+BACK:   "log_side.png"
+LEFT:   "log_side.png"
+RIGHT:  "log_side.png"
+
+name: "wood"

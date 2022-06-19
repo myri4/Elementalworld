@@ -1,6 +1,5 @@
 #pragma once
 #include "Item.hpp"
-#include <GUI/Renderer2D.hpp>
 #include <GUI/AssetManager.hpp>
 
 namespace wc {

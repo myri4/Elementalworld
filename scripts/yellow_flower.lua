@@ -1,8 +1,0 @@
-isCollidable = false
-ConnectionType = "CUSTOM_MODEL"
-
-allTextures = "yellow_flower.png"
-
-emitLight = false
-
-name = "yellow_flower"

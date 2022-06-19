@@ -21,9 +21,6 @@
     <ClCompile Include="src\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="common\Maths\AssimpGLMHelpers.hpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="vendor\Include\yaml-src\contrib\graphbuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -119,199 +116,25 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\world\Chunk.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Block.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\entities\Entity.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\Time.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\State.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\SFMLCLock.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gl\Camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gl\Cubemap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gl\glErrors.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gl\IndexBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gl\Shaders.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gl\Skybox.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gl\Text.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gl\Texture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gl\VertexArray.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gl\FrameBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\Camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\Cubemap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\FrameBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\glErrors.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\IndexBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\Shaders.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\Text.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\Texture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\VertexArray.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Utilitiess\State.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Utilitiess\Log.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\Skybox.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\world\World.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\FrameBuffer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\Shaders.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\Texture.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\world\Chunk.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\entities\Player.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Utils\Log.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Utils\NonCopyable.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Utils\Random.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Utils\State.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Utils\Time.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Maths\Frustum.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Maths\Camera.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Utils\Window.hpp">
+    <None Include="..\Elementalworld Server\Elementalworld Server.vcxproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Application.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\world\Biome.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Application.hpp">
+    <ClInclude Include="src\world\Block.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\GUI\AssetManager.hpp">
+    <ClInclude Include="src\world\Chunk.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\gl\TextureArray.hpp">
+    <ClInclude Include="src\world\World.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\GUI\Renderer2D.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Renderer\Renderer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Maths\Ray.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\wc\pch.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\VertexArray.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\gl\Buffer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\wc\Model\Animation.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\wc\Model\Bone.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\wc\Model\Mesh.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\wc\Model\Model.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\net\message.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\net\net_client.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\net\net_common.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\net\net_connection.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\net\net_server.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\net\tsqueue.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\net\wc_net.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Utils\Bits.hpp">
+    <ClInclude Include="src\Game Mechanics\CommandParser.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Game Mechanics\Inventory.hpp">
@@ -323,669 +146,224 @@
     <ClInclude Include="src\Game Mechanics\LineBatcher.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\world\Block.hpp">
+    <ClInclude Include="src\entities\Entity.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\FastNoise\FastNoiseLite.h">
+    <ClInclude Include="src\entities\Player.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\Utils\YAML.hpp">
+    <ClInclude Include="vendor\Include\gl\Buffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game Mechanics\CommandParser.hpp">
+    <ClInclude Include="vendor\Include\gl\FrameBuffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\contrib\graphbuilderadapter.h">
+    <ClInclude Include="vendor\Include\gl\Shaders.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\collectionstack.h">
+    <ClInclude Include="vendor\Include\gl\Texture.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\directives.h">
+    <ClInclude Include="vendor\Include\gl\TextureArray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\emitterstate.h">
+    <ClInclude Include="vendor\Include\gl\VertexArray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\emitterutils.h">
+    <ClInclude Include="vendor\Include\GUI\AssetManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\exp.h">
+    <ClInclude Include="vendor\Include\GUI\GUI.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\indentation.h">
+    <ClInclude Include="vendor\Include\Maths\AssimpGLMHelpers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\nodebuilder.h">
+    <ClInclude Include="vendor\Include\Maths\Camera.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\nodeevents.h">
+    <ClInclude Include="vendor\Include\Maths\Frustum.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\ptr_vector.h">
+    <ClInclude Include="vendor\Include\Maths\Ray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\regex_yaml.h">
+    <ClInclude Include="vendor\Include\net\message.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\regeximpl.h">
+    <ClInclude Include="vendor\Include\net\net_client.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\scanner.h">
+    <ClInclude Include="vendor\Include\net\net_common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\scanscalar.h">
+    <ClInclude Include="vendor\Include\net\net_connection.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\scantag.h">
+    <ClInclude Include="vendor\Include\net\net_server.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\setting.h">
+    <ClInclude Include="vendor\Include\net\tsqueue.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\singledocparser.h">
+    <ClInclude Include="vendor\Include\net\wc_net.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\stream.h">
+    <ClInclude Include="vendor\Include\Utils\Bits.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\streamcharsource.h">
+    <ClInclude Include="vendor\Include\Utils\List.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\stringsource.h">
+    <ClInclude Include="vendor\Include\Utils\Log.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\tag.h">
+    <ClInclude Include="vendor\Include\Utils\Memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-src\token.h">
+    <ClInclude Include="vendor\Include\Utils\NonCopyable.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common\Utils\Memory.h">
+    <ClInclude Include="vendor\Include\Utils\Random.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\ElementImage.h">
+    <ClInclude Include="vendor\Include\Utils\State.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\ElementLabel.h">
+    <ClInclude Include="vendor\Include\Utils\Time.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\ElementTextSelection.h">
+    <ClInclude Include="vendor\Include\Utils\Window.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputType.h">
+    <ClInclude Include="vendor\Include\Utils\YAML.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputTypeButton.h">
+    <ClInclude Include="vendor\Include\wc\Model\Animation.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputTypeCheckbox.h">
+    <ClInclude Include="vendor\Include\wc\Model\Bone.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputTypeRadio.h">
+    <ClInclude Include="vendor\Include\wc\Model\Mesh.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputTypeRange.h">
+    <ClInclude Include="vendor\Include\wc\Model\Model.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputTypeSubmit.h">
+    <ClInclude Include="vendor\Include\wc\pch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\InputTypeText.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\anchor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\WidgetDropDown.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\binary.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\WidgetSlider.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\depthguard.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\WidgetTextInput.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\dll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\WidgetTextInputMultiLine.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\emitfromevents.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\WidgetTextInputSingleLine.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\emitter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\WidgetTextInputSingleLinePassword.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\emitterdef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\XMLNodeHandlerDataGrid.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\emittermanip.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\XMLNodeHandlerSelect.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\emitterstyle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\XMLNodeHandlerTabSet.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\eventhandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Elements\XMLNodeHandlerTextArea.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\exceptions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontEngineInterfaceDefault.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\mark.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontFace.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\noexcept.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontFaceHandleDefault.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\null.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontFaceLayer.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\ostream_wrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontFamily.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontProvider.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\stlemitter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FontTypes.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\traits.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEngineDefault\FreeTypeInterface.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\yaml.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Clock.h">
+    <ClInclude Include="vendor\Include\gl\Fence.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\ComputeProperty.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\iterator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\ContextInstancerDefault.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\iterator_fwd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DataController.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DataControllerDefault.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DataExpression.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\node_data.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DataModel.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\node_iterator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DataView.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\node_ref.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DataViewDefault.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\convert.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorGradient.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\emit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorNinePatch.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiled.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\iterator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledBox.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledBoxInstancer.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\parse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledHorizontal.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\ptr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledHorizontalInstancer.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\node\type.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledImage.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\contrib\anchordict.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledImageInstancer.h">
+    <ClInclude Include="vendor\Include\yaml-cpp\contrib\graphbuilder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledInstancer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledVertical.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DecoratorTiledVerticalInstancer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\DocumentHeader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\ElementAnimation.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\ElementBackgroundBorder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\ElementDecoration.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\ElementDefinition.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\ElementHandle.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\ElementStyle.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\EventDispatcher.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\EventInstancerDefault.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\EventSpecification.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\FileInterfaceDefault.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEffectBlur.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEffectGlow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEffectOutline.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\FontEffectShadow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\GeometryBackgroundBorder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\GeometryDatabase.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\IdNameMap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutBlockBox.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutBlockBoxSpace.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutDetails.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutEngine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutFlex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutInlineBox.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutInlineBoxText.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutLineBox.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutTable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\LayoutTableDetails.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Memory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\PluginRegistry.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Pool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\precompiled.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertiesIterator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserAnimation.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserColour.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserDecorator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserFontEffect.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserKeyword.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserNumber.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserRatio.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserString.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyParserTransform.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\PropertyShorthandDefinition.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StreamFile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetFactory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNode.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelector.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorEmpty.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorFirstChild.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorFirstOfType.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorLastChild.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorLastOfType.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorNthChild.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorNthLastChild.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorNthLastOfType.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorNthOfType.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorOnlyChild.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetNodeSelectorOnlyOfType.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\StyleSheetParser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Template.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\TemplateCache.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\TextureDatabase.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\TextureLayout.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\TextureLayoutRectangle.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\TextureLayoutRow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\TextureLayoutTexture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\TextureResource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\TransformState.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\TransformUtilities.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\Utilities.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\WidgetScroll.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\XMLNodeHandlerBody.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\XMLNodeHandlerDefault.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\XMLNodeHandlerHead.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\XMLNodeHandlerTemplate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Core\XMLParseTools.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\BeaconSource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\CommonSource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\DebuggerPlugin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\DebuggerSystemInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\ElementContextHook.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\ElementInfo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\ElementLog.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\FontSource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\Geometry.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\InfoSource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\LogSource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Debugger\MenuSource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lottie\LottiePlugin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\As.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\DataFormatter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\DataSource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementDataGrid.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementDataGridRow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementForm.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementFormControl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementFormControlDataSelect.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementFormControlInput.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementFormControlSelect.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementFormControlTextArea.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\ElementTabSet.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\LuaDataFormatter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\LuaDataSource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Elements\SelectOptionsProxy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Colourb.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Colourf.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Context.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\ContextDocumentsProxy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Document.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Element.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\ElementAttributesProxy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\ElementChildNodesProxy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\ElementInstancer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\ElementStyleProxy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\ElementText.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Event.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\EventParametersProxy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\GlobalLuaFunctions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Log.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaDataModel.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaDocument.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaDocumentElementInstancer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaElementInstancer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaEventListener.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaEventListenerInstancer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\LuaPlugin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Pairs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\RmlUi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\RmlUiContextsProxy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Vector2f.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\Lua\Vector2i.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\RmlUi-src\SVG\SVGPlugin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\GUI\GUI.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="common\Utils\List.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="scripts\grassblock.lua" />
-    <None Include="shaderpacks\default\skybox.glsl" />
-    <None Include="scripts\dirt.lua" />
-    <None Include="scripts\stone.lua" />
-    <None Include="scripts\sand.lua" />
-    <None Include="scripts\water.lua" />
-    <None Include="shaderpacks\default\chunkShader.glsl" />
-    <None Include="scripts\glass.lua" />
-    <None Include="scripts\wood.lua" />
-    <None Include="scripts\worldGen.lua" />
-    <None Include="scripts\blocks.lua" />
-    <None Include="scripts\snow.lua" />
-    <None Include="scripts\haybale.lua" />
-    <None Include="scripts\leaves.lua" />
-    <None Include="scripts\red_flower.lua" />
-    <None Include="scripts\coal_ore.lua" />
-    <None Include="shaderpacks\default\Renderer2D.glsl" />
-    <None Include="shaderpacks\default\modelShader.glsl" />
-    <None Include="shaderpacks\default\Line3D.glsl" />
-    <None Include="scripts\yellow_flower.lua" />
-    <None Include="scripts\dead_bush.lua" />
-    <None Include="scripts\small_grass.lua" />
-    <None Include="scripts\iron_ore.lua" />
-    <None Include="shaderpacks\default\pbrUtil.glsl" />
-    <None Include="scripts\green_coral.lua" />
-    <None Include="scripts\requirements.lua" />
-    <None Include="scripts\biomes.lua" />
-    <None Include="..\Elementalworld Server\Elementalworld Server.vcxproj" />
-    <None Include="vendor\Include\RmlUi-src\Core\Pool.inl">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="scripts\gui_scripts\test.rml" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,0 @@
-isCollidable = true
-ConnectionType = "NO_CONNECT"
-
-allTextures = "glass.png"
-
-name = "glass"

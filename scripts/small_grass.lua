@@ -1,6 +1,0 @@
-isCollidable = false
-ConnectionType = "CUSTOM_MODEL"
-
-allTextures = "small_grass.png"
-
-name = "small_grass"

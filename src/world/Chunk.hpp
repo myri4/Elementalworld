@@ -1,17 +1,15 @@
 #pragma once
-#include <gl/VertexArray.hpp>
-#include <gl/Buffer.hpp>
 #include "Block.hpp"
 
-//OpenGL Memory Buffer Variables
 //@Todo try with size_t 
 const uint16_t chunkSize = 16;
 const uint32_t chunkVolume = chunkSize * chunkSize * chunkSize;
 
 const uint32_t MaxFaceCount = chunkSize * chunkSize * 5;
 const uint32_t MaxVertexCount = MaxFaceCount * 4;
+const uint32_t MaxIndexCount = MaxFaceCount * 6;
 
-typedef uint16_t ChunkID; // This represents the chunk id in the chunk array
+using ChunkID = uint16_t; // This represents the chunk id in the chunk array
 
 namespace wc {
 
@@ -26,9 +24,7 @@ namespace wc {
 		return glm::ivec3(x, y, z);
 	}
 
-	class Chunk {
-	public: // Variables
-		uint32_t IndexCount = 0;
+	struct Chunk {
 		glm::ivec3 position = glm::ivec3(0);
 		BlockID data[chunkSize][chunkSize][chunkSize] = { 0 };
 		int16_t neighborPos[3] = { -1,-1,-1 };
@@ -39,9 +35,6 @@ namespace wc {
 		bool canBeUpdated : 1;
 		bool generatedStructures : 1;
 
-		gl::Buffer meshBuffer;
-		gl::Buffer indexBuffer;
-	public: // Functions 
 		Chunk() {
 			used = false;
 			generated = true;

@@ -1,0 +1,11 @@
+isCollidable: true
+ConnectionType: "CONNECT_DEFAULT"
+
+TOP:    "hay_bale_top.png"
+BOTTOM: "hay_bale_top.png"
+FRONT:  "hay_bale_side.png"
+BACK:   "hay_bale_side.png"
+LEFT:   "hay_bale_side.png"
+RIGHT:  "hay_bale_side.png"
+
+name: "hay_bale"

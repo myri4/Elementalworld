@@ -2,6 +2,38 @@
 #define GLM_FORCE_INTRINSICS 
 #include "world/World.hpp"
 
+void GLAPIENTRY OpenGLDebugMessege(uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int length, const char* message, const void* userParam) {
+	const char* src;
+	switch (source)
+	{
+	case GL_DEBUG_SOURCE_API:             src = "API"; break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   src = "Window System"; break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER: src = "Shader Compiler"; break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:     src = "Third Party"; break;
+	case GL_DEBUG_SOURCE_APPLICATION:     src = "Application"; break;
+	case GL_DEBUG_SOURCE_OTHER:           src = "Other"; break;
+	}
+
+	switch (severity)
+	{
+	case GL_DEBUG_SEVERITY_HIGH:
+		WC_ERROR("[{0}] {1}", src, message);
+		break;
+
+	case GL_DEBUG_SEVERITY_MEDIUM:
+		WC_WARN("[{0}] {1}", src, message);
+		break;
+
+	case GL_DEBUG_SEVERITY_LOW:
+		WC_INFO("[{0}] {1}", src, message);
+		break;
+
+	case GL_DEBUG_SEVERITY_NOTIFICATION:
+		// WC_TRACE("[{0} {1} TRACE] {2}", src, typeStr, message);
+		break;
+	}
+}
+
 namespace wc {	
 
 	GameInstance world;
@@ -36,6 +68,8 @@ namespace wc {
 		Clock deltaTimer;
 		float deltaTime = 0.f;
 
+		gl::Fence fence;
+
 		//Rml
 		Rml::ElementDocument* document = nullptr;
 
@@ -56,8 +90,9 @@ namespace wc {
 
 			if (resized) { 
 				auto size = window.GetSize();
+				glViewport(0, 0, size.x, size.y);
 				context->SetDimensions({ size.x, size.y});
-				Renderer2D::m_Data.windowSize = size;
+				render_interface.windowSize = size;
 				world.DestroyScreen();
 				world.CreateScreen();
 			}
@@ -65,8 +100,19 @@ namespace wc {
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() override {
 			window.Create({1280, 720}, "Elementalworld");
+
+			if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) WC_ERROR("Failed to initialize GLAD");
 			// OpenGL state
-			Renderer::enableDebuging();
+			int flags;
+			glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+			//if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) 
+			{
+				// initialize debug output 
+				glDebugMessageCallback(OpenGLDebugMessege, nullptr);
+				glEnable(GL_DEBUG_OUTPUT);
+				glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+				//glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, true);
+			}
 			// ------------
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -74,9 +120,7 @@ namespace wc {
 			world.CreateScreen();
 
 			auto size = window.GetSize();
-
-			Renderer2D::Init();
-			Renderer2D::m_Data.windowSize = size;
+			render_interface.windowSize = size;
 
 			world.Create();
 
@@ -167,16 +211,15 @@ namespace wc {
 			my_model.DirtyVariable("yaw");
 			
 			context->Update();
-			
+			fence.wait();
 			if (mode == MenuMode::GAME)
 				world.Update(deltaTime);
-			if (mode != MenuMode::GAME) Renderer::Clear();
+			if (mode != MenuMode::GAME)
+				glClear(GL_COLOR_BUFFER_BIT);
 
-			glDisable(GL_DEPTH_TEST);
-			Renderer2D::Flush();
 			context->Render();
 			render_interface.Flush();
-
+			fence.lock();
 			window.display();
 		}
 		//----------------------------------------------------------------------------------------------------------------------

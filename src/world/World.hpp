@@ -10,11 +10,8 @@
 #include <wc/Model/Animation.hpp>
 #include "../Game Mechanics/LineBatcher.hpp"
 #include "../Game Mechanics/CommandParser.hpp"
-#include <Utils/YAML.hpp>
 #include <Utils/Memory.h>
 #include <ppl.h>
-
-#define MODEL1
 
 namespace wc {
 	static const uint32_t RenderDistance = 16;
@@ -45,6 +42,13 @@ namespace wc {
 		float MouseSensitivity = 5.f;
 		float gravity = 20.f;
 
+		Timer blockBreakTimer;
+		bool startBreaking = false;
+		glm::ivec3 breakPos = glm::ivec3(0);
+		bool thirdPerson = false;
+
+		AABB box;
+		// Graphics
 		LineBatcher lineBatcher;
 
 		gl::Shader skyShader;
@@ -56,13 +60,13 @@ namespace wc {
 
 		gl::UniformBuffer transforms;
 
-		// Lighting
 		gl::UniformBuffer lights;
-		gl::UniformBuffer materials;
+		gl::ShaderStorageBuffer materials;
+		gl::ShaderStorageBuffer blockTransformBuffer;
+		glm::vec4* blockTransforms = nullptr;
 		uint32_t currentLightID = 0;
-		bool lightUpdate = false;
 
-		struct TransformData {
+		struct SceneData {
 			glm::mat4 ViewProj = glm::mat4(1.f);
 			alignas(16) glm::vec3 cameraPos = glm::vec3(0.f);
 			alignas(16) glm::vec3 lower_left_corner = glm::vec3(0.f);
@@ -70,9 +74,16 @@ namespace wc {
 			alignas(16) glm::vec3 vertical = glm::vec3(0.f);
 			alignas(16) glm::vec2 windowSize = glm::vec2(0.f);
 			uint32_t numLights = 0;
+			uint32_t transformOffset = 0;
 		};
 
 		gl::VertexArray chunkMeshArray;
+		gl::Buffer globalVertexBuffer;
+		gl::Buffer globalIndexBuffer;
+		Vertex* globalVertices = nullptr;
+		uint32_t* globalIndices = nullptr;
+		gl::DrawIndirectBuffer indirectBuffer;
+		gl::DrawElementsIndirectCommand* cmds = nullptr;
 		std::array<Chunk, RenderDistance * RenderDistance * RenderDistance> chunks;
 
 		FastNoiseLite worldNoise;
@@ -82,21 +93,17 @@ namespace wc {
 		FastNoiseLite caveNoise;
 
 		bool generateTerrain : 1;
-
 		int8_t water_level = 0;
-		uint32_t localPlayerID = 0;
 
+		uint32_t localPlayerID = 0;
 		std::unordered_map<uint32_t, PlayerDescription> players;
 
-		// World saving
+		// Data managing
 		std::string worldName = "New world";
-
-#ifdef MODEL
 		gl::Shader modelShader;
 		//Animation animation;
 		Model model;
-		glm::vec3 modelPos = { (RenderDistance * RenderDistance * 0.5f + RenderDistance), 51.f , (RenderDistance * RenderDistance * 0.5f) };
-#endif
+		gl::UniformBuffer animationBuffer;
 
 		void SaveStructure(const char* outFile, const glm::ivec3& Start, const glm::ivec3& End) {
 			glm::ivec3 start = Start;
@@ -139,8 +146,9 @@ namespace wc {
 		struct Light {
 			glm::vec3 vector;
 			uint32_t color;
-		} lighting[chunkVolume];
-
+		};
+		Light* lighting = nullptr;
+		uint32_t maxLights = chunkVolume;
 		// Composite stuff
 		gl::FrameBuffer screen;
 		gl::Texture scrTexture;
@@ -179,18 +187,30 @@ namespace wc {
 		Player p;
 
 		void Create() {
-			chunkShader.Create("resourcepacks/default/shaders/chunkShader.vert", "resourcepacks/default/shaders/chunkShader.frag");
-			bloomShader.Create("resourcepacks/default/shaders/bloomShader.comp");
-			compositeShader.Create("resourcepacks/default/shaders/composite.comp");
+			chunkShader.Create("resourcepacks/" + resourceName + "/shaders/chunkShader.vert", "resourcepacks/" + resourceName + "/shaders/chunkShader.frag");
+			modelShader.Create("resourcepacks/" + resourceName + "/shaders/modelShader.vert", "resourcepacks/" + resourceName + "/shaders/modelShader.frag");
+			skyShader.Create("resourcepacks/" + resourceName + "/shaders/skybox.vert", "resourcepacks/" + resourceName + "/shaders/skybox.frag");
+			bloomShader.Create("resourcepacks/" + resourceName + "/shaders/bloomShader.comp");
+			compositeShader.Create("resourcepacks/" + resourceName + "/shaders/composite.comp");
 
-			transforms.Create(sizeof(TransformData), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
+			uint32_t bits = GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
+			transforms.Create(sizeof(SceneData), GL_DYNAMIC_STORAGE_BIT);
 			transforms.BufferBase(0);
 
-			lights.Create(sizeof(lighting), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
+			lights.Create(maxLights * sizeof(Light), bits);
 			lights.BufferBase(1);
 
-			bloomUBO.Create(sizeof(BloomUBOSettings), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
+			materials.Create(materialData.byte_size(), bits);
+			materials.BufferBase(3);
+
+			bloomUBO.Create(sizeof(BloomUBOSettings), GL_DYNAMIC_STORAGE_BIT);
 			bloomUBO.BufferBase(4);
+
+			animationBuffer.Create(sizeof(glm::mat4) * (MAX_BONE_WEIGHTS + 1), GL_DYNAMIC_STORAGE_BIT);
+			animationBuffer.BufferBase(5);
+
+			blockTransformBuffer.Create(sizeof(glm::vec4) * chunks.size() * chunkVolume, bits);
+			blockTransformBuffer.BufferBase(6);
 
 			sol::state worldGenState;
 			worldGenState.new_usertype<FastNoiseLite>("Noise", sol::constructors<void()>(),
@@ -215,19 +235,22 @@ namespace wc {
 			if (worldGenState["water_level"].valid()) water_level = worldGenState["water_level"];
 
 			assets.Create(30, 32, 32);
-			Block airBlock;
-			blockData.push_back(airBlock);
-			Material mat;
-			materialData.push_back(mat);
-			Item noItem;
-			itemData.push_back(noItem);
+			blockData.counter = 1;
+			materialData.Data = (Material*)materials.Map(bits, materialData.allocated_size());
+			materialData.counter = 1;
+			itemData.counter = 1;
 
 			//Loading blocks
-			worldGenState.set_function("AddBlockScript", &AddBlockScript);
-			worldGenState.script_file("scripts/blocks.lua");
+			//worldGenState.set_function("AddBlockScript", &AddBlockScript);
+			//worldGenState.script_file("scripts/blocks.lua");
 
-			materials.Create(materialData.byte_size(), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT, materialData.data());
-			materials.BufferBase(3);
+			
+			for (auto& p : std::filesystem::directory_iterator("scripts/blockScripts")) {
+				std::string filename = p.path().stem().string();
+				if (p.is_regular_file())
+					AddBlockScript("scripts/blockScripts/" + filename + ".yaml");
+				
+			}			
 
 			worldGenState.new_usertype<Biome>("Biome", sol::constructors<void()>(),
 				"maxMois", &Biome::maxMois,
@@ -243,35 +266,33 @@ namespace wc {
 			lineBatcher.Create();
 			chunkMeshArray.Create();
 			chunkMeshArray.VertexAttribPointer(0, 3, offsetof(Vertex, Position));  // position attribute
-			chunkMeshArray.VertexAttribPointer(1, 1, offsetof(Vertex, TexCoords)); // texture coord attribute
+			chunkMeshArray.VertexAttribPointer(1, 3, offsetof(Vertex, TexCoords)); // texture coord attribute
 			chunkMeshArray.VertexAttribPointer(2, 3, offsetof(Vertex, Normal)); // type attribute
-			chunkMeshArray.VertexAttribPointer(4, 1, offsetof(Vertex, materialID)); // color attribute
-			for (ChunkID chunkID = 0; chunkID < chunks.size(); chunkID++) {
-				//Configuring the vertex buffer
-				chunks[chunkID].meshBuffer.Create(MaxVertexCount * sizeof(Vertex), GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
-				chunks[chunkID].indexBuffer.Create(sizeof(uint32_t) * MaxFaceCount * 6, GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
-			}
+			chunkMeshArray.VertexAttribPointer(3, 1, offsetof(Vertex, materialID)); // color attribute
 
-			skyShader.Create("resourcepacks/default/shaders/skybox.vert", "resourcepacks/default/shaders/skybox.frag");
-#ifdef MODEL
-			modelShader.Create("resourcepacks/default/shaders/modelShader.glsl");
-			model.Create("assets/models/Ravenkin.obj");
-			//animation.Create("assets/models/dancing_vampire.dae", model);
-#endif // MODEL
+			indirectBuffer.Create(chunks.size() * sizeof(gl::DrawElementsIndirectCommand), bits);
+			globalVertexBuffer.Create(MaxVertexCount * sizeof(Vertex) * chunks.size(), bits);
+			globalIndexBuffer.Create(MaxIndexCount * sizeof(uint32_t) * chunks.size(), bits);
+
+			cmds = (gl::DrawElementsIndirectCommand*)indirectBuffer.Map(bits, chunks.size() * sizeof(gl::DrawElementsIndirectCommand));
+			globalVertices = (Vertex*)globalVertexBuffer.Map(bits, MaxVertexCount * sizeof(Vertex) * chunks.size());
+			globalIndices = (uint32_t*)globalIndexBuffer.Map(bits, MaxIndexCount * sizeof(uint32_t) * chunks.size());
+			lighting = (Light*)lights.Map(bits, maxLights * sizeof(Light));
+			blockTransforms = (glm::vec4*)blockTransformBuffer.Map(bits, sizeof(glm::vec4) * chunks.size() * chunkVolume);
+
+			for (ChunkID i = 0; i < chunks.size(); i++) {
+				//Configuring the vertex buffer
+				cmds[i].baseVertex = i * MaxVertexCount;
+				cmds[i].firstIndex = i * MaxIndexCount;
+			}
+			
+			chunkMeshArray.SetVertexBuffer(globalVertexBuffer, sizeof(Vertex));
+			chunkMeshArray.SetIndexBuffer(globalIndexBuffer);
+
+			model.Create("resourcepacks/default/models/player_model.obj");
+			//animation.Create("resourcepacks/default/models/dancing_vampire.dae", model);
 
 			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 1.f, 1.f, 0.f)));
-			recipes[0].data[0] = 6; recipes[0].data[1] = 0;
-			recipes[0].data[2] = 0; recipes[0].data[3] = 0;
-			recipes[0].amount = 4;
-			recipes[0].result = 18;
-
-			recipes[1].data[0] = 18; recipes[1].data[1] = 18;
-			recipes[1].data[2] = 18; recipes[1].data[3] = 18;
-			recipes[1].amount = 1;
-			recipes[1].result = 19;
-
-			//BlockMeshes.Load("assets/models/seagrass.ply");
-			//blockData[18].connectionType = ConnectionType::CUSTOM_MODEL;
 
 			grass = getBlockID("grass_block");
 			stone = getBlockID("stone_block");
@@ -279,39 +300,12 @@ namespace wc {
 			sand = getBlockID("sand");
 			oak = getBlockID("wood");
 			leaves = getBlockID("leaves");
+			coal = getBlockID("campfire");
+			dirt = getBlockID("dirt");
 
-			const uint32_t xMeshIndexArray[] = {
-				0, 1, 2,
-				2, 3, 0,
-
-				4, 5, 6,
-				6, 7, 4
-			};
-
-			BlockMesh& xMesh = blockMeshes[0];
-			xMesh.indices.reserve(ARRAYSIZE(xMeshIndexArray));
-			for(int i = 0; i < ARRAYSIZE(xMeshIndexArray); i++)
-				xMesh.indices.emplace_back(xMeshIndexArray[i]);
-
-			//WC_INFO("albedo: {0}", offsetof(Material, albedo));
-			//WC_INFO("normal: {0}", offsetof(Material, normal));
-			//WC_INFO("MRA: {0}", offsetof(Material, MRA));
-			//WC_INFO("flags: {0}", offsetof(Material, flags));
-			//WC_INFO("color: {0}", offsetof(Material, color));
+			box.position = glm::vec3(0.f, 128.f, 0.f);
+			box.size = glm::vec3(1.f);
 			
-			glm::vec3 normal1 = glm::vec3( 0.70710677f, 0.f, 0.70710677f);
-			glm::vec3 normal2 = glm::vec3(-0.70710677f, 0.f, 0.70710677f);
-			xMesh.vertices.reserve(8);
-			xMesh.vertices.emplace_back(Vertex(glm::vec3(blockSize,  blockSize, 0.f),  glm::vec3(0.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, normal1, 0));
-			xMesh.vertices.emplace_back(Vertex(glm::vec3(blockSize, 0.f, 0.f),         glm::vec3(0.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, normal1, 0));
-			xMesh.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.f,  blockSize),        glm::vec3(1.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, normal1, 0));
-			xMesh.vertices.emplace_back(Vertex(glm::vec3(0.f,  blockSize,  blockSize), glm::vec3(1.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, normal1, 0));
-
-			xMesh.vertices.emplace_back(Vertex(glm::vec3(blockSize,  blockSize,  blockSize), glm::vec3(0.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, normal2, 0));
-			xMesh.vertices.emplace_back(Vertex(glm::vec3(blockSize, 0.f,  blockSize),        glm::vec3(0.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, normal2, 0));
-			xMesh.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.f, 0.f),                     glm::vec3(1.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, normal2, 0));
-			xMesh.vertices.emplace_back(Vertex(glm::vec3(0.f,  blockSize, 0.f),              glm::vec3(1.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, normal2, 0));
-
 			const uint32_t slabMeshIndexArray[] = {
 				0, 1, 2,
 				2, 3, 0,
@@ -331,48 +325,48 @@ namespace wc {
 				20, 21, 22,
 				22, 23, 20
 			};
-
-			BlockMesh& slabMeshDown = blockMeshes[1];
+			blockMeshes.counter = 1;
+			BlockMesh& slabMeshDown = blockMeshes[0];
 			slabMeshDown.indices.reserve(ARRAYSIZE(slabMeshIndexArray));
 			for (int i = 0; i < ARRAYSIZE(slabMeshIndexArray); i++)
 				slabMeshDown.indices.emplace_back(slabMeshIndexArray[i]);
 
 			slabMeshDown.vertices.reserve(24);
 			// Top
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.5f, 0.f), glm::vec3(0.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, 1.f, 0.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.5f, 1.f), glm::vec3(0.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, 1.f, 0.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.5f, 1.f), glm::vec3(1.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, 1.f, 0.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.5f, 0.f), glm::vec3(1.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, 1.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.5f, 0.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.5f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 1.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.5f, 1.f), glm::vec3(1.f, 1.f, 0.f), glm::vec3(0.f, 1.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.5f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f), 0));
 
 			// Bottom
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, -1.f, 0.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, -1.f, 0.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.f, 1.f), glm::vec3(1.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, -1.f, 0.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, -1.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f,  0.f, 0.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, -1.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f,  0.f, 1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, -1.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f,  0.f, 1.f), glm::vec3(1.f, 1.f, 0.f), glm::vec3(0.f, -1.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f,  0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(0.f, -1.f, 0.f), 0));
 
 			// Front
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.5f, 1.f), glm::vec3(0.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, 0.f, -1.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, 0.f, -1.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.f, 1.f), glm::vec3(1.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, 0.f, -1.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.5f, 1.f), glm::vec3(1.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, 0.f, -1.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.5f, 1.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, -1.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.f,  1.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 0.f, -1.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.f,  1.f), glm::vec3(1.f, 1.f, 0.f), glm::vec3(0.f, 0.f, -1.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.5f, 1.f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(0.f, 0.f, -1.f), 0));
 
 			// Back
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.5f, 0.f), glm::vec3(0.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, 0.f, 1.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, 0.f, 1.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, 0.f, 1.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.5f, 0.f), glm::vec3(1.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(0.f, 0.f, 1.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.5f, 0.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.f, 0.f),  glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 0.f, 1.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.f, 0.f),  glm::vec3(1.f, 1.f, 0.f), glm::vec3(0.f, 0.f, 1.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.5f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 1.f), 0));
 
 			// Left
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.5f, 1.f), glm::vec3(0.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(1.f, 0.f, 0.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(1.f, 0.f, 0.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.f, 0.f), glm::vec3(1.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(1.f, 0.f, 0.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.5f, 0.f), glm::vec3(1.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(1.f, 0.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.5f, 1.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.f, 1.f),  glm::vec3(0.f, 1.f, 0.f), glm::vec3(1.f, 0.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.f, 0.f),  glm::vec3(1.f, 1.f, 0.f), glm::vec3(1.f, 0.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(0.f, 0.5f, 0.f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 0.f, 0.f), 0));
 
 			// Right
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.5f, 0.f), glm::vec3(0.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(-1.f, 0.f, 0.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(-1.f, 0.f, 0.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.f, 1.f), glm::vec3(1.f, 1.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(-1.f, 0.f, 0.f), 0));
-			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.5f, 1.f), glm::vec3(1.f, 0.f, 0.f) * 255.f, (uint8_t)ConnectionType::CUSTOM_MODEL, glm::vec3(-1.f, 0.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.5f, 0.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(-1.f, 0.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.f,  0.f), glm::vec3(0.f, 1.f, 0.f), glm::vec3(-1.f, 0.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.f,  1.f), glm::vec3(1.f, 1.f, 0.f), glm::vec3(-1.f, 0.f, 0.f), 0));
+			slabMeshDown.vertices.emplace_back(Vertex(glm::vec3(1.f, 0.5f, 1.f), glm::vec3(1.f, 0.f, 0.f), glm::vec3(-1.f, 0.f, 0.f), 0));
 		}
 
 		// Common blocks
@@ -382,6 +376,8 @@ namespace wc {
 		BlockID sand = 0;
 		BlockID oak = 0;
 		BlockID leaves = 0;
+		BlockID coal = 0;
+		BlockID dirt = 0;
 
 		void Join(const std::string& ip, const std::string& playerName) {
 			if (multiPlayer) {
@@ -434,10 +430,18 @@ namespace wc {
 		}
 
 		uint32_t getScreen() { return finalImage; }
+
+		bool RectVsRect(const AABB& r1, const AABB& r2)
+		{
+			return (r1.position.x < r2.position.x + r2.size.x && r1.position.x + r1.size.x > r2.position.x &&
+					r1.position.y < r2.position.y + r2.size.y && r1.position.y + r1.size.y > r2.position.y &&
+					r1.position.z < r2.position.z + r2.size.z && r1.position.z + r1.size.z > r2.position.z
+				);
+		}
 		
 		void Update(const float& deltaTime) {
 			screen.Bind();
-			Renderer::Clear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+			glClear(GL_DEPTH_BUFFER_BIT);
 			// Multiplayer 
 			if (multiPlayer) {
 				if (clientInstance.IsConnected())
@@ -537,7 +541,7 @@ namespace wc {
 					// @WARN: glEnable(GL_DEPTH_TEST) might be needed
 					for (auto& player : players) {
 						if (player.second.nUniqueID != localPlayerID) {
-							DrawOutlineCube(player.second.Position - p.Size, p.Size * 2.f, glm::vec4(1.f));
+							lineBatcher.DrawOutlineCube(player.second.Position - p.Size, p.Size * 2.f, glm::vec4(1.f));
 						}
 					}
 				}
@@ -556,47 +560,52 @@ namespace wc {
 			}
 
 			// camera/view transformation
-			TransformData data;
-			data.windowSize = window.GetSize();
-			data.ViewProj = glm::perspective(glm::radians(camera.FOV), data.windowSize.x / data.windowSize.y, 0.1f, 1100.f) * camera.GetViewMatrix();
-			data.cameraPos = camera.Position;
-			data.lower_left_corner = camera.lower_left_corner;
-			data.vertical = camera.vertical;
-			data.horizontal = camera.horizontal;
-			data.numLights = currentLightID;
-			transforms.SetData(sizeof(TransformData), &data);
+			SceneData sceneData;
+			sceneData.windowSize = window.GetSize();
+			sceneData.ViewProj = glm::perspective(glm::radians(camera.FOV), sceneData.windowSize.x / sceneData.windowSize.y, 0.1f, 1100.f) * camera.GetViewMatrix();
+			sceneData.cameraPos = camera.Position;
+			sceneData.lower_left_corner = camera.lower_left_corner;
+			sceneData.vertical = camera.vertical;
+			sceneData.horizontal = camera.horizontal;
+			sceneData.numLights = currentLightID;
+			transforms.SetData(sizeof(SceneData), &sceneData);
 
 			lighting[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 0.f, 1.f)));
-			if (lightUpdate) {
-				lights.SetData(sizeof(Light) * currentLightID, lighting);
-				lightUpdate = false;
-			}
-			else 
-				lights.SetData(sizeof(Light), lighting);			
 
 			// Draw sky
+			glDisable(GL_DEPTH_TEST);
 			skyShader.use();
-			Renderer::DrawArrays(3);
+			glDrawArrays(GL_TRIANGLES, 0, 3);
 
 			glEnable(GL_DEPTH_TEST);
 
 			angle += deltaTime * rotateSpeed;
 			angle = glm::mod(angle, 360.f);
 
-			viewFrustum.update(data.ViewProj);
+			viewFrustum.update(sceneData.ViewProj);
 			uint32_t chunkHalf = chunkSize / 2;
-			glm::ivec3 currentPlayerPos2 = getChunkPos(p.Position); // @TODO: hmmm? why doesnt it work with glm::ivec3?
-			glm::vec3 currentPlayerPos = currentPlayerPos2;
+			glm::vec3 currentPlayerPos = getChunkPos(p.Position); // @TODO: hmmm? why doesnt it work with glm::ivec3?
 			for (ChunkID i = 0; i < chunks.size(); i++) {
 				glm::ivec3& currChunkPos = chunks[i].position;
-				if (currChunkPos.x < currentPlayerPos.x - chunkHalf) ResetChunk(i, glm::ivec3(currentPlayerPos.x + chunkHalf - 1, currChunkPos.y, currChunkPos.z));
-				if (currChunkPos.x > currentPlayerPos.x + chunkHalf) ResetChunk(i, glm::ivec3(currentPlayerPos.x - chunkHalf + 1, currChunkPos.y, currChunkPos.z));
+				glm::ivec3 newPosition = currChunkPos;
+					 if (currChunkPos.x < currentPlayerPos.x - chunkHalf) newPosition.x = currentPlayerPos.x + chunkHalf - 1;
+				else if (currChunkPos.x > currentPlayerPos.x + chunkHalf) newPosition.x = currentPlayerPos.x - chunkHalf + 1;
+				
+				else if (currChunkPos.y < currentPlayerPos.y - chunkHalf) newPosition.y = currentPlayerPos.y + chunkHalf - 1;
+				else if (currChunkPos.y > currentPlayerPos.y + chunkHalf) newPosition.y = currentPlayerPos.y - chunkHalf + 1;
+				
+				else if (currChunkPos.z < currentPlayerPos.z - chunkHalf) newPosition.z = currentPlayerPos.z + chunkHalf - 1;
+				else if (currChunkPos.z > currentPlayerPos.z + chunkHalf) newPosition.z = currentPlayerPos.z - chunkHalf + 1;
 
-				if (currChunkPos.y < currentPlayerPos.y - chunkHalf) ResetChunk(i, glm::ivec3(currChunkPos.x, currentPlayerPos.y + chunkHalf - 1, currChunkPos.z));
-				if (currChunkPos.y > currentPlayerPos.y + chunkHalf) ResetChunk(i, glm::ivec3(currChunkPos.x, currentPlayerPos.y - chunkHalf + 1, currChunkPos.z));
+				if (newPosition != currChunkPos) // Reset Chunk
+				{
+					SaveChunk(i);
+					chunks[i].position = newPosition;
+					UpdateNeighbours(i);
+					TryToLoadChunk(i);
 
-				if (currChunkPos.z < currentPlayerPos.z - chunkHalf) ResetChunk(i, glm::ivec3(currChunkPos.x, currChunkPos.y, currentPlayerPos.z + chunkHalf - 1));
-				if (currChunkPos.z > currentPlayerPos.z + chunkHalf) ResetChunk(i, glm::ivec3(currChunkPos.x, currChunkPos.y, currentPlayerPos.z - chunkHalf + 1));
+					chunks[i].canBeUpdated = true; // @TODO: try to remove this
+				}
 			}
 
 			if (generateTerrain) {
@@ -611,34 +620,47 @@ namespace wc {
 
 			assets.Bind();
 			chunkShader.use();
+			chunkMeshArray.Bind();
+			indirectBuffer.Bind();
 			for (ChunkID i = 0; i < chunks.size(); i++) {
 
-				if (chunks[i].canBeUpdated) { UpdateMesh(chunks[i]); chunks[i].canBeUpdated = false; }
+				if (chunks[i].canBeUpdated) { UpdateMesh(i); chunks[i].canBeUpdated = false; }
 			
-				if (chunks[i].IndexCount > 0 && viewFrustum.isBoxInFrustum(AABB(chunks[i].position * glm::ivec3(chunkSize), glm::vec3(chunkSize)))) {
-					chunkMeshArray.AddVertexBuffer(chunks[i].meshBuffer, sizeof(Vertex));
-					chunkMeshArray.AddIndexBuffer(chunks[i].indexBuffer);
-					chunkMeshArray.Bind();
-					Renderer::DrawIndexed(chunks[i].IndexCount);
-				}
+				if (!viewFrustum.isBoxInFrustum(AABB(chunks[i].position * glm::ivec3(chunkSize), glm::vec3(chunkSize)))) 
+					cmds[i].instanceCount = 0;				
+				else 
+					cmds[i].instanceCount = 1;
 			}
 
-			if (thirdPerson)
-				DrawOutlineCube(p.Position - p.Size, p.Size * 2.f, glm::vec4(2.f));
+			glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, chunks.size(), sizeof(gl::DrawElementsIndirectCommand));
+			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+
+			//if (thirdPerson)
+			//	lineBatcher.DrawOutlineCube(p.Position - p.Size, p.Size * 2.f, glm::vec4(2.f));
+
+			if (RectVsRect(box, AABB(p.Position - p.Size, p.Size * 2.f)))
+				lineBatcher.DrawOutlineCube(box, convertColor(0xFF33FF00) * glm::vec4(3.f));
+			else 
+				lineBatcher.DrawOutlineCube(box, convertColor(0xFF33FF00));
+
 			lineBatcher.Flush();
-#ifdef MODEL
+
 			modelShader.use();
 
-			//modelShader.setMat4Array(1, animation.GetPoseTransforms(), MAX_BONE_WEIGHTS);
-			
+			//animationBuffer.SetData(sizeof(glm::mat4) * MAX_BONE_WEIGHTS, animation.GetPoseTransforms());
+
 			// render the loaded model
 			//animation.Update(deltaTime);
-			//glm::mat4 Model = glm::mat4(1.f);
-			//Model = glm::translate(Model, modelPos);    // translate it down so it's at the center of the scene
-			//Model = glm::scale(Model, glm::vec3(0.3f));
-			//modelShader.setMat4(0, Model);
-			//model.Draw();
-#endif
+			glm::mat4 Model = glm::mat4(1.f);
+			Model = glm::translate(Model, p.Position - glm::vec3(0.f, p.Size.y, 0.f));    // translate it down so it's at the center of the scene
+			//Model = glm::scale(Model, glm::vec3(0.8f));
+			Model = glm::rotate(Model, glm::radians(camera.Yaw + 90.f), glm::vec3(0.f, -1.f, 0.f));
+
+			animationBuffer.SetData(sizeof(glm::mat4), glm::value_ptr(Model), sizeof(glm::mat4) * MAX_BONE_WEIGHTS);
+
+			if (thirdPerson)
+				model.Draw();
+
 			screen.unbind();
 			// GUI			
 
@@ -648,15 +670,14 @@ namespace wc {
 			scrTexture.Bind(1); // use the color attachment texture as the texture of the quad plane	
 			bloomBuffers[2].Bind(2);
 			compositeShader.use();
-			compositeShader.Dispatch(glm::ceil((glm::vec2)data.windowSize / glm::vec2(m_BloomComputeWorkGroupSize)));
+			compositeShader.Dispatch(glm::ceil((glm::vec2)sceneData.windowSize / glm::vec2(m_BloomComputeWorkGroupSize)));
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-			Renderer2D::DrawQuad({ 0,0 }, data.windowSize, finalImage);
-			glm::vec2 pos = (data.windowSize - 15.f) / 2.f;
-			//Renderer2D::DrawQuad(pos, {15, 15}, render_interface.whiteTexture);
+			render_interface.DrawQuad({ 0,0 }, sceneData.windowSize, finalImage);
+			glm::vec2 pos = (sceneData.windowSize - 15.f) / 2.f;
+			render_interface.DrawQuad(pos, {15, 15}, render_interface.whiteTexture);
 		}
 
-		bool thirdPerson = false;
 
 		void ParseCommand(std::string& command) {
 			// Command parsing
@@ -676,25 +697,6 @@ namespace wc {
 			else if (commandType == CommandType::setSpeed) p.MovementSpeed = getArgument(args, 0);
 			else if (commandType == CommandType::setTime) angle = getArgument(args, 0);
 			else if (commandType == CommandType::getBlockID) WC_INFO(getBlock({ getArgument(args, 0) , getArgument(args, 1) , getArgument(args, 2) }));
-			else if (commandType == CommandType::capture) {
-				glm::vec3 startPos = p.Position - p.Size;
-				glm::vec3 endPos = p.Position + p.Size;
-				WC_INFO("Normal pos: {0} {1} {2}", (int)startPos.x, (int)startPos.y, (int)startPos.z);
-				WC_INFO("Normal pos: {0} {1} {2}", (int)endPos.x, (int)endPos.y, (int)endPos.z);
-
-				p.Position = -p.Position;
-
-				startPos = p.Position - p.Size;
-				endPos = p.Position + p.Size;
-				WC_INFO("Flipped pos: {0} {1} {2}", (int)startPos.x, (int)startPos.y, (int)startPos.z);
-				WC_INFO("Flipped pos: {0} {1} {2}", (int)endPos.x, (int)endPos.y, (int)endPos.z);
-
-				p.Position = -p.Position;
-			}
-#ifdef MODEL
-			else if (commandType == CommandType::tpModel)
-				modelPos = p.Position;
-#endif
 			else if (commandType == CommandType::UNKNOWN) WC_ERROR("Unknow command!");
 			command = "";
 		}
@@ -795,16 +797,7 @@ namespace wc {
 			if (!p.flying)
 				p.velocity.y -= gravity * deltaTime;
 
-			float velocityY = p.velocity.y;
-			if (p.collision) {
-				p.Position.x += p.velocity.x * deltaTime;
-				collide({ p.velocity.x,0.f,0.f });
-				p.Position.y += p.velocity.y * deltaTime;
-				collide({ 0.f,p.velocity.y,0.f });
-				p.Position.z += p.velocity.z * deltaTime;
-				collide({ 0.f,0.f,p.velocity.z });
-			}
-			else p.Position += p.velocity * deltaTime;
+			p.Position += p.velocity * deltaTime;
 
 			if (!p.wasFalling && p.isFalling()) p.startOfFall = p.Position.y;
 			if (!p.wasOnGround && p.m_isOnGround) 
@@ -828,9 +821,18 @@ namespace wc {
 
 			camera.Update();
 
-			bool bBreak = Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT)  == GLFW_PRESS;
-			bool bPlace = Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
-			
+			bool bBreak = Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT);
+			bool bPlace = Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT);
+
+			float breakTime = 1.f / 12.f;
+			if (bBreak && !startBreaking) {
+				startBreaking = true;
+				blockBreakTimer.Start();
+			}
+
+			glm::vec4 color = glm::vec4(1.f);
+			if (startBreaking) color = glm::mix(glm::vec4(1.f), glm::vec4(1.f, 0.f, 1.f, 1.f), blockBreakTimer.getElapsedTime() / breakTime);
+
 			float fMaxDistance = 6.f;
 
 			glm::ivec3 vMapCheck = glm::floor(vRayStart), vMapLastCheck = glm::floor(vRayStart), vStep = glm::ivec3(0);
@@ -872,23 +874,26 @@ namespace wc {
 				Block& block = blockData[blockID];
 				if (blockID > 0 && block.connectionType != ConnectionType::FLUID_CONNECT)
 				{
-
-					DrawOutlineCube(vMapCheck, glm::vec3(1.f), glm::vec4(1.f));
-					DrawOutlineCube(vRayStart + vRayDir * fDistance - glm::vec3(0.05f), glm::vec3(0.1f), glm::vec4(1.f));
-					if (bBreak) {
+					if (breakPos != vMapCheck) {
+						startBreaking = false;
+						breakPos = vMapCheck;
+					}
+					lineBatcher.DrawOutlineCube(vMapCheck, glm::vec3(1.f), color);
+					//DrawOutlineCube(vRayStart + vRayDir * fDistance - glm::vec3(0.05f), glm::vec3(0.1f), glm::vec4(1.f));
+					if (blockBreakTimer.getElapsedTime() >= breakTime && startBreaking) {
 						//p.inventory.AddItem(block - 1, p.currentSlot);
 						setBlock(vMapCheck, 0, true, true);
+						startBreaking = false;
 					}
 					else if (bPlace) {
 						//ItemID itemID = p.inventory.data[p.currentSlot].itemID;
 						//if (p.inventory.RemoveItem(p.currentSlot))
-							setBlock(vMapLastCheck, /*items[itemID].block*/1, true, true);
+							setBlock(vMapLastCheck, /*items[itemID].block*/coal, true, true);
 					}
 					bTileFound = true;
 				}	
 				vMapLastCheck = vMapCheck;
 			}
-			lineBatcher.DrawLine(vRayStart, vRayStart + vRayDir * fDistance);
 		}
 
 		void Destroy() {
@@ -896,40 +901,7 @@ namespace wc {
 			else SaveWorld();
 		}
 
-	private:
-
-		void collide(const glm::vec3& vel) {
-			glm::vec3 startPos = glm::floor(p.Position - p.Size);
-			glm::vec3 endPos = p.Position + p.Size;
-
-			for (int x = startPos.x; x < endPos.x; x++)
-			for (int y = startPos.y; y < endPos.y; y++)
-			for (int z = startPos.z; z < endPos.z; z++) {
-				BlockID blockID = getBlock(glm::ivec3(x, y, z));
-				Block block = blockData[blockID];
-				if (blockID != 0u && block.isCollidable) {
-					if (vel.y > 0) {
-						p.Position.y = y - p.Size.y;
-						p.velocity.y = 0.f;
-					}
-					else if (vel.y < 0) {
-						p.m_isOnGround = true;
-						p.Position.y = y + p.Size.y + blockSize;
-						p.velocity.y = 0.f;
-					}
-
-					if (vel.x > 0)
-						p.Position.x = x - p.Size.x;
-					else if (vel.x < 0)
-						p.Position.x = x + p.Size.x + blockSize;
-
-					if (vel.z > 0)
-						p.Position.z = z - p.Size.z;
-					else if (vel.z < 0)
-						p.Position.z = z + p.Size.z + blockSize;
-				}
-			}
-		}		
+	private:	
 
 		std::string getChunkPath(const glm::ivec3& pos) {
 			return "worlds/" + worldName + "/Chunk data/Island 0/r." + std::to_string(pos.x) + "." + std::to_string(pos.y) + "." + std::to_string(pos.z) + ".ewr";
@@ -1074,6 +1046,10 @@ namespace wc {
 
 		void GenerateChunkTerrain(const ChunkID& chunk) {
 				memset(&chunks[chunk].data, 0, sizeof(chunks[chunk].data));
+				auto setBlockTerrain = [&](const glm::ivec3& pos, const BlockID& blockID) {
+					chunks[chunk].data[pos.x][pos.y][pos.z] = blockID;
+				};
+
 				concurrency::parallel_for(uint32_t(0), (uint32_t)chunkSize, [&](uint32_t z){
 					for (uint32_t x = 0; x < chunkSize; x++) {
 						glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
@@ -1090,19 +1066,30 @@ namespace wc {
 								bool onSand = (pos.y <= water_level + (int)(floraGen * 3.f) && pos.y == heightMap);
 								if (pos.y == heightMap) {
 									if (onSand)
-										setBlockLocal(glm::ivec3(x, y, z), sand, chunk, false, false);
+										setBlockTerrain(glm::ivec3(x, y, z), sand);
 									else 
-										setBlockLocal(glm::ivec3(x, y, z), grass, chunk, false, false);
+										setBlockTerrain(glm::ivec3(x, y, z), grass);
 								}
 								
-								if (pos.y < heightMap && pos.y >= heightMap - dirtDepth) setBlockLocal(glm::ivec3(x, y, z), 2, chunk, false, false);
-								if (pos.y < heightMap - dirtDepth) setBlockLocal(glm::ivec3(x, y, z), stone, chunk, false, false);
-								if (pos.y > heightMap && pos.y < water_level) setBlockLocal(glm::ivec3(x, y, z), water, chunk, false, false);
-								//if (pos.y == 125) setBlockLocal(glm::ivec3(x, y, z), grass, chunk, false, false);
+								if (pos.y < heightMap && pos.y >= heightMap - dirtDepth) setBlockTerrain(glm::ivec3(x, y, z), dirt);
+								if (pos.y < heightMap - dirtDepth) setBlockTerrain(glm::ivec3(x, y, z), stone);
+								if (pos.y > heightMap && pos.y < water_level) setBlockTerrain(glm::ivec3(x, y, z), water);
+								//if (pos.y == 125) setBlockTerrain(glm::ivec3(x, y, z), grass, chunk, false, false);
 						}
 					}
 					return;
 				});
+
+				chunks[chunk].canBeUpdated = true;
+
+
+				{ int16_t neg = chunks[chunk].neighborNeg[0]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
+				{ int16_t neg = chunks[chunk].neighborNeg[1]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
+				{ int16_t neg = chunks[chunk].neighborNeg[2]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
+
+				{ int16_t Pos = chunks[chunk].neighborPos[0]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
+				{ int16_t Pos = chunks[chunk].neighborPos[1]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
+				{ int16_t Pos = chunks[chunk].neighborPos[2]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
 		}
 
 		void GenerateChunkStructures(const ChunkID& chunk) {
@@ -1139,21 +1126,19 @@ namespace wc {
 		// LIGHT MANAGING
 		uint32_t addLight(const glm::vec3& position, const uint32_t& color) {
 			uint32_t light = currentLightID;
-			if (currentLightID <= ARRAYSIZE(lighting)) {
+			if (currentLightID <= maxLights) {
 				lighting[currentLightID].vector = position;
 				lighting[currentLightID].color = color;
 				currentLightID++;
-				lightUpdate = true;
 			}
 			return light;
 		}
 
 		void removeLight(const glm::vec3& position) {
-			for (uint32_t i = 0u; i < ARRAYSIZE(lighting); i++)
+			for (uint32_t i = 0; i < maxLights; i++)
 				if (lighting[i].vector == position) {
 					currentLightID--;
 					lighting[i] = lighting[currentLightID];
-					lightUpdate = true;
 					break;
 				}
 		}
@@ -1195,15 +1180,15 @@ namespace wc {
 			if (chunk > -1) setBlockLocal(getBlockPos(pos), block, chunk, playerEdited, replyToServer);
 		}	
 
-		void UpdateMesh(Chunk& chunk) {
+		void UpdateMesh(const ChunkID& chunkID) {
 			uint32_t offset = 0;
-			chunk.IndexCount = 0;
-			//WC_INFO(chunk.IndexCount);
-			uint32_t ioffset = 0;
+			Chunk& chunk = chunks[chunkID];
+			cmds[chunkID].count = 0;
 
 			glm::ivec3 chunkPos = chunk.position * glm::ivec3(chunkSize);
-			Vertex* vertices = (Vertex*)chunk.meshBuffer.Map(GL_WRITE_ONLY);
-			uint32_t* indices = (uint32_t*)chunk.indexBuffer.Map(GL_WRITE_ONLY);
+
+			Vertex* vertices = (Vertex*)(globalVertices + chunkID * MaxVertexCount);
+			uint32_t* indices = (uint32_t*)(globalIndices + chunkID * MaxIndexCount);
 
 			const uint32_t indexArray[] = {
 				0, 1, 2,
@@ -1279,28 +1264,23 @@ namespace wc {
 							// The mask is set to true if there is a visible face between two blocks, i.e. both aren't empty and both aren't blocks
 
 							if (type == ConnectionType::CUSTOM_MODEL) {
-								if (chunk.IndexCount < MaxFaceCount * 6) {
+								if (cmds[chunkID].count < MaxIndexCount) {
 									Block& block = blockData[blockID];
+									BlockMesh& mesh = blockMeshes[block.meshID];
 
-									if (blockMeshes[block.meshID].optimize) {
-
+									for (uint32_t i = 0; i < mesh.vertices.size(); i++) {
+										Vertex& vertex = vertices[i + offset];
+										vertex.Position = mesh.vertices[i].Position + glm::vec3(chunkPos + x);
+										vertex.TexCoords = mesh.vertices[i].TexCoords;
+										vertex.Normal = mesh.vertices[i].Normal;
+										vertex.materialID = blockData[blockID].material;
 									}
-									else {
-										//for (uint32_t i = 0; i < blockMeshes[block.meshID].vertices.size(); i++) {
-										//	glm::vec2 texCoords = convertColor(blockMeshes[block.meshID].vertices[i].TexCoords);
-										//	vertices[i + offset] = Vertex(
-										//		blockMeshes[block.meshID].vertices[i].Position + glm::vec3(chunkPos + x),
-										//		{ texCoords, block.texture[(int)BlockTexture::TOP] }, block.connectionType, 
-										//		blockMeshes[block.meshID].vertices[i].Normal, 0);
-										//}
-										//
-										//for (uint32_t i = 0; i < blockMeshes[block.meshID].indices.size(); i++)
-										//	indices[chunk.IndexCount + i] = blockMeshes[block.meshID].indices[i] + ioffset;
-									}
+									
+									for (uint32_t i = 0; i < mesh.indices.size(); i++)
+										indices[cmds[chunkID].count + i] = mesh.indices[i] + offset;
 
-									ioffset += blockMeshes[block.meshID].vertices.size();
-									chunk.IndexCount += blockMeshes[block.meshID].indices.size();
-									offset += blockMeshes[block.meshID].vertices.size();									
+									cmds[chunkID].count += mesh.indices.size();
+									offset += mesh.vertices.size();
 								}
 							}
 							
@@ -1390,7 +1370,7 @@ namespace wc {
 									std::swap(h1, w1);
 								}
 								face.CalculateNormal();
-								if (chunk.IndexCount < MaxFaceCount * 6) {
+								if (cmds[chunkID].count < MaxIndexCount) {
 									BlockID blockID = mask[n] - 1;
 									glm::vec2 TexCoords[] = {
 										glm::vec2(0.f, 0.f),
@@ -1400,13 +1380,12 @@ namespace wc {
 									};
 
 									for (uint32_t i = 0; i < ARRAYSIZE(face.corner); i++)
-										vertices[i + offset] = Vertex(face.corner[i] + (glm::vec3)chunkPos, { TexCoords[i], textureMask[n] }, blockData[blockID].connectionType, face.normal, blockData[blockID].material);
+										vertices[i + offset] = Vertex(face.corner[i] + (glm::vec3)chunkPos, { TexCoords[i], textureMask[n] }, face.normal, blockData[blockID].material);
 
 									for (uint32_t i = 0; i < ARRAYSIZE(indexArray); i++)
-										indices[chunk.IndexCount + i] = indexArray[i] + ioffset;
+										indices[cmds[chunkID].count + i] = indexArray[i] + offset;
 
-									ioffset += ARRAYSIZE(face.corner);
-									chunk.IndexCount += ARRAYSIZE(indexArray);
+									cmds[chunkID].count += ARRAYSIZE(indexArray);
 									offset += ARRAYSIZE(face.corner);
 								}
 								// Clear this part of the mask, so we don't add duplicate faces
@@ -1429,11 +1408,6 @@ namespace wc {
 					}
 				}
 			}
-
-			//WC_WARN(chunk.IndexCount);
-
-			chunk.meshBuffer.UnMap();
-			chunk.indexBuffer.UnMap();
 		}
 		 
 		BlockID getBlock(const glm::ivec3& pos) {
@@ -1449,15 +1423,6 @@ namespace wc {
 						return i;				
 			}
 			return -1;
-		}
-
-		void ResetChunk(const ChunkID& chunkID, const glm::ivec3& newChunkPos) {
-			SaveChunk(chunkID);
-			chunks[chunkID].position = newChunkPos;
-			UpdateNeighbours(chunkID);
-			TryToLoadChunk(chunkID);
-
-			chunks[chunkID].canBeUpdated = true; // @TODO: try to remove this
 		}
 
 		void UpdateNeighbours(const ChunkID& chunk) {
@@ -1534,25 +1499,7 @@ namespace wc {
 					counter++;
 				}
 			}
-		}
-
-		void DrawOutlineCube(const glm::vec3& pos, const glm::vec3& size, const glm::vec4& color) {
-			lineBatcher.DrawLine(pos,								   pos + glm::vec3(0.f,    size.y, 0.f),    color);
-			lineBatcher.DrawLine(pos,								   pos + glm::vec3(size.x, 0.f,    0.f),    color);
-			lineBatcher.DrawLine(pos + glm::vec3(size.x, 0.f,    0.f), pos + glm::vec3(size.x, size.y, 0.f),    color);
-			lineBatcher.DrawLine(pos + glm::vec3(size.x, size.y, 0.f), pos + glm::vec3(0.f,    size.y, 0.f),    color);
-																									        
-			lineBatcher.DrawLine(pos + glm::vec3(0.f, 0.f,    size.z), pos + glm::vec3(0.f,    size.y, size.z), color);
-			lineBatcher.DrawLine(pos + glm::vec3(0.f, 0.f,    size.z), pos + glm::vec3(size.x, 0.f,    size.z), color);
-			lineBatcher.DrawLine(pos + glm::vec3(size.x, 0.f, size.z), pos + glm::vec3(size.x, size.y, size.z), color);
-			lineBatcher.DrawLine(pos + size,                           pos + glm::vec3(0.f,    size.y, size.z), color);
-
-			lineBatcher.DrawLine(pos + glm::vec3(0.f, 0.f,    size.z), pos,                                     color);
-			lineBatcher.DrawLine(pos + glm::vec3(size.x, 0.f, size.z), pos + glm::vec3(size.x, 0.f, 0.f),       color);
-
-			lineBatcher.DrawLine(pos + glm::vec3(0.f, size.y, size.z), pos + glm::vec3(0.f,    size.y, 0.f),	color);
-			lineBatcher.DrawLine(pos + size,						   pos + glm::vec3(size.x, size.y, 0.f),	color);
-		}
+		}		
 
 		// BLOOM
 		void RenderBloom()

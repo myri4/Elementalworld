@@ -1,9 +1,9 @@
 MovementSpeed: 4
-rotation: [320.600098, -41.4226112]
+rotation: [8.13332939, -47.7110519]
 currentSlot: 0
-position: [103.855728, 47.3563995, -84.766861]
-flying: 0
-collision: 1
-velocity: [0, -0.79712218, 0]
+position: [56.8570251, 59.4043541, -29.5884285]
+flying: 1
+collision: 0
+velocity: [0, 0, 0]
 acceleration: [0, 0, 0]
-health: 5.5
+health: 10
