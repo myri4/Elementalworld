@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "../../src/world/Block.hpp"
+#include "../../src/world/Block.h"
 
 namespace wc {
 	namespace mem {

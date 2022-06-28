@@ -1,14 +1,5 @@
-[06/19/22 13:48:36][error] APP: [API] Unknown internal debug message. The NVIDIA OpenGL driver has encountered
-an out of memory error. This application might
-behave inconsistently and fail.
-(pid=8816 elementalworld.exe 32bit)
-[06/19/22 13:48:36][error] APP: [API] GL_OUT_OF_MEMORY error generated. Failed to allocate CPU address space mapping for buffer object (consider building 64-bit app).
-[06/19/22 13:48:36][error] APP: [API] Unknown internal debug message. The NVIDIA OpenGL driver has encountered
-an out of memory error. This application might
-behave inconsistently and fail.
-(pid=8816 elementalworld.exe 32bit)
-[06/19/22 13:48:36][error] APP: [API] GL_OUT_OF_MEMORY error generated. Failed to map buffer.
-[06/19/22 13:48:36][info] APP: Loading Lua plugin using the provided Lua state.
-[06/19/22 13:48:36][info] APP: Loaded font face 'rmlui-debugger-font' [regular] from 'memory'.
-[06/19/22 13:48:36][info] APP: Loaded font face 'rmlui-debugger-font' [italic] from 'memory'.
-[06/19/22 13:48:36][info] APP: Loaded font face 'Minecraft' [regular] from 'resourcepacks/default/font/Minecraft.ttf'.
+[06/28/22 19:25:48][info] APP: Loading Lua plugin using the provided Lua state.
+[06/28/22 19:25:48][info] APP: Loaded font face 'rmlui-debugger-font' [regular] from 'memory'.
+[06/28/22 19:25:48][info] APP: Loaded font face 'rmlui-debugger-font' [italic] from 'memory'.
+[06/28/22 19:25:48][info] APP: Loaded font face 'Minecraft' [weight=500] from 'resourcepacks/default/font/Minecraft.ttf'.
+[06/28/22 19:25:48][warning] APP: Syntax error parsing property declaration 'position: auto;' in resourcepacks/default/gui/gui.css: 45.

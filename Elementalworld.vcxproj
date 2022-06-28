@@ -107,7 +107,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
@@ -128,7 +128,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)common;$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
@@ -180,7 +180,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>liblua54.a;glfw3.lib;assimp-vc142-mt.lib;RmlCore.lib;RmlDebugger.lib;RmlLua.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua54.lib;glfw3.lib;assimp-vc143-mt.lib;RmlCore.lib;RmlDebugger.lib;RmlLua.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dist|Win32'">
@@ -244,7 +244,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>liblua54.a;glfw3.lib;assimp-vc142-mt.lib;RmlCore.lib;RmlDebugger.lib;RmlLua.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua54.lib;glfw3.lib;assimp-vc143-mt.lib;RmlCore.lib;RmlDebugger.lib;RmlLua.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
@@ -308,87 +308,50 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.hpp" />
-    <ClInclude Include="src\entities\Entity.hpp" />
-    <ClInclude Include="src\entities\Player.hpp" />
-    <ClInclude Include="src\Game Mechanics\CommandParser.hpp" />
-    <ClInclude Include="src\Game Mechanics\Inventory.hpp" />
-    <ClInclude Include="src\Game Mechanics\Item.hpp" />
-    <ClInclude Include="src\Game Mechanics\LineBatcher.hpp" />
-    <ClInclude Include="src\world\Biome.hpp" />
-    <ClInclude Include="src\world\Block.hpp" />
-    <ClInclude Include="src\world\Chunk.hpp" />
-    <ClInclude Include="src\world\World.hpp" />
-    <ClInclude Include="vendor\Include\gl\Buffer.hpp" />
+    <ClInclude Include="src\entities\Entity.h" />
+    <ClInclude Include="src\entities\Player.h" />
+    <ClInclude Include="src\Game Mechanics\CommandParser.h" />
+    <ClInclude Include="src\Game Mechanics\Inventory.h" />
+    <ClInclude Include="src\Game Mechanics\Item.h" />
+    <ClInclude Include="src\Game Mechanics\LineBatcher.h" />
+    <ClInclude Include="src\world\Biome.h" />
+    <ClInclude Include="src\world\Block.h" />
+    <ClInclude Include="src\world\Chunk.h" />
+    <ClInclude Include="src\world\World.h" />
+    <ClInclude Include="vendor\Include\gl\Buffer.h" />
+    <ClInclude Include="vendor\Include\gl\CommandBuffer.h" />
     <ClInclude Include="vendor\Include\gl\Fence.h" />
-    <ClInclude Include="vendor\Include\gl\FrameBuffer.hpp" />
-    <ClInclude Include="vendor\Include\gl\Shaders.hpp" />
-    <ClInclude Include="vendor\Include\gl\Texture.hpp" />
-    <ClInclude Include="vendor\Include\gl\TextureArray.hpp" />
-    <ClInclude Include="vendor\Include\gl\VertexArray.hpp" />
-    <ClInclude Include="vendor\Include\GUI\AssetManager.hpp" />
-    <ClInclude Include="vendor\Include\GUI\GUI.hpp" />
-    <ClInclude Include="vendor\Include\Maths\AssimpGLMHelpers.hpp" />
-    <ClInclude Include="vendor\Include\Maths\Camera.hpp" />
-    <ClInclude Include="vendor\Include\Maths\Frustum.hpp" />
-    <ClInclude Include="vendor\Include\Maths\Ray.hpp" />
-    <ClInclude Include="vendor\Include\net\message.hpp" />
-    <ClInclude Include="vendor\Include\net\net_client.hpp" />
-    <ClInclude Include="vendor\Include\net\net_common.hpp" />
-    <ClInclude Include="vendor\Include\net\net_connection.hpp" />
-    <ClInclude Include="vendor\Include\net\net_server.hpp" />
-    <ClInclude Include="vendor\Include\net\tsqueue.hpp" />
-    <ClInclude Include="vendor\Include\net\wc_net.hpp" />
-    <ClInclude Include="vendor\Include\Utils\Bits.hpp" />
-    <ClInclude Include="vendor\Include\Utils\List.hpp" />
-    <ClInclude Include="vendor\Include\Utils\Log.hpp" />
+    <ClInclude Include="vendor\Include\gl\FrameBuffer.h" />
+    <ClInclude Include="vendor\Include\gl\Shaders.h" />
+    <ClInclude Include="vendor\Include\gl\Texture.h" />
+    <ClInclude Include="vendor\Include\gl\TextureArray.h" />
+    <ClInclude Include="vendor\Include\GUI\AssetManager.h" />
+    <ClInclude Include="vendor\Include\GUI\GUI.h" />
+    <ClInclude Include="vendor\Include\Maths\AssimpGLMHelpers.h" />
+    <ClInclude Include="vendor\Include\Maths\Camera.h" />
+    <ClInclude Include="vendor\Include\Maths\Frustum.h" />
+    <ClInclude Include="vendor\Include\net\message.h" />
+    <ClInclude Include="vendor\Include\net\net_client.h" />
+    <ClInclude Include="vendor\Include\net\net_common.h" />
+    <ClInclude Include="vendor\Include\net\net_connection.h" />
+    <ClInclude Include="vendor\Include\net\net_server.h" />
+    <ClInclude Include="vendor\Include\net\tsqueue.h" />
+    <ClInclude Include="vendor\Include\net\wc_net.h" />
+    <ClInclude Include="vendor\Include\Utils\Bits.h" />
+    <ClInclude Include="vendor\Include\Utils\List.h" />
+    <ClInclude Include="vendor\Include\Utils\Log.h" />
     <ClInclude Include="vendor\Include\Utils\Memory.h" />
-    <ClInclude Include="vendor\Include\Utils\NonCopyable.hpp" />
-    <ClInclude Include="vendor\Include\Utils\Random.hpp" />
-    <ClInclude Include="vendor\Include\Utils\State.hpp" />
-    <ClInclude Include="vendor\Include\Utils\Time.hpp" />
-    <ClInclude Include="vendor\Include\Utils\Window.hpp" />
-    <ClInclude Include="vendor\Include\Utils\YAML.hpp" />
-    <ClInclude Include="vendor\Include\wc\Model\Animation.hpp" />
-    <ClInclude Include="vendor\Include\wc\Model\Bone.hpp" />
-    <ClInclude Include="vendor\Include\wc\Model\Mesh.hpp" />
-    <ClInclude Include="vendor\Include\wc\Model\Model.hpp" />
-    <ClInclude Include="vendor\Include\wc\pch.hpp" />
-    <ClInclude Include="vendor\Include\yaml-cpp\anchor.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\binary.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\contrib\anchordict.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\contrib\graphbuilder.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\depthguard.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\dll.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\emitfromevents.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\emitter.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\emitterdef.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\emittermanip.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\emitterstyle.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\eventhandler.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\exceptions.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\mark.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\convert.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\iterator.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\iterator_fwd.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\memory.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\node.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\node_data.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\node_iterator.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\node_ref.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\emit.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\impl.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\iterator.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\node.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\parse.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\ptr.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\node\type.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\noexcept.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\null.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\ostream_wrapper.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\parser.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\stlemitter.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\traits.h" />
-    <ClInclude Include="vendor\Include\yaml-cpp\yaml.h" />
+    <ClInclude Include="vendor\Include\Utils\NonCopyable.h" />
+    <ClInclude Include="vendor\Include\Utils\Random.h" />
+    <ClInclude Include="vendor\Include\Utils\State.h" />
+    <ClInclude Include="vendor\Include\Utils\Time.h" />
+    <ClInclude Include="vendor\Include\Utils\Window.h" />
+    <ClInclude Include="vendor\Include\Utils\YAML.h" />
+    <ClInclude Include="vendor\Include\wc\Model\Animation.h" />
+    <ClInclude Include="vendor\Include\wc\Model\Bone.h" />
+    <ClInclude Include="vendor\Include\wc\Model\Mesh.h" />
+    <ClInclude Include="vendor\Include\wc\Model\Model.h" />
+    <ClInclude Include="vendor\Include\wc\pch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

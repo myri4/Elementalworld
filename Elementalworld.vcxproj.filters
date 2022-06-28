@@ -122,247 +122,136 @@
     <ClInclude Include="src\Application.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\world\Biome.hpp">
+    <ClInclude Include="src\world\Biome.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\world\Block.hpp">
+    <ClInclude Include="src\world\Block.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\world\Chunk.hpp">
+    <ClInclude Include="src\world\Chunk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\world\World.hpp">
+    <ClInclude Include="src\world\World.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game Mechanics\CommandParser.hpp">
+    <ClInclude Include="src\Game Mechanics\CommandParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game Mechanics\Inventory.hpp">
+    <ClInclude Include="src\Game Mechanics\Inventory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game Mechanics\Item.hpp">
+    <ClInclude Include="src\Game Mechanics\Item.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game Mechanics\LineBatcher.hpp">
+    <ClInclude Include="src\Game Mechanics\LineBatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\entities\Entity.hpp">
+    <ClInclude Include="src\entities\Entity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\entities\Player.hpp">
+    <ClInclude Include="src\entities\Player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\gl\Buffer.hpp">
+    <ClInclude Include="vendor\Include\gl\Buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\gl\FrameBuffer.hpp">
+    <ClInclude Include="vendor\Include\gl\FrameBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\gl\Shaders.hpp">
+    <ClInclude Include="vendor\Include\gl\Shaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\gl\Texture.hpp">
+    <ClInclude Include="vendor\Include\gl\Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\gl\TextureArray.hpp">
+    <ClInclude Include="vendor\Include\gl\TextureArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\gl\VertexArray.hpp">
+    <ClInclude Include="vendor\Include\GUI\AssetManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\GUI\AssetManager.hpp">
+    <ClInclude Include="vendor\Include\GUI\GUI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\GUI\GUI.hpp">
+    <ClInclude Include="vendor\Include\Maths\AssimpGLMHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\Maths\AssimpGLMHelpers.hpp">
+    <ClInclude Include="vendor\Include\Maths\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\Maths\Camera.hpp">
+    <ClInclude Include="vendor\Include\Maths\Frustum.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\Maths\Frustum.hpp">
+    <ClInclude Include="vendor\Include\net\message.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\Maths\Ray.hpp">
+    <ClInclude Include="vendor\Include\net\net_client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\net\message.hpp">
+    <ClInclude Include="vendor\Include\net\net_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\net\net_client.hpp">
+    <ClInclude Include="vendor\Include\net\net_connection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\net\net_common.hpp">
+    <ClInclude Include="vendor\Include\net\net_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\net\net_connection.hpp">
+    <ClInclude Include="vendor\Include\net\tsqueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\net\net_server.hpp">
+    <ClInclude Include="vendor\Include\net\wc_net.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\net\tsqueue.hpp">
+    <ClInclude Include="vendor\Include\Utils\Bits.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\net\wc_net.hpp">
+    <ClInclude Include="vendor\Include\Utils\List.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\Utils\Bits.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\Utils\List.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\Utils\Log.hpp">
+    <ClInclude Include="vendor\Include\Utils\Log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\Include\Utils\Memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\Utils\NonCopyable.hpp">
+    <ClInclude Include="vendor\Include\Utils\NonCopyable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\Utils\Random.hpp">
+    <ClInclude Include="vendor\Include\Utils\Random.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\Utils\State.hpp">
+    <ClInclude Include="vendor\Include\Utils\State.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\Utils\Time.hpp">
+    <ClInclude Include="vendor\Include\Utils\Time.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\Utils\Window.hpp">
+    <ClInclude Include="vendor\Include\Utils\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\Utils\YAML.hpp">
+    <ClInclude Include="vendor\Include\Utils\YAML.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\Model\Animation.hpp">
+    <ClInclude Include="vendor\Include\wc\Model\Animation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\Model\Bone.hpp">
+    <ClInclude Include="vendor\Include\wc\Model\Bone.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\Model\Mesh.hpp">
+    <ClInclude Include="vendor\Include\wc\Model\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\Model\Model.hpp">
+    <ClInclude Include="vendor\Include\wc\Model\Model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\pch.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\anchor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\binary.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\depthguard.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\dll.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\emitfromevents.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\emitter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\emitterdef.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\emittermanip.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\emitterstyle.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\eventhandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\exceptions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\mark.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\noexcept.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\null.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\ostream_wrapper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\parser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\stlemitter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\traits.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\yaml.h">
+    <ClInclude Include="vendor\Include\wc\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\Include\gl\Fence.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\iterator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\iterator_fwd.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\memory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\node_data.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\node_iterator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\detail\node_ref.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\convert.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\emit.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\impl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\iterator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\parse.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\ptr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\node\type.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\contrib\anchordict.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\yaml-cpp\contrib\graphbuilder.h">
+    <ClInclude Include="vendor\Include\gl\CommandBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

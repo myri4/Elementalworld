@@ -1,6 +1,6 @@
 #pragma once
 #define GLM_FORCE_INTRINSICS 
-#include "world/World.hpp"
+#include "world/World.h"
 
 void GLAPIENTRY OpenGLDebugMessege(uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int length, const char* message, const void* userParam) {
 	const char* src;
@@ -115,6 +115,7 @@ namespace wc {
 			}
 			// ------------
 			glEnable(GL_BLEND);
+			glEnable(GL_LINE_SMOOTH);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 			world.CreateScreen();
@@ -128,7 +129,7 @@ namespace wc {
 			render_interface.Create();
 			Rml::SetRenderInterface(&render_interface);
 			Rml::SetSystemInterface(&system_interface);
-			system_interface.window = window;
+			system_window = window;
 			// Now we can initialize RmlUi.
 			Rml::Initialise();
 			

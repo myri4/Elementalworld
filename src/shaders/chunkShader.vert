@@ -36,7 +36,8 @@ void main()
 
 	v_TexCoords = a_TexCoord;
     type = materials[a_MaterialID].flags;
-    if (type == 11) currentVertex += transforms[gl_InstanceID].xyz;
+    //if (type == 11) 
+    currentVertex += transforms[gl_InstanceID + transformOffset].xyz;
 
     p0 = currentVertex;
 	gl_Position = u_ViewProjection * vec4(currentVertex, 1.f);
