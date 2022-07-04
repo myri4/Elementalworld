@@ -1,6 +1,6 @@
 #pragma once
 
-#include <wc/pch.h>
+#include <pch.h>
 #include <magic_enum.hpp>
 
 namespace wc {

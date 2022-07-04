@@ -1,4 +1,5 @@
-﻿#include "Application.hpp"
+﻿#define GLM_FORCE_INTRINSICS 
+#include "Application.hpp"
 
 //DANGEROUS!
 #define STB_IMAGE_IMPLEMENTATION

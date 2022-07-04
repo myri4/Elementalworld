@@ -1,5 +1,4 @@
 #pragma once
-#define GLM_FORCE_INTRINSICS 
 #include "world/World.h"
 
 void GLAPIENTRY OpenGLDebugMessege(uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int length, const char* message, const void* userParam) {
@@ -46,9 +45,6 @@ namespace wc {
 		Rml::String chatArguments = "";
 		glm::ivec3 chunkPosition = glm::ivec3(0);
 	} my_data;
-
-	enum MenuMode { GAME, INVENTORY, MAINMENU, SETTINGS, MULTIPLAYER, ESCMENU };
-	uint32_t mode = MenuMode::MAINMENU; // @TODO: Remove it from here and make a file that needs to be include everywhere
 
 	int changeMenu(lua_State* L) {
 		mode = lua_tonumber(L, 1);

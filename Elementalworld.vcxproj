@@ -314,6 +314,11 @@
     <ClInclude Include="src\Game Mechanics\Inventory.h" />
     <ClInclude Include="src\Game Mechanics\Item.h" />
     <ClInclude Include="src\Game Mechanics\LineBatcher.h" />
+    <ClInclude Include="src\Game Mechanics\Model\Animation.h" />
+    <ClInclude Include="src\Game Mechanics\Model\Bone.h" />
+    <ClInclude Include="src\Game Mechanics\Model\Mesh.h" />
+    <ClInclude Include="src\Game Mechanics\Model\Model.h" />
+    <ClInclude Include="src\Globals.h" />
     <ClInclude Include="src\world\Biome.h" />
     <ClInclude Include="src\world\Block.h" />
     <ClInclude Include="src\world\Chunk.h" />
@@ -351,7 +356,7 @@
     <ClInclude Include="vendor\Include\wc\Model\Bone.h" />
     <ClInclude Include="vendor\Include\wc\Model\Mesh.h" />
     <ClInclude Include="vendor\Include\wc\Model\Model.h" />
-    <ClInclude Include="vendor\Include\wc\pch.h" />
+    <ClInclude Include="vendor\Include\pch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

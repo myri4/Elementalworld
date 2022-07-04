@@ -144,8 +144,6 @@ namespace wc {
 			TextureSlotIndex = 0;
 			IndexCount = 0;
 			VertexCount = 0;
-
-			glEnable(GL_DEPTH_TEST);
 		}
 
 		void EnableScissorRegion(bool enable) override {
@@ -217,7 +215,20 @@ namespace wc {
 			int fnrComponents;
 			auto data = stbi_load(source.c_str(), &texture_dimensions.x, &texture_dimensions.y, &fnrComponents, 0);
 
-			if (data) texture.CreateRml(glm::ivec2(texture_dimensions.x, texture_dimensions.y), data);
+			if (data) { 
+				gl::TextureProps props;
+				props.SetSize(glm::ivec2(texture_dimensions.x, texture_dimensions.y));
+				GLint filter = GL_LINEAR;
+				if (texture_dimensions.x <= 120 || texture_dimensions.y <= 120) filter = GL_NEAREST;
+				props.internalFormat = GL_RGBA8;
+				props.mag_filter = filter;
+				props.min_filter = filter;
+				props.wrap_s = GL_CLAMP_TO_EDGE;
+				props.wrap_t = GL_CLAMP_TO_EDGE;
+				texture.Create(props);
+
+				glTextureSubImage2D(texture, 0, 0, 0, texture_dimensions.x, texture_dimensions.y, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			}
 			else WC_ERROR("Could not open file location at path {0}!", source.c_str());
 
 			delete data; // stbi free
@@ -229,7 +240,17 @@ namespace wc {
 
 		bool GenerateTexture(Rml::TextureHandle& texture_handle, const Rml::byte* source, const Rml::Vector2i& source_dimensions) {
 			gl::Texture texture;
-			texture.CreateRml(glm::vec2(source_dimensions.x, source_dimensions.y), source);
+			gl::TextureProps props;
+			props.SetSize(glm::ivec2(source_dimensions.x, source_dimensions.y));
+			props.internalFormat = GL_RGBA8;
+			props.mag_filter = GL_NEAREST;
+			props.min_filter = GL_NEAREST;
+			props.wrap_s = GL_CLAMP_TO_EDGE;
+			props.wrap_t = GL_CLAMP_TO_EDGE;
+			texture.Create(props);
+
+			glTextureSubImage2D(texture, 0, 0, 0, source_dimensions.x, source_dimensions.y, GL_RGBA, GL_UNSIGNED_BYTE, source);
+
 			texture_handle = texture;
 			return true;
 		}
@@ -248,39 +269,27 @@ namespace wc {
 	class SystemInterface : public Rml::SystemInterface
 	{
 
-		double GetElapsedTime() override
-		{
-			return glfwGetTime();
-		}
-
-		//virtual int TranslateString(Rml::String& translated, const Rml::String& input);
-
-		//virtual void JoinPath(Rml::String& translated_path, const Rml::String& document_path, const Rml::String& path);
+		double GetElapsedTime() override { return glfwGetTime(); }
 
 		bool LogMessage(Rml::Log::Type type, const Rml::String& message) override {
 			switch (type) {
-			case Rml::Log::Type::LT_ALWAYS:	WC_TRACE(message.c_str()); break;
-			case Rml::Log::Type::LT_ERROR:	WC_ERROR(message.c_str()); break;
-			case Rml::Log::Type::LT_ASSERT:	WC_INFO(message.c_str()); break;
-			case Rml::Log::Type::LT_WARNING:WC_WARN(message.c_str()); break;
-			case Rml::Log::Type::LT_INFO:	WC_INFO(message.c_str()); break;
-			case Rml::Log::Type::LT_DEBUG:	WC_DEBUG(message.c_str()); break;
-			case Rml::Log::Type::LT_MAX:    WC_CRITICAL(message.c_str()); break;
+				case Rml::Log::Type::LT_ALWAYS:	WC_TRACE(message.c_str());    break;
+				case Rml::Log::Type::LT_ERROR:	WC_ERROR(message.c_str());    break;
+				case Rml::Log::Type::LT_ASSERT:	WC_INFO(message.c_str());     break;
+				case Rml::Log::Type::LT_WARNING:WC_WARN(message.c_str());     break;
+				case Rml::Log::Type::LT_INFO:	WC_INFO(message.c_str());     break;
+				case Rml::Log::Type::LT_DEBUG:	WC_DEBUG(message.c_str());    break;
+				case Rml::Log::Type::LT_MAX:    WC_CRITICAL(message.c_str()); break;
 			}
 			return true;
 		}
 
-		//virtual void SetMouseCursor(const Rml::String& cursor_name);
-
-		void SetClipboardText(const Rml::String& text) {
+		void SetClipboardText(const std::string& text) {
 			glfwSetClipboardString(system_window, text.c_str());
 		}
 
-		void GetClipboardText(Rml::String& text) override {
+		void GetClipboardText(std::string& text) override {
 			text = glfwGetClipboardString(system_window);
 		}
-
-		//virtual void DeactivateKeyboard();
-	public:
 	}system_interface;
 }

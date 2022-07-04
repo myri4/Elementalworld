@@ -4,4 +4,4 @@ ConnectionType: "CUSTOM_MODEL"
 modelTexture: "murshroom.png"
 modelPath: "Murshroom.obj"
 
-name: "flower"
+name: "murshroom"

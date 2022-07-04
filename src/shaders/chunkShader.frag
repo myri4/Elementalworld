@@ -25,4 +25,5 @@ void main() {
 	if (gl_FrontFacing) N = -N;
   
     FragColor = textureColor * vec4(rayTrace(textureColor.rgb, N), textureColor.a) * v_Color;
+    //FragColor = vec4(1.f);
 }

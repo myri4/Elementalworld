@@ -12,6 +12,7 @@
 #include <Utils/YAML.h>
 #include <sol/sol.hpp>
 #include <GUI/AssetManager.h>
+#include "../Globals.h"
 
 namespace wc{
 
@@ -20,57 +21,14 @@ enum ConnectionType : uint8_t { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT,
 	CANT_CONNECT, AIR, CUSTOM_MODEL, NON_EXISTENT};
 enum class BlockTexture : uint8_t { RIGHT, TOP, FRONT, LEFT, BOTTOM, BACK, LENGTH };
 
-const float blockSize = 1.f;
-
-std::string resourceName = "default";
-
-struct Face {
-	glm::vec3 corner[4] = { glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.f) , glm::vec3(0.f) };
-	glm::vec3 normal = glm::vec3(0.f);
-
-	void CalculateNormal() {
-		normal = glm::normalize(glm::cross(corner[2] - corner[0], corner[1] - corner[0]));	
-	}
-};
-
-uint32_t convertColor(const glm::vec4& color) {
-	int32_t r = color.r * 255.f;
-	int32_t g = color.g * 255.f;
-	int32_t b = color.b * 255.f;
-	int32_t a = color.a * 255.f;
-	return a << 24 | b << 16 | g << 8 | r;
-}
-
-glm::vec4 convertColor(const uint32_t& color) {
-	const float c = 1.f / 255.f;
-	glm::vec4 Color;
-	Color.r = float((uint32_t)(color & uint32_t(0x000000ff))) * c;
-	Color.g = float((uint32_t)(color & uint32_t(0x0000ff00)) >> 8) * c;
-	Color.b = float((uint32_t)(color & uint32_t(0x00ff0000)) >> 16) * c;
-	Color.a = float((uint32_t)(color & uint32_t(0xff000000)) >> 24) * c;
-
-	return Color;
-}
-
-struct Vertex {
-	glm::vec3 Position = { 0,0,0 };
-	glm::vec3 TexCoords = { 0,0,0 };
-	uint32_t materialID = 0;
-	glm::vec3 Normal = { 0,0,0 };
-	Vertex() {}
-	Vertex(const glm::vec3& pos, const glm::vec3& texCoord, const glm::vec3& normal, const uint32_t& mat) : Position(pos), Normal(normal), materialID(mat), TexCoords(texCoord) { }
-};
-
-struct BlockMesh {
-	std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;
-	uint32_t instanceCount = 0;
+struct BlockMesh { // @TODO: Improve
+	gl::DrawElementsIndirectCommand cmd;
 	gl::Buffer vertexBuffer;
 	gl::Buffer indexBuffer;
 
 	BlockMesh() = default;
 
-	void Load(const std::string& path, const uint32_t& textureID) {
+	void Load(const std::string& path, const uint32_t& textureID, const uint32_t& materialID) {
 		Assimp::Importer importer;
 		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_OptimizeMeshes | aiProcess_JoinIdenticalVertices | aiProcess_GenNormals | aiProcess_FlipUVs);
 		
@@ -80,13 +38,21 @@ struct BlockMesh {
 			return;
 		}
 		uint32_t offset = 0;
-		processNode(scene->mRootNode, *scene, offset, textureID);
-		uint32_t bits = GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
+		std::vector<Vertex> vertices;
+		std::vector<uint32_t> indices;
+		processNode(scene->mRootNode, *scene, offset, textureID, materialID, vertices, indices);
+		uint32_t bits = 0;
 		indexBuffer.Create(sizeof(uint32_t) * indices.size(), bits, indices.data());
 		vertexBuffer.Create(sizeof(Vertex) * vertices.size(), bits, vertices.data());
+		cmd.count = indices.size();
+		cmd.instanceCount = 0;
+
+		importer.FreeScene();
+		vertices.clear();
+		indices.clear();
 	}
 
-	void processNode(const aiNode* node, const aiScene& scene, uint32_t& offset, const uint32_t& textureID) {
+	void processNode(const aiNode* node, const aiScene& scene, uint32_t& offset, const uint32_t& textureID, const uint32_t& materialID, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices) {
 		// process each mesh located at the current node		
 		// the node object only contains indices to index the actual objects in the scene. 
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
@@ -97,6 +63,7 @@ struct BlockMesh {
 				Vertex vertex;
 				vertex.Position = AssimpGLMHelpers::GetGLMVec(mesh.mVertices[i]) + glm::vec3(0.5f, 0.f, 0.5f);
 				vertex.Normal = -AssimpGLMHelpers::GetGLMVec(mesh.mNormals[i]);
+				vertex.materialID = materialID;
 
 				if (mesh.mTextureCoords[0])
 					vertex.TexCoords = glm::vec3(mesh.mTextureCoords[0][i].x, mesh.mTextureCoords[0][i].y, textureID);
@@ -116,12 +83,9 @@ struct BlockMesh {
 
 		// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
 		for (uint32_t i = 0; i < node->mNumChildren; i++)
-			processNode(node->mChildren[i], scene, offset, textureID);
+			processNode(node->mChildren[i], scene, offset, textureID, materialID, vertices, indices);
 	}
 };
-
-using BlockID = glm::uint8_t;
-using MaterialID = glm::uint8_t;
 
 struct Material {
 	uint32_t albedo[6] = { 0 };
@@ -152,87 +116,6 @@ struct Block{
 List<Block, 40> blockData;
 List<BlockMesh, 10> blockMeshes;
 PointerList<Material, 40> materialData;
-
-void AddBlockScript(const std::string& script) {
-	std::string conType;
-	YAML::Node blockState = YAML::LoadFile(script);
-
-	Block block;
-	Material mat;
-
-	if (blockState["name"]) block.name = blockState["name"].as<std::string>();
-	else WC_WARN("No block name is specified in '{0}'. Block name 'air' assumed.", script);
-
-	if (blockState["isCollidable"]) block.isCollidable = blockState["isCollidable"].as<bool>();
-	if (blockState["ConnectionType"]) conType = blockState["ConnectionType"].as<std::string>();
-	if (blockState["color"]) mat.color = blockState["color"].as<uint32_t>();
-
-	for (uint8_t i = 0; i < ConnectionType::NON_EXISTENT; i++)
-		if (conType == magic_enum::enum_name((ConnectionType)i)) block.connectionType = (ConnectionType)i;
-	mat.flags = block.connectionType;
-
-	std::string diffusePath = "resourcepacks/" + resourceName + "/textures/block/diffuse/";
-
-	if (blockState["allTextures"]) {
-		std::string path = blockState["allTextures"].as<std::string>();
-		block.texture[0] = assets.LoadTexture(diffusePath + path);
-		for (int i = 1; i < 6; i++) block.texture[i] = block.texture[0];
-	}
-	else if (blockState["modelTexture"]) {
-		std::string path = blockState["modelTexture"].as<std::string>();
-		block.texture[0] = assets.LoadModelTexture(diffusePath + path);
-		for (int i = 1; i < 6; i++) block.texture[i] = block.texture[0];
-	}
-	else {
-		std::string path;
-
-		for (uint32_t i = 0; i < (uint32_t)BlockTexture::LENGTH; i++) {
-			auto name = std::string(magic_enum::enum_name((BlockTexture)i));
-			if (blockState[name]) {
-				path = blockState[name].as<std::string>();
-				block.texture[i] = assets.LoadTexture(diffusePath + path);
-			}
-		}
-
-	}
-	if (blockState["emitLight"]) block.emitLight = blockState["emitLight"].as<bool>();
-
-	if (blockState["modelPath"]) {
-		std::string path = blockState["modelPath"].as<std::string>();
-		block.meshID = blockMeshes.size();
-		blockMeshes[block.meshID].Load("resourcepacks/" + resourceName + "/models/" + path, block.texture[0]);
-		blockMeshes.counter++;
-	}
-
-	//mat.albedo[0] = block.texture[0];
-	//mat.albedo[1] = block.texture[1];
-	//mat.albedo[2] = block.texture[2];
-	//mat.albedo[3] = block.texture[3];
-	//mat.albedo[4] = block.texture[4];
-	//mat.albedo[5] = block.texture[5];
-	block.material = materialData.push_back(mat);
-
-	blockData.push_back(block);
-
-	if (blockState["canSlab"]) {
-		block.variations = 1;
-	
-		Block slab1;
-		slab1.name = block.name + "_slab_up";
-		slab1.texture[0] = block.texture[0];
-		slab1.texture[1] = block.texture[1];
-		slab1.texture[2] = block.texture[2];
-		slab1.texture[3] = block.texture[3];
-		slab1.texture[4] = block.texture[4];
-		slab1.texture[5] = block.texture[5];
-		slab1.meshID = 1;
-		slab1.emitLight = block.emitLight;
-		slab1.connectionType = ConnectionType::CUSTOM_MODEL;
-		slab1.isCollidable = block.isCollidable;
-		slab1.material = block.material;
-		blockData.push_back(slab1);
-	}
-}
 
 struct RarityTable {
 	BlockID block = 0;

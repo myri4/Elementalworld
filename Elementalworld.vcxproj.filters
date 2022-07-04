@@ -245,13 +245,28 @@
     <ClInclude Include="vendor\Include\wc\Model\Model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\pch.h">
+    <ClInclude Include="vendor\Include\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\Include\gl\Fence.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\Include\gl\CommandBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game Mechanics\Model\Animation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game Mechanics\Model\Bone.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game Mechanics\Model\Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game Mechanics\Model\Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Globals.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
