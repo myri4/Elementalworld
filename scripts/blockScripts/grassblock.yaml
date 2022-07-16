@@ -7,6 +7,5 @@ FRONT:  "grass_block_side.png"
 BACK:   "grass_block_side.png"
 LEFT:   "grass_block_side.png"
 RIGHT:  "grass_block_side.png"
---color: 0xccffffff
 
 name: "grass_block"

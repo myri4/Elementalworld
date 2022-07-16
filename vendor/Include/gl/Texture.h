@@ -1,6 +1,7 @@
 #pragma once
 #include <glad/glad.h>
 #include <stb_image/stb_image.h>
+#include <stb_image/stb_write.h>
 #include <glm/glm.hpp>
 #include <Utils/Log.h>
 #undef min

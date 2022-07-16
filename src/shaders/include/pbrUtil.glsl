@@ -1,5 +1,4 @@
 #include "sceneData.glsl"
-#include "Material.glsl"
 #include "Light.glsl"
 #include "constants.glsl"
 
@@ -40,12 +39,13 @@ vec3 fresnelSchlickRoughness(const in float cosTheta, const in vec3 F0, const in
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-vec3 rayTrace(const in vec3 albedo, const in vec3 N) {
+vec3 rayTrace(const in vec3 N, const vec4 materialData, const in vec3 albedo) {
 	vec3 color;
 
-	float metallic = 0.f;
-	float roughness = 1.f;
-	float ao = 1.f;
+	float metallic = materialData[0];
+	float roughness = materialData[1];
+	float ao = materialData[2];
+	float emmision = materialData[3];
 
 	vec3 V = normalize(cameraPos - p0);
 

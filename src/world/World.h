@@ -79,12 +79,8 @@ namespace wc {
 		gl::DrawIndirectBuffer indirectBuffer;
 		gl::DrawElementsIndirectCommand* cmds = nullptr;
 		std::array<Chunk, RenderDistance* RenderDistance* RenderDistance> chunks;
-		glm::ivec3 furthestPos = glm::ivec3(0);
-		glm::ivec3 furthestNeg = glm::ivec3(0);
 
 		FastNoiseLite worldNoise;
-		FastNoiseLite temperatureNoise;
-		FastNoiseLite moistureNoise;
 		FastNoiseLite treeNoise;
 		FastNoiseLite caveNoise;
 
@@ -179,6 +175,7 @@ namespace wc {
 		}bloomSettings;
 	public:
 		bool multiPlayer = false;
+		bool renderGUI = true;
 		Player p;
 
 		void Create() {
@@ -222,8 +219,6 @@ namespace wc {
 			//worldGenState.new_enum("FractalType", {{ "None", FastNoiseLite::FractalType::FractalType_None },{ "None", FastNoiseLite::FractalType::FractalType_None } });
 			worldGenState.script_file("scripts/worldGen.lua");
 			if (worldGenState["noise"].valid()) worldNoise = worldGenState["noise"];
-			if (worldGenState["TempNoise"].valid()) temperatureNoise = worldGenState["TempNoise"];
-			if (worldGenState["MoistureNoise"].valid()) moistureNoise = worldGenState["MoistureNoise"];
 			if (worldGenState["TreeNoise"].valid()) treeNoise = worldGenState["TreeNoise"];
 			if (worldGenState["CaveNoise"].valid()) caveNoise = worldGenState["CaveNoise"];
 
@@ -244,92 +239,66 @@ namespace wc {
 					YAML::Node blockState = YAML::LoadFile(script);
 
 					Block block;
-					Material mat;
+					Material blockMaterial;
 
 					if (blockState["name"]) block.name = blockState["name"].as<std::string>();
 					else WC_WARN("No block name is specified in '{0}'. Block name 'air' assumed.", script);
 
 					if (blockState["isCollidable"]) block.isCollidable = blockState["isCollidable"].as<bool>();
 					if (blockState["ConnectionType"]) conType = blockState["ConnectionType"].as<std::string>();
-					if (blockState["color"]) mat.color = blockState["color"].as<uint32_t>();
+					if (blockState["color"]) blockMaterial.color = blockState["color"].as<uint32_t>();
+					if (blockState["cull"]) if (blockState["cull"].as<bool>()) blockMaterial.flags |= WC_CULL_BIT;
 
 					for (uint8_t i = 0; i < ConnectionType::NON_EXISTENT; i++)
 						if (conType == magic_enum::enum_name((ConnectionType)i)) block.connectionType = (ConnectionType)i;
-					mat.flags = block.connectionType;
 
 					std::string diffusePath = "resourcepacks/" + resourceName + "/textures/block/diffuse/";
+					std::string materialPath = "resourcepacks/" + resourceName + "/textures/block/materials/";
 
 					if (blockState["allTextures"]) {
-						std::string path = blockState["allTextures"].as<std::string>();
-						block.texture[0] = assets.LoadTexture(diffusePath + path);
-						for (int i = 1; i < 6; i++) block.texture[i] = block.texture[0];
+						std::string filename = blockState["allTextures"].as<std::string>();
+						blockMaterial.albedo[0] = assets.LoadTexture(diffusePath + filename);
+						for (int i = 1; i < 6; i++) blockMaterial.albedo[i] = blockMaterial.albedo[0];
+
+						if (blockState["materialData"]) {
+							blockMaterial.materialData[0] = assets.LoadTextureMaterial(materialPath + filename);
+							for (int i = 1; i < 6; i++) blockMaterial.materialData[i] = blockMaterial.materialData[0];
+						}
 					}
+					// @TODO: Remove
 					else if (blockState["modelTexture"]) {
-						std::string path = blockState["modelTexture"].as<std::string>();
-						block.texture[0] = assets.LoadModelTexture(diffusePath + path);
-						for (int i = 1; i < 6; i++) block.texture[i] = block.texture[0];
+						std::string filename = blockState["modelTexture"].as<std::string>();
+						blockMaterial.albedo[0] = assets.LoadModelTexture(diffusePath + filename);
+						for (int i = 1; i < 6; i++) blockMaterial.albedo[i] = blockMaterial.albedo[0];
+						
+						if (blockState["materialData"]) {
+							blockMaterial.materialData[0] = assets.LoadModelTextureMaterial(materialPath + filename);
+							for (int i = 1; i < 6; i++) blockMaterial.materialData[i] = blockMaterial.materialData[0];
+						}
 					}
 					else {
-						std::string path;
-
 						for (uint32_t i = 0; i < (uint32_t)BlockTexture::LENGTH; i++) {
 							auto name = std::string(magic_enum::enum_name((BlockTexture)i));
-							if (blockState[name]) {
-								path = blockState[name].as<std::string>();
-								block.texture[i] = assets.LoadTexture(diffusePath + path);
-							}
+							if (blockState[name]) 
+								blockMaterial.albedo[i] = assets.LoadTexture(diffusePath + blockState[name].as<std::string>());
 						}
 
 					}
 					if (blockState["emitLight"]) block.emitLight = blockState["emitLight"].as<bool>();
 
-					block.material = materialData.push_back(mat);
+					if (block.connectionType == ConnectionType::CUSTOM_MODEL) blockMaterial.flags |= WC_MODEL_BIT;
+					block.material = materialData.push_back(blockMaterial);
 					if (blockState["modelPath"]) {
 						std::string path = blockState["modelPath"].as<std::string>();
 						block.meshID = blockMeshes.size();
-						blockMeshes[block.meshID].Load("resourcepacks/" + resourceName + "/models/" + path, block.texture[0], block.material);
+						blockMeshes[block.meshID].Load("resourcepacks/" + resourceName + "/models/" + path, block.material);
 						blockMeshes.counter++;
 					}
 
-					//mat.albedo[0] = block.texture[0];
-					//mat.albedo[1] = block.texture[1];
-					//mat.albedo[2] = block.texture[2];
-					//mat.albedo[3] = block.texture[3];
-					//mat.albedo[4] = block.texture[4];
-					//mat.albedo[5] = block.texture[5];
 
 					blockData.push_back(block);
-
-					if (blockState["canSlab"]) {
-						block.variations = 1;
-
-						Block slab1;
-						slab1.name = block.name + "_slab_up";
-						slab1.texture[0] = block.texture[0];
-						slab1.texture[1] = block.texture[1];
-						slab1.texture[2] = block.texture[2];
-						slab1.texture[3] = block.texture[3];
-						slab1.texture[4] = block.texture[4];
-						slab1.texture[5] = block.texture[5];
-						slab1.meshID = 1;
-						slab1.emitLight = block.emitLight;
-						slab1.connectionType = ConnectionType::CUSTOM_MODEL;
-						slab1.isCollidable = block.isCollidable;
-						slab1.material = block.material;
-						blockData.push_back(slab1);
-					}
 				}
 			}
-
-			worldGenState.new_usertype<Biome>("Biome", sol::constructors<void()>(),
-				"maxMois", &Biome::maxMois,
-				"maxTemp", &Biome::maxTemp,
-				"minMois", &Biome::minMois,
-				"minTemp", &Biome::minTemp,
-				"topBlock", &Biome::topBlock
-				);
-			worldGenState.set_function("AddBiome", [&](const Biome& biome) { biomeMap.push_back(biome); });
-			worldGenState.script_file("scripts/biomes.lua");
 			assets.Free();
 
 			lineBatcher.Create();
@@ -624,13 +593,6 @@ namespace wc {
 				}
 			}
 
-			furthestPos = chunks[0].position;
-			furthestNeg = chunks[0].position;
-			for (ChunkID i = 1; i < chunks.size(); i++) {
-				if (chunks[i].position != furthestPos) furthestPos = glm::max(chunks[i].position, furthestPos);
-				if (chunks[i].position != furthestNeg) furthestNeg = glm::min(chunks[i].position, furthestNeg);
-			}
-
 			if (generateTerrain) {
 				for (ChunkID chunk = 0; chunk < chunks.size(); chunk++)
 					if (!chunks[chunk].generated) { GenerateChunkTerrain(chunk); chunks[chunk].generated = true; }
@@ -660,6 +622,7 @@ namespace wc {
 			glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, chunks.size(), sizeof(gl::DrawElementsIndirectCommand));
 			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 
+			assets.BindModelData();
 			for (uint32_t i = 0; i < blockMeshes.size(); i++) {
 				BlockMesh& mesh = blockMeshes[i];
 				if (mesh.cmd.instanceCount > 0) {
@@ -677,7 +640,7 @@ namespace wc {
 			else
 				lineBatcher.DrawOutlineCube(box, convertColor(0xFF33FF00));
 
-			lineBatcher.Flush();
+			lineBatcher.Flush(renderGUI);
 
 			//animationBuffer.SetData(sizeof(glm::mat4) * MAX_BONE_WEIGHTS, animation.GetPoseTransforms());
 
@@ -706,7 +669,7 @@ namespace wc {
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			render_interface.DrawQuad({ 0,0 }, sceneData.windowSize, finalImage);
-			render_interface.DrawQuad((sceneData.windowSize - 15.f) / 2.f, { 15, 15 }, render_interface.whiteTexture);
+			if (renderGUI) render_interface.DrawQuad((sceneData.windowSize - 15.f) / 2.f, { 15, 15 }, render_interface.whiteTexture);
 		}
 
 
@@ -820,6 +783,18 @@ namespace wc {
 
 				Mouse::SetMousePosition(t);
 			}
+
+			if (wc::Keyboard::getKey(wc::Keyboard::Key::F2)) {
+				glm::ivec2 size = finalImage.GetSize();
+				uint32_t byteSize = size.x * size.y * 4;
+				uint8_t* data = new uint8_t[byteSize];
+				glReadPixels(0, 0, size.x, size.y, GL_RGBA, GL_UNSIGNED_BYTE, data);
+				stbi_flip_vertically_on_write(true);
+				stbi_write_png("screenshots/screenshot.png", size.x, size.y, 4, data, size.x * 4);
+				delete[] data;
+			}
+
+			if (wc::Keyboard::getKey(wc::Keyboard::Key::F1)) renderGUI = !renderGUI;
 
 			// PLAYER RELATED
 			p.velocity += p.acceleration;
@@ -1128,7 +1103,6 @@ namespace wc {
 					glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
 					int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
 					float treeGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-					float baseTemperature = temperatureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
 
 					for (uint8_t y = 0; y < chunkSize; y++) {
 						glm::ivec3 pos = chunks[chunk].position * glm::ivec3(chunkSize) + glm::ivec3(x, y, z);
@@ -1153,7 +1127,7 @@ namespace wc {
 			return 0;
 		}
 
-		// LIGHT MANAGING
+		// LIGHT MANAGING (deprecated)
 		uint32_t addLight(const glm::vec3& position, const uint32_t& color) {
 			uint32_t light = currentLightID;
 			if (currentLightID <= maxLights) {
@@ -1250,6 +1224,7 @@ namespace wc {
 			if (chunk > -1) setBlockLocal(getBlockPos(pos), block, chunk, playerEdited, replyToServer);
 		}
 
+		// should be replaced with UpdateChunk
 		void UpdateMesh(const ChunkID& chunkID) {
 			uint32_t offset = 0;
 			Chunk& chunk = chunks[chunkID];
@@ -1326,16 +1301,17 @@ namespace wc {
 								checkType = blockData[checkBlock].connectionType;
 							}
 							// The mask is set to true if there is a visible face between two blocks, i.e. both aren't empty and both aren't blocks							
-
+							Block& checkBlockData = blockData[checkBlock];
+							Block& BlockData = blockData[blockID];
 							if (type != checkType && type != ConnectionType::NON_EXISTENT && checkType != ConnectionType::NON_EXISTENT) {
-								if (blockID != checkBlock && type == ConnectionType::CONNECT_DEFAULT) { mask[n] = blockID + 1; textureMask[n] = blockData[blockID].texture[d]; }
-								else if ((blockID == 0 || type != ConnectionType::CONNECT_DEFAULT) && checkType == ConnectionType::CONNECT_DEFAULT) { mask[n] = checkBlock + 1; textureMask[n] = blockData[checkBlock].texture[d + 3]; }
+								if (blockID != checkBlock && type == ConnectionType::CONNECT_DEFAULT) { mask[n] = blockID + 1; textureMask[n] = materialData[BlockData.material].albedo[d]; }
+								else if ((blockID == 0 || type != ConnectionType::CONNECT_DEFAULT) && checkType == ConnectionType::CONNECT_DEFAULT) { mask[n] = checkBlock + 1; textureMask[n] = materialData[checkBlockData.material].albedo[d + 3]; }
 
-								else if (blockID != checkBlock && type == ConnectionType::NO_CONNECT) { mask[n] = blockID + 1; textureMask[n] = blockData[blockID].texture[d]; }
-								else if (blockID == 0 && checkType == ConnectionType::NO_CONNECT) { mask[n] = checkBlock + 1; textureMask[n] = blockData[checkBlock].texture[d + 3]; }
+								else if (blockID != checkBlock && type == ConnectionType::NO_CONNECT) { mask[n] = blockID + 1; textureMask[n] = materialData[BlockData.material].albedo[d]; }
+								else if (blockID == 0 && checkType == ConnectionType::NO_CONNECT) { mask[n] = checkBlock + 1; textureMask[n] = materialData[checkBlockData.material].albedo[d + 3]; }
 
-								else if (checkBlock == 0 && type == ConnectionType::FLUID_CONNECT) { mask[n] = blockID + 1; textureMask[n] = blockData[blockID].texture[d]; }
-								else if (blockID == 0 && checkType == ConnectionType::FLUID_CONNECT) { mask[n] = checkBlock + 1; textureMask[n] = blockData[checkBlock].texture[d + 3]; }
+								else if (checkBlock == 0 && type == ConnectionType::FLUID_CONNECT) { mask[n] = blockID + 1; textureMask[n] = materialData[BlockData.material].albedo[d]; }
+								else if (blockID == 0 && checkType == ConnectionType::FLUID_CONNECT) { mask[n] = checkBlock + 1; textureMask[n] = materialData[checkBlockData.material].albedo[d + 3]; }
 							}
 							n++;
 						}
@@ -1392,9 +1368,9 @@ namespace wc {
 								dv[u] = 0;
 								float h1 = h, w1 = w;
 								// Create a quad for this face. Colour, normal or textures are not stored in this block vertex format.
-								glm::vec3 corner[4] = { glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.f) , glm::vec3(0.f) };
+								glm::vec3 corner[4];
 
-								if (d == 0) {
+								if (d == 0) { // @TODO: Wrong!
 									corner[2] = x;           // Top-left vertice position
 									corner[3] = x + du;      // Top right vertice position
 									corner[1] = x + dv;      // Bottom left vertice position
@@ -1423,8 +1399,16 @@ namespace wc {
 										glm::vec2(h1,  0.f),
 									};
 
+									uint32_t texID = 0;
+									if (normal == glm::vec3(0.f, -1.f, 0.f)) texID = (uint32_t)BlockTexture::TOP;
+									if (normal == glm::vec3(0.f,  1.f, 0.f)) texID = (uint32_t)BlockTexture::BOTTOM;
+									if (normal == glm::vec3( 1.f, 0.f, 0.f)) texID = (uint32_t)BlockTexture::RIGHT;
+									if (normal == glm::vec3(-1.f, 0.f, 0.f)) texID = (uint32_t)BlockTexture::LEFT;
+									if (normal == glm::vec3(0.f, 0.f,  1.f)) texID = (uint32_t)BlockTexture::FRONT;
+									if (normal == glm::vec3(0.f, 0.f, -1.f)) texID = (uint32_t)BlockTexture::BACK;
+
 									for (uint32_t i = 0; i < ARRAYSIZE(corner); i++)
-										vertices[i + offset] = Vertex(corner[i] + (glm::vec3)chunkPos, { TexCoords[i], textureMask[n] }, normal, blockData[blockID].material);
+										vertices[i + offset] = Vertex(corner[i] + (glm::vec3)chunkPos, { TexCoords[i], texID }, normal, blockData[blockID].material);
 
 									cmds[chunkID].count += 6;
 									offset += ARRAYSIZE(corner);
@@ -1451,24 +1435,7 @@ namespace wc {
 			}
 		}
 
-		BlockID getBlock(const glm::ivec3& pos) {
-			int16_t chunk = getChunkID(getChunkPos(pos));
-			if (chunk < 0) return 0;
-			glm::ivec3 blockPos = getBlockPos(pos);
-			return chunks[chunk].data[blockPos.x][blockPos.y][blockPos.z];
-		}
-
-		int16_t getChunkID(const glm::ivec3& pos) {
-			if (pos.x > furthestPos.x || pos.x < furthestNeg.x) return -1;
-			if (pos.y > furthestPos.y || pos.x < furthestNeg.y) return -1;
-			if (pos.z > furthestPos.z || pos.x < furthestNeg.z) return -1;
-
-			for (ChunkID i = 0; i < chunks.size(); i++) {
-				if (chunks[i].position == pos)
-					return i;
-			}
-		}
-
+		// Deprecated
 		void UpdateNeighbours(const ChunkID& chunk) {
 			glm::ivec3 neighborXpos = chunks[chunk].position + glm::ivec3(1, 0, 0);
 			glm::ivec3 neighborYpos = chunks[chunk].position + glm::ivec3(0, 1, 0);
@@ -1498,6 +1465,22 @@ namespace wc {
 				if (chunks[chunk].neighborPos[0] != -1 && chunks[chunk].neighborPos[1] != -1 && chunks[chunk].neighborPos[2] != -1 &&
 					chunks[chunk].neighborNeg[0] != -1 && chunks[chunk].neighborNeg[1] != -1 && chunks[chunk].neighborNeg[2] != -1) return;
 			}
+		}
+
+		BlockID getBlock(const glm::ivec3& pos) {
+			int16_t chunk = getChunkID(getChunkPos(pos));
+			if (chunk < 0) return 0;
+			glm::ivec3 blockPos = getBlockPos(pos);
+			return chunks[chunk].data[blockPos.x][blockPos.y][blockPos.z];
+		}
+
+		int16_t getChunkID(const glm::ivec3& pos) {
+			for (ChunkID i = 0; i < chunks.size(); i++) {
+				if (chunks[i].position == pos)
+					return i;
+			}
+
+			return -1;
 		}
 
 		BlockID getBlockID(const std::string& name) {

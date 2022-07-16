@@ -70,9 +70,7 @@ namespace wc {
 		Rml::ElementDocument* document = nullptr;
 
 		//----------------------------------------------------------------------------------------------------------------------
-		bool IsEngineOK() override {
-			return window.isOpen();
-		}
+		bool IsEngineOK() override { return window.isOpen(); }
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnInput() override {
 			bool hasFocus = window.hasFocus();
@@ -211,11 +209,12 @@ namespace wc {
 			fence.wait();
 			if (mode == MenuMode::GAME)
 				world.Update(deltaTime);
-			if (mode != MenuMode::GAME)
+			else
 				glClear(GL_COLOR_BUFFER_BIT);
 
-			context->Render();
+			if (world.renderGUI) context->Render();
 			render_interface.Flush();
+			
 			fence.lock();
 			window.display();
 		}
@@ -227,6 +226,6 @@ namespace wc {
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 	public:
-		Application() {}
+		Application() = default;
 	};
 }

@@ -15,3 +15,6 @@ float Hm = 1200.f;               // Same as above but for Mie scattering (Hm)
 vec3 betaR = vec3(3.8e-6f, 13.5e-6f, 33.1e-6f); 
 vec3 betaM = vec3(21e-6f); 
 const float kInfinity = 3.402823466e+38F;
+
+const int WC_MODEL_BIT = 1;
+const int WC_CULL_BIT = 2;

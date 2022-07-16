@@ -63,12 +63,14 @@ namespace wc {
 			DrawOutlineCube(aabb.position, aabb.size, color);
 		}
 
-		void Flush() {
+		void Flush(const bool render = true) {
 			if (!IndexCount) return;
-			shader.use();
-			glDrawArrays(GL_LINES, 0, IndexCount);
-			IndexCount = 0;
+			if (render) {
+				shader.use();
+				glDrawArrays(GL_LINES, 0, IndexCount);
+			}
 			byteOffset = 0;
+			IndexCount = 0;
 		}
 
 		LineBatcher() {	}

@@ -51,8 +51,11 @@ namespace wc {
 			uint32_t totalIndices = 0, totalVertices = 0;
 			getNodeParameters(scene->mRootNode, *scene, totalIndices, totalVertices);
 
-			m_IndexBuffer.Create(sizeof(uint32_t) * totalIndices, GL_DYNAMIC_STORAGE_BIT);
-			m_VertexBuffer.Create(sizeof(MeshVertex) * totalVertices, GL_DYNAMIC_STORAGE_BIT);
+			uint32_t bits = GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
+			m_IndexBuffer.Create(sizeof(uint32_t) * totalIndices, bits);
+			m_VertexBuffer.Create(sizeof(MeshVertex) * totalVertices, bits);
+			vertices = (MeshVertex*)m_VertexBuffer.Map(bits, sizeof(MeshVertex) * totalVertices);
+			indices = (uint32_t*)m_IndexBuffer.Map(bits, sizeof(uint32_t) * totalIndices);
 
 			shader.SetVertexBuffer(m_VertexBuffer, sizeof(MeshVertex));
 			shader.SetIndexBuffer(m_IndexBuffer);
@@ -77,6 +80,8 @@ namespace wc {
 		gl::Buffer m_VertexBuffer;
 		gl::Texture diffuseTexture;
 		std::vector<gl::DrawElementsIndirectCommand> cmds;
+		MeshVertex* vertices = nullptr;
+		uint32_t* indices = nullptr;
 		uint32_t vertexOffset = 0;
 		uint32_t indexOffset = 0;
 
@@ -87,24 +92,21 @@ namespace wc {
 				cmd.baseVertex = vertexOffset;
 				cmd.firstIndex = indexOffset;
 				auto& mesh = scene.mMeshes[node->mMeshes[j]];
-				std::vector<MeshVertex> vertices;
 				for (uint32_t i = 0; i < mesh->mNumVertices; i++)
 				{
-					MeshVertex vertex;
+					MeshVertex& vertex = vertices[vertexOffset];
 					vertex.Position = wc::AssimpGLMHelpers::GetGLMVec(mesh->mVertices[i]);
 					vertex.Normal = wc::AssimpGLMHelpers::GetGLMVec(mesh->mNormals[i]);
 
 					if (mesh->mTextureCoords[0])
 						vertex.TexCoords = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
 
-					vertices.push_back(vertex);
-					m_VertexBuffer.SetData(sizeof(MeshVertex), &vertex, vertexOffset * sizeof(MeshVertex));
 					vertexOffset++;
 				}
 				for (uint32_t i = 0; i < mesh->mNumFaces; i++)
 				{
 					aiFace& face = mesh->mFaces[i];
-					m_IndexBuffer.SetData(sizeof(uint32_t) * face.mNumIndices, face.mIndices, sizeof(uint32_t) * indexOffset);
+					memcpy((void*)(indices + indexOffset), face.mIndices, sizeof(uint32_t) * face.mNumIndices);
 					cmd.count += face.mNumIndices;
 					indexOffset += face.mNumIndices;
 				}

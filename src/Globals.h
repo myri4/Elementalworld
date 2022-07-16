@@ -14,8 +14,7 @@ static const uint32_t RenderDistance = 16;
 using ChunkID = uint16_t; // This represents the chunk id in the chunk array
 using BlockID = uint8_t;
 using MaterialID = uint8_t;
-
-const float blockSize = 1.f;
+using MeshID = uint32_t;
 
 std::string resourceName = "default";
 

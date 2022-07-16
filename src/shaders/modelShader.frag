@@ -11,11 +11,11 @@ layout(binding = 0) uniform sampler2D u_Texture;
 layout(location = 0) out vec4 FragColor;
 void main()
 {    
-    vec4 textureColor = texture(u_Texture, v_TexCoords);    
+    vec4 albedo = texture(u_Texture, v_TexCoords);    
     
 	vec3 N = v_Normal;
 	if (!gl_FrontFacing) N = -N;
 
-    vec4 finalColor = textureColor * vec4(rayTrace(textureColor.rgb, N), textureColor.a);
+    vec4 finalColor = albedo * vec4(rayTrace(N, vec4(0.f, 1.f, 1.f, 0.f), albedo.rgb), albedo.a);
     FragColor = finalColor;
 }
