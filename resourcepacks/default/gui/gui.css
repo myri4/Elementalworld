@@ -50,7 +50,10 @@
 
 #crosshair {
     display: block;
-    margin: 25% auto;
+    position: fixed;
+    transform: translate(16px , 16px);
+    left: 50vw;
+    top: 50vh;
 }
 
 #debug_info {
