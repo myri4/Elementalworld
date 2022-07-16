@@ -378,6 +378,11 @@ namespace wc {
 			glfwSetCursorPos(window, pos.x, pos.y);
 		}
 
+        void setMaximized(const bool& maximized) {
+            if (maximized) glfwMaximizeWindow(window);
+            else glfwRestoreWindow(window);
+        }
+
 		void ShowMouse(const bool& show) {
 			if (show) 
 				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);			
