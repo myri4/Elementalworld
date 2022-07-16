@@ -22,3 +22,7 @@
 .vs/Elementalworld/v17/ipch/AutoPCH/1e22ee6681272b66/MAIN.ipch
 .vs/Elementalworld/v17/ipch/AutoPCH/cf4fe1cd7d4f24f2/WORLD.ipch
 .vs/Elementalworld/v17/ipch/AutoPCH/eeee9f4d04ccff4b/INVENTORY.ipch
+*.ewr
+*.ec
+*.properties
+*.log
