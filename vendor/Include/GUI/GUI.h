@@ -114,10 +114,19 @@ namespace wc {
 			vertices[VertexCount + 2] = RmlVertex({ pos.x,		  pos.y, }, { 0.f, 1.f, textureIndex });
 			vertices[VertexCount + 3] = RmlVertex({ pos.x + size.x, pos.y, }, { 1.f, 1.f, textureIndex });
 
+			glm::mat4 trans = glm::mat4(1.f);
+
+			if (transformEnabled) {
+				transformEnabled = false;
+				trans = transform;
+			}
+
 			for (uint8_t i = 0; i < 4; i++) {
 				glm::vec2& Pos = vertices[i + VertexCount].position;
 				Pos = ((vertices[i + VertexCount].position / windowSize) * 2.f - 1.f);
 				Pos.y = -Pos.y;
+				glm::vec4 pos = glm::vec4(Pos, 0.f, 0.f) * trans;
+				Pos = glm::vec2(pos.x, pos.y);
 			}
 
 			indices[IndexCount + 0] = VertexCount;
@@ -259,9 +268,14 @@ namespace wc {
 			glDeleteTextures(1, (uint32_t*)&texture);
 		}
 
+		glm::mat4 transform = glm::mat4(0.f);
 		void SetTransform(const Rml::Matrix4f* rmlTransform) {
-			WC_INFO("SetTransform");
 			transformEnabled = (bool)rmlTransform;
+
+			if (rmlTransform) {
+				if (std::is_same<Rml::Matrix4f, Rml::ColumnMajorMatrix4f>::value) transform = glm::make_mat4(rmlTransform->data());
+				else if (std::is_same<Rml::Matrix4f, Rml::RowMajorMatrix4f>::value) transform = glm::make_mat4(rmlTransform->Transpose().data());				
+			}
 		}
 	} render_interface;
 
