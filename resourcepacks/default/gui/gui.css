@@ -22,35 +22,12 @@
   color: red;
   font: Minecraft;
 }
-#textBox{
-  background-color: red;
-  color: white;
-  font: Minecraft;
-}
-
-#textBox2{
-  background-color: red;
-  color: white;
-  margin-left: 19px;
-  font: Minecraft;
-}
-
-#chatTextbox{
-  background-color: red;
-  color: white;
-  font: Minecraft;
-}
-
-#crosshair2 {
-    width: 15px;
-    height: 15px;
-    margin-left: 632px;
-    margin-top: 219px;
-}
 
 #crosshair {
-    display: block;
-    margin: 25% auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(50%, 50%);
 }
 
 #debug_info {
