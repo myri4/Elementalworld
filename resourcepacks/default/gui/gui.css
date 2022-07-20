@@ -1,26 +1,33 @@
+body {
+    font-family: Minecraft;
+}
 #title {
-  margin-left: 150px;
-  font: Minecraft;
+    margin-left: 150px;
+    font: Minecraft;
 }
 #center {
-  margin-top: auto;
-  font: Minecraft;
+    display: block;
+    margin: 0 auto;
+    background: rgba(79,57,141,100);
+}
+.mode-bg {
+    width: 100%;
+    height: 100%;
+    decorator: image(../textures/misc/bg.png none cover center center);
 }
 #btn {
   margin-top: 30px;
+  margin-left: 9px;
+  margin-right: 9px;
   background-color: red;
   display: inline-block;
   padding: 19px;
   font-size: 17px;
-  border: 9px;
-  border-color: black;
-  font: Minecraft;
 }
 #btn:hover {
   background-color: blue;
   padding: 19px;
   color: red;
-  font: Minecraft;
 }
 
 #crosshair {
@@ -34,5 +41,4 @@
   margin-top: 5px;
   margin-left: 5px;
   font-size: 14px;
-  font: Minecraft;
 }
