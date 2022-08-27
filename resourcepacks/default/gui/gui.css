@@ -41,21 +41,9 @@
   font: Minecraft;
 }
 
-#crosshair2 {
-    width: 15px;
-    height: 15px;
-    margin-left: 632px;
-    margin-top: 219px;
-}
-
-#crosshair {
-    display: block;
-    margin: 25% auto;
-}
-
 #debug_info {
-  margin-top: 5px;
-  margin-left: 5px;
-  font-size: 14px;
-  font: Minecraft;
+    margin-top: 5px;
+    margin-left: 5px;
+    font-size: 14px;
+    font: Minecraft;
 }

@@ -1,4 +1,4 @@
-#version 450
+#pragma shader_stage(vertex)
 
 layout(location = 0) in vec3 a_Pos;
 layout(location = 1) in vec4 a_Color;

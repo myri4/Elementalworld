@@ -1,4 +1,5 @@
-#version 450
+#pragma shader_stage(vertex)
+
 layout (location = 0) in vec3 a_Pos;
 layout (location = 1) in vec3 a_TexCoord;
 layout (location = 2) in vec3 a_Normal;
@@ -37,7 +38,7 @@ void main()
     v_Normal = a_Normal;
 
     albedo = material.albedo[int(a_TexCoord.z)];
-    materialData = 0.f;
+    materialData = material.materialData[int(a_TexCoord.z)];
     flags = material.flags;
     color = decompress(material.color);
 

@@ -5,7 +5,7 @@
 
 namespace wc {
 
-	enum class CommandType { UNKNOWN = -1, textMessage, fly, collide, setTime, setBlock, give, setSpeed, getBlockID, Length };
+	enum class CommandType { UNKNOWN = -1, textMessage, fly, collide, setTime, setBlock, give, setSpeed, getBlockID };
 
 	CommandType getCommandType(const std::string& text, std::string& args) {
 		if (text[0] == '/') {
@@ -25,7 +25,7 @@ namespace wc {
 					args[i - length - 1] = text[i];
 			}
 
-			for (uint32_t i = (uint32_t)CommandType::textMessage; i < (uint32_t)CommandType::Length; i++)
+			for (uint32_t i = (uint32_t)CommandType::textMessage; i < magic_enum::enum_count<CommandType>(); i++)
 				if (buffer == magic_enum::enum_name((CommandType)i)) return (CommandType)i;
 
 			return CommandType::UNKNOWN;

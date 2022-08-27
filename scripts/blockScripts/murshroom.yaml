@@ -1,7 +1,6 @@
 isCollidable: false
-ConnectionType: "CUSTOM_MODEL"
 
-modelTexture: "murshroom.png"
+allTextures: "murshroom.png"
 modelPath: "Murshroom.obj"
 
 name: "murshroom"

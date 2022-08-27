@@ -5,7 +5,7 @@
 
 namespace gl {
 	class TextureArray {
-		uint32_t width = 32, height = 32;
+		uint32_t width = 128, height = 128;
 
 		uint32_t MaxTextureSize = 1;
 		uint32_t m_RendererID = 0;
@@ -32,9 +32,11 @@ namespace gl {
 
 		~TextureArray() { glDeleteTextures(1, &m_RendererID); }
 
-		void AddTexture(const void* data) {
+		uint32_t AddTexture(const void* data) {
+			uint32_t location = m_Textures;
 			glTextureSubImage3D(m_RendererID, 0, 0, 0, m_Textures, width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
-			m_Textures++;			
+			m_Textures++;
+			return location;
 		}
 
 		void GenerateMipmap() {

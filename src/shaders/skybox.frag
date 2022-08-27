@@ -1,4 +1,4 @@
-#version 450
+#pragma shader_stage(fragment)
 
 #include "include/sceneData.glsl"
 #include "include/Light.glsl"

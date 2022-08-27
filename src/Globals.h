@@ -5,11 +5,11 @@
 const uint16_t chunkSize = 16;
 const uint32_t chunkVolume = chunkSize * chunkSize * chunkSize;
 
-const uint32_t MaxFaceCount = chunkSize * chunkSize * 5;
+const uint32_t MaxFaceCount = chunkSize * chunkSize * 4;
 const uint32_t MaxVertexCount = MaxFaceCount * 4;
 const uint32_t MaxIndexCount = MaxFaceCount * 6;
 
-static const uint32_t RenderDistance = 16;
+static const uint32_t RenderDistance = 8;
 
 using ChunkID = uint16_t; // This represents the chunk id in the chunk array
 using BlockID = uint8_t;
@@ -18,6 +18,7 @@ using MeshID = uint32_t;
 
 std::string resourceName = "default";
 
+//@TODO: REMOVE
 enum MenuMode { GAME, INVENTORY, MAINMENU, SETTINGS, MULTIPLAYER, ESCMENU };
 uint32_t mode = MenuMode::MAINMENU;
 

@@ -43,6 +43,12 @@ namespace wc {
 			return index;
 		}
 
+		size_t push_back() {
+			size_t index = counter;
+			counter++;
+			return index;
+		}
+
 		size_t size() const { return counter; }
 		constexpr size_t allocated_size() const { return Size; }
 		constexpr size_t byte_size() const { return Size * sizeof(T); }

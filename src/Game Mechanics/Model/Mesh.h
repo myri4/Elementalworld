@@ -22,8 +22,7 @@ struct MeshVertex {
     //weights from each bone
     float m_Weights[MAX_BONE_INFLUENCE] = { 0.f };
 
-    MeshVertex() {
-        memset(m_BoneIDs,-1, sizeof(m_BoneIDs));
-        memset(m_Weights, 0, sizeof(m_Weights));
-    }
+    //uint32_t materialID = 0;
+
+    MeshVertex() {}
 };

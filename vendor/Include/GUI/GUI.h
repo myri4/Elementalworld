@@ -80,7 +80,7 @@ namespace wc {
 		}
 
 		void RenderGeometry(Rml::Vertex* p_vertices, int num_vertices, int* p_indices, int num_indices, Rml::TextureHandle texture, const Rml::Vector2f& translation) override {
-			if (IndexCount + num_indices >= MaxQuadIndexCount || TextureSlotIndex >= MaxTextures) { Flush(); WC_INFO("Out of memory... Flushing.");	}
+			if (IndexCount + num_indices >= MaxQuadIndexCount || TextureSlotIndex >= MaxTextures) Flush();
 
 			uint32_t texID = texture;
 			if (texID == 0) texID = whiteTexture;
@@ -175,7 +175,7 @@ namespace wc {
 
 		void SetScissorRegion(int x, int y, int width, int height) override {
 			if (!transformEnabled)
-				glScissor(x, /*window.GetSize()*/this->GetContext()->GetDimensions().y - (y + height), width, height);
+				glScissor(x, /*window.GetSize()*/windowSize.y - (y + height), width, height);
 			else {
 				// clear the stencil buffer
 				glStencilMask(GLuint(-1));
@@ -292,7 +292,7 @@ namespace wc {
 				case Rml::Log::Type::LT_ERROR:	WC_ERROR(message.c_str());    break;
 				case Rml::Log::Type::LT_ASSERT:	WC_INFO(message.c_str());     break;
 				case Rml::Log::Type::LT_WARNING:WC_WARN(message.c_str());     break;
-				case Rml::Log::Type::LT_INFO:	WC_INFO(message.c_str());     break;
+				//case Rml::Log::Type::LT_INFO:	WC_INFO(message.c_str());     break;
 				case Rml::Log::Type::LT_DEBUG:	WC_DEBUG(message.c_str());    break;
 				case Rml::Log::Type::LT_MAX:    WC_CRITICAL(message.c_str()); break;
 			}

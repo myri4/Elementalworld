@@ -101,7 +101,7 @@ namespace gl {
 	void load(const char* path, Texture& tex) {
 		int fnrComponents;
 		TextureProps props;
-		props.min_filter = GL_NEAREST_MIPMAP_LINEAR;
+		props.min_filter = GL_NEAREST;
 		props.min_filter = GL_NEAREST;
 		props.wrap_s = GL_CLAMP_TO_EDGE;
 		props.wrap_t = GL_CLAMP_TO_EDGE;

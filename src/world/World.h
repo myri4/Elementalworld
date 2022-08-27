@@ -47,6 +47,8 @@ namespace wc {
 		// Graphics
 		LineBatcher lineBatcher;
 
+		gl::Texture crosshair; // Temp
+
 		gl::Shader skyShader;
 		float rotateSpeed = 1.f * 0.6f; // one cycle is one unit (in minutes)
 		float angle = 0.f;
@@ -224,77 +226,63 @@ namespace wc {
 
 			if (worldGenState["water_level"].valid()) water_level = worldGenState["water_level"];
 
-			assets.Create(30, 32, 32);
+			assets.Create(40);
 			blockData.counter = 1;
 			materialData.Data = (Material*)materialsBuffer.Map(bits, materialData.allocated_size());
 			materialData.counter = 1;
 			itemData.counter = 1;
+
+			std::string diffusePath = "resourcepacks/" + resourceName + "/textures/block/diffuse/";
+			std::string materialPath = "resourcepacks/" + resourceName + "/textures/block/materials/";
 
 			//Loading blocks
 			for (auto& p : std::filesystem::directory_iterator("scripts/blockScripts")) {
 				std::string filename = p.path().stem().string();
 				if (p.is_regular_file()) { //AddBlockScript
 					std::string script = "scripts/blockScripts/" + filename + ".yaml";
-					std::string conType;
 					YAML::Node blockState = YAML::LoadFile(script);
 
 					Block block;
-					Material blockMaterial;
+					Material material;
 
 					if (blockState["name"]) block.name = blockState["name"].as<std::string>();
 					else WC_WARN("No block name is specified in '{0}'. Block name 'air' assumed.", script);
 
 					if (blockState["isCollidable"]) block.isCollidable = blockState["isCollidable"].as<bool>();
-					if (blockState["ConnectionType"]) conType = blockState["ConnectionType"].as<std::string>();
-					if (blockState["color"]) blockMaterial.color = blockState["color"].as<uint32_t>();
-					if (blockState["cull"]) if (blockState["cull"].as<bool>()) blockMaterial.flags |= WC_CULL_BIT;
-
-					for (uint8_t i = 0; i < ConnectionType::NON_EXISTENT; i++)
-						if (conType == magic_enum::enum_name((ConnectionType)i)) block.connectionType = (ConnectionType)i;
-
-					std::string diffusePath = "resourcepacks/" + resourceName + "/textures/block/diffuse/";
-					std::string materialPath = "resourcepacks/" + resourceName + "/textures/block/materials/";
+					if (blockState["ConnectionType"]) block.connectionType = magic_enum::enum_cast<ConnectionType>(blockState["ConnectionType"].as<std::string>()).value();
+					if (blockState["color"]) material.color = blockState["color"].as<uint32_t>();
+					if (blockState["cull"]) if (blockState["cull"].as<bool>()) material.flags |= WC_CULL_BIT;
 
 					if (blockState["allTextures"]) {
-						std::string filename = blockState["allTextures"].as<std::string>();
-						blockMaterial.albedo[0] = assets.LoadTexture(diffusePath + filename);
-						for (int i = 1; i < 6; i++) blockMaterial.albedo[i] = blockMaterial.albedo[0];
-
-						if (blockState["materialData"]) {
-							blockMaterial.materialData[0] = assets.LoadTextureMaterial(materialPath + filename);
-							for (int i = 1; i < 6; i++) blockMaterial.materialData[i] = blockMaterial.materialData[0];
-						}
-					}
-					// @TODO: Remove
-					else if (blockState["modelTexture"]) {
-						std::string filename = blockState["modelTexture"].as<std::string>();
-						blockMaterial.albedo[0] = assets.LoadModelTexture(diffusePath + filename);
-						for (int i = 1; i < 6; i++) blockMaterial.albedo[i] = blockMaterial.albedo[0];
-						
-						if (blockState["materialData"]) {
-							blockMaterial.materialData[0] = assets.LoadModelTextureMaterial(materialPath + filename);
-							for (int i = 1; i < 6; i++) blockMaterial.materialData[i] = blockMaterial.materialData[0];
-						}
+						material.albedo[0] = assets.LoadTexture(diffusePath + blockState["allTextures"].as<std::string>());
+						for (int i = 1; i < 6; i++) material.albedo[i] = material.albedo[0];
 					}
 					else {
-						for (uint32_t i = 0; i < (uint32_t)BlockTexture::LENGTH; i++) {
+						for (uint32_t i = 0; i < magic_enum::enum_count<BlockTexture>(); i++) {
 							auto name = std::string(magic_enum::enum_name((BlockTexture)i));
 							if (blockState[name]) 
-								blockMaterial.albedo[i] = assets.LoadTexture(diffusePath + blockState[name].as<std::string>());
+								material.albedo[i] = assets.LoadTexture(diffusePath + blockState[name].as<std::string>());
 						}
-
 					}
 					if (blockState["emitLight"]) block.emitLight = blockState["emitLight"].as<bool>();
 
-					if (block.connectionType == ConnectionType::CUSTOM_MODEL) blockMaterial.flags |= WC_MODEL_BIT;
-					block.material = materialData.push_back(blockMaterial);
+					if (blockState["modelPath"]) { 
+						material.flags |= WC_MODEL_BIT;
+						block.connectionType = ConnectionType::CUSTOM_MODEL;
+					}
+
+					if (blockState["materialData"]) {
+						material.materialData[0] = assets.LoadTextureMaterial(materialPath + blockState["materialData"].as<std::string>());
+						for (int i = 1; i < 6; i++) material.materialData[i] = material.materialData[0];
+					}
+
+					block.material = materialData.push_back(material);
 					if (blockState["modelPath"]) {
 						std::string path = blockState["modelPath"].as<std::string>();
 						block.meshID = blockMeshes.size();
 						blockMeshes[block.meshID].Load("resourcepacks/" + resourceName + "/models/" + path, block.material);
 						blockMeshes.counter++;
 					}
-
 
 					blockData.push_back(block);
 				}
@@ -341,9 +329,10 @@ namespace wc {
 			chunkShader.SetIndexBuffer(globalIndexBuffer);
 
 			model.Create("resourcepacks/default/models/player_model.obj");
+			gl::load("resourcepacks/default/textures/misc/cursor.png", crosshair);
 			//animation.Create("resourcepacks/default/models/dancing_vampire.dae", model);
 
-			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 1.f, 1.f, 0.f)));
+			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 0.891f, 0.796f, 0.f)));
 
 			grass = getBlockID("grass_block");
 			stone = getBlockID("stone_block");
@@ -616,13 +605,12 @@ namespace wc {
 
 			assets.Bind();
 			chunkShader.use();
-			chunkShader.SetVertexBuffer(globalVertexBuffer, sizeof(Vertex));
 			chunkShader.SetIndexBuffer(globalIndexBuffer);
+			chunkShader.SetVertexBuffer(globalVertexBuffer, sizeof(Vertex));
 			indirectBuffer.Bind();
 			glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, chunks.size(), sizeof(gl::DrawElementsIndirectCommand));
 			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 
-			assets.BindModelData();
 			for (uint32_t i = 0; i < blockMeshes.size(); i++) {
 				BlockMesh& mesh = blockMeshes[i];
 				if (mesh.cmd.instanceCount > 0) {
@@ -669,9 +657,8 @@ namespace wc {
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			render_interface.DrawQuad({ 0,0 }, sceneData.windowSize, finalImage);
-			if (renderGUI) render_interface.DrawQuad((sceneData.windowSize - 15.f) / 2.f, { 15, 15 }, render_interface.whiteTexture);
+			if (renderGUI) render_interface.DrawQuad((sceneData.windowSize - 20.f) / 2.f, { 20, 20 }, crosshair);
 		}
-
 
 		void ParseCommand(std::string& command) {
 			// Command parsing

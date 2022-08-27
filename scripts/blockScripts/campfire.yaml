@@ -1,6 +1,5 @@
 isCollidable: false
-ConnectionType: "CUSTOM_MODEL"
-modelTexture: "campfire.png"
+allTextures: "campfire.png"
 materialData: "campfire.png"
 modelPath: "campfire.obj"
 name: "campfire"
