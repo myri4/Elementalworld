@@ -118,11 +118,4 @@ struct Block{
 List<Block, 40> blockData;
 List<BlockMesh, 10> blockMeshes;
 PointerList<Material, 40> materialData;
-
-struct RarityTable {
-	BlockID block = 0;
-
-	float start = 0.f;
-	float end = 0.f;
-};
 }

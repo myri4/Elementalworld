@@ -9,7 +9,7 @@ const uint32_t MaxFaceCount = chunkSize * chunkSize * 4;
 const uint32_t MaxVertexCount = MaxFaceCount * 4;
 const uint32_t MaxIndexCount = MaxFaceCount * 6;
 
-static const uint32_t RenderDistance = 8;
+static const uint32_t RenderDistance = 16;
 
 using ChunkID = uint16_t; // This represents the chunk id in the chunk array
 using BlockID = uint8_t;

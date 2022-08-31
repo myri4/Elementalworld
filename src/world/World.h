@@ -49,21 +49,26 @@ namespace wc {
 
 		gl::Texture crosshair; // Temp
 
-		gl::Shader skyShader;
 		float rotateSpeed = 1.f * 0.6f; // one cycle is one unit (in minutes)
 		float angle = 0.f;
+#ifndef RAY_TRACING
+		gl::Shader skyShader;
 
 		Frustum viewFrustum;
 		gl::Shader chunkShader;
+#endif
 
 		gl::UniformBuffer seneDataBuffer;
 
 		gl::UniformBuffer lightBuffer;
 		gl::ShaderStorageBuffer materialsBuffer;
 		gl::ShaderStorageBuffer blockTransformBuffer;
-		glm::vec4* blockTransforms = nullptr;
+
 		uint32_t currentLightID = 0;
+#ifndef RAY_TRACING
+		glm::vec4* blockTransforms = nullptr;
 		uint32_t transformOffset = 0;
+#endif
 
 		struct SceneData {
 			glm::mat4 ViewProj = glm::mat4(1.f);
@@ -76,11 +81,13 @@ namespace wc {
 			uint32_t transformOffset = 0;
 		};
 
+#ifndef RAY_TRACING
 		gl::Buffer globalVertexBuffer;
 		gl::Buffer globalIndexBuffer;
 		gl::DrawIndirectBuffer indirectBuffer;
 		gl::DrawElementsIndirectCommand* cmds = nullptr;
 		std::array<Chunk, RenderDistance* RenderDistance* RenderDistance> chunks;
+#endif
 
 		FastNoiseLite worldNoise;
 		FastNoiseLite treeNoise;
@@ -290,6 +297,8 @@ namespace wc {
 			assets.Free();
 
 			lineBatcher.Create();
+
+#ifndef RAY_TRACING
 			chunkShader.VertexAttribPointer(0, 3, offsetof(Vertex, Position));  // position attribute
 			chunkShader.VertexAttribPointer(1, 3, offsetof(Vertex, TexCoords)); // texture coord attribute
 			chunkShader.VertexAttribPointer(2, 3, offsetof(Vertex, Normal)); // type attribute
@@ -327,6 +336,7 @@ namespace wc {
 
 			chunkShader.SetVertexBuffer(globalVertexBuffer, sizeof(Vertex));
 			chunkShader.SetIndexBuffer(globalIndexBuffer);
+#endif
 
 			model.Create("resourcepacks/default/models/player_model.obj");
 			gl::load("resourcepacks/default/textures/misc/cursor.png", crosshair);
@@ -549,14 +559,16 @@ namespace wc {
 
 			lights[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 0.f, 1.f)));
 
+#ifndef RAY_TRACING
 			// Draw sky
 			skyShader.use();
 			glDrawArrays(GL_TRIANGLES, 0, 3);
+			viewFrustum.update(sceneData.ViewProj);
+#endif
 
 			angle += deltaTime * rotateSpeed;
 			angle = glm::mod(angle, 360.f);
 
-			viewFrustum.update(sceneData.ViewProj);
 			uint32_t chunkHalf = chunkSize / 2;
 			glm::vec3 currentPlayerPos = getChunkPos(p.Position); // @TODO: hmmm? why doesnt it work with glm::ivec3?
 			for (ChunkID i = 0; i < chunks.size(); i++) {
@@ -592,6 +604,8 @@ namespace wc {
 				generateTerrain = false;
 			}
 
+
+#ifndef RAY_TRACING
 			for (ChunkID i = 0; i < chunks.size(); i++) {
 
 				if (chunks[i].canBeUpdated) { UpdateMesh(i); chunks[i].canBeUpdated = false; }
@@ -621,6 +635,7 @@ namespace wc {
 					seneDataBuffer.SetData(sizeof(SceneData), &sceneData);
 				}
 			}
+#endif
 
 
 			if (RectVsRect(box, AABB(p.Position - p.Size, p.Size * 2.f)))
@@ -642,7 +657,10 @@ namespace wc {
 			animationBuffer.SetData(sizeof(glm::mat4), glm::value_ptr(Model), sizeof(glm::mat4) * MAX_BONE_WEIGHTS);
 
 			if (thirdPerson)
+
+#ifndef RAY_TRACING
 				model.Draw();
+#endif
 
 			screen.unbind();
 			// GUI		

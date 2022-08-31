@@ -16,9 +16,11 @@ namespace wc {
 
 	struct Chunk {
 		glm::ivec3 position = glm::ivec3(0);
+#ifndef RAY_TRACING
 		BlockID data[chunkSize][chunkSize][chunkSize] = { 0 };
 		int16_t neighborPos[3] = { -1,-1,-1 };
 		int16_t neighborNeg[3] = { -1,-1,-1 };
+#endif
 
 		bool used : 1; // Should the chunk be saved
 		bool generated : 1;
