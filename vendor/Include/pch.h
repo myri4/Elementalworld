@@ -17,24 +17,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-//OpenGL
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
 //Internet connection
 #include <net/wc_net.h>
-
-//Custom libraries
-#include <gl/Buffer.h>
-#include <gl/Shaders.h>
-#include <gl/Texture.h>
-#include <gl/FrameBuffer.h>
-#include <gl/Fence.h>
-
-#include <Maths/Camera.h>
-
-//Lua
-#include <sol/sol.hpp>
 
 //Util
 #include <Utils/Log.h>
@@ -43,6 +27,18 @@
 #include <Utils/Random.h>
 #include <Utils/Window.h>
 #include <Utils/List.h>
+
+//Custom libraries
+#include <vk/Buffer.h>
+#include <vk/Pipeline.h>
+#include <vk/Images.h>
+#include <vk/Renderpass.h>
+#include <vk/Synchronization.h>
+
+#include <Maths/Camera.h>
+
+//Lua
+#include <sol/sol.hpp>
 
 // GUI
 #include <GUI/AssetManager.h>

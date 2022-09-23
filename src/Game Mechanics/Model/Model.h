@@ -8,6 +8,7 @@
 
 #include <unordered_map>
 #include <Maths/AssimpGLMHelpers.h>
+#include <wc/Shader.h>
 
 namespace wc {
 
@@ -20,10 +21,21 @@ namespace wc {
 	public:
 		Model() {}
 
-		void Create(const std::string& path) {
+		void Create(const std::string& path, const vk::RenderPass& renderPass, const glm::vec2& windowSize) {
 			// read file via ASSIMP
-			shader.Create("resourcepacks/" + resourceName + "/shaders/modelShader.vert", "resourcepacks/" + resourceName + "/shaders/modelShader.frag");
-			shader.depthTest = true;
+			wc::ShaderCreateInfo createInfo;
+			std::string resourceName = "default"; // @TODO: Remove
+			createInfo.vertexShader = "resourcepacks/" + resourceName + "/shaders/modelShader.vert";
+			createInfo.fragmentShader = "resourcepacks/" + resourceName + "/shaders/modelShader.frag";
+			createInfo.windowSize = windowSize;
+			createInfo.renderPass = renderPass;
+			createInfo.vertexDescription = MeshVertex::get_vertex_description();
+			createInfo.blending = false;
+			createInfo.depthTest = true;
+			createInfo.invertY = true;
+			shader.Create(createInfo);
+			
+
 			Assimp::Importer importer;
 			const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_OptimizeMeshes);
 			// check for errors
@@ -33,63 +45,80 @@ namespace wc {
 				return;
 			}
 
-			// set the vertex attribute pointers
-			// vertex Positions
-			shader.VertexAttribPointer(0, 3, offsetof(MeshVertex, Position));
-			// vertex normals
-			shader.VertexAttribPointer(1, 3, offsetof(MeshVertex, Normal));
-			// vertex texture coords
-			shader.VertexAttribPointer(2, 2, offsetof(MeshVertex, TexCoords));
-			// ids
-			shader.VertexAttribPointer(3, 4, offsetof(MeshVertex, m_BoneIDs));
-			// weights
-			shader.VertexAttribPointer(4, 4, offsetof(MeshVertex, m_Weights));
-
 			std::string file = "resourcepacks/default/models/playermodel_tex.png";
-			load(file.c_str(), diffuseTexture);
+
+			VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+
+			sampler.magFilter = VK_FILTER_NEAREST;
+			sampler.minFilter = VK_FILTER_NEAREST;
+			sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+			sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+			sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+			vk::loadTexture(file, diffuseTexture);
+			diffuseTexture.SetSamplerInfo(sampler);
+
+			{
+				vk::DescriptorWriter writer;
+				writer.dstSet = shader.descriptorSet;
+				writer.write_image(0, diffuseTexture.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+
+				vk::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+			}
 
 			uint32_t totalIndices = 0, totalVertices = 0;
 			getNodeParameters(scene->mRootNode, *scene, totalIndices, totalVertices);
 
-			uint32_t bits = GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
-			m_IndexBuffer.Create(sizeof(uint32_t) * totalIndices, bits);
-			m_VertexBuffer.Create(sizeof(MeshVertex) * totalVertices, bits);
-			vertices = (MeshVertex*)m_VertexBuffer.Map(bits, sizeof(MeshVertex) * totalVertices);
-			indices = (uint32_t*)m_IndexBuffer.Map(bits, sizeof(uint32_t) * totalIndices);
+			m_IndexBuffer.Create(sizeof(uint32_t) * totalIndices, vk::INDEX_BUFFER);
+			m_VertexBuffer.Create(sizeof(MeshVertex) * totalVertices, vk::VERTEX_BUFFER);
 
-			shader.SetVertexBuffer(m_VertexBuffer, sizeof(MeshVertex));
-			shader.SetIndexBuffer(m_IndexBuffer);
+			vertices.Create(sizeof(MeshVertex) * totalVertices);
+			vertices.Map();
+
+			indices.Create(sizeof(uint32_t) * totalIndices);
+			indices.Map();
 
 			// process ASSIMP's root node recursively
 			cmds.reserve(scene->mNumMeshes);
 			processNode(scene->mRootNode, *scene);
+
+			vertices.Unmap();
+			indices.Unmap();
+
+			m_IndexBuffer.SetData(indices.GetBuffer(), sizeof(uint32_t) * totalIndices);
+			m_IndexBuffer.SetData(vertices.GetBuffer(), sizeof(MeshVertex) * totalVertices);
+
+			m_IndirectBuffer.Create(sizeof(VkDrawIndexedIndirectCommand) * cmds.size(), vk::INDIRECT_BUFFER);
 		}
 
 		// draws the model, and thus all its meshes
-		void Draw()
+		void Draw(const vk::CommandBuffer& cmd)
 		{
-			diffuseTexture.Bind();
-			shader.use();
-			glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, cmds.data(), cmds.size(), sizeof(gl::DrawElementsIndirectCommand));
+			shader.Bind(cmd);
+			cmd.DrawIndexedIndirect(m_IndirectBuffer, cmds.size());
 		}
 
 		std::unordered_map<std::string, BoneInfo> m_OffsetMatMap;
-		gl::Shader shader;
+		wc::Shader shader;
 	private:
-		gl::Buffer m_IndexBuffer;
-		gl::Buffer m_VertexBuffer;
-		gl::Texture diffuseTexture;
-		std::vector<gl::DrawElementsIndirectCommand> cmds;
-		MeshVertex* vertices = nullptr;
-		uint32_t* indices = nullptr;
+		vk::Buffer m_IndexBuffer;
+		vk::Buffer m_VertexBuffer;
+
+		vk::Texture diffuseTexture;
+
+		vk::Buffer m_IndirectBuffer;
+		std::vector<VkDrawIndexedIndirectCommand> cmds;
+
+		vk::CPUBuffer<MeshVertex> vertices;
+		vk::CPUBuffer<uint32_t> indices;
 		uint32_t vertexOffset = 0;
 		uint32_t indexOffset = 0;
 
 		void processNode(const aiNode* node, const aiScene& scene) {
 			// @TODO: drop the mesh updates a little down to fix animation if it doesnt work
 			for (uint32_t j = 0; j < node->mNumMeshes; j++) {
-				gl::DrawElementsIndirectCommand cmd;
-				cmd.baseVertex = vertexOffset;
+				VkDrawIndexedIndirectCommand cmd;
+				cmd.vertexOffset = vertexOffset;
 				cmd.firstIndex = indexOffset;
 				auto& mesh = scene.mMeshes[node->mMeshes[j]];
 				for (uint32_t i = 0; i < mesh->mNumVertices; i++)
@@ -97,22 +126,22 @@ namespace wc {
 					MeshVertex& vertex = vertices[vertexOffset];
 					vertex.Position = wc::AssimpGLMHelpers::GetGLMVec(mesh->mVertices[i]);
 					vertex.Normal = wc::AssimpGLMHelpers::GetGLMVec(mesh->mNormals[i]);
-
+			
 					if (mesh->mTextureCoords[0])
 						vertex.TexCoords = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
-
+			
 					vertexOffset++;
 				}
 				for (uint32_t i = 0; i < mesh->mNumFaces; i++)
 				{
 					aiFace& face = mesh->mFaces[i];
 					memcpy((void*)(indices + indexOffset), face.mIndices, sizeof(uint32_t) * face.mNumIndices);
-					cmd.count += face.mNumIndices;
+					cmd.indexCount += face.mNumIndices;
 					indexOffset += face.mNumIndices;
 				}
-
+			
 				cmds.emplace_back(cmd);
-
+			
 				m_OffsetMatMap.reserve(mesh->mNumBones);
 				for (uint32_t boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
 				{
@@ -125,11 +154,11 @@ namespace wc {
 					}
 					else
 						boneID = m_OffsetMatMap[boneName].id;
-
+			
 					assert(boneID != -1);
 					auto& weights = mesh->mBones[boneIndex]->mWeights;
 					uint32_t& numWeights = mesh->mBones[boneIndex]->mNumWeights;
-
+			
 					for (uint32_t weightIndex = 0; weightIndex < numWeights; ++weightIndex)
 						SetVertexBoneData(vertices[weights[weightIndex].mVertexId], boneID, weights[weightIndex].mWeight);
 				}								

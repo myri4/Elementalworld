@@ -11,6 +11,10 @@
 #include "../Game Mechanics/CommandParser.h"
 #include <Utils/Memory.h>
 
+#include <wc/Shader.h>
+#include <wc/Framebuffer.h>
+#include <Utils/DeletionQueue.h>
+
 namespace wc {
 	enum class GameMsg : uint32_t
 	{
@@ -33,6 +37,7 @@ namespace wc {
 	};
 
 	class GameInstance {
+		DeletionQueue delQueue;
 		// Player related
 		Camera camera;
 		float MouseSensitivity = 5.f;
@@ -47,26 +52,27 @@ namespace wc {
 		// Graphics
 		LineBatcher lineBatcher;
 
-		gl::Texture crosshair; // Temp
+		uint32_t crosshair; // Temp
 
 		float rotateSpeed = 1.f * 0.6f; // one cycle is one unit (in minutes)
 		float angle = 0.f;
 #ifndef RAY_TRACING
-		gl::Shader skyShader;
+		wc::Shader skyShader;
 
 		Frustum viewFrustum;
-		gl::Shader chunkShader;
+		wc::Shader chunkShader;
+		bool updateChunks = false;
 #endif
 
-		gl::UniformBuffer seneDataBuffer;
+		vk::Buffer sceneDataBuffer; // ubo
 
-		gl::UniformBuffer lightBuffer;
-		gl::ShaderStorageBuffer materialsBuffer;
-		gl::ShaderStorageBuffer blockTransformBuffer;
+		vk::Buffer lightBuffer; // ubo
+		vk::Buffer materialsBuffer; // ssbo
+		vk::Buffer blockTransformBuffer; // ssbo
 
 		uint32_t currentLightID = 0;
 #ifndef RAY_TRACING
-		glm::vec4* blockTransforms = nullptr;
+		vk::CPUBuffer<glm::vec4> blockTransforms;
 		uint32_t transformOffset = 0;
 #endif
 
@@ -78,14 +84,12 @@ namespace wc {
 			alignas(16) glm::vec3 vertical = glm::vec3(0.f);
 			alignas(16) glm::vec2 windowSize = glm::vec2(0.f);
 			uint32_t numLights = 0;
-			uint32_t transformOffset = 0;
 		};
 
 #ifndef RAY_TRACING
-		gl::Buffer globalVertexBuffer;
-		gl::Buffer globalIndexBuffer;
-		gl::DrawIndirectBuffer indirectBuffer;
-		gl::DrawElementsIndirectCommand* cmds = nullptr;
+		vk::Buffer globalVertexBuffer;
+		vk::Buffer globalIndexBuffer;
+		vk::Buffer indirectBuffer; // indirect buffer
 		std::array<Chunk, RenderDistance* RenderDistance* RenderDistance> chunks;
 #endif
 
@@ -103,7 +107,7 @@ namespace wc {
 		std::string worldName = "New world";
 		//Animation animation;
 		Model model;
-		gl::UniformBuffer animationBuffer;
+		vk::Buffer animationBuffer; // ubo
 
 		void SaveStructure(const char* outFile, const glm::ivec3& Start, const glm::ivec3& End) {
 			glm::ivec3 start = Start;
@@ -147,21 +151,26 @@ namespace wc {
 			glm::vec3 vector;
 			uint32_t color;
 		};
-		Light* lights = nullptr;
+		vk::CPUBuffer<Light> lights;
 		uint32_t maxLights = chunkVolume;
 		// Composite stuff
-		gl::FrameBuffer screen;
-		gl::Texture scrTexture;
-		gl::Texture finalImage;
-		gl::ComputeShader compositeShader;
-		gl::Texture bloomBuffers[3];
+		wc::Framebuffer screen;
+		vk::Texture scrTexture;
+		uint32_t framebufferTextureHandle = 0;
+
+
+		//vk::Texture scrTexture;
+		vk::Texture finalImage;
+		wc::ComputeShader compositeShader;
+		vk::Image bloomBuffers[3];
+		vk::ImageView bloomImageView;
+		vk::Sampler bloomSampler;
 
 		glm::ivec2 bloomTexSize = glm::ivec2(0);
 		uint32_t m_BloomComputeWorkGroupSize = 4;
 		uint32_t mips = 1;
 
-		gl::ComputeShader bloomShader;
-		gl::UniformBuffer bloomUBO;
+		wc::ComputeShader bloomShader;
 
 		enum class BloomMode
 		{
@@ -187,33 +196,77 @@ namespace wc {
 		bool renderGUI = true;
 		Player p;
 
-		void Create() {
-			chunkShader.Create("resourcepacks/" + resourceName + "/shaders/chunkShader.vert", "resourcepacks/" + resourceName + "/shaders/chunkShader.frag");
-			skyShader.Create("resourcepacks/" + resourceName + "/shaders/skybox.vert", "resourcepacks/" + resourceName + "/shaders/skybox.frag");
+		void Create(const glm::vec2& windowSize) {						
+			sceneDataBuffer.Create(sizeof(SceneData), vk::UNIFORM_BUFFER); // 0
+			delQueue.push_function([=] { sceneDataBuffer.Destroy(); });
+			
+			lightBuffer.Create(maxLights * sizeof(Light), vk::UNIFORM_BUFFER); // 1
+			delQueue.push_function([=] { lightBuffer.Destroy(); });
+			
+			materialsBuffer.Create(materialData.byte_size(), vk::STORAGE_BUFFER); // 3
+			delQueue.push_function([=] { materialsBuffer.Destroy(); });
+			
+			blockTransformBuffer.Create(sizeof(glm::vec4) * chunks.size() * chunkVolume, vk::STORAGE_BUFFER); // 4
+			delQueue.push_function([=] { blockTransformBuffer.Destroy(); });
+			
+			animationBuffer.Create(sizeof(glm::mat4) * (MAX_BONE_WEIGHTS + 1), vk::UNIFORM_BUFFER); // 5
+			delQueue.push_function([=] { animationBuffer.Destroy(); });
+			
+			assets.Create(40);
+			delQueue.push_function([] { assets.Destroy(); });
+
+			{
+				wc::ShaderCreateInfo createInfo;
+				createInfo.vertexShader = "resourcepacks/" + resourceName + "/shaders/chunkShader.vert";
+				createInfo.fragmentShader = "resourcepacks/" + resourceName + "/shaders/chunkShader.frag";
+				createInfo.windowSize = windowSize;
+				createInfo.renderPass = screen.renderPass;
+				createInfo.vertexDescription = Vertex::get_vertex_description();
+				createInfo.blending = true;
+				createInfo.depthTest = true;
+				createInfo.invertY = true; // doesnt matter
+				chunkShader.Create(createInfo);
+
+				vk::DescriptorWriter writer;
+				writer.dstSet = chunkShader.descriptorSet;
+				writer.write_buffer(0, sceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+					.write_buffer(1, lightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+					.write_buffer(2, materialsBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+					.write_buffer(3, blockTransformBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+					.write_image(4, assets.texArr.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+					.write_image(5, assets.textureMaterialArr.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+
+				vk::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+
+				delQueue.push_function([=] { chunkShader.Destroy(); });
+			}
+			{
+				wc::ShaderCreateInfo createInfo;
+				createInfo.vertexShader = "resourcepacks/" + resourceName + "/shaders/skybox.vert";
+				createInfo.fragmentShader = "resourcepacks/" + resourceName + "/shaders/skybox.frag";
+				createInfo.windowSize = windowSize;
+				createInfo.renderPass = screen.renderPass;
+				vk::VertexInputDescription desc; // empty
+				createInfo.vertexDescription = desc;
+				createInfo.blending = false;
+				createInfo.depthTest = false;
+				createInfo.invertY = true; // doesnt matter
+				skyShader.Create(createInfo);
+
+				vk::DescriptorWriter writer;
+				writer.dstSet = skyShader.descriptorSet;
+				writer.write_buffer(0, sceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+					.write_buffer(1, lightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+				vk::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+
+				delQueue.push_function([=] { skyShader.Destroy(); });
+			}
 			bloomShader.Create("resourcepacks/" + resourceName + "/shaders/bloomShader.comp");
+			delQueue.push_function([=] { bloomShader.Destroy(); });
 			compositeShader.Create("resourcepacks/" + resourceName + "/shaders/composite.comp");
-
-			chunkShader.depthTest = true;
-
-			uint32_t bits = GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
-			seneDataBuffer.Create(sizeof(SceneData), GL_DYNAMIC_STORAGE_BIT);
-			seneDataBuffer.BufferBase(0);
-
-			lightBuffer.Create(maxLights * sizeof(Light), bits);
-			lightBuffer.BufferBase(1);
-
-			materialsBuffer.Create(materialData.byte_size(), bits);
-			materialsBuffer.BufferBase(3);
-
-			bloomUBO.Create(sizeof(BloomUBOSettings), GL_DYNAMIC_STORAGE_BIT);
-			bloomUBO.BufferBase(4);
-
-			animationBuffer.Create(sizeof(glm::mat4) * (MAX_BONE_WEIGHTS + 1), GL_DYNAMIC_STORAGE_BIT);
-			animationBuffer.BufferBase(5);
-
-			blockTransformBuffer.Create(sizeof(glm::vec4) * chunks.size() * chunkVolume, bits);
-			blockTransformBuffer.BufferBase(6);
-
+			delQueue.push_function([=] { compositeShader.Destroy(); });
+			
 			sol::state worldGenState;
 			worldGenState.new_usertype<FastNoiseLite>("Noise", sol::constructors<void()>(),
 				"SetOctaves", &FastNoiseLite::SetFractalOctaves,
@@ -230,36 +283,39 @@ namespace wc {
 			if (worldGenState["noise"].valid()) worldNoise = worldGenState["noise"];
 			if (worldGenState["TreeNoise"].valid()) treeNoise = worldGenState["TreeNoise"];
 			if (worldGenState["CaveNoise"].valid()) caveNoise = worldGenState["CaveNoise"];
-
+			
 			if (worldGenState["water_level"].valid()) water_level = worldGenState["water_level"];
-
-			assets.Create(40);
+			
+			//@TODO: more work has to be done here
+			vk::StagingBuffer matBuffer;
+			matBuffer.Create(materialData.byte_size());
+			
 			blockData.counter = 1;
-			materialData.Data = (Material*)materialsBuffer.Map(bits, materialData.allocated_size());
+			materialData.Data = (Material*)matBuffer.Map();
 			materialData.counter = 1;
 			itemData.counter = 1;
-
+			
 			std::string diffusePath = "resourcepacks/" + resourceName + "/textures/block/diffuse/";
 			std::string materialPath = "resourcepacks/" + resourceName + "/textures/block/materials/";
-
+			
 			//Loading blocks
 			for (auto& p : std::filesystem::directory_iterator("scripts/blockScripts")) {
 				std::string filename = p.path().stem().string();
 				if (p.is_regular_file()) { //AddBlockScript
 					std::string script = "scripts/blockScripts/" + filename + ".yaml";
 					YAML::Node blockState = YAML::LoadFile(script);
-
+			
 					Block block;
 					Material material;
-
+			
 					if (blockState["name"]) block.name = blockState["name"].as<std::string>();
 					else WC_WARN("No block name is specified in '{0}'. Block name 'air' assumed.", script);
-
+			
 					if (blockState["isCollidable"]) block.isCollidable = blockState["isCollidable"].as<bool>();
 					if (blockState["ConnectionType"]) block.connectionType = magic_enum::enum_cast<ConnectionType>(blockState["ConnectionType"].as<std::string>()).value();
 					if (blockState["color"]) material.color = blockState["color"].as<uint32_t>();
 					if (blockState["cull"]) if (blockState["cull"].as<bool>()) material.flags |= WC_CULL_BIT;
-
+			
 					if (blockState["allTextures"]) {
 						material.albedo[0] = assets.LoadTexture(diffusePath + blockState["allTextures"].as<std::string>());
 						for (int i = 1; i < 6; i++) material.albedo[i] = material.albedo[0];
@@ -272,78 +328,82 @@ namespace wc {
 						}
 					}
 					if (blockState["emitLight"]) block.emitLight = blockState["emitLight"].as<bool>();
-
+			
 					if (blockState["modelPath"]) { 
 						material.flags |= WC_MODEL_BIT;
 						block.connectionType = ConnectionType::CUSTOM_MODEL;
 					}
-
+			
 					if (blockState["materialData"]) {
 						material.materialData[0] = assets.LoadTextureMaterial(materialPath + blockState["materialData"].as<std::string>());
 						for (int i = 1; i < 6; i++) material.materialData[i] = material.materialData[0];
 					}
-
-					block.material = materialData.push_back(material);
+			
+					block.materialID = materialData.push_back(material);
 					if (blockState["modelPath"]) {
 						std::string path = blockState["modelPath"].as<std::string>();
 						block.meshID = blockMeshes.size();
-						blockMeshes[block.meshID].Load("resourcepacks/" + resourceName + "/models/" + path, block.material);
+						uint32_t id = block.meshID;
+						blockMeshes[id].Load("resourcepacks/" + resourceName + "/models/" + path, block.materialID);
+						delQueue.push_function([=] { blockMeshes[id].Destroy(); });
 						blockMeshes.counter++;
 					}
-
+			
 					blockData.push_back(block);
 				}
 			}
 			assets.Free();
-
-			lineBatcher.Create();
+			matBuffer.Unmap();
+			materialsBuffer.SetData(matBuffer, materialData.byte_size());
+			matBuffer.Destroy();
+			
+			lineBatcher.Create(screen.renderPass, sceneDataBuffer.GetDescriptorInfo());
+			delQueue.push_function([=] { lineBatcher.Destroy(); });
 
 #ifndef RAY_TRACING
-			chunkShader.VertexAttribPointer(0, 3, offsetof(Vertex, Position));  // position attribute
-			chunkShader.VertexAttribPointer(1, 3, offsetof(Vertex, TexCoords)); // texture coord attribute
-			chunkShader.VertexAttribPointer(2, 3, offsetof(Vertex, Normal)); // type attribute
-			chunkShader.VertexAttribPointer(3, 1, offsetof(Vertex, materialID)); // color attribute
-
-			indirectBuffer.Create(chunks.size() * sizeof(gl::DrawElementsIndirectCommand), bits);
-			globalVertexBuffer.Create(MaxVertexCount * sizeof(Vertex) * chunks.size(), bits);
-			globalIndexBuffer.Create(MaxIndexCount * sizeof(uint32_t) * chunks.size(), bits);
-
-			cmds = (gl::DrawElementsIndirectCommand*)indirectBuffer.Map(bits, chunks.size() * sizeof(gl::DrawElementsIndirectCommand));
-			globalVertices = (Vertex*)globalVertexBuffer.Map(bits, MaxVertexCount * sizeof(Vertex) * chunks.size());
-
-			lights = (Light*)lightBuffer.Map(bits, maxLights * sizeof(Light));
-			blockTransforms = (glm::vec4*)blockTransformBuffer.Map(bits, sizeof(glm::vec4) * chunks.size() * chunkVolume);
-
-			for (ChunkID i = 0; i < chunks.size(); i++) {
-				//Configuring the vertex buffer
-				cmds[i].baseVertex = i * MaxVertexCount;
-			}
+			indirectBuffer.Create(chunks.size() * sizeof(VkDrawIndexedIndirectCommand), vk::INDIRECT_BUFFER);
+			delQueue.push_function([=] { indirectBuffer.Destroy(); });
+			globalVertexBuffer.Create(MaxVertexCount * sizeof(Vertex) * chunks.size(), vk::VERTEX_BUFFER);
+			delQueue.push_function([=] { globalVertexBuffer.Destroy(); });
+			globalIndexBuffer.Create(MaxIndexCount * sizeof(uint32_t) * chunks.size(), vk::INDEX_BUFFER);
+			delQueue.push_function([=] { globalIndexBuffer.Destroy(); });
+						
+			lights.Create(maxLights * sizeof(Light));
+			delQueue.push_function([=] { lights.Unmap(); lights.Destroy(); });
+			lights.Map();
+			
+			blockTransforms.Create(sizeof(glm::vec4) * chunks.size() * chunkVolume);
+			delQueue.push_function([=] { blockTransforms.Unmap(); blockTransforms.Destroy(); });
+			blockTransforms.Map();
 
 			uint32_t iOffset = 0;
-			uint32_t* indices = (uint32_t*)globalIndexBuffer.Map(bits, MaxIndexCount * sizeof(uint32_t));
+			vk::CPUBuffer <uint32_t> indices;
+			indices.Create(MaxIndexCount * sizeof(uint32_t));
+			indices.Map();
 			for (int i = 0; i < MaxIndexCount; i += 6) {
 				indices[i + 0] = 0 + iOffset;
 				indices[i + 1] = 1 + iOffset;
 				indices[i + 2] = 2 + iOffset;
-
+			
 				indices[i + 3] = 2 + iOffset;
 				indices[i + 4] = 3 + iOffset;
 				indices[i + 5] = 0 + iOffset;
-
+			
 				iOffset += 4;
 			}
-			globalIndexBuffer.UnMap();
-
-			chunkShader.SetVertexBuffer(globalVertexBuffer, sizeof(Vertex));
-			chunkShader.SetIndexBuffer(globalIndexBuffer);
+			indices.Unmap();
+			
+			globalIndexBuffer.SetData(indices.GetBuffer(), MaxIndexCount * sizeof(uint32_t));
+			indices.Destroy();
 #endif
 
-			model.Create("resourcepacks/default/models/player_model.obj");
-			gl::load("resourcepacks/default/textures/misc/cursor.png", crosshair);
+			//model.Create("resourcepacks/default/models/player_model.obj", screen.renderPass, windowSize);
+			Rml::Vector2i cSize = Rml::Vector2i(0);
+			render_interface.LoadTexture(crosshair, cSize, "resourcepacks/default/textures/misc/cursor.png");
 			//animation.Create("resourcepacks/default/models/dancing_vampire.dae", model);
-
+			
 			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 0.891f, 0.796f, 0.f)));
-
+			
 			grass = getBlockID("grass_block");
 			stone = getBlockID("stone_block");
 			water = getBlockID("water");
@@ -352,9 +412,15 @@ namespace wc {
 			leaves = getBlockID("leaves");
 			coal = getBlockID("campfire");
 			dirt = getBlockID("dirt");
-
+			
 			box.position = glm::vec3(0.f, 128.f, 0.f);
 			box.size = glm::vec3(1.f);
+		}
+
+		void Destroy() {
+			if (multiPlayer) clientInstance.Disconnect();
+			else SaveWorld();
+			delQueue.flush();
 		}
 
 		// Common blocks
@@ -376,48 +442,68 @@ namespace wc {
 		}
 
 		void CreateScreen() {
+
 			// Creating the screen framebuffer
-			gl::TextureProps scrProps;
-			scrProps.internalFormat = GL_RGBA32F;
-			scrProps.min_filter = GL_LINEAR_MIPMAP_LINEAR;
-			scrProps.mag_filter = GL_LINEAR;
-			scrProps.wrap_s = GL_CLAMP_TO_EDGE;
-			scrProps.wrap_t = GL_CLAMP_TO_EDGE;
-			scrProps.SetSize(window.GetSize());
-			scrTexture.Create(scrProps);
-			finalImage.Create(scrProps);
+			wc::AttachmentCreateInfo attachmentInfo = {};
+			attachmentInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT; // GL_RGBA32F
+			attachmentInfo.width = window.GetSize().x;
+			attachmentInfo.height = window.GetSize().y;
+			attachmentInfo.layerCount = 1;
+			attachmentInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+			uint32_t attachment = screen.addAttachment(attachmentInfo);
+			
+			wc::AttachmentCreateInfo depthAttachmentInfo = {};
+			depthAttachmentInfo.format = RendererContext::GetDepthBuffer().GetFormat();
+			depthAttachmentInfo.width = window.GetSize().x;
+			depthAttachmentInfo.height = window.GetSize().y;
+			depthAttachmentInfo.layerCount = 1;
+			depthAttachmentInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+			screen.addAttachment(depthAttachmentInfo);
+			
+			screen.Create(window.GetSize());
+			
+			scrTexture.Create(screen.attachments[attachment].image, screen.attachments[attachment].view);
+			VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+			
+			sampler.magFilter = VK_FILTER_LINEAR;
+			sampler.minFilter = VK_FILTER_LINEAR;
+			sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			
+			scrTexture.SetSamplerInfo(sampler);
+			framebufferTextureHandle = render_interface.AddTextureFramebuffer(scrTexture);
 
-			screen.Create(scrProps.Width, scrProps.Height);
-			screen.addTexture(scrTexture);
-
-			bloomTexSize = glm::ivec2(scrProps.Width, scrProps.Height) / 2;
+			bloomTexSize = glm::ivec2(window.GetSize().x, window.GetSize().y) / 2;
 			bloomTexSize += glm::ivec2(m_BloomComputeWorkGroupSize - bloomTexSize.x % m_BloomComputeWorkGroupSize, m_BloomComputeWorkGroupSize - bloomTexSize.y % m_BloomComputeWorkGroupSize);
-			mips = scrTexture.GetMipLevelCount() - 4;
-			gl::TextureProps bloomProps;
-			bloomProps.internalFormat = GL_RGBA32F;
-			bloomProps.mips = mips;
-			bloomProps.min_filter = GL_LINEAR_MIPMAP_LINEAR;
-			bloomProps.mag_filter = GL_LINEAR;
-			bloomProps.wrap_s = GL_CLAMP_TO_EDGE;
-			bloomProps.wrap_t = GL_CLAMP_TO_EDGE;
-
-			bloomProps.SetSize(bloomTexSize);
-			for (int i = 0; i < 3; i++) {
-				bloomBuffers[i].Create(bloomProps);
-				//bloomBuffers[i].GenerateMipMap();
-			}
+			mips = vk::GetMipLevelCount(window.GetSize()) - 4;
+			//gl::TextureProps bloomProps;
+			//bloomProps.internalFormat = GL_RGBA32F;
+			//bloomProps.mips = mips;
+			//bloomProps.min_filter = GL_LINEAR_MIPMAP_LINEAR;
+			//bloomProps.mag_filter = GL_LINEAR;
+			//bloomProps.wrap_s = GL_CLAMP_TO_EDGE;
+			//bloomProps.wrap_t = GL_CLAMP_TO_EDGE;
+			//
+			//bloomProps.SetSize(bloomTexSize);
+			//for (int i = 0; i < 3; i++) {
+			//	bloomBuffers[i].Create(bloomProps);
+			//	//bloomBuffers[i].GenerateMipMap();
+			//}
 		}
 
 		void DestroyScreen() {
 			screen.Destroy();
-			scrTexture.Destroy();
-			finalImage.Destroy();
+			screen.DestroyAttachments();
+			scrTexture.ResetSamplerInfo();
 
-			for (int i = 0; i < 3; i++)
-				bloomBuffers[i].Destroy();
+			//finalImage.Destroy();
+			//
+			//for (int i = 0; i < 3; i++)
+			//	bloomBuffers[i].Destroy();
 		}
 
-		uint32_t getScreen() { return finalImage; }
+		uint32_t getScreen() { return framebufferTextureHandle; }
 
 		bool RectVsRect(const AABB& r1, const AABB& r2)
 		{
@@ -428,8 +514,29 @@ namespace wc {
 		}
 
 		void Update(const float& deltaTime) {
-			screen.Bind();
-			glClear(GL_DEPTH_BUFFER_BIT);
+			vk::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
+
+			VkRenderPassBeginInfo fRPInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+
+			fRPInfo.renderPass = screen.renderPass;
+			fRPInfo.renderArea.offset.x = 0;
+			fRPInfo.renderArea.offset.y = 0;
+			fRPInfo.renderArea.extent = window.GetExtent();
+			fRPInfo.framebuffer = screen.framebuffer;
+
+			VkClearValue clearValuesFB[2];
+
+			VkClearValue& clearValueFB = clearValuesFB[0];
+			clearValueFB.color = { { 0.0f, 0.0f, 0.f, 1.0f } };
+
+			VkClearValue& depthValue = clearValuesFB[1];
+			depthValue.depthStencil.depth = 1.f;
+
+			fRPInfo.clearValueCount = ARRAYSIZE(clearValuesFB);
+			fRPInfo.pClearValues = clearValuesFB;
+			//once we start adding rendering commands, they will go here
+			screen.renderPass.Begin(cmd, fRPInfo);
+
 			// Multiplayer 
 			if (multiPlayer) {
 				if (clientInstance.IsConnected())
@@ -555,16 +662,11 @@ namespace wc {
 			sceneData.vertical = camera.vertical;
 			sceneData.horizontal = camera.horizontal;
 			sceneData.numLights = currentLightID;
-			seneDataBuffer.SetData(sizeof(SceneData), &sceneData);
+			sceneDataBuffer.SetData(&sceneData, sizeof(SceneData));
 
 			lights[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 0.f, 1.f)));
 
-#ifndef RAY_TRACING
-			// Draw sky
-			skyShader.use();
-			glDrawArrays(GL_TRIANGLES, 0, 3);
 			viewFrustum.update(sceneData.ViewProj);
-#endif
 
 			angle += deltaTime * rotateSpeed;
 			angle = glm::mod(angle, 360.f);
@@ -576,63 +678,83 @@ namespace wc {
 				glm::ivec3 newPosition = currChunkPos;
 				if (currChunkPos.x < currentPlayerPos.x - chunkHalf) newPosition.x = currentPlayerPos.x + chunkHalf - 1;
 				else if (currChunkPos.x > currentPlayerPos.x + chunkHalf) newPosition.x = currentPlayerPos.x - chunkHalf + 1;
-
+			
 				else if (currChunkPos.y < currentPlayerPos.y - chunkHalf) newPosition.y = currentPlayerPos.y + chunkHalf - 1;
 				else if (currChunkPos.y > currentPlayerPos.y + chunkHalf) newPosition.y = currentPlayerPos.y - chunkHalf + 1;
-
+			
 				else if (currChunkPos.z < currentPlayerPos.z - chunkHalf) newPosition.z = currentPlayerPos.z + chunkHalf - 1;
 				else if (currChunkPos.z > currentPlayerPos.z + chunkHalf) newPosition.z = currentPlayerPos.z - chunkHalf + 1;
-
+			
 				if (newPosition != currChunkPos) // Reset Chunk
 				{
 					SaveChunk(i);
 					chunks[i].position = newPosition;
 					UpdateNeighbours(i);
 					TryToLoadChunk(i);
-
+			
 					chunks[i].canBeUpdated = true; // @TODO: try to remove this
 				}
 			}
-
+			
 			if (generateTerrain) {
 				for (ChunkID chunk = 0; chunk < chunks.size(); chunk++)
 					if (!chunks[chunk].generated) { GenerateChunkTerrain(chunk); chunks[chunk].generated = true; }
-
+			
 				for (ChunkID chunk = 0; chunk < chunks.size(); chunk++)
 					if (!chunks[chunk].generatedStructures) { GenerateChunkStructures(chunk); chunks[chunk].generatedStructures = true; }
-
+			
 				generateTerrain = false;
 			}
-
-
+			
 #ifndef RAY_TRACING
-			for (ChunkID i = 0; i < chunks.size(); i++) {
+			//for (ChunkID i = 0; i < chunks.size(); i++) {
+			//
+			//	bool show = false;
+			//
+			//	if (viewFrustum.isBoxInFrustum(AABB(chunks[i].position * glm::ivec3(chunkSize), glm::vec3(chunkSize))) && cmds[i].indexCount > 0) show = true;
+			//
+			//	cmds[i].instanceCount = show;
+			//}
 
-				if (chunks[i].canBeUpdated) { UpdateMesh(i); chunks[i].canBeUpdated = false; }
+			uint32_t size = currentLightID ? currentLightID : 1;
+			lights.Unmap();
+			lightBuffer.SetData(lights.GetBuffer(), size * sizeof(Light));
+			lights.Map();
 
-				bool show = false;
+			if (updateChunks) {
 
-				if (viewFrustum.isBoxInFrustum(AABB(chunks[i].position * glm::ivec3(chunkSize), glm::vec3(chunkSize))) && cmds[i].count > 0) show = true;
+				for (ChunkID i = 0; i < chunks.size(); i++) if (chunks[i].canBeUpdated) { UpdateMesh(i); chunks[i].canBeUpdated = false; }
+				updateChunks = false;
 
-				cmds[i].instanceCount = show;
+				size = transformOffset ? transformOffset : 1;
+				blockTransforms.Unmap();
+				blockTransformBuffer.SetData(blockTransforms.GetBuffer(), sizeof(glm::vec4) * size * chunkVolume);
+				blockTransforms.Map();
 			}
 
-			assets.Bind();
-			chunkShader.use();
-			chunkShader.SetIndexBuffer(globalIndexBuffer);
-			chunkShader.SetVertexBuffer(globalVertexBuffer, sizeof(Vertex));
-			indirectBuffer.Bind();
-			glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, chunks.size(), sizeof(gl::DrawElementsIndirectCommand));
-			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+			// Draw sky
+			skyShader.Bind(cmd);
+			cmd.Draw(3);
+			
+			chunkShader.Bind(cmd);
+			cmd.BindIndexBuffer(globalIndexBuffer);
+			cmd.BindVertexBuffer(globalVertexBuffer);
 
+			uint32_t defaultVal = 0;
+			cmd.PushConstants(chunkShader.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(uint32_t), &defaultVal);
+
+			cmd.DrawIndexedIndirect(indirectBuffer, chunks.size());
+			
+			uint32_t shaderTransformOffset = 0;
 			for (uint32_t i = 0; i < blockMeshes.size(); i++) {
 				BlockMesh& mesh = blockMeshes[i];
 				if (mesh.cmd.instanceCount > 0) {
-					chunkShader.SetIndexBuffer(mesh.indexBuffer);
-					chunkShader.SetVertexBuffer(mesh.vertexBuffer, sizeof(Vertex));
-					glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, &mesh.cmd);
-					sceneData.transformOffset += mesh.cmd.instanceCount;
-					seneDataBuffer.SetData(sizeof(SceneData), &sceneData);
+					cmd.BindIndexBuffer(mesh.indexBuffer);
+					cmd.BindVertexBuffer(mesh.vertexBuffer);
+			
+					cmd.DrawIndexedIndirect(mesh.cmd);
+					shaderTransformOffset += mesh.cmd.instanceCount;
+					cmd.PushConstants(chunkShader.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(uint32_t), &shaderTransformOffset);
 				}
 			}
 #endif
@@ -642,40 +764,41 @@ namespace wc {
 				lineBatcher.DrawOutlineCube(box, convertColor(0xFF33FF00) * glm::vec4(3.f));
 			else
 				lineBatcher.DrawOutlineCube(box, convertColor(0xFF33FF00));
-
+			
 			lineBatcher.Flush(renderGUI);
 
 			//animationBuffer.SetData(sizeof(glm::mat4) * MAX_BONE_WEIGHTS, animation.GetPoseTransforms());
 
 			// render the loaded model
 			//animation.Update(deltaTime);
-			glm::mat4 Model = glm::mat4(1.f);
-			Model = glm::translate(Model, p.Position - glm::vec3(0.f, p.Size.y, 0.f));    // translate it down so it's at the center of the scene
+			//glm::mat4 Model = glm::mat4(1.f);
+			//Model = glm::translate(Model, p.Position - glm::vec3(0.f, p.Size.y, 0.f));    // translate it down so it's at the center of the scene
 			//Model = glm::scale(Model, glm::vec3(0.8f));
-			Model = glm::rotate(Model, glm::radians(camera.Yaw + 90.f), glm::vec3(0.f, -1.f, 0.f));
+			//Model = glm::rotate(Model, glm::radians(camera.Yaw + 90.f), glm::vec3(0.f, -1.f, 0.f));
 
-			animationBuffer.SetData(sizeof(glm::mat4), glm::value_ptr(Model), sizeof(glm::mat4) * MAX_BONE_WEIGHTS);
+			//animationBuffer.SetData(glm::value_ptr(Model), sizeof(glm::mat4), sizeof(glm::mat4) * MAX_BONE_WEIGHTS);
 
-			if (thirdPerson)
+			//if (thirdPerson)
 
 #ifndef RAY_TRACING
-				model.Draw();
+			//	model.Draw(cmd);
 #endif
+			screen.renderPass.End(cmd);
+		}
 
-			screen.unbind();
-			// GUI		
-
-			RenderBloom();
-
-			finalImage.BindTextureImage(0, GL_WRITE_ONLY);
-			scrTexture.Bind(1); // use the color attachment texture as the texture of the quad plane	
-			bloomBuffers[2].Bind(2);
-			compositeShader.use();
-			compositeShader.Dispatch(glm::ceil((glm::vec2)sceneData.windowSize / glm::vec2(m_BloomComputeWorkGroupSize)));
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-			render_interface.DrawQuad({ 0,0 }, sceneData.windowSize, finalImage);
-			if (renderGUI) render_interface.DrawQuad((sceneData.windowSize - 20.f) / 2.f, { 20, 20 }, crosshair);
+		void RenderGUI() {
+			//RenderBloom();
+			//
+			//finalImage.BindTextureImage(0, GL_WRITE_ONLY);
+			//scrTexture.Bind(1); // use the color attachment texture as the texture of the quad plane	
+			//bloomBuffers[2].Bind(2);
+			//compositeShader.use();
+			//compositeShader.Dispatch(glm::ceil((glm::vec2)sceneData.windowSize / glm::vec2(m_BloomComputeWorkGroupSize)));
+			//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			//
+			//render_interface.DrawQuad({ 0,0 }, sceneData.windowSize, finalImage);
+			//if (renderGUI) render_interface.DrawQuad((sceneData.windowSize - 20.f) / 2.f, { 20, 20 }, crosshair);
+			render_interface.DrawQuad({ 0,0 }, window.GetSize(), framebufferTextureHandle);
 		}
 
 		void ParseCommand(std::string& command) {
@@ -789,15 +912,15 @@ namespace wc {
 				Mouse::SetMousePosition(t);
 			}
 
-			if (wc::Keyboard::getKey(wc::Keyboard::Key::F2)) {
-				glm::ivec2 size = finalImage.GetSize();
-				uint32_t byteSize = size.x * size.y * 4;
-				uint8_t* data = new uint8_t[byteSize];
-				glReadPixels(0, 0, size.x, size.y, GL_RGBA, GL_UNSIGNED_BYTE, data);
-				stbi_flip_vertically_on_write(true);
-				stbi_write_png("screenshots/screenshot.png", size.x, size.y, 4, data, size.x * 4);
-				delete[] data;
-			}
+			//if (wc::Keyboard::getKey(wc::Keyboard::Key::F2)) {
+			//	glm::ivec2 size = finalImage.GetSize();
+			//	uint32_t byteSize = size.x * size.y * 4;
+			//	uint8_t* data = new uint8_t[byteSize];
+			//	glReadPixels(0, 0, size.x, size.y, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			//	stbi_flip_vertically_on_write(true);
+			//	stbi_write_png("screenshots/screenshot.png", size.x, size.y, 4, data, size.x * 4);
+			//	delete[] data;
+			//}
 
 			if (wc::Keyboard::getKey(wc::Keyboard::Key::F1)) renderGUI = !renderGUI;
 
@@ -905,12 +1028,7 @@ namespace wc {
 				}
 				vMapLastCheck = vMapCheck;
 			}
-		}
-
-		void Destroy() {
-			if (multiPlayer) clientInstance.Disconnect();
-			else SaveWorld();
-		}
+		}		
 
 	private:
 
@@ -1158,6 +1276,7 @@ namespace wc {
 			uint16_t y = pos.y;
 			uint16_t z = pos.z;
 
+			updateChunks = true;
 			BlockID& chunkBlockID = chunks[chunkID].data[x][y][z];
 			if (chunkBlockID == blockID) return;
 			glm::vec3 globalPos = glm::vec3(chunks[chunkID].position) * glm::vec3(chunkSize) + glm::vec3(pos);
@@ -1233,11 +1352,14 @@ namespace wc {
 		void UpdateMesh(const ChunkID& chunkID) {
 			uint32_t offset = 0;
 			Chunk& chunk = chunks[chunkID];
-			cmds[chunkID].count = 0;
+			uint32_t indexCount = 0;
 
 			glm::ivec3 chunkPos = chunk.position * glm::ivec3(chunkSize);
 
-			Vertex* vertices = (Vertex*)(globalVertices + chunkID * MaxVertexCount);
+			//Vertex* vertices = (Vertex*)(globalVertices + chunkID * MaxVertexCount);
+			vk::CPUBuffer<Vertex> vertices;
+			vertices.Create(MaxVertexCount * sizeof(Vertex));
+			vertices.Map();
 
 			bool done = false;
 			uint32_t i = 0, j = 0, k = 0, l = 0, w = 0, h = 0, d = 0, u = 0, v = 0, n = 0;
@@ -1309,14 +1431,14 @@ namespace wc {
 							Block& checkBlockData = blockData[checkBlock];
 							Block& BlockData = blockData[blockID];
 							if (type != checkType && type != ConnectionType::NON_EXISTENT && checkType != ConnectionType::NON_EXISTENT) {
-								if (blockID != checkBlock && type == ConnectionType::CONNECT_DEFAULT) { mask[n] = blockID + 1; textureMask[n] = materialData[BlockData.material].albedo[d]; }
-								else if ((blockID == 0 || type != ConnectionType::CONNECT_DEFAULT) && checkType == ConnectionType::CONNECT_DEFAULT) { mask[n] = checkBlock + 1; textureMask[n] = materialData[checkBlockData.material].albedo[d + 3]; }
+								if (blockID != checkBlock && type == ConnectionType::CONNECT_DEFAULT) { mask[n] = blockID + 1; textureMask[n] = materialData[BlockData.materialID].albedo[d]; }
+								else if ((blockID == 0 || type != ConnectionType::CONNECT_DEFAULT) && checkType == ConnectionType::CONNECT_DEFAULT) { mask[n] = checkBlock + 1; textureMask[n] = materialData[checkBlockData.materialID].albedo[d + 3]; }
 
-								else if (blockID != checkBlock && type == ConnectionType::NO_CONNECT) { mask[n] = blockID + 1; textureMask[n] = materialData[BlockData.material].albedo[d]; }
-								else if (blockID == 0 && checkType == ConnectionType::NO_CONNECT) { mask[n] = checkBlock + 1; textureMask[n] = materialData[checkBlockData.material].albedo[d + 3]; }
+								else if (blockID != checkBlock && type == ConnectionType::NO_CONNECT) { mask[n] = blockID + 1; textureMask[n] = materialData[BlockData.materialID].albedo[d]; }
+								else if (blockID == 0 && checkType == ConnectionType::NO_CONNECT) { mask[n] = checkBlock + 1; textureMask[n] = materialData[checkBlockData.materialID].albedo[d + 3]; }
 
-								else if (checkBlock == 0 && type == ConnectionType::FLUID_CONNECT) { mask[n] = blockID + 1; textureMask[n] = materialData[BlockData.material].albedo[d]; }
-								else if (blockID == 0 && checkType == ConnectionType::FLUID_CONNECT) { mask[n] = checkBlock + 1; textureMask[n] = materialData[checkBlockData.material].albedo[d + 3]; }
+								else if (checkBlock == 0 && type == ConnectionType::FLUID_CONNECT) { mask[n] = blockID + 1; textureMask[n] = materialData[BlockData.materialID].albedo[d]; }
+								else if (blockID == 0 && checkType == ConnectionType::FLUID_CONNECT) { mask[n] = checkBlock + 1; textureMask[n] = materialData[checkBlockData.materialID].albedo[d + 3]; }
 							}
 							n++;
 						}
@@ -1395,7 +1517,7 @@ namespace wc {
 									std::swap(h1, w1);
 								}
 								glm::vec3 normal = glm::normalize(glm::cross(corner[2] - corner[0], corner[1] - corner[0]));
-								if (cmds[chunkID].count < MaxIndexCount) {
+								if (indexCount < MaxIndexCount) {
 									BlockID blockID = mask[n] - 1;
 									glm::vec2 TexCoords[] = {
 										glm::vec2(0.f, 0.f),
@@ -1413,9 +1535,9 @@ namespace wc {
 									if (normal == glm::vec3(0.f, 0.f, -1.f)) texID = (uint32_t)BlockTexture::BACK;
 
 									for (uint32_t i = 0; i < ARRAYSIZE(corner); i++)
-										vertices[i + offset] = Vertex(corner[i] + (glm::vec3)chunkPos, { TexCoords[i], texID }, normal, blockData[blockID].material);
+										vertices[i + offset] = Vertex(corner[i] + (glm::vec3)chunkPos, { TexCoords[i], texID }, normal, blockData[blockID].materialID);
 
-									cmds[chunkID].count += 6;
+									indexCount += 6;
 									offset += ARRAYSIZE(corner);
 								}
 								// Clear this part of the mask, so we don't add duplicate faces
@@ -1438,6 +1560,17 @@ namespace wc {
 					}
 				}
 			}
+			vertices.Unmap();
+			globalVertexBuffer.SetData(vertices.GetBuffer(), MaxVertexCount * sizeof(Vertex), chunkID * MaxVertexCount * sizeof(Vertex));
+			vertices.Destroy();
+			
+			VkDrawIndexedIndirectCommand cmd;
+			cmd.vertexOffset = chunkID * MaxVertexCount;
+			cmd.instanceCount = 1;
+			cmd.firstInstance = 0;
+			cmd.firstIndex = 0;
+			cmd.indexCount = indexCount;
+			indirectBuffer.SetData(&cmd, sizeof(cmd), sizeof(cmd) * chunkID);
 		}
 
 		// Deprecated
@@ -1534,64 +1667,80 @@ namespace wc {
 		}
 
 		// BLOOM
-		void RenderBloom()
+
+		VkImageViewCreateInfo GetBloomViewInfo(const vk::Image& image, const uint32_t& mipLevel = 0) {
+			VkImageViewCreateInfo createInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			createInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+			createInfo.flags = 0;
+			createInfo.image = image;
+			createInfo.subresourceRange.layerCount = 1;
+			createInfo.subresourceRange.levelCount = mips;
+			createInfo.subresourceRange.baseMipLevel = mipLevel;
+			createInfo.subresourceRange.baseArrayLayer = 0;
+			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		}
+
+		void RenderBloom(const vk::CommandBuffer& cmd)
 		{
-			bloomShader.use();
+			bloomShader.Bind(cmd);
 			BloomUBOSettings settings;
 			settings.Params = glm::vec4(bloomSettings.Threshold, bloomSettings.Threshold - bloomSettings.Knee, bloomSettings.Knee * 2.f, 0.25f / bloomSettings.Knee);
-			bloomUBO.SetData(sizeof(BloomUBOSettings), &settings);
-			bloomBuffers[0].BindTextureImage(0, GL_WRITE_ONLY);
-			scrTexture.Bind(1);
-			bloomShader.Dispatch(glm::ceil(glm::vec2(bloomTexSize) / glm::vec2(m_BloomComputeWorkGroupSize)));
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-			bloomBuffers[0].Bind(1);
+			cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
+			GetBloomViewInfo(bloomBuffers[0]);
+			//scrTexture.Bind(1);
+			cmd.Dispatch({ (glm::ivec2)glm::ceil(glm::vec2(bloomTexSize) / glm::vec2(m_BloomComputeWorkGroupSize)) , 1 });
+			//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			
+			//bloomBuffers[0].Bind(1);
 			for (int currentMip = 1; currentMip < mips; currentMip++)
 			{
-				glm::vec2 mipSize = bloomBuffers[0].GetMipSize(currentMip);
-				mipSize = glm::ceil(mipSize / glm::vec2(m_BloomComputeWorkGroupSize));
+				//glm::vec2 mipSize = bloomBuffers[0].GetMipSize(currentMip);
+				//mipSize = glm::ceil(mipSize / glm::vec2(m_BloomComputeWorkGroupSize));
 				settings.Mode = (int)BloomMode::Downsample;
-
+			
 				// Ping 
 				settings.LOD = currentMip - 1;
-				bloomUBO.SetData(sizeof(BloomUBOSettings), &settings);
+				cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
+			
 
-				bloomBuffers[1].BindTextureImage(0, GL_WRITE_ONLY, currentMip);
-				bloomShader.Dispatch(mipSize);
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
+				GetBloomViewInfo(bloomBuffers[1], currentMip);
+				//bloomShader.Dispatch(mipSize);
+				//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			
 				// Pong 
 				settings.LOD = currentMip;
-				bloomUBO.SetData(sizeof(BloomUBOSettings), &settings);
+				cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
 
-				bloomBuffers[0].BindTextureImage(0, GL_WRITE_ONLY, currentMip);
-				bloomBuffers[1].Bind(1);
-				bloomShader.Dispatch(mipSize);
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+				GetBloomViewInfo(bloomBuffers[0], currentMip);
+				//bloomBuffers[1].Bind(1);
+				//bloomShader.Dispatch(mipSize);
+				//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			}
-
+			
 			// First Upsample		
 			settings.LOD = mips - 2;
 			settings.Mode = (int)BloomMode::UpsampleFirst;
-			bloomUBO.SetData(sizeof(BloomUBOSettings), &settings);
+			cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
+			
 
-			bloomBuffers[2].BindTextureImage(0, GL_WRITE_ONLY, mips - 1);
-			bloomBuffers[0].Bind(1);
-
-			bloomShader.Dispatch(glm::ceil((glm::vec2)bloomBuffers[2].GetMipSize(mips - 1) / glm::vec2(m_BloomComputeWorkGroupSize)));
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-			bloomBuffers[2].Bind(2);
+			GetBloomViewInfo(bloomBuffers[2], mips - 1);
+			//bloomBuffers[0].Bind(1);
+			
+			//bloomShader.Dispatch(glm::ceil((glm::vec2)bloomBuffers[2].GetMipSize(mips - 1) / glm::vec2(m_BloomComputeWorkGroupSize)));
+			//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			
+			//bloomBuffers[2].Bind(2);
 			settings.Mode = (int)BloomMode::Upsample;
 			for (int currentMip = mips - 2; currentMip >= 0; currentMip--)
 			{
 				settings.LOD = currentMip;
-				bloomUBO.SetData(sizeof(BloomUBOSettings), &settings);
+				cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
 
-				bloomBuffers[2].BindTextureImage(0, GL_WRITE_ONLY, currentMip);
-
-				bloomShader.Dispatch(glm::ceil((glm::vec2)bloomBuffers[2].GetMipSize(currentMip) / glm::vec2(m_BloomComputeWorkGroupSize)));
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+				GetBloomViewInfo(bloomBuffers[2], currentMip);
+			
+				//bloomShader.Dispatch(glm::ceil((glm::vec2)bloomBuffers[2].GetMipSize(currentMip) / glm::vec2(m_BloomComputeWorkGroupSize)));
+				//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			}
 		}
 	};

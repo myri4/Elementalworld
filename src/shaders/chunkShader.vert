@@ -13,12 +13,12 @@ layout(location = 0) out vec2 v_TexCoords;
 layout(location = 1) out vec3 v_Normal;
 layout(location = 2) out vec3 p0;
 
-layout(location = 3) out float albedo;
-layout(location = 4) out float materialData;
+layout(location = 3) out float albedoID;
+layout(location = 4) out float materialID;
 layout(location = 5) out uint flags;
 layout(location = 6) out vec4 color;
 
-layout (binding = 6, std430) readonly buffer Transform { vec4 transforms[]; };
+layout (binding = 3, std430) readonly buffer Transform { vec4 transforms[]; };
 
 vec4 decompress(const in uint num) {
     vec4 Output;
@@ -30,6 +30,11 @@ vec4 decompress(const in uint num) {
     return Output;
 }
 
+layout(push_constant) uniform PushConstant
+{
+    uint transformOffset;
+};
+
 void main()
 {
     vec3 currentVertex = a_Pos;
@@ -37,13 +42,13 @@ void main()
 
     v_Normal = a_Normal;
 
-    albedo = material.albedo[int(a_TexCoord.z)];
-    materialData = material.materialData[int(a_TexCoord.z)];
+    albedoID = material.albedo[int(a_TexCoord.z)];
+    materialID = material.materialData[int(a_TexCoord.z)];
     flags = material.flags;
     color = decompress(material.color);
 
 	v_TexCoords = a_TexCoord.xy;
-    if (bool(material.flags & WC_MODEL_BIT)) currentVertex += transforms[gl_InstanceID + transformOffset].xyz;
+    if (bool(material.flags & WC_MODEL_BIT)) currentVertex += transforms[gl_InstanceIndex + transformOffset].xyz;
 
     p0 = currentVertex;
 	gl_Position = u_ViewProjection * vec4(currentVertex, 1.f);

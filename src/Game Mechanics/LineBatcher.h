@@ -1,5 +1,7 @@
 #pragma once
-#include <gl/Buffer.h>
+#include <pch.h>
+#include <Maths/Frustum.h>
+
 
 namespace wc {
 
@@ -8,23 +10,71 @@ namespace wc {
 	struct LineVertex {
 		glm::vec3 pos;
 		glm::vec4 color;
+
+		static vk::VertexInputDescription get_vertex_description() {
+			vk::VertexInputDescription description;
+
+			//we will have just 1 vertex buffer binding, with a per-vertex rate
+			VkVertexInputBindingDescription mainBinding = {};
+			mainBinding.binding = 0;
+			mainBinding.stride = sizeof(LineVertex);
+			mainBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+			description.bindings.push_back(mainBinding);
+
+			//Position will be stored at Location 0
+			VkVertexInputAttributeDescription positionAttribute = {};
+			positionAttribute.binding = 0;
+			positionAttribute.location = 0;
+			positionAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
+			positionAttribute.offset = offsetof(LineVertex, pos);
+
+			//Normal will be stored at Location 1
+			VkVertexInputAttributeDescription colorAttribute = {};
+			colorAttribute.binding = 0;
+			colorAttribute.location = 1;
+			colorAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+			colorAttribute.offset = offsetof(LineVertex, color);
+
+			description.attributes.push_back(positionAttribute);
+			description.attributes.push_back(colorAttribute);
+			return description;
+		}
 	};
 
 	class LineBatcher {
 		uint32_t IndexCount = 0;
 		uint32_t byteOffset = 0;
 
-		gl::Buffer lineBuffer;
-		gl::Shader shader;
+		vk::Buffer lineBuffer;
+		wc::Shader shader;
 	public:
-		void Create() {
-			shader.Create("resourcepacks/default/shaders/Line3D.vert", "resourcepacks/default/shaders/Line3D.frag");
-			shader.depthTest = true;
+		void Create(const vk::RenderPass& renderPass, const VkDescriptorBufferInfo& ubo) {
+			wc::ShaderCreateInfo createInfo;
+			createInfo.vertexShader = "resourcepacks/default/shaders/Line3D.vert";
+			createInfo.fragmentShader = "resourcepacks/default/shaders/Line3D.frag";
+			createInfo.windowSize = window.GetSize();
+			createInfo.renderPass = renderPass;
+			createInfo.vertexDescription = LineVertex::get_vertex_description();
+			createInfo.blending = false;
+			createInfo.depthTest = true;
+			createInfo.invertY = true;
+			createInfo.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+			shader.Create(createInfo);
 
-			shader.VertexAttribPointer(0, 3, offsetof(LineVertex, pos));
-			shader.VertexAttribPointer(1, 4, offsetof(LineVertex, color));
-			lineBuffer.Create(MaxLineVertexCount * sizeof(LineVertex), GL_DYNAMIC_STORAGE_BIT);
-			shader.SetVertexBuffer(lineBuffer, sizeof(LineVertex));
+			vk::DescriptorWriter writer;
+
+			writer.dstSet = shader.descriptorSet;
+			writer.write_buffer(0, ubo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+			vk::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+
+			lineBuffer.Create(MaxLineVertexCount * sizeof(LineVertex), vk::VERTEX_BUFFER);
+		}
+
+		void Destroy() {
+			lineBuffer.Destroy();
+			shader.Destroy();
 		}
 
 		void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color = glm::vec4(1.f)) {
@@ -36,7 +86,7 @@ namespace wc {
 				end.x,   end.y,   end.z  , color.r, color.g, color.b, color.a
 			};
 
-			lineBuffer.SetData(sizeof(vertices), vertices, byteOffset);
+			lineBuffer.SetData(vertices, sizeof(vertices), byteOffset);
 			byteOffset += sizeof(vertices);
 			IndexCount += 2;
 		}
@@ -66,8 +116,10 @@ namespace wc {
 		void Flush(const bool render = true) {
 			if (!IndexCount) return;
 			if (render) {
-				shader.use();
-				glDrawArrays(GL_LINES, 0, IndexCount);
+				vk::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
+				shader.Bind(cmd);
+				cmd.BindVertexBuffer(lineBuffer);
+				cmd.Draw(IndexCount);
 			}
 			byteOffset = 0;
 			IndexCount = 0;

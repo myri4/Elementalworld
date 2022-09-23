@@ -1,11 +1,13 @@
 ﻿#define GLM_FORCE_INTRINSICS 
-#include "Application.hpp"
+#include "Application.h"
 
 //DANGEROUS!
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image/stb_image.h>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image/stb_write.h>
+#define VMA_IMPLEMENTATION
+#include <vma/vk_mem_alloc.h>
 
 namespace wc {
 	Application app;
@@ -45,7 +47,7 @@ namespace wc {
 			}
 			});
 		glfwInit();
-
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		app.Start();
 		glfwTerminate();
 

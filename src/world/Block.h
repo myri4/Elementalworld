@@ -25,9 +25,9 @@ const uint8_t WC_MODEL_BIT = 0x1;
 const uint8_t WC_CULL_BIT = 0x2;
 
 struct BlockMesh { // @TODO: Improve
-	gl::DrawElementsIndirectCommand cmd;
-	gl::Buffer vertexBuffer;
-	gl::Buffer indexBuffer;
+	vk::Buffer vertexBuffer;
+	vk::Buffer indexBuffer; 
+	VkDrawIndexedIndirectCommand cmd = {};
 
 	BlockMesh() = default;
 
@@ -44,10 +44,13 @@ struct BlockMesh { // @TODO: Improve
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;
 		processNode(scene->mRootNode, *scene, offset, materialID, vertices, indices);
-		uint32_t bits = 0;
-		indexBuffer.Create(sizeof(uint32_t) * indices.size(), bits, indices.data());
-		vertexBuffer.Create(sizeof(Vertex) * vertices.size(), bits, vertices.data());
-		cmd.count = indices.size();
+		indexBuffer.Create(sizeof(uint32_t) * indices.size(), vk::INDEX_BUFFER);
+		indexBuffer.SetData(indices.data(), sizeof(uint32_t) * indices.size());
+
+		vertexBuffer.Create(sizeof(Vertex) * vertices.size(), vk::VERTEX_BUFFER);
+		vertexBuffer.SetData(vertices.data(), sizeof(Vertex) * vertices.size());
+		
+		cmd.indexCount = indices.size();
 		cmd.instanceCount = 0;
 
 		importer.FreeScene();
@@ -88,6 +91,11 @@ struct BlockMesh { // @TODO: Improve
 		for (uint32_t i = 0; i < node->mNumChildren; i++)
 			processNode(node->mChildren[i], scene, offset, materialID, vertices, indices);
 	}
+
+	void Destroy() {
+		indexBuffer.Destroy();
+		vertexBuffer.Destroy();
+	}
 };
 
 struct Material {
@@ -104,7 +112,7 @@ struct Block{
 	bool isCollidable : 1;
 	MeshID meshID = 0;
 	uint8_t variations = 0;
-	MaterialID material = 0;
+	MaterialID materialID = 0;
 	glm::vec3 rotation = glm::vec3(0.f);
 
 	std::string name = "air";

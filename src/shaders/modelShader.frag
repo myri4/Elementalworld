@@ -6,7 +6,7 @@ layout(location = 2) in vec3 p0;
 
 #include "include/pbrUtil.glsl"
 
-layout(binding = 0) uniform sampler2D u_Texture;
+layout(binding = 0, set = 0) uniform sampler2D u_Texture;
 
 layout(location = 0) out vec4 FragColor;
 void main()

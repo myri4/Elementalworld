@@ -1,5 +1,6 @@
 #pragma once
 
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <glm/glm.hpp>
@@ -7,8 +8,6 @@
 #include <RmlUi/Core.h>
 
 namespace wc {
-
-	bool resized = false;
 
 	double scrollX = 0.f, scrollY = 0.f;
     int mouseButtons[GLFW_MOUSE_BUTTON_LAST];
@@ -269,6 +268,7 @@ namespace wc {
         return mods;
     }
 
+    /*
 	class Window {
 	public:
         Window() = default;
@@ -410,7 +410,190 @@ namespace wc {
 	private:
 		GLFWwindow* window = nullptr;
 	};
+    */
 
+struct WindowCreateInfo {
+    uint32_t width = 0;
+    uint32_t height = 0;
+    bool startMaximized = false;
+    bool Vsync = false;
+    std::string appName;
+    bool startFullscreen = false;
+    bool decorated = true;
+};
+
+const char* getClipboard() { return glfwGetClipboardString(nullptr); }
+void setClipboard(const std::string& string) { glfwSetClipboardString(nullptr, string.c_str()); }
+
+class Window {
+public:
+    Window() = default;
+    ~Window() {}
+
+    void Create(const glm::ivec2& size, const char* title, const bool& fullscreen = false) {
+        GLFWmonitor* mode = nullptr;
+
+        if (fullscreen) mode = glfwGetPrimaryMonitor();
+
+        //glfwWindowHint(GLFW_DECORATED, false);
+        window = glfwCreateWindow(size.x, size.y, title, mode, nullptr);
+        glfwSetWindowUserPointer(window, this);
+
+        glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
+            scrollX = xoffset; scrollY = yoffset;
+        
+            context->ProcessMouseWheel(-(float)scrollY, getModifications());
+            });
+        glfwSetCharCallback(window, [](GLFWwindow* window, uint32_t codepoint) {
+            context->ProcessTextInput((char)codepoint);
+            });
+        glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+            keyButtons[key] = action;
+        
+            if (action != GLFW_RELEASE) { context->ProcessKeyDown(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
+            else { context->ProcessKeyUp(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
+            });
+        
+        glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) {
+            context->ProcessMouseMove((int)xpos, (int)ypos, getModifications());
+            });
+        glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
+            mouseButtons[button] = action;
+        
+            if (action != GLFW_RELEASE) { context->ProcessMouseButtonDown(button, getModifications(mods)); }
+            else { context->ProcessMouseButtonUp(button, getModifications(mods)); }
+            });
+
+        // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    }
+
+    void SetCursorPosCallback(const GLFWcursorposfun& callback) const {
+        glfwSetCursorPosCallback(window, callback);
+    }
+
+    void SetFramebufferSizeCallback(const GLFWframebuffersizefun& callback) {
+        glfwSetFramebufferSizeCallback(window, callback);
+    }
+
+    void SetScrollCallback(const GLFWscrollfun& callback) {
+        glfwSetScrollCallback(window, callback);
+    }
+
+    void SetCharCallback(const GLFWcharfun& callback) {
+        glfwSetCharCallback(window, callback);
+    }
+
+    void SetMouseButtonCallback(const GLFWmousebuttonfun& callback) {
+        glfwSetMouseButtonCallback(window, callback);
+    }
+
+    void SetKeyCallback(const GLFWkeyfun& callback) {
+        glfwSetKeyCallback(window, callback);
+    }
+
+    void Destroy() const {
+        glfwDestroyWindow(window);
+    }
+
+    float getContentScale() {
+        float xscale, yscale;
+        glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &xscale, &yscale);
+        return xscale;
+    }
+
+    float getAspectRatio() {
+        auto size = GetSize();
+        return float((float)size.x / (float)size.y);
+    }
+
+    void display() const {
+        scrollY = 0.f;
+        scrollX = 0.f;
+        memset(mouseButtons, GLFW_RELEASE, sizeof(mouseButtons));
+        memset(keyButtons, GLFW_RELEASE, sizeof(keyButtons));
+        glfwPollEvents();
+    }
+
+    glm::ivec2 GetPos() const {
+        int xpos, ypos;
+        glfwGetWindowPos(window, &xpos, &ypos);
+        return { xpos, ypos };
+    }
+
+    glm::ivec2 GetSize() const {
+        int width, height;
+        glfwGetWindowSize(window, &width, &height);
+        return { width, height };
+    }
+
+    VkExtent2D GetExtent() const {
+        int width, height;
+        glfwGetWindowSize(window, &width, &height);
+        return { (uint32_t)width, (uint32_t)height };
+    }
+
+    void close() const {
+        glfwSetWindowShouldClose(window, true);
+    }
+
+    bool isOpen() const {
+        return !glfwWindowShouldClose(window);
+    }
+
+    bool hasFocus() const {
+        return glfwGetWindowAttrib(window, GLFW_FOCUSED);
+    }
+
+    void setCursorPos(const glm::ivec2& pos) {
+        glfwSetCursorPos(window, pos.x, pos.y);
+    }
+
+    void setMaximized(const bool& maximized) {
+        if (maximized) glfwMaximizeWindow(window);
+        else glfwRestoreWindow(window);
+    }
+
+    void setPosition(const glm::ivec2& pos) {
+        glfwSetWindowPos(window, pos.x, pos.y);
+    }
+
+    void setTitle(const std::string& title) {
+        glfwSetWindowTitle(window, title.c_str());
+    }
+
+    void setSize(const glm::ivec2& size) {
+        glfwSetWindowSize(window, size.x, size.y);
+    }
+
+    void setSizeLimits(const glm::ivec2& minSize, const glm::ivec2& maxSize) {
+        glfwSetWindowSizeLimits(window, minSize.x, minSize.y, maxSize.x, maxSize.y);
+    }
+
+    void ShowMouse(const bool& show) {
+        if (show) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        else      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    }
+
+    int getKey(const int& key) {
+        return glfwGetKey(window, key);
+    }
+
+    int getMouse(const int& key) {
+        return glfwGetMouseButton(window, key);
+    }
+
+    glm::ivec2 getCursorPos() {
+        double x, y;
+        glfwGetCursorPos(window, &x, &y);
+        return glm::ivec2(x, y);
+    }
+
+    inline operator GLFWwindow* () { return window; }
+    inline operator GLFWwindow* () const { return window; }
+
+private:
+    GLFWwindow* window = nullptr;
+};
     static Window window;
 
     namespace Keyboard {

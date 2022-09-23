@@ -8,5 +8,4 @@ layout (std140, binding = 0) uniform SceneData
     vec3 vertical;
 	vec2 windowSize;
 	uint u_numLights;
-    uint transformOffset;
 };

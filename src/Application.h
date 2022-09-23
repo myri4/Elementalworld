@@ -1,37 +1,37 @@
 #pragma once
 #include "world/World.h"
 
-void GLAPIENTRY OpenGLDebugMessege(uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int length, const char* message, const void* userParam) {
-	const char* src;
-	switch (source)
-	{
-	case GL_DEBUG_SOURCE_API:             src = "API"; break;
-	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   src = "Window System"; break;
-	case GL_DEBUG_SOURCE_SHADER_COMPILER: src = "Shader Compiler"; break;
-	case GL_DEBUG_SOURCE_THIRD_PARTY:     src = "Third Party"; break;
-	case GL_DEBUG_SOURCE_APPLICATION:     src = "Application"; break;
-	case GL_DEBUG_SOURCE_OTHER:           src = "Other"; break;
-	}
-
-	switch (severity)
-	{
-	case GL_DEBUG_SEVERITY_HIGH:
-		WC_ERROR("[{0}] {1}", src, message);
-		break;
-
-	case GL_DEBUG_SEVERITY_MEDIUM:
-		WC_WARN("[{0}] {1}", src, message);
-		break;
-
-	case GL_DEBUG_SEVERITY_LOW:
-		WC_INFO("[{0}] {1}", src, message);
-		break;
-
-	case GL_DEBUG_SEVERITY_NOTIFICATION:
-		// WC_TRACE("[{0} {1} TRACE] {2}", src, typeStr, message);
-		break;
-	}
-}
+//void GLAPIENTRY OpenGLDebugMessege(uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int length, const char* message, const void* userParam) {
+//	const char* src;
+//	switch (source)
+//	{
+//	case GL_DEBUG_SOURCE_API:             src = "API"; break;
+//	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   src = "Window System"; break;
+//	case GL_DEBUG_SOURCE_SHADER_COMPILER: src = "Shader Compiler"; break;
+//	case GL_DEBUG_SOURCE_THIRD_PARTY:     src = "Third Party"; break;
+//	case GL_DEBUG_SOURCE_APPLICATION:     src = "Application"; break;
+//	case GL_DEBUG_SOURCE_OTHER:           src = "Other"; break;
+//	}
+//
+//	switch (severity)
+//	{
+//	case GL_DEBUG_SEVERITY_HIGH:
+//		WC_ERROR("[{0}] {1}", src, message);
+//		break;
+//
+//	case GL_DEBUG_SEVERITY_MEDIUM:
+//		WC_WARN("[{0}] {1}", src, message);
+//		break;
+//
+//	case GL_DEBUG_SEVERITY_LOW:
+//		WC_INFO("[{0}] {1}", src, message);
+//		break;
+//
+//	case GL_DEBUG_SEVERITY_NOTIFICATION:
+//		// WC_TRACE("[{0} {1} TRACE] {2}", src, typeStr, message);
+//		break;
+//	}
+//}
 
 namespace wc {	
 
@@ -64,8 +64,6 @@ namespace wc {
 		Clock deltaTimer;
 		float deltaTime = 0.f;
 
-		gl::Fence fence;
-
 		//Rml
 		Rml::ElementDocument* document = nullptr;
 
@@ -80,47 +78,28 @@ namespace wc {
 				if (wc::Keyboard::getKey(wc::Keyboard::Key::F8))
 					Rml::Debugger::SetVisible(!Rml::Debugger::IsVisible());
 			}
-			Mouse::ShowMouse(mode != MenuMode::GAME || !hasFocus);
-
-			if (resized) { 
-				auto size = window.GetSize();
-				glViewport(0, 0, size.x, size.y);
-				context->SetDimensions({ size.x, size.y});
-				render_interface.windowSize = size;
-				world.DestroyScreen();
-				world.CreateScreen();
-			}
+			Mouse::ShowMouse(mode != MenuMode::GAME || !hasFocus);			
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() override {
-			window.Create({1280, 720}, "Elementalworld");
+			window.Create({ 1280, 720 }, "Elementalworld");
+			auto dev = VulkanContext::Create("Elementalworld", window);
+			RendererContext::CreateSwapchain(window);
+			RendererContext::CreateQueues(dev);
 
-			if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) WC_ERROR("Failed to initialize GLAD");
-			// OpenGL state
-			int flags;
-			glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-			//if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) 
-			{
-				// initialize debug output 
-				glDebugMessageCallback(OpenGLDebugMessege, nullptr);
-				glEnable(GL_DEBUG_OUTPUT);
-				glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-				//glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, true);
-			}
-			// ------------
-			glEnable(GL_BLEND);
-			glEnable(GL_LINE_SMOOTH);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-			world.CreateScreen();
+			vk::UploadContext::Init(RendererContext::graphicsQueue);
+			RendererContext::CreateCommands();
 
 			auto size = window.GetSize();
 			render_interface.windowSize = size;
 
-			world.Create();
-
 			// Begin by installing the custom interfaces.
-			render_interface.Create();
+			render_interface.Create(RendererContext::GetRenderPass());
+
+			world.CreateScreen();
+
+			world.Create(size);
+
 			Rml::SetRenderInterface(&render_interface);
 			Rml::SetSystemInterface(&system_interface);
 			system_window = window;
@@ -181,6 +160,15 @@ namespace wc {
 				WC_ERROR("Failed to load document!");
 			}
 			document->Show();
+
+			window.SetFramebufferSizeCallback([](GLFWwindow* windowHnadle, int width, int height) {
+				glm::ivec2 size = {width, height};
+				RendererContext::RecreateSwapchain(window);
+				context->SetDimensions({ size.x, size.y });
+				render_interface.windowSize = size;
+				world.DestroyScreen();
+				world.CreateScreen();
+				});
 		}
 
 		Rml::DataModelHandle my_model;
@@ -188,7 +176,15 @@ namespace wc {
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnUpdate() override {
 			deltaTime = deltaTimer.restart();
-			
+			vk::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
+
+			RendererContext::Reset();
+
+			//begin the command buffer recording. We will use this command buffer exactly once, so we want to let vulkan know that
+			cmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+			uint32_t swapchainImageIndex = RendererContext::AcquireNextImageKHR();
+
 			//Update Rml
 			my_data.fps = (int)(1.f / deltaTime);
 			my_data.frametime = deltaTime;
@@ -206,22 +202,47 @@ namespace wc {
 			my_model.DirtyVariable("yaw");
 			
 			context->Update();
-			fence.wait();
 			if (mode == MenuMode::GAME)
 				world.Update(deltaTime);
-			else
-				glClear(GL_COLOR_BUFFER_BIT);
 
-			if (world.renderGUI) context->Render();
+			RendererContext::Begin(swapchainImageIndex, window);
+
+			if (mode == MenuMode::GAME)
+				world.RenderGUI();
+
+			if (world.renderGUI) 
+				context->Render();
+
 			render_interface.Flush();
+
+			//finalize the render pass
+			RendererContext::End();
+			//finalize the command buffer (we can no longer add commands, but it can now be executed)
+			cmd.End();
+
+			RendererContext::Present(swapchainImageIndex);
 			
-			fence.lock();
 			window.display();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnDelete() override {
-			world.Destroy();
+			VulkanContext::WaitIdle();
+
 			Rml::Shutdown();
+			world.Destroy();
+			world.DestroyScreen();
+
+
+			wc::render_interface.Destroy();
+
+			vk::UploadContext::Destroy();
+
+			vk::descriptorLayoutCache.Destroy();
+			vk::descriptorAllocator.Destroy();
+
+			RendererContext::Destroy();
+			VulkanContext::Destroy();
+
 			wc::window.Destroy();
 		}
 		//----------------------------------------------------------------------------------------------------------------------

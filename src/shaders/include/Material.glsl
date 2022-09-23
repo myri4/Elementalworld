@@ -5,4 +5,4 @@ struct Material {
 	uint color;
 };
 
-layout (binding = 3, std430) readonly buffer MaterialData { Material materials[]; };
+layout (binding = 2, std430) readonly buffer MaterialData { Material materials[]; };

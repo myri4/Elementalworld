@@ -144,9 +144,10 @@ vec3 computeIncidentLight(const in vec3 orig, const in vec3 dir, out float mixer
 
 layout(location = 0) out vec4 FragColor;
 
+layout(location = 0) in vec2 uv;
+
 void main()
 {    
-    vec2 uv = gl_FragCoord.xy / windowSize;
     vec3 rayDir = normalize(lower_left_corner + uv.x * horizontal + uv.y * vertical - cameraPos);
 	vec3 color;
 

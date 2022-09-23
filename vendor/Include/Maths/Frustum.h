@@ -80,10 +80,9 @@ namespace wc {
         {
             bool result = true;
             for (auto& plane : m_planes) {
-                if (plane.distanceToPoint(box.getVP(plane.normal)) < 0.f)
-                {
+                if (plane.distanceToPoint(box.getVP(plane.normal)) < 0.f)                
                     return false;
-                }
+                
                 else if (plane.distanceToPoint(box.getVN(plane.normal)) < 0.f)
                     result = true;
 
@@ -95,15 +94,9 @@ namespace wc {
         struct Plane {
             Plane() = default;
 
-            Plane(const glm::vec3& p1, const glm::vec3& norm)
-                : normal(norm),
-                distance(glm::dot(normal, p1))
-            {}
+            Plane(const glm::vec3& p1, const glm::vec3& norm) : normal(norm), distance(glm::dot(normal, p1)) {}
 
-            float distanceToPoint(const glm::vec3& point) const
-            {
-                return glm::dot(point, normal) + distance;
-            }
+            float distanceToPoint(const glm::vec3& point) const { return glm::dot(point, normal) + distance; }
 
             glm::vec3 normal;
             float distance;

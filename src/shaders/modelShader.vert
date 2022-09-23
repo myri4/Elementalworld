@@ -9,7 +9,7 @@ layout(location = 4) in vec4 weights;
 #include "include/sceneData.glsl"
 #include "include/constants.glsl"
 
-layout (std140, binding = 5) uniform ModelMatrices
+layout (std140, binding = 4, set = 0) uniform ModelMatrices
 {
     mat4 finalBonesMatrices[MAX_BONES];
     mat4 model;
