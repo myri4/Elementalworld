@@ -2,7 +2,7 @@
 
 #include "VulkanContext.h"
 
-namespace vk{
+namespace wc{
     namespace init {
         inline VkImageMemoryBarrier imageMemoryBarrier()
         {

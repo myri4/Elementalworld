@@ -51,8 +51,8 @@ struct Vertex {
 	Vertex() {}
 	Vertex(const glm::vec3& pos, const glm::vec3& texCoord, const glm::vec3& normal, const uint32_t& mat) : Position(pos), Normal(normal), materialID(mat), TexCoords(texCoord) { }
 
-	static vk::VertexInputDescription get_vertex_description() {
-		vk::VertexInputDescription description;
+	static wc::VertexInputDescription get_vertex_description() {
+		wc::VertexInputDescription description;
 
 		//we will have just 1 vertex buffer binding, with a per-vertex rate
 		VkVertexInputBindingDescription mainBinding = {};

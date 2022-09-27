@@ -1,7 +1,7 @@
 #pragma once
 #include "VulkanContext.h"
 
-namespace vk {
+namespace wc {
 	struct Fence : public RendererObject<VkFence> {
 
 		VkResult Create(const VkFenceCreateInfo& fenceCreateInfo, const VkAllocationCallbacks* pAllocator = nullptr) { return vkCreateFence(VulkanContext::GetDevice(), &fenceCreateInfo, pAllocator, &m_RendererID); }

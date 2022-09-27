@@ -3,7 +3,7 @@
 #include "VulkanContext.h"
 #include "Commands.h"
 
-namespace vk {
+namespace wc {
 
 	enum BufferUsage {
 		UNIFORM_BUFFER = 0x00000010,
@@ -97,7 +97,7 @@ namespace vk {
 		}
 
 		void SetData(const VkBufferCopy& copy, const void* data) {
-			vk::StagingBuffer stb;
+			wc::StagingBuffer stb;
 			stb.Create(copy.size);
 			stb.SetData(data, copy.size);
 			SetData(copy, stb);

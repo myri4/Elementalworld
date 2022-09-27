@@ -4,7 +4,7 @@
 #include "Commands.h"
 #include "Images.h"
 
-namespace vk {
+namespace wc {
 	struct RenderPass : public RendererObject<VkRenderPass> {
 
 		VkResult Create(const VkRenderPassCreateInfo& render_pass_info) { return vkCreateRenderPass(VulkanContext::GetDevice(), &render_pass_info, nullptr, &m_RendererID); }

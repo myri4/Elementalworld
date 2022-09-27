@@ -21,7 +21,7 @@ namespace wc {
 	public:
 		Model() {}
 
-		void Create(const std::string& path, const vk::RenderPass& renderPass, const glm::vec2& windowSize) {
+		void Create(const std::string& path, const wc::RenderPass& renderPass, const glm::vec2& windowSize) {
 			// read file via ASSIMP
 			wc::ShaderCreateInfo createInfo;
 			std::string resourceName = "default"; // @TODO: Remove
@@ -55,22 +55,22 @@ namespace wc {
 			sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 			sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
-			vk::loadTexture(file, diffuseTexture);
+			wc::loadTexture(file, diffuseTexture);
 			diffuseTexture.SetSamplerInfo(sampler);
 
 			{
-				vk::DescriptorWriter writer;
+				wc::DescriptorWriter writer;
 				writer.dstSet = shader.descriptorSet;
 				writer.write_image(0, diffuseTexture.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
-				vk::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+				wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
 			}
 
 			uint32_t totalIndices = 0, totalVertices = 0;
 			getNodeParameters(scene->mRootNode, *scene, totalIndices, totalVertices);
 
-			m_IndexBuffer.Create(sizeof(uint32_t) * totalIndices, vk::INDEX_BUFFER);
-			m_VertexBuffer.Create(sizeof(MeshVertex) * totalVertices, vk::VERTEX_BUFFER);
+			m_IndexBuffer.Create(sizeof(uint32_t) * totalIndices, wc::INDEX_BUFFER);
+			m_VertexBuffer.Create(sizeof(MeshVertex) * totalVertices, wc::VERTEX_BUFFER);
 
 			vertices.Create(sizeof(MeshVertex) * totalVertices);
 			vertices.Map();
@@ -88,11 +88,11 @@ namespace wc {
 			m_IndexBuffer.SetData(indices.GetBuffer(), sizeof(uint32_t) * totalIndices);
 			m_IndexBuffer.SetData(vertices.GetBuffer(), sizeof(MeshVertex) * totalVertices);
 
-			m_IndirectBuffer.Create(sizeof(VkDrawIndexedIndirectCommand) * cmds.size(), vk::INDIRECT_BUFFER);
+			m_IndirectBuffer.Create(sizeof(VkDrawIndexedIndirectCommand) * cmds.size(), wc::INDIRECT_BUFFER);
 		}
 
 		// draws the model, and thus all its meshes
-		void Draw(const vk::CommandBuffer& cmd)
+		void Draw(const wc::CommandBuffer& cmd)
 		{
 			shader.Bind(cmd);
 			cmd.DrawIndexedIndirect(m_IndirectBuffer, cmds.size());
@@ -101,16 +101,16 @@ namespace wc {
 		std::unordered_map<std::string, BoneInfo> m_OffsetMatMap;
 		wc::Shader shader;
 	private:
-		vk::Buffer m_IndexBuffer;
-		vk::Buffer m_VertexBuffer;
+		wc::Buffer m_IndexBuffer;
+		wc::Buffer m_VertexBuffer;
 
-		vk::Texture diffuseTexture;
+		wc::Texture diffuseTexture;
 
-		vk::Buffer m_IndirectBuffer;
+		wc::Buffer m_IndirectBuffer;
 		std::vector<VkDrawIndexedIndirectCommand> cmds;
 
-		vk::CPUBuffer<MeshVertex> vertices;
-		vk::CPUBuffer<uint32_t> indices;
+		wc::CPUBuffer<MeshVertex> vertices;
+		wc::CPUBuffer<uint32_t> indices;
 		uint32_t vertexOffset = 0;
 		uint32_t indexOffset = 0;
 

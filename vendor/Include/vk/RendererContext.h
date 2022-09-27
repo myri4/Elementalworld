@@ -19,26 +19,26 @@ namespace RendererContext {
 		//array of image-views from the swapchain
 		std::vector<VkImageView> swapchainImageViews;
 
-		std::vector<vk::Framebuffer> framebuffers;
+		std::vector<wc::Framebuffer> framebuffers;
 
-		vk::RenderPass defaultRenderPass;
+		wc::RenderPass defaultRenderPass;
 
-		vk::DepthBuffer depthBuffer;
+		wc::DepthBuffer depthBuffer;
 
 		
-		vk::Semaphore presentSemaphore[FRAME_OVERLAP], renderSemaphore[FRAME_OVERLAP];
-		vk::Fence renderFence[FRAME_OVERLAP];
+		wc::Semaphore presentSemaphore[FRAME_OVERLAP], renderSemaphore[FRAME_OVERLAP];
+		wc::Fence renderFence[FRAME_OVERLAP];
 
-		vk::CommandBuffer mainCommandBuffer[FRAME_OVERLAP];
+		wc::CommandBuffer mainCommandBuffer[FRAME_OVERLAP];
 		
 
-		vk::CommandPool commandPool;
+		wc::CommandPool commandPool;
 		uint32_t frameIndex = 0;
 	}
 
-	vk::Queue graphicsQueue;
-	vk::Queue computeQueue;
-	vk::Queue transferQueue;
+	wc::Queue graphicsQueue;
+	wc::Queue computeQueue;
+	wc::Queue transferQueue;
 
 	void CreateQueues(const vkb::Device& device) {
 		graphicsQueue.GetIndex(vkb::QueueType::graphics, device);
@@ -145,7 +145,7 @@ namespace RendererContext {
 		fb_info.layers = 1;
 
 		const uint32_t swapchain_imagecount = swapchainImages.size();
-		framebuffers = std::vector<vk::Framebuffer>(swapchain_imagecount);
+		framebuffers = std::vector<wc::Framebuffer>(swapchain_imagecount);
 
 		for (int i = 0; i < swapchain_imagecount; i++) {
 
@@ -220,7 +220,7 @@ namespace RendererContext {
 			glfwWaitEvents();
 		}
 
-		VulkanContext::WaitIdle();
+		VulkanContext::GetDevice().waitIdle();
 
 		DestroySwapchain();
 
@@ -261,7 +261,7 @@ namespace RendererContext {
 		defaultRenderPass.End(mainCommandBuffer[frameIndex]);
 	}
 
-	void Present(const uint32_t& swapchainImageIndex) {
+	void ExecuteGraphicsCommands() {
 		//prepare the submission to the queue. 
 		//we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
 		//we will signal the _renderSemaphore, to signal that rendering has finished
@@ -284,8 +284,9 @@ namespace RendererContext {
 		//submit command buffer to the queue and execute it.
 		// renderFence will now block until the graphic commands finish execution
 		graphicsQueue.Submit(submit, renderFence[frameIndex]);
+	}
 
-
+	void Present(const uint32_t& swapchainImageIndex) {
 		VkPresentInfoKHR presentInfo = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
 
 		presentInfo.pSwapchains = &swapchain;
@@ -304,16 +305,16 @@ namespace RendererContext {
 		frameIndex = frameIndex % FRAME_OVERLAP;
 	}
 
-	vk::CommandBuffer& GetCommandBuffer() { return mainCommandBuffer[frameIndex]; }
+	wc::CommandBuffer& GetCommandBuffer() { return mainCommandBuffer[frameIndex]; }
 
 	const VkSwapchainKHR& GetSwapchain() { return swapchain; }
 
 	const std::vector<VkImage>& GetSwapchainImages() { return swapchainImages; }
 	const std::vector<VkImageView>& GetSwapchainImageViews() { return swapchainImageViews; }
-	const std::vector<vk::Framebuffer>& GetFramebuffers() { return framebuffers; }
+	const std::vector<wc::Framebuffer>& GetFramebuffers() { return framebuffers; }
 	VkFormat GetSwapchainImageFormat() { return swapchainImageFormat; }
-	const vk::RenderPass& GetRenderPass() { return defaultRenderPass; }
-	const vk::DepthBuffer& GetDepthBuffer() { return depthBuffer; }
+	const wc::RenderPass& GetRenderPass() { return defaultRenderPass; }
+	const wc::DepthBuffer& GetDepthBuffer() { return depthBuffer; }
 	const uint32_t& GetFrameIndex() { return frameIndex; }
 
 }

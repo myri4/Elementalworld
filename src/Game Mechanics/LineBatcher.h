@@ -11,8 +11,8 @@ namespace wc {
 		glm::vec3 pos;
 		glm::vec4 color;
 
-		static vk::VertexInputDescription get_vertex_description() {
-			vk::VertexInputDescription description;
+		static wc::VertexInputDescription get_vertex_description() {
+			wc::VertexInputDescription description;
 
 			//we will have just 1 vertex buffer binding, with a per-vertex rate
 			VkVertexInputBindingDescription mainBinding = {};
@@ -46,10 +46,10 @@ namespace wc {
 		uint32_t IndexCount = 0;
 		uint32_t byteOffset = 0;
 
-		vk::Buffer lineBuffer;
+		wc::Buffer lineBuffer;
 		wc::Shader shader;
 	public:
-		void Create(const vk::RenderPass& renderPass, const VkDescriptorBufferInfo& ubo) {
+		void Create(const wc::RenderPass& renderPass, const VkDescriptorBufferInfo& ubo) {
 			wc::ShaderCreateInfo createInfo;
 			createInfo.vertexShader = "resourcepacks/default/shaders/Line3D.vert";
 			createInfo.fragmentShader = "resourcepacks/default/shaders/Line3D.frag";
@@ -62,14 +62,14 @@ namespace wc {
 			createInfo.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 			shader.Create(createInfo);
 
-			vk::DescriptorWriter writer;
+			wc::DescriptorWriter writer;
 
 			writer.dstSet = shader.descriptorSet;
 			writer.write_buffer(0, ubo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
-			vk::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+			wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
 
-			lineBuffer.Create(MaxLineVertexCount * sizeof(LineVertex), vk::VERTEX_BUFFER);
+			lineBuffer.Create(MaxLineVertexCount * sizeof(LineVertex), wc::VERTEX_BUFFER);
 		}
 
 		void Destroy() {
@@ -116,7 +116,7 @@ namespace wc {
 		void Flush(const bool render = true) {
 			if (!IndexCount) return;
 			if (render) {
-				vk::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
+				wc::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
 				shader.Bind(cmd);
 				cmd.BindVertexBuffer(lineBuffer);
 				cmd.Draw(IndexCount);

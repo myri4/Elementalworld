@@ -8,8 +8,8 @@ namespace wc {
 	*/
 	struct FramebufferAttachment
 	{
-		vk::Image image;
-		vk::ImageView view;
+		wc::Image image;
+		wc::ImageView view;
 		VkFormat format;
 		VkImageSubresourceRange subresourceRange;
 		VkAttachmentDescription description;
@@ -75,9 +75,9 @@ namespace wc {
 	/**
 	* @brief Encapsulates a complete Vulkan framebuffer with an arbitrary number and combination of attachments
 	*/
-	struct Framebuffer {
-		vk::Framebuffer framebuffer;
-		vk::RenderPass renderPass;
+	struct FramebufferWC {
+		wc::Framebuffer framebuffer;
+		wc::RenderPass renderPass;
 		std::vector<FramebufferAttachment> attachments;
 		void Destroy() {
 			renderPass.Destroy();

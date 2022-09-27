@@ -25,8 +25,8 @@ const uint8_t WC_MODEL_BIT = 0x1;
 const uint8_t WC_CULL_BIT = 0x2;
 
 struct BlockMesh { // @TODO: Improve
-	vk::Buffer vertexBuffer;
-	vk::Buffer indexBuffer; 
+	wc::Buffer vertexBuffer;
+	wc::Buffer indexBuffer; 
 	VkDrawIndexedIndirectCommand cmd = {};
 
 	BlockMesh() = default;
@@ -44,10 +44,10 @@ struct BlockMesh { // @TODO: Improve
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;
 		processNode(scene->mRootNode, *scene, offset, materialID, vertices, indices);
-		indexBuffer.Create(sizeof(uint32_t) * indices.size(), vk::INDEX_BUFFER);
+		indexBuffer.Create(sizeof(uint32_t) * indices.size(), wc::INDEX_BUFFER);
 		indexBuffer.SetData(indices.data(), sizeof(uint32_t) * indices.size());
 
-		vertexBuffer.Create(sizeof(Vertex) * vertices.size(), vk::VERTEX_BUFFER);
+		vertexBuffer.Create(sizeof(Vertex) * vertices.size(), wc::VERTEX_BUFFER);
 		vertexBuffer.SetData(vertices.data(), sizeof(Vertex) * vertices.size());
 		
 		cmd.indexCount = indices.size();

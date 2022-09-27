@@ -3,7 +3,7 @@
 #include "VulkanContext.h"
 #include <array>
 
-namespace vk {
+namespace wc {
 
 	using DescriptorSet = VkDescriptorSet;
 
@@ -226,7 +226,7 @@ namespace vk {
 
 	class DescriptorWriter {
 	public:
-		vk::DescriptorSet dstSet;
+		wc::DescriptorSet dstSet;
 		DescriptorWriter& write_buffer(const uint32_t& binding, const VkDescriptorBufferInfo& bufferInfo, const VkDescriptorType& type) {
 
 			VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };

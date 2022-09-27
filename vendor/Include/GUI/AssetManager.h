@@ -77,8 +77,8 @@ public:
 		textureMaterialArr.Destroy();
 	}
 	
-	vk::TextureArray texArr;
-	vk::TextureArray textureMaterialArr;
+	wc::TextureArray texArr;
+	wc::TextureArray textureMaterialArr;
 private:
 	std::unordered_map<std::string, int> m_TextureCache;
 	uint32_t textureCounter = 1;

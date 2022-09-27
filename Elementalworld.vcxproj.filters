@@ -138,6 +138,27 @@
     <ClCompile Include="vendor\Include\spirv_cross\spirv_reflect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="vendor\Include\imgui\imgui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\Include\imgui\imgui_demo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\Include\imgui\imgui_draw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\Include\imgui\imgui_impl_glfw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\Include\imgui\imgui_impl_vulkan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\Include\imgui\imgui_tables.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\Include\imgui\imgui_widgets.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Elementalworld Server\Elementalworld Server.vcxproj" />
@@ -280,9 +301,6 @@
     <ClInclude Include="vendor\Include\vk\Renderpass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\vk\Synchronization.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="vendor\Include\Utils\DeletionQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -314,6 +332,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\Include\wc\Framebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\Include\vk\Synchronization.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -25,13 +25,13 @@ namespace wc {
 
 		bool transformEnabled = false;
 
-		vk::Buffer VBO;
-		vk::Buffer EBO;
+		wc::Buffer VBO;
+		wc::Buffer EBO;
 
 		wc::Shader shader;
 
 
-		std::array<vk::Texture, 100> m_Textures;
+		std::array<wc::Texture, 100> m_Textures;
 		uint32_t m_NumTextures = 0;
 
 
@@ -43,8 +43,8 @@ namespace wc {
 			RmlVertex() = default;
 			RmlVertex(const glm::vec2& pos, const glm::vec3& texCoord) : position(pos), tex_coord(texCoord) { }
 
-			static vk::VertexInputDescription get_vertex_description() {
-				vk::VertexInputDescription description;
+			static wc::VertexInputDescription get_vertex_description() {
+				wc::VertexInputDescription description;
 
 				VkVertexInputBindingDescription mainBinding = {};
 				mainBinding.binding = 0;
@@ -101,13 +101,13 @@ namespace wc {
 			return textureIndex;
 		}
 
-		vk::CPUBuffer<uint32_t> indices;
-		vk::CPUBuffer<RmlVertex> vertices;
+		wc::CPUBuffer<uint32_t> indices;
+		wc::CPUBuffer<RmlVertex> vertices;
 	public:
 		glm::vec2 windowSize = glm::vec2(0.f);
 		uint32_t whiteTexture;
 
-		void Create(const vk::RenderPass& renderPass) {
+		void Create(const wc::RenderPass& renderPass) {
 
 			wc::ShaderCreateInfo createInfo;
 			createInfo.vertexShader = "resourcepacks/default/shaders/RmlRenderer.vert";
@@ -120,8 +120,8 @@ namespace wc {
 			createInfo.invertY = true;
 			shader.Create(createInfo);
 
-			EBO.Create(sizeof(uint32_t) * MaxQuadIndexCount, vk::INDEX_BUFFER);
-			VBO.Create(sizeof(RmlVertex) * MaxQuadVertexCount, vk::VERTEX_BUFFER);
+			EBO.Create(sizeof(uint32_t) * MaxQuadIndexCount, wc::INDEX_BUFFER);
+			VBO.Create(sizeof(RmlVertex) * MaxQuadVertexCount, wc::VERTEX_BUFFER);
 
 			indices.Create(sizeof(uint32_t) * MaxQuadIndexCount); indices.Map();
 			vertices.Create(sizeof(RmlVertex) * MaxQuadVertexCount); vertices.Map();
@@ -142,7 +142,7 @@ namespace wc {
 			newWrite.dstBinding = 0;
 			newWrite.dstSet = shader.descriptorSet;
 
-			vk::UpdateDescriptorSets(1, &newWrite);
+			wc::UpdateDescriptorSets(1, &newWrite);
 		}
 
 		void Destroy() {
@@ -219,7 +219,7 @@ namespace wc {
 		}
 
 		void Flush() {
-			vk::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
+			wc::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
 			if (!IndexCount) return;
 
 			indices.Unmap();
@@ -243,7 +243,7 @@ namespace wc {
 			newWrite.dstBinding = 0;
 			newWrite.dstSet = shader.descriptorSet;
 
-			vk::UpdateDescriptorSets(1, &newWrite);
+			wc::UpdateDescriptorSets(1, &newWrite);
 
 			VkViewport viewport;
 			viewport.x = 0.f;
@@ -329,7 +329,7 @@ namespace wc {
 		bool LoadTexture(uint32_t& texture_handle, Rml::Vector2i& texture_dimensions, const Rml::String& source) {
 			std::string src = (std::string)source.c_str();
 
-			vk::Texture& texture = m_Textures[m_NumTextures];
+			wc::Texture& texture = m_Textures[m_NumTextures];
 
 			int fnrComponents;
 			auto data = stbi_load(source.c_str(), &texture_dimensions.x, &texture_dimensions.y, &fnrComponents, 0);
@@ -363,7 +363,7 @@ namespace wc {
 		}
 
 		bool GenerateTexture(Rml::TextureHandle& texture_handle, const Rml::byte* source, const Rml::Vector2i& source_dimensions) override {
-			vk::Texture& texture = m_Textures[m_NumTextures];
+			wc::Texture& texture = m_Textures[m_NumTextures];
 
 			VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 
@@ -383,7 +383,7 @@ namespace wc {
 		}
 
 		bool GenerateTexture(uint32_t& texture_handle, const void* source, const glm::ivec2& source_dimensions) {
-			vk::Texture& texture = m_Textures[m_NumTextures];
+			wc::Texture& texture = m_Textures[m_NumTextures];
 
 			VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 
@@ -402,7 +402,7 @@ namespace wc {
 			return true;
 		}
 
-		uint32_t AddTextureFramebuffer(const vk::Texture& texture) {
+		uint32_t AddTextureFramebuffer(const wc::Texture& texture) {
 			m_Textures[m_Textures.size() - 1] = texture;
 			return m_Textures.size() - 1;
 		}
@@ -412,7 +412,7 @@ namespace wc {
 			m_NumTextures--;
 		}
 
-		void UpdateTexture(const vk::RenderableTexture& texture) {
+		void UpdateTexture(const wc::RenderableTexture& texture) {
 			m_Textures[texture.handle] = texture;
 		}
 

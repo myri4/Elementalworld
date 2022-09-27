@@ -1,37 +1,8 @@
 #pragma once
 #include "world/World.h"
-
-//void GLAPIENTRY OpenGLDebugMessege(uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int length, const char* message, const void* userParam) {
-//	const char* src;
-//	switch (source)
-//	{
-//	case GL_DEBUG_SOURCE_API:             src = "API"; break;
-//	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   src = "Window System"; break;
-//	case GL_DEBUG_SOURCE_SHADER_COMPILER: src = "Shader Compiler"; break;
-//	case GL_DEBUG_SOURCE_THIRD_PARTY:     src = "Third Party"; break;
-//	case GL_DEBUG_SOURCE_APPLICATION:     src = "Application"; break;
-//	case GL_DEBUG_SOURCE_OTHER:           src = "Other"; break;
-//	}
-//
-//	switch (severity)
-//	{
-//	case GL_DEBUG_SEVERITY_HIGH:
-//		WC_ERROR("[{0}] {1}", src, message);
-//		break;
-//
-//	case GL_DEBUG_SEVERITY_MEDIUM:
-//		WC_WARN("[{0}] {1}", src, message);
-//		break;
-//
-//	case GL_DEBUG_SEVERITY_LOW:
-//		WC_INFO("[{0}] {1}", src, message);
-//		break;
-//
-//	case GL_DEBUG_SEVERITY_NOTIFICATION:
-//		// WC_TRACE("[{0} {1} TRACE] {2}", src, typeStr, message);
-//		break;
-//	}
-//}
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_vulkan.h>
+#include <imgui/imgui_impl_glfw.h>
 
 namespace wc {	
 
@@ -65,6 +36,7 @@ namespace wc {
 		float deltaTime = 0.f;
 
 		//Rml
+		wc::DescriptorPool imguiPool;
 		Rml::ElementDocument* document = nullptr;
 
 		//----------------------------------------------------------------------------------------------------------------------
@@ -87,7 +59,7 @@ namespace wc {
 			RendererContext::CreateSwapchain(window);
 			RendererContext::CreateQueues(dev);
 
-			vk::UploadContext::Init(RendererContext::graphicsQueue);
+			wc::UploadContext::Init(RendererContext::graphicsQueue);
 			RendererContext::CreateCommands();
 
 			auto size = window.GetSize();
@@ -169,6 +141,59 @@ namespace wc {
 				world.DestroyScreen();
 				world.CreateScreen();
 				});
+
+
+
+
+			VkDescriptorPoolSize pool_sizes[] =
+			{
+				{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+				{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+				{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+				{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+				{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+				{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+				{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+				{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+				{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+			};
+
+			VkDescriptorPoolCreateInfo pool_info = {};
+			pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+			pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+			pool_info.maxSets = 1000;
+			pool_info.poolSizeCount = std::size(pool_sizes);
+			pool_info.pPoolSizes = pool_sizes;
+
+			imguiPool.Create(pool_info);
+
+			//this initializes the core structures of imgui
+			ImGui::CreateContext();
+
+			//this initializes imgui for SDL
+			ImGui_ImplGlfw_InitForVulkan(window, false);
+
+			//this initializes imgui for Vulkan
+			ImGui_ImplVulkan_InitInfo init_info = {};
+			init_info.Instance = VulkanContext::GetInstance();
+			init_info.PhysicalDevice = VulkanContext::GetPhysicalDevice();
+			init_info.Device = VulkanContext::GetDevice();
+			init_info.Queue = RendererContext::graphicsQueue;
+			init_info.DescriptorPool = imguiPool;
+			init_info.MinImageCount = 3;
+			init_info.ImageCount = 3;
+			init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+			ImGui_ImplVulkan_Init(&init_info, RendererContext::GetRenderPass());
+
+			UploadContext::immediate_submit([&](VkCommandBuffer cmd) {
+				ImGui_ImplVulkan_CreateFontsTexture(cmd);
+				});
+
+			//clear font textures from cpu data
+			ImGui_ImplVulkan_DestroyFontUploadObjects();
 		}
 
 		Rml::DataModelHandle my_model;
@@ -176,7 +201,7 @@ namespace wc {
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnUpdate() override {
 			deltaTime = deltaTimer.restart();
-			vk::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
+			wc::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
 
 			RendererContext::Reset();
 
@@ -202,6 +227,18 @@ namespace wc {
 			my_model.DirtyVariable("yaw");
 			
 			context->Update();
+
+			ImGui_ImplVulkan_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+
+			ImGui::NewFrame();
+
+
+			//imgui commands
+			ImGui::ShowDemoWindow();
+
+			ImGui::Render();
+
 			if (mode == MenuMode::GAME)
 				world.Update(deltaTime);
 
@@ -214,31 +251,34 @@ namespace wc {
 				context->Render();
 
 			render_interface.Flush();
-
+			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 			//finalize the render pass
 			RendererContext::End();
 			//finalize the command buffer (we can no longer add commands, but it can now be executed)
 			cmd.End();
 
+			RendererContext::ExecuteGraphicsCommands();
 			RendererContext::Present(swapchainImageIndex);
 			
 			window.display();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnDelete() override {
-			VulkanContext::WaitIdle();
+			VulkanContext::GetDevice().waitIdle();
 
 			Rml::Shutdown();
+			imguiPool.Destroy();
+			ImGui_ImplVulkan_Shutdown();
 			world.Destroy();
 			world.DestroyScreen();
 
 
 			wc::render_interface.Destroy();
 
-			vk::UploadContext::Destroy();
+			wc::UploadContext::Destroy();
 
-			vk::descriptorLayoutCache.Destroy();
-			vk::descriptorAllocator.Destroy();
+			wc::descriptorLayoutCache.Destroy();
+			wc::descriptorAllocator.Destroy();
 
 			RendererContext::Destroy();
 			VulkanContext::Destroy();

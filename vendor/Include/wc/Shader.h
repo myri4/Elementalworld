@@ -35,7 +35,7 @@ namespace wc {
 		}
 	}
 
-	class ShaderModule : public RendererObject<VkShaderModule> {
+	class ShaderModuleWC : public RendererObject<VkShaderModule> {
 	private:
 		std::vector<uint32_t> shaderData;
 
@@ -96,8 +96,8 @@ namespace wc {
 		std::string vertexShader;
 		std::string fragmentShader;
 		glm::vec2 windowSize;
-		vk::RenderPass renderPass;
-		vk::VertexInputDescription vertexDescription;
+		wc::RenderPass renderPass;
+		wc::VertexInputDescription vertexDescription;
 		bool blending = false;
 		bool depthTest = true;
 		bool invertY = false;
@@ -105,18 +105,18 @@ namespace wc {
 	};
 
 	class Shader {
-		vk::Pipeline pipeline;
-		vk::PipelineLayout pipelineLayout;
-		vk::DescriptorSetLayout descriptorLayout;
+		wc::Pipeline pipeline;
+		wc::PipelineLayout pipelineLayout;
+		wc::DescriptorSetLayout descriptorLayout;
 	public:
-		const vk::Pipeline& getPipeline() const { return pipeline; }
-		const vk::PipelineLayout& getPipelineLayout() const { return pipelineLayout; }
-		const vk::DescriptorSetLayout& getDescriptorLayout() const { return descriptorLayout; }
-		vk::DescriptorSet descriptorSet;
+		const wc::Pipeline& getPipeline() const { return pipeline; }
+		const wc::PipelineLayout& getPipelineLayout() const { return pipelineLayout; }
+		const wc::DescriptorSetLayout& getDescriptorLayout() const { return descriptorLayout; }
+		wc::DescriptorSet descriptorSet;
 
 		void Create(const ShaderCreateInfo& createInfo) {
-			vk::PipelineBuilder pipelineBuilder;
-			std::array<wc::ShaderModule, 2> shaderModules;
+			wc::PipelineBuilder pipelineBuilder;
+			std::array<ShaderModuleWC, 2> shaderModules;
 
 			shaderModules[0].Create(createInfo.vertexShader);
 			shaderModules[1].Create(createInfo.fragmentShader);
@@ -245,9 +245,9 @@ namespace wc {
 				layoutInfo.pBindings = layoutBindings.data();
 				layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
 
-				descriptorLayout = vk::descriptorLayoutCache.create_descriptor_layout(layoutInfo);
+				descriptorLayout = wc::descriptorLayoutCache.create_descriptor_layout(layoutInfo);
 
-				vk::descriptorAllocator.allocate(descriptorSet, descriptorLayout);
+				wc::descriptorAllocator.allocate(descriptorSet, descriptorLayout);
 
 				VkPipelineLayoutCreateInfo info = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 
@@ -261,7 +261,7 @@ namespace wc {
 				
 			}
 
-			pipelineBuilder.vertexInputInfo = vk::vertex_input_state_create_info(createInfo.vertexDescription);
+			pipelineBuilder.vertexInputInfo = wc::vertex_input_state_create_info(createInfo.vertexDescription);
 
 			//build viewport and scissor from the swapchain extents
 			pipelineBuilder.viewport.x = 0.f;
@@ -292,7 +292,7 @@ namespace wc {
 			colorBlend.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 			colorBlend.alphaBlendOp = VK_BLEND_OP_ADD;
 
-			pipelineBuilder.depthStencil = vk::depth_stencil_create_info(createInfo.depthTest, createInfo.depthTest, VK_COMPARE_OP_LESS_OR_EQUAL);
+			pipelineBuilder.depthStencil = wc::depth_stencil_create_info(createInfo.depthTest, createInfo.depthTest, VK_COMPARE_OP_LESS_OR_EQUAL);
 			pipelineBuilder.topology = createInfo.topology;
 			//finally build the pipeline
 			pipeline = pipelineBuilder.build_pipeline(createInfo.renderPass, pipelineLayout);
@@ -300,7 +300,7 @@ namespace wc {
 			for (uint32_t i = 0; i < shaderModules.size(); i++) shaderModules[i].Destroy();
 		}
 
-		void Bind(const vk::CommandBuffer& cmd) {
+		void Bind(const wc::CommandBuffer& cmd) {
 			cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, 0, pipelineLayout, descriptorSet);
 			cmd.BindPipeline(pipeline);
 		}
@@ -312,17 +312,17 @@ namespace wc {
 	};
 
 	class ComputeShader {
-		vk::ComputePipeline pipeline;
-		vk::PipelineLayout pipelineLayout;
-		vk::DescriptorSetLayout descriptorLayout;
+		wc::ComputePipeline pipeline;
+		wc::PipelineLayout pipelineLayout;
+		wc::DescriptorSetLayout descriptorLayout;
 	public:
-		const vk::ComputePipeline& getPipeline() const { return pipeline; }
-		const vk::PipelineLayout& getPipelineLayout() const { return pipelineLayout; }
-		const vk::DescriptorSetLayout& getDescriptorLayout() const { return descriptorLayout; }
-		vk::DescriptorSet descriptorSet;
+		const wc::ComputePipeline& getPipeline() const { return pipeline; }
+		const wc::PipelineLayout& getPipelineLayout() const { return pipelineLayout; }
+		const wc::DescriptorSetLayout& getDescriptorLayout() const { return descriptorLayout; }
+		wc::DescriptorSet descriptorSet;
 
 		void Create(const std::string& shaderPath) {
-			wc::ShaderModule shaderModule;
+			ShaderModuleWC shaderModule;
 
 			shaderModule.Create(shaderPath);
 
@@ -429,9 +429,9 @@ namespace wc {
 				layoutInfo.pBindings = layoutBindings.data();
 				layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
 
-				descriptorLayout = vk::descriptorLayoutCache.create_descriptor_layout(layoutInfo);
+				descriptorLayout = wc::descriptorLayoutCache.create_descriptor_layout(layoutInfo);
 
-				vk::descriptorAllocator.allocate(descriptorSet, descriptorLayout);
+				wc::descriptorAllocator.allocate(descriptorSet, descriptorLayout);
 
 				VkPipelineLayoutCreateInfo info = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 
@@ -465,7 +465,7 @@ namespace wc {
 			shaderModule.Destroy();
 		}
 
-		void Bind(const vk::CommandBuffer& cmd) {
+		void Bind(const wc::CommandBuffer& cmd) {
 			cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, 0, pipelineLayout, descriptorSet);
 			cmd.BindPipeline(pipeline);
 		}

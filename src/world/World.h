@@ -61,18 +61,19 @@ namespace wc {
 
 		Frustum viewFrustum;
 		wc::Shader chunkShader;
-		bool updateChunks = false;
+		bool updateModels = false;
+		bool sortModels = false;
 #endif
 
-		vk::Buffer sceneDataBuffer; // ubo
+		wc::Buffer sceneDataBuffer;
 
-		vk::Buffer lightBuffer; // ubo
-		vk::Buffer materialsBuffer; // ssbo
-		vk::Buffer blockTransformBuffer; // ssbo
+		wc::Buffer lightBuffer;
+		wc::Buffer materialsBuffer;
+		wc::Buffer blockTransformBuffer;
 
 		uint32_t currentLightID = 0;
 #ifndef RAY_TRACING
-		vk::CPUBuffer<glm::vec4> blockTransforms;
+		wc::CPUBuffer<glm::vec4> blockTransforms;
 		uint32_t transformOffset = 0;
 #endif
 
@@ -87,9 +88,9 @@ namespace wc {
 		};
 
 #ifndef RAY_TRACING
-		vk::Buffer globalVertexBuffer;
-		vk::Buffer globalIndexBuffer;
-		vk::Buffer indirectBuffer; // indirect buffer
+		wc::Buffer globalVertexBuffer;
+		wc::Buffer globalIndexBuffer;
+		wc::Buffer indirectBuffer; // indirect buffer
 		std::array<Chunk, RenderDistance* RenderDistance* RenderDistance> chunks;
 #endif
 
@@ -107,7 +108,7 @@ namespace wc {
 		std::string worldName = "New world";
 		//Animation animation;
 		Model model;
-		vk::Buffer animationBuffer; // ubo
+		wc::Buffer animationBuffer; // ubo
 
 		void SaveStructure(const char* outFile, const glm::ivec3& Start, const glm::ivec3& End) {
 			glm::ivec3 start = Start;
@@ -151,20 +152,19 @@ namespace wc {
 			glm::vec3 vector;
 			uint32_t color;
 		};
-		vk::CPUBuffer<Light> lights;
+		wc::CPUBuffer<Light> lights;
 		uint32_t maxLights = chunkVolume;
 		// Composite stuff
-		wc::Framebuffer screen;
-		vk::Texture scrTexture;
-		uint32_t framebufferTextureHandle = 0;
+		wc::FramebufferWC screen;
+		wc::Texture scrTexture;
 
 
 		//vk::Texture scrTexture;
-		vk::Texture finalImage;
+		wc::Texture finalImage;
 		wc::ComputeShader compositeShader;
-		vk::Image bloomBuffers[3];
-		vk::ImageView bloomImageView;
-		vk::Sampler bloomSampler;
+		wc::Image bloomBuffers[3];
+		wc::ImageView bloomImageView;
+		wc::Sampler bloomSampler;
 
 		glm::ivec2 bloomTexSize = glm::ivec2(0);
 		uint32_t m_BloomComputeWorkGroupSize = 4;
@@ -197,19 +197,19 @@ namespace wc {
 		Player p;
 
 		void Create(const glm::vec2& windowSize) {						
-			sceneDataBuffer.Create(sizeof(SceneData), vk::UNIFORM_BUFFER); // 0
+			sceneDataBuffer.Create(sizeof(SceneData), wc::UNIFORM_BUFFER); // 0
 			delQueue.push_function([=] { sceneDataBuffer.Destroy(); });
 			
-			lightBuffer.Create(maxLights * sizeof(Light), vk::UNIFORM_BUFFER); // 1
+			lightBuffer.Create(maxLights * sizeof(Light), wc::UNIFORM_BUFFER); // 1
 			delQueue.push_function([=] { lightBuffer.Destroy(); });
 			
-			materialsBuffer.Create(materialData.byte_size(), vk::STORAGE_BUFFER); // 3
+			materialsBuffer.Create(materialData.byte_size(), wc::STORAGE_BUFFER); // 3
 			delQueue.push_function([=] { materialsBuffer.Destroy(); });
 			
-			blockTransformBuffer.Create(sizeof(glm::vec4) * chunks.size() * chunkVolume, vk::STORAGE_BUFFER); // 4
+			blockTransformBuffer.Create(sizeof(glm::vec4) * chunks.size() * chunkVolume, wc::STORAGE_BUFFER); // 4
 			delQueue.push_function([=] { blockTransformBuffer.Destroy(); });
 			
-			animationBuffer.Create(sizeof(glm::mat4) * (MAX_BONE_WEIGHTS + 1), vk::UNIFORM_BUFFER); // 5
+			animationBuffer.Create(sizeof(glm::mat4) * (MAX_BONE_WEIGHTS + 1), wc::UNIFORM_BUFFER); // 5
 			delQueue.push_function([=] { animationBuffer.Destroy(); });
 			
 			assets.Create(40);
@@ -227,7 +227,7 @@ namespace wc {
 				createInfo.invertY = true; // doesnt matter
 				chunkShader.Create(createInfo);
 
-				vk::DescriptorWriter writer;
+				wc::DescriptorWriter writer;
 				writer.dstSet = chunkShader.descriptorSet;
 				writer.write_buffer(0, sceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 					.write_buffer(1, lightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
@@ -236,7 +236,7 @@ namespace wc {
 					.write_image(4, assets.texArr.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 					.write_image(5, assets.textureMaterialArr.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
-				vk::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+				wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
 
 				delQueue.push_function([=] { chunkShader.Destroy(); });
 			}
@@ -246,26 +246,36 @@ namespace wc {
 				createInfo.fragmentShader = "resourcepacks/" + resourceName + "/shaders/skybox.frag";
 				createInfo.windowSize = windowSize;
 				createInfo.renderPass = screen.renderPass;
-				vk::VertexInputDescription desc; // empty
+				wc::VertexInputDescription desc; // empty
 				createInfo.vertexDescription = desc;
 				createInfo.blending = false;
 				createInfo.depthTest = false;
 				createInfo.invertY = true; // doesnt matter
 				skyShader.Create(createInfo);
 
-				vk::DescriptorWriter writer;
+				wc::DescriptorWriter writer;
 				writer.dstSet = skyShader.descriptorSet;
 				writer.write_buffer(0, sceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 					.write_buffer(1, lightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
-				vk::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+				wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
 
 				delQueue.push_function([=] { skyShader.Destroy(); });
 			}
-			bloomShader.Create("resourcepacks/" + resourceName + "/shaders/bloomShader.comp");
-			delQueue.push_function([=] { bloomShader.Destroy(); });
-			compositeShader.Create("resourcepacks/" + resourceName + "/shaders/composite.comp");
-			delQueue.push_function([=] { compositeShader.Destroy(); });
+			//bloomShader.Create("resourcepacks/" + resourceName + "/shaders/bloomShader.comp");
+			//delQueue.push_function([=] { bloomShader.Destroy(); });
+			{
+				compositeShader.Create("resourcepacks/" + resourceName + "/shaders/composite.comp");
+
+				wc::DescriptorWriter writer;
+				writer.dstSet = compositeShader.descriptorSet;
+				writer
+					.write_image(0, finalImage.GetDescriptorData(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+					.write_image(1, scrTexture.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+				
+
+				delQueue.push_function([=] { compositeShader.Destroy(); });
+			}
 			
 			sol::state worldGenState;
 			worldGenState.new_usertype<FastNoiseLite>("Noise", sol::constructors<void()>(),
@@ -286,8 +296,7 @@ namespace wc {
 			
 			if (worldGenState["water_level"].valid()) water_level = worldGenState["water_level"];
 			
-			//@TODO: more work has to be done here
-			vk::StagingBuffer matBuffer;
+			wc::StagingBuffer matBuffer;
 			matBuffer.Create(materialData.byte_size());
 			
 			blockData.counter = 1;
@@ -361,11 +370,11 @@ namespace wc {
 			delQueue.push_function([=] { lineBatcher.Destroy(); });
 
 #ifndef RAY_TRACING
-			indirectBuffer.Create(chunks.size() * sizeof(VkDrawIndexedIndirectCommand), vk::INDIRECT_BUFFER);
+			indirectBuffer.Create(chunks.size() * sizeof(VkDrawIndexedIndirectCommand), wc::INDIRECT_BUFFER);
 			delQueue.push_function([=] { indirectBuffer.Destroy(); });
-			globalVertexBuffer.Create(MaxVertexCount * sizeof(Vertex) * chunks.size(), vk::VERTEX_BUFFER);
+			globalVertexBuffer.Create(MaxVertexCount * sizeof(Vertex) * chunks.size(), wc::VERTEX_BUFFER);
 			delQueue.push_function([=] { globalVertexBuffer.Destroy(); });
-			globalIndexBuffer.Create(MaxIndexCount * sizeof(uint32_t) * chunks.size(), vk::INDEX_BUFFER);
+			globalIndexBuffer.Create(MaxIndexCount * sizeof(uint32_t) * chunks.size(), wc::INDEX_BUFFER);
 			delQueue.push_function([=] { globalIndexBuffer.Destroy(); });
 						
 			lights.Create(maxLights * sizeof(Light));
@@ -377,7 +386,7 @@ namespace wc {
 			blockTransforms.Map();
 
 			uint32_t iOffset = 0;
-			vk::CPUBuffer <uint32_t> indices;
+			wc::CPUBuffer <uint32_t> indices;
 			indices.Create(MaxIndexCount * sizeof(uint32_t));
 			indices.Map();
 			for (int i = 0; i < MaxIndexCount; i += 6) {
@@ -463,6 +472,7 @@ namespace wc {
 			screen.Create(window.GetSize());
 			
 			scrTexture.Create(screen.attachments[attachment].image, screen.attachments[attachment].view);
+			finalImage.Create(window.GetSize(), VK_FORMAT_R32G32B32A32_SFLOAT);
 			VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 			
 			sampler.magFilter = VK_FILTER_LINEAR;
@@ -470,13 +480,16 @@ namespace wc {
 			sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 			
 			scrTexture.SetSamplerInfo(sampler);
-			framebufferTextureHandle = render_interface.AddTextureFramebuffer(scrTexture);
+			finalImage.SetSamplerInfo(sampler);
+			render_interface.AddTextureFramebuffer(scrTexture);
 
 			bloomTexSize = glm::ivec2(window.GetSize().x, window.GetSize().y) / 2;
 			bloomTexSize += glm::ivec2(m_BloomComputeWorkGroupSize - bloomTexSize.x % m_BloomComputeWorkGroupSize, m_BloomComputeWorkGroupSize - bloomTexSize.y % m_BloomComputeWorkGroupSize);
-			mips = vk::GetMipLevelCount(window.GetSize()) - 4;
+			mips = wc::GetMipLevelCount(window.GetSize()) - 4;
+
 			//gl::TextureProps bloomProps;
 			//bloomProps.internalFormat = GL_RGBA32F;
 			//bloomProps.mips = mips;
@@ -497,13 +510,11 @@ namespace wc {
 			screen.DestroyAttachments();
 			scrTexture.ResetSamplerInfo();
 
-			//finalImage.Destroy();
+			finalImage.Destroy();
 			//
 			//for (int i = 0; i < 3; i++)
 			//	bloomBuffers[i].Destroy();
 		}
-
-		uint32_t getScreen() { return framebufferTextureHandle; }
 
 		bool RectVsRect(const AABB& r1, const AABB& r2)
 		{
@@ -514,7 +525,7 @@ namespace wc {
 		}
 
 		void Update(const float& deltaTime) {
-			vk::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
+			wc::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
 
 			VkRenderPassBeginInfo fRPInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
 
@@ -721,10 +732,19 @@ namespace wc {
 			lightBuffer.SetData(lights.GetBuffer(), size * sizeof(Light));
 			lights.Map();
 
-			if (updateChunks) {
+			for (ChunkID i = 0; i < chunks.size(); i++) if (chunks[i].canBeUpdated) { UpdateMesh(i); chunks[i].canBeUpdated = false; }
 
-				for (ChunkID i = 0; i < chunks.size(); i++) if (chunks[i].canBeUpdated) { UpdateMesh(i); chunks[i].canBeUpdated = false; }
-				updateChunks = false;
+			if (updateModels) {
+				updateModels = false;
+
+				if (sortModels) {
+					for (uint32_t i = 0; i < transformOffset; i++)
+						for (uint32_t j = 0; j < transformOffset - i - 1; j++) {
+							if (blockTransforms[j].w > blockTransforms[j + 1].w)
+								std::swap(blockTransforms[j], blockTransforms[j + 1]);
+						}
+					sortModels = false;
+				}
 
 				size = transformOffset ? transformOffset : 1;
 				blockTransforms.Unmap();
@@ -797,8 +817,8 @@ namespace wc {
 			//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			//
 			//render_interface.DrawQuad({ 0,0 }, sceneData.windowSize, finalImage);
-			//if (renderGUI) render_interface.DrawQuad((sceneData.windowSize - 20.f) / 2.f, { 20, 20 }, crosshair);
-			render_interface.DrawQuad({ 0,0 }, window.GetSize(), framebufferTextureHandle);
+			render_interface.DrawQuad({ 0,0 }, window.GetSize(), 99);
+			if (renderGUI) render_interface.DrawQuad(((glm::vec2)window.GetSize() - 20.f) / 2.f, {20, 20}, crosshair);
 		}
 
 		void ParseCommand(std::string& command) {
@@ -1276,12 +1296,11 @@ namespace wc {
 			uint16_t y = pos.y;
 			uint16_t z = pos.z;
 
-			updateChunks = true;
+			updateModels = true;
 			BlockID& chunkBlockID = chunks[chunkID].data[x][y][z];
 			if (chunkBlockID == blockID) return;
 			glm::vec3 globalPos = glm::vec3(chunks[chunkID].position) * glm::vec3(chunkSize) + glm::vec3(pos);
 			glm::ivec3 iGlobalPos = globalPos;
-			bool sortModels = false;
 			if (blockID == 0) {
 				if (blockData[chunkBlockID].emitLight)
 					removeLight(globalPos + glm::vec3(0.5f));
@@ -1311,16 +1330,7 @@ namespace wc {
 					mesh.cmd.instanceCount++;
 					sortModels = true;
 				}
-			}
-
-			if (sortModels) {
-				// @TODO: maybe improve at some point in the future + transfer this to a compute shader
-				for (uint32_t i = 0; i < transformOffset; i++)
-					for (uint32_t j = 0; j < transformOffset - i - 1; j++) {
-						if (blockTransforms[j].w > blockTransforms[j + 1].w)
-							std::swap(blockTransforms[j], blockTransforms[j + 1]);
-					}
-			}
+			}			
 
 			chunks[chunkID].data[x][y][z] = blockID;
 			chunks[chunkID].canBeUpdated = true;
@@ -1357,7 +1367,7 @@ namespace wc {
 			glm::ivec3 chunkPos = chunk.position * glm::ivec3(chunkSize);
 
 			//Vertex* vertices = (Vertex*)(globalVertices + chunkID * MaxVertexCount);
-			vk::CPUBuffer<Vertex> vertices;
+			wc::CPUBuffer<Vertex> vertices;
 			vertices.Create(MaxVertexCount * sizeof(Vertex));
 			vertices.Map();
 
@@ -1668,7 +1678,7 @@ namespace wc {
 
 		// BLOOM
 
-		VkImageViewCreateInfo GetBloomViewInfo(const vk::Image& image, const uint32_t& mipLevel = 0) {
+		VkImageViewCreateInfo GetBloomViewInfo(const wc::Image& image, const uint32_t& mipLevel = 0) {
 			VkImageViewCreateInfo createInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
 			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 			createInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -1681,7 +1691,7 @@ namespace wc {
 			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		}
 
-		void RenderBloom(const vk::CommandBuffer& cmd)
+		void RenderBloom(const wc::CommandBuffer& cmd)
 		{
 			bloomShader.Bind(cmd);
 			BloomUBOSettings settings;

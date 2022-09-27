@@ -5,7 +5,7 @@
 #include "Pipeline.h"
 #include "Descriptors.h"
 
-namespace vk {
+namespace wc {
 
 	class Queue : public RendererObject<VkQueue> {
 		uint32_t queueFamily; //family of that queue
@@ -35,9 +35,7 @@ namespace vk {
 		VkResult Begin(const VkCommandBufferBeginInfo& info) const { return vkBeginCommandBuffer(m_RendererID, &info); }
 
 		VkResult Begin(const VkCommandBufferUsageFlags& flags) const {
-			VkCommandBufferBeginInfo info = {};
-			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			info.pNext = nullptr;
+			VkCommandBufferBeginInfo info = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
 
 			info.pInheritanceInfo = nullptr;
 			info.flags = flags;
@@ -62,7 +60,7 @@ namespace vk {
 			vkCmdBindIndexBuffer(m_RendererID, index_buffer, 0, indexType);
 		}
 
-		void BindDescriptorSet(const VkPipelineBindPoint& bindPoint, const uint32_t& binding, const PipelineLayout& layout, const DescriptorSet& set, const uint32_t& dynamic_offset = 0) const {
+		void BindDescriptorSet(const VkPipelineBindPoint& bindPoint, const uint32_t& binding, const PipelineLayout& layout, const VkDescriptorSet& set, const uint32_t& dynamic_offset = 0) const {
 			vkCmdBindDescriptorSets(m_RendererID, bindPoint, layout, binding, 1, &set, dynamic_offset, nullptr);
 		}
 

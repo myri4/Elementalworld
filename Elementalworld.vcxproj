@@ -270,6 +270,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="vendor\Include\imgui\imgui.cpp" />
+    <ClCompile Include="vendor\Include\imgui\imgui_demo.cpp" />
+    <ClCompile Include="vendor\Include\imgui\imgui_draw.cpp" />
+    <ClCompile Include="vendor\Include\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="vendor\Include\imgui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="vendor\Include\imgui\imgui_tables.cpp" />
+    <ClCompile Include="vendor\Include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="vendor\Include\spirv_cross\spirv_cfg.cpp" />
     <ClCompile Include="vendor\Include\spirv_cross\spirv_cpp.cpp" />
     <ClCompile Include="vendor\Include\spirv_cross\spirv_cross.cpp" />
@@ -364,9 +371,9 @@
     <ClInclude Include="vendor\Include\vk\RendererContext.h" />
     <ClInclude Include="vendor\Include\vk\RendererObject.h" />
     <ClInclude Include="vendor\Include\vk\Renderpass.h" />
+    <ClInclude Include="vendor\Include\vk\Synchronization.h" />
     <ClInclude Include="vendor\Include\wc\Framebuffer.h" />
     <ClInclude Include="vendor\Include\wc\Shader.h" />
-    <ClInclude Include="vendor\Include\vk\Synchronization.h" />
     <ClInclude Include="vendor\Include\vk\Initializers.h" />
     <ClInclude Include="vendor\Include\vk\VulkanContext.h" />
     <ClInclude Include="vendor\Include\wc\Model\Animation.h" />

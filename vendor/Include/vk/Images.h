@@ -5,7 +5,7 @@
 #include "Initializers.h"
 #include <stb_image/stb_image.h>
 
-namespace vk {
+namespace wc {
 
     glm::ivec2 GetMipSize(int level, glm::ivec2 size)
     {

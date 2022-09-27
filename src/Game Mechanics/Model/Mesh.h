@@ -23,8 +23,8 @@ struct MeshVertex {
 
     MeshVertex() {}
 
-	static vk::VertexInputDescription get_vertex_description() {
-		vk::VertexInputDescription description;
+	static wc::VertexInputDescription get_vertex_description() {
+		wc::VertexInputDescription description;
 
 		//we will have just 1 vertex buffer binding, with a per-vertex rate
 		VkVertexInputBindingDescription mainBinding = {};

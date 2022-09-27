@@ -4,7 +4,7 @@
 #include <fstream>
 #include <spirv_cross/spirv_cross.hpp>
 
-namespace vk {	
+namespace wc {	
 
 	struct VertexInputDescription {
 
@@ -12,18 +12,6 @@ namespace vk {
 		std::vector<VkVertexInputAttributeDescription> attributes;
 
 		VkPipelineVertexInputStateCreateFlags flags = 0;
-	};
-
-	class ShaderModule : public RendererObject<VkShaderModule> {
-	public:
-
-		VkResult Create(const VkShaderModuleCreateInfo& createInfo) {
-			return vkCreateShaderModule(VulkanContext::GetDevice(), &createInfo, nullptr, &m_RendererID);
-		}
-
-		void Destroy() {
-			vkDestroyShaderModule(VulkanContext::GetDevice(), m_RendererID, nullptr);
-		}
 	};
 
 	struct Pipeline : public RendererObject<VkPipeline> {
@@ -57,19 +45,6 @@ namespace vk {
 
 
 	struct ComputePipeline : public Pipeline {
-		/*void Create(const std::string& filepath, const VkPipelineLayout& pipelineLayout) {
-			ShaderModule shaderModule;
-			shaderModule.Create(filepath);
-
-			VkComputePipelineCreateInfo pipelineInfo = { VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
-			pipelineInfo.layout = pipelineLayout;
-			pipelineInfo.stage = shaderModule.GetShaderStageCreateInfo();
-			pipelineInfo.flags = 0;
-			pipelineInfo.basePipelineHandle = nullptr;
-			pipelineInfo.basePipelineIndex = 0;
-			Create(pipelineInfo);
-			shaderModule.Destroy();
-		}*/
 
 		VkResult Create(const VkComputePipelineCreateInfo& pipelineInfo) {
 			return vkCreateComputePipelines(VulkanContext::GetDevice(), nullptr, 1, &pipelineInfo, nullptr, &m_RendererID);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vulkan/vulkan.hpp>
 #include <vkbootstrap/VkBootstrap.h>
 #include <Utils/Window.h>
 #include <Utils/NonCopyable.h>
@@ -8,13 +9,13 @@
 
 namespace VulkanContext {
 	namespace {
-		VkInstance instance;
-		VkPhysicalDevice physicalDevice;
-		VkDevice device;
+		vk::Instance instance;
+		vk::PhysicalDevice physicalDevice;
+		vk::Device device;
 
 		VmaAllocator allocator;
 
-		VkDebugUtilsMessengerEXT debug_messenger; // Vulkan debug output handle
+		vk::DebugUtilsMessengerEXT debug_messenger; // Vulkan debug output handle
 
 		VkSurfaceKHR surface; // Vulkan window surface		
 
@@ -50,9 +51,9 @@ namespace VulkanContext {
 		}
 	}
 
-	VkInstance GetInstance() { return instance; }
-	VkPhysicalDevice GetPhysicalDevice() { return physicalDevice; }
-	VkDevice GetDevice() { return device; }
+	vk::Instance GetInstance() { return instance; }
+	vk::PhysicalDevice GetPhysicalDevice() { return physicalDevice; }
+	vk::Device GetDevice() { return device; }
 	VkSurfaceKHR GetSurface() { return surface; }
 	VmaAllocator GetMemoryAllocator() { return allocator; }
 	VkPhysicalDeviceProperties GetProperties() { return properties; }
@@ -226,11 +227,9 @@ namespace VulkanContext {
 	void Destroy() {
 		vmaDestroyAllocator(allocator);
 
-		vkDestroyDevice(device, nullptr);
-		vkDestroySurfaceKHR(instance, surface, nullptr);
+		device.destroy();
+		instance.destroySurfaceKHR(surface);
 		vkb::destroy_debug_utils_messenger(instance, debug_messenger);
-		vkDestroyInstance(instance, nullptr);
-	}	
-
-	void WaitIdle() { vkDeviceWaitIdle(device); }
+		instance.destroy();
+	}
 }

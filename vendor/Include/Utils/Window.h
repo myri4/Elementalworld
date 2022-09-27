@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include "Log.h"
 #include <RmlUi/Core.h>
+#include <imgui/imgui_impl_glfw.h>
 
 namespace wc {
 
@@ -435,6 +436,7 @@ public:
 
         if (fullscreen) mode = glfwGetPrimaryMonitor();
 
+        glfwWindowHint(GLFW_RESIZABLE, false);
         //glfwWindowHint(GLFW_DECORATED, false);
         window = glfwCreateWindow(size.x, size.y, title, mode, nullptr);
         glfwSetWindowUserPointer(window, this);
@@ -443,25 +445,31 @@ public:
             scrollX = xoffset; scrollY = yoffset;
         
             context->ProcessMouseWheel(-(float)scrollY, getModifications());
+            ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
             });
         glfwSetCharCallback(window, [](GLFWwindow* window, uint32_t codepoint) {
             context->ProcessTextInput((char)codepoint);
+            ImGui_ImplGlfw_CharCallback(window, codepoint);
             });
         glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
             keyButtons[key] = action;
         
             if (action != GLFW_RELEASE) { context->ProcessKeyDown(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
             else { context->ProcessKeyUp(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
+
+            ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
             });
         
         glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) {
             context->ProcessMouseMove((int)xpos, (int)ypos, getModifications());
+            ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
             });
         glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
             mouseButtons[button] = action;
         
             if (action != GLFW_RELEASE) { context->ProcessMouseButtonDown(button, getModifications(mods)); }
             else { context->ProcessMouseButtonUp(button, getModifications(mods)); }
+            ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
             });
 
         // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
@@ -473,6 +481,7 @@ public:
 
     void SetFramebufferSizeCallback(const GLFWframebuffersizefun& callback) {
         glfwSetFramebufferSizeCallback(window, callback);
+        //glfwSetWindowSize
     }
 
     void SetScrollCallback(const GLFWscrollfun& callback) {
