@@ -1,4 +1,5 @@
 ﻿#define GLM_FORCE_INTRINSICS 
+#define GLFW_INCLUDE_NONE
 #include "Application.h"
 
 //DANGEROUS!

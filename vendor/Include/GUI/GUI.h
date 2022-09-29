@@ -1,9 +1,6 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <RmlUi/Lua.h>
-#include <RmlUi/Core.h>
-#include <RmlUi/Debugger.h>
 
 #include <vk/Buffer.h>
 #include <vk/Images.h>
@@ -15,7 +12,7 @@
 
 namespace wc {
 
-	class RenderInterface : public Rml::RenderInterface
+	class RenderInterface
 	{
 		static const uint32_t MaxQuadCount = 10000;
 		static const uint32_t MaxQuadVertexCount = MaxQuadCount * 4;
@@ -35,20 +32,20 @@ namespace wc {
 		uint32_t m_NumTextures = 0;
 
 
-		struct RmlVertex {
+		struct Vertex2D {
 			glm::vec2 position = glm::vec2(0.f);
 			uint32_t color = 0xFFFFFFFF;
 			glm::vec3 tex_coord = glm::vec3(0.f);
 
-			RmlVertex() = default;
-			RmlVertex(const glm::vec2& pos, const glm::vec3& texCoord) : position(pos), tex_coord(texCoord) { }
+			Vertex2D() = default;
+			Vertex2D(const glm::vec2& pos, const glm::vec3& texCoord) : position(pos), tex_coord(texCoord) { }
 
 			static wc::VertexInputDescription get_vertex_description() {
 				wc::VertexInputDescription description;
 
 				VkVertexInputBindingDescription mainBinding = {};
 				mainBinding.binding = 0;
-				mainBinding.stride = sizeof(RmlVertex);
+				mainBinding.stride = sizeof(Vertex2D);
 				mainBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 				description.bindings.push_back(mainBinding);
@@ -57,19 +54,19 @@ namespace wc {
 				positionAttribute.binding = 0;
 				positionAttribute.location = 0;
 				positionAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-				positionAttribute.offset = offsetof(RmlVertex, position);
+				positionAttribute.offset = offsetof(Vertex2D, position);
 
 				VkVertexInputAttributeDescription colorAttribute = {};
 				colorAttribute.binding = 0;
 				colorAttribute.location = 1;
 				colorAttribute.format = VK_FORMAT_R32_UINT;
-				colorAttribute.offset = offsetof(RmlVertex, color);
+				colorAttribute.offset = offsetof(Vertex2D, color);
 
 				VkVertexInputAttributeDescription texCoordAttribute = {};
 				texCoordAttribute.binding = 0;
 				texCoordAttribute.location = 2;
 				texCoordAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-				texCoordAttribute.offset = offsetof(RmlVertex, tex_coord);
+				texCoordAttribute.offset = offsetof(Vertex2D, tex_coord);
 
 				description.attributes.push_back(positionAttribute);
 				description.attributes.push_back(colorAttribute);
@@ -102,7 +99,7 @@ namespace wc {
 		}
 
 		wc::CPUBuffer<uint32_t> indices;
-		wc::CPUBuffer<RmlVertex> vertices;
+		wc::CPUBuffer<Vertex2D> vertices;
 	public:
 		glm::vec2 windowSize = glm::vec2(0.f);
 		uint32_t whiteTexture;
@@ -114,17 +111,17 @@ namespace wc {
 			createInfo.fragmentShader = "resourcepacks/default/shaders/RmlRenderer.frag";
 			createInfo.windowSize = windowSize;
 			createInfo.renderPass = renderPass;
-			createInfo.vertexDescription = RmlVertex::get_vertex_description();
+			createInfo.vertexDescription = Vertex2D::get_vertex_description();
 			createInfo.blending = true;
 			createInfo.depthTest = false;
 			createInfo.invertY = true;
 			shader.Create(createInfo);
 
 			EBO.Create(sizeof(uint32_t) * MaxQuadIndexCount, wc::INDEX_BUFFER);
-			VBO.Create(sizeof(RmlVertex) * MaxQuadVertexCount, wc::VERTEX_BUFFER);
+			VBO.Create(sizeof(Vertex2D) * MaxQuadVertexCount, wc::VERTEX_BUFFER);
 
 			indices.Create(sizeof(uint32_t) * MaxQuadIndexCount); indices.Map();
-			vertices.Create(sizeof(RmlVertex) * MaxQuadVertexCount); vertices.Map();
+			vertices.Create(sizeof(Vertex2D) * MaxQuadVertexCount); vertices.Map();
 
 			uint32_t color = 0xFFFFFFFF;
 			GenerateTexture(whiteTexture, &color, {1, 1});
@@ -157,38 +154,38 @@ namespace wc {
 			shader.Destroy();
 		}
 
-		void RenderGeometry(Rml::Vertex* p_vertices, int num_vertices, int* p_indices, int num_indices, Rml::TextureHandle texture, const Rml::Vector2f& translation) override {
-			if (IndexCount + num_indices >= MaxQuadIndexCount || TextureSlotIndex >= MaxTextures) Flush();
-
-			uint32_t texID = texture;
-			//if (texID == 0) texID = whiteTexture;
-			float textureIndex = (float)getTexture(texID);
-
-			for (int32_t i = 0; i < num_indices; i++) {
-				indices[IndexCount] = p_indices[i] + VertexCount;
-				IndexCount++;
-			}
-
-			glm::mat4 trans = glm::mat4(1.f);
-
-			if (transformEnabled) {
-				transformEnabled = false;
-				trans = transform;
-			}
-
-			for (int32_t i = 0; i < num_vertices; i++) {
-				RmlVertex& vertex = vertices[VertexCount];
-				vertex.position = (glm::vec2(p_vertices[i].position.x + translation.x, p_vertices[i].position.y + translation.y) / windowSize) * 2.f - 1.f;
-
-				glm::vec4 Pos = glm::vec4(vertex.position.x, vertex.position.y, 0.f, 0.f) * trans;
-				vertex.position = glm::vec2(Pos.x, Pos.y);
-
-				glm::vec4 color = glm::vec4(p_vertices[i].colour.red, p_vertices[i].colour.green, p_vertices[i].colour.blue, p_vertices[i].colour.alpha);
-				vertex.color = (uint32_t)(color.r) << 24 | (uint32_t)(color.g) << 16 | (uint32_t)(color.b) << 8 | (uint32_t)(color.a);
-
-				vertex.tex_coord = glm::vec3(p_vertices[i].tex_coord.x, p_vertices[i].tex_coord.y, textureIndex);
-				VertexCount++;
-			}
+		void RenderGeometry(Vertex2D* p_vertices, int num_vertices, int* p_indices, int num_indices, uint32_t texture, const glm::vec2& translation) {
+			//if (IndexCount + num_indices >= MaxQuadIndexCount || TextureSlotIndex >= MaxTextures) Flush();
+			//
+			//uint32_t texID = texture;
+			////if (texID == 0) texID = whiteTexture;
+			//float textureIndex = (float)getTexture(texID);
+			//
+			//for (int32_t i = 0; i < num_indices; i++) {
+			//	indices[IndexCount] = p_indices[i] + VertexCount;
+			//	IndexCount++;
+			//}
+			//
+			//glm::mat4 trans = glm::mat4(1.f);
+			//
+			//if (transformEnabled) {
+			//	transformEnabled = false;
+			//	trans = transform;
+			//}
+			//
+			//for (int32_t i = 0; i < num_vertices; i++) {
+			//	RmlVertex& vertex = vertices[VertexCount];
+			//	vertex.position = (glm::vec2(p_vertices[i].position.x + translation.x, p_vertices[i].position.y + translation.y) / windowSize) * 2.f - 1.f;
+			//
+			//	glm::vec4 Pos = glm::vec4(vertex.position.x, vertex.position.y, 0.f, 0.f) * trans;
+			//	vertex.position = glm::vec2(Pos.x, Pos.y);
+			//
+			//	glm::vec4 color = glm::vec4(p_vertices[i].colour.red, p_vertices[i].colour.green, p_vertices[i].colour.blue, p_vertices[i].colour.alpha);
+			//	vertex.color = (uint32_t)(color.r) << 24 | (uint32_t)(color.g) << 16 | (uint32_t)(color.b) << 8 | (uint32_t)(color.a);
+			//
+			//	vertex.tex_coord = glm::vec3(p_vertices[i].tex_coord.x, p_vertices[i].tex_coord.y, textureIndex);
+			//	VertexCount++;
+			//}
 		}
 
 		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const uint32_t& texID) {
@@ -196,10 +193,10 @@ namespace wc {
 
 			float textureIndex = (float)getTexture(texID);
 
-			vertices[VertexCount + 0] = RmlVertex({ pos.x + size.x, pos.y + size.y }, { 1.f, 0.f, textureIndex });
-			vertices[VertexCount + 1] = RmlVertex({ pos.x,		  pos.y + size.y }, { 0.f, 0.f, textureIndex });
-			vertices[VertexCount + 2] = RmlVertex({ pos.x,		  pos.y, }, { 0.f, 1.f, textureIndex });
-			vertices[VertexCount + 3] = RmlVertex({ pos.x + size.x, pos.y, }, { 1.f, 1.f, textureIndex });
+			vertices[VertexCount + 0] = Vertex2D({ pos.x + size.x, pos.y + size.y }, { 1.f, 0.f, textureIndex });
+			vertices[VertexCount + 1] = Vertex2D({ pos.x,		  pos.y + size.y }, { 0.f, 0.f, textureIndex });
+			vertices[VertexCount + 2] = Vertex2D({ pos.x,		  pos.y, }, { 0.f, 1.f, textureIndex });
+			vertices[VertexCount + 3] = Vertex2D({ pos.x + size.x, pos.y, }, { 1.f, 1.f, textureIndex });
 
 			for (uint8_t i = 0; i < 4; i++) {
 				glm::vec2& Pos = vertices[i + VertexCount].position;
@@ -227,7 +224,7 @@ namespace wc {
 			indices.Map();
 
 			vertices.Unmap();
-			VBO.SetData({ 0,0,sizeof(RmlVertex) * MaxQuadVertexCount }, vertices.GetBuffer());
+			VBO.SetData({ 0,0,sizeof(Vertex2D) * MaxQuadVertexCount }, vertices.GetBuffer());
 			vertices.Map();
 
 			std::vector<VkDescriptorImageInfo> imageInfos;
@@ -265,68 +262,7 @@ namespace wc {
 			VertexCount = 0;
 		}
 
-		void EnableScissorRegion(bool enable) override {
-			//if (enable) {
-			//	if (!transformEnabled) {
-			//		glEnable(GL_SCISSOR_TEST);
-			//		glDisable(GL_STENCIL_TEST);
-			//	}
-			//	else {
-			//		glDisable(GL_SCISSOR_TEST);
-			//		glEnable(GL_STENCIL_TEST);
-			//	}
-			//}
-			//else {
-			//	glDisable(GL_SCISSOR_TEST);
-			//	glDisable(GL_STENCIL_TEST);
-			//}
-		}
-
-		void SetScissorRegion(int x, int y, int width, int height) override {
-			//if (!transformEnabled)
-			//	glScissor(x, /*window.GetSize()*/windowSize.y - (y + height), width, height);
-			//else {
-			//	// clear the stencil buffer
-			//	glStencilMask(GLuint(-1));
-			//	glClear(GL_STENCIL_BUFFER_BIT);
-			//
-			//	// fill the stencil buffer
-			//	glColorMask(false, false, false, false);
-			//	glDepthMask(false);
-			//	glStencilFunc(GL_NEVER, 1, GLuint(-1));
-			//	glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
-			//
-			//	float fx = (float)x;
-			//	float fy = (float)y;
-			//	float fwidth = (float)width;
-			//	float fheight = (float)height;
-			//
-			//	// draw transformed quad
-			//	RmlVertex vertices2[4];
-			//	vertices2[0].position = glm::vec2(fx, fy);
-			//	vertices2[1].position = glm::vec2(fx, fy + fheight);
-			//	vertices2[2].position = glm::vec2(fx + fwidth, fy + fheight);
-			//	vertices2[3].position = glm::vec2(fx + fwidth, fy);
-			//
-			//	uint32_t indices2[] = { 0,1,2,2,3,0 };
-			//	memcpy(indices, indices2, sizeof(indices2));
-			//	memcpy(vertices, vertices2, sizeof(vertices2));
-			//	IndexCount = 0;
-			//	VertexCount = 0;
-			//	TextureSlotIndex = 0;
-			//	shader.use();
-			//
-			//	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-			//
-			//	// prepare for drawing the real thing
-			//	glColorMask(true, true, true, true);
-			//	glDepthMask(true);
-			//	glStencilMask(0);
-			//	glStencilFunc(GL_EQUAL, 1, GLuint(-1));
-			//}
-		}
-
-		bool LoadTexture(uint32_t& texture_handle, Rml::Vector2i& texture_dimensions, const Rml::String& source) {
+		bool LoadTexture(uint32_t& texture_handle, glm::ivec2& texture_dimensions, const std::string& source) {
 			std::string src = (std::string)source.c_str();
 
 			wc::Texture& texture = m_Textures[m_NumTextures];
@@ -359,26 +295,6 @@ namespace wc {
 			texture_handle = m_NumTextures;
 			m_NumTextures++;
 
-			return true;
-		}
-
-		bool GenerateTexture(Rml::TextureHandle& texture_handle, const Rml::byte* source, const Rml::Vector2i& source_dimensions) override {
-			wc::Texture& texture = m_Textures[m_NumTextures];
-
-			VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-
-			sampler.magFilter = VK_FILTER_NEAREST;
-			sampler.minFilter = VK_FILTER_NEAREST;
-			sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-
-			texture.Create(glm::ivec2(source_dimensions.x, source_dimensions.y));
-			texture.SetData(glm::ivec2(source_dimensions.x, source_dimensions.y), source);
-			texture.SetSamplerInfo(sampler);
-
-			texture_handle = m_NumTextures;
-			m_NumTextures++;
 			return true;
 		}
 
@@ -415,47 +331,5 @@ namespace wc {
 		void UpdateTexture(const wc::RenderableTexture& texture) {
 			m_Textures[texture.handle] = texture;
 		}
-
-		void ReleaseTexture(Rml::TextureHandle texture) {
-			//m_Textures[texture].Destroy();
-		}
-
-		glm::mat4 transform = glm::mat4(0.f);
-		void SetTransform(const Rml::Matrix4f* rmlTransform) {
-			transformEnabled = (bool)rmlTransform;
-
-			if (transformEnabled) {
-				if (std::is_same<Rml::Matrix4f, Rml::ColumnMajorMatrix4f>::value) transform = glm::make_mat4(rmlTransform->data());
-				else if (std::is_same<Rml::Matrix4f, Rml::RowMajorMatrix4f>::value) transform = glm::make_mat4(rmlTransform->Transpose().data());
-			}
-		}
 	} render_interface;
-
-	GLFWwindow* system_window = nullptr;
-	class SystemInterface : public Rml::SystemInterface
-	{
-
-		double GetElapsedTime() override { return glfwGetTime(); }
-
-		bool LogMessage(Rml::Log::Type type, const Rml::String& message) override {
-			switch (type) {
-			case Rml::Log::Type::LT_ALWAYS:	WC_TRACE("RML: {0}", message.c_str());    break;
-			case Rml::Log::Type::LT_ERROR:	WC_ERROR("RML: {0}", message.c_str());    break;
-			case Rml::Log::Type::LT_ASSERT:	WC_INFO("RML: {0}", message.c_str());     break;
-			case Rml::Log::Type::LT_WARNING:WC_WARN("RML: {0}", message.c_str());     break;
-				//case Rml::Log::Type::LT_INFO:	WC_INFO(message.c_str());     break;
-			case Rml::Log::Type::LT_DEBUG:	WC_DEBUG("RML: {0}", message.c_str());    break;
-			case Rml::Log::Type::LT_MAX:    WC_CRITICAL("RML: {0}", message.c_str()); break;
-			}
-			return true;
-		}
-
-		void SetClipboardText(const std::string& text) {
-			glfwSetClipboardString(system_window, text.c_str());
-		}
-
-		void GetClipboardText(std::string& text) override {
-			text = glfwGetClipboardString(system_window);
-		}
-	}system_interface;
 }

@@ -42,6 +42,7 @@
 
 // GUI
 #include <GUI/AssetManager.h>
-#include <RmlUi/Core.h>
-#include <RmlUi/Debugger.h>
 #include <GUI/GUI.h>
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_vulkan.h>
+#include <imgui/imgui_impl_glfw.h>

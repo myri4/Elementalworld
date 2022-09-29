@@ -407,7 +407,7 @@ namespace wc {
 #endif
 
 			//model.Create("resourcepacks/default/models/player_model.obj", screen.renderPass, windowSize);
-			Rml::Vector2i cSize = Rml::Vector2i(0);
+			glm::ivec2 cSize = glm::ivec2(0);
 			render_interface.LoadTexture(crosshair, cSize, "resourcepacks/default/textures/misc/cursor.png");
 			//animation.Create("resourcepacks/default/models/dancing_vampire.dae", model);
 			

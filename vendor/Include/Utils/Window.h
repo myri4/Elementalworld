@@ -5,7 +5,6 @@
 #include <GLFW/glfw3native.h>
 #include <glm/glm.hpp>
 #include "Log.h"
-#include <RmlUi/Core.h>
 #include <imgui/imgui_impl_glfw.h>
 
 namespace wc {
@@ -13,7 +12,6 @@ namespace wc {
 	double scrollX = 0.f, scrollY = 0.f;
     int mouseButtons[GLFW_MOUSE_BUTTON_LAST];
     int keyButtons[GLFW_KEY_LAST];
-    Rml::Context* context = nullptr;
 
     namespace Keyboard {
 
@@ -141,132 +139,6 @@ namespace wc {
         {
             return keyButtons[(uint32_t)key];
         }
-    }
-
-    Rml::Input::KeyIdentifier convertToRmlKey(const Keyboard::Key& key) {
-            if (key == Keyboard::Key::A) return Rml::Input::KeyIdentifier::KI_A;
-            if (key == Keyboard::Key::B) return Rml::Input::KeyIdentifier::KI_B;
-            if (key == Keyboard::Key::C) return Rml::Input::KeyIdentifier::KI_C;
-            if (key == Keyboard::Key::D) return Rml::Input::KeyIdentifier::KI_D;
-            if (key == Keyboard::Key::E) return Rml::Input::KeyIdentifier::KI_E;
-            if (key == Keyboard::Key::F) return Rml::Input::KeyIdentifier::KI_F;
-            if (key == Keyboard::Key::G) return Rml::Input::KeyIdentifier::KI_G;
-            if (key == Keyboard::Key::H) return Rml::Input::KeyIdentifier::KI_H;
-            if (key == Keyboard::Key::I) return Rml::Input::KeyIdentifier::KI_I;
-            if (key == Keyboard::Key::J) return Rml::Input::KeyIdentifier::KI_J;
-            if (key == Keyboard::Key::K) return Rml::Input::KeyIdentifier::KI_K;
-            if (key == Keyboard::Key::L) return Rml::Input::KeyIdentifier::KI_L;
-            if (key == Keyboard::Key::M) return Rml::Input::KeyIdentifier::KI_M;
-            if (key == Keyboard::Key::N) return Rml::Input::KeyIdentifier::KI_N;
-            if (key == Keyboard::Key::O) return Rml::Input::KeyIdentifier::KI_O;
-            if (key == Keyboard::Key::P) return Rml::Input::KeyIdentifier::KI_P;
-            if (key == Keyboard::Key::Q) return Rml::Input::KeyIdentifier::KI_Q;
-            if (key == Keyboard::Key::R) return Rml::Input::KeyIdentifier::KI_R;
-            if (key == Keyboard::Key::S) return Rml::Input::KeyIdentifier::KI_S;
-            if (key == Keyboard::Key::T) return Rml::Input::KeyIdentifier::KI_T;
-            if (key == Keyboard::Key::U) return Rml::Input::KeyIdentifier::KI_U;
-            if (key == Keyboard::Key::V) return Rml::Input::KeyIdentifier::KI_V;
-            if (key == Keyboard::Key::W) return Rml::Input::KeyIdentifier::KI_W;
-            if (key == Keyboard::Key::X) return Rml::Input::KeyIdentifier::KI_X;
-            if (key == Keyboard::Key::Y) return Rml::Input::KeyIdentifier::KI_Y;
-            if (key == Keyboard::Key::Z) return Rml::Input::KeyIdentifier::KI_Z;
-
-            if (key == Keyboard::Key::Num0) return Rml::Input::KeyIdentifier::KI_0;
-            if (key == Keyboard::Key::Num1) return Rml::Input::KeyIdentifier::KI_1;
-            if (key == Keyboard::Key::Num2) return Rml::Input::KeyIdentifier::KI_2;
-            if (key == Keyboard::Key::Num3) return Rml::Input::KeyIdentifier::KI_3;
-            if (key == Keyboard::Key::Num4) return Rml::Input::KeyIdentifier::KI_4;
-            if (key == Keyboard::Key::Num5) return Rml::Input::KeyIdentifier::KI_5;
-            if (key == Keyboard::Key::Num6) return Rml::Input::KeyIdentifier::KI_6;
-            if (key == Keyboard::Key::Num7) return Rml::Input::KeyIdentifier::KI_7;
-            if (key == Keyboard::Key::Num8) return Rml::Input::KeyIdentifier::KI_8;
-            if (key == Keyboard::Key::Num9) return Rml::Input::KeyIdentifier::KI_9;
-
-            if (key == Keyboard::Key::Space) return Rml::Input::KeyIdentifier::KI_SPACE;
-
-            if (key == Keyboard::Key::Semicolon) return Rml::Input::KeyIdentifier::KI_OEM_1;
-            if (key == Keyboard::Key::Add) return Rml::Input::KeyIdentifier::KI_OEM_PLUS;
-            if (key == Keyboard::Key::Comma) return Rml::Input::KeyIdentifier::KI_OEM_COMMA;
-            if (key == Keyboard::Key::Subtract) return Rml::Input::KeyIdentifier::KI_OEM_MINUS;
-            if (key == Keyboard::Key::Period) return Rml::Input::KeyIdentifier::KI_OEM_PERIOD;
-            if (key == Keyboard::Key::Slash) return Rml::Input::KeyIdentifier::KI_OEM_2;
-           // if (key == Keyboard::Key::Slash) return Rml::Input::KeyIdentifier::KI_OEM_3;
-            if (key == Keyboard::Key::LBracket) return Rml::Input::KeyIdentifier::KI_OEM_4;
-            if (key == Keyboard::Key::Backslash) return Rml::Input::KeyIdentifier::KI_OEM_5;
-            if (key == Keyboard::Key::RBracket) return Rml::Input::KeyIdentifier::KI_OEM_6;
-            if (key == Keyboard::Key::Quote) return Rml::Input::KeyIdentifier::KI_OEM_7;
-
-
-            if (key == Keyboard::Key::Numpad0) return Rml::Input::KeyIdentifier::KI_NUMPAD0;
-            if (key == Keyboard::Key::Numpad1) return Rml::Input::KeyIdentifier::KI_NUMPAD1;
-            if (key == Keyboard::Key::Numpad2) return Rml::Input::KeyIdentifier::KI_NUMPAD2;
-            if (key == Keyboard::Key::Numpad3) return Rml::Input::KeyIdentifier::KI_NUMPAD3;
-            if (key == Keyboard::Key::Numpad4) return Rml::Input::KeyIdentifier::KI_NUMPAD4;
-            if (key == Keyboard::Key::Numpad5) return Rml::Input::KeyIdentifier::KI_NUMPAD5;
-            if (key == Keyboard::Key::Numpad6) return Rml::Input::KeyIdentifier::KI_NUMPAD6;
-            if (key == Keyboard::Key::Numpad7) return Rml::Input::KeyIdentifier::KI_NUMPAD7;
-            if (key == Keyboard::Key::Numpad8) return Rml::Input::KeyIdentifier::KI_NUMPAD8;
-            if (key == Keyboard::Key::Numpad9) return Rml::Input::KeyIdentifier::KI_NUMPAD9;
-
-            if (key == Keyboard::Key::Enter) return Rml::Input::KeyIdentifier::KI_NUMPADENTER;
-            if (key == Keyboard::Key::Multiply) return Rml::Input::KeyIdentifier::KI_MULTIPLY;
-            if (key == Keyboard::Key::Divide) return Rml::Input::KeyIdentifier::KI_DIVIDE;
-            //if (key == Keyboard::Key::Add) return Rml::Input::KeyIdentifier::KI_ADD;
-
-            if (key == Keyboard::Key::Backspace) return Rml::Input::KeyIdentifier::KI_BACK;
-            if (key == Keyboard::Key::Tab) return Rml::Input::KeyIdentifier::KI_TAB;
-            if (key == Keyboard::Key::Divide) return Rml::Input::KeyIdentifier::KI_DIVIDE;
-            if (key == Keyboard::Key::CapsLock) return Rml::Input::KeyIdentifier::KI_CAPITAL;
-            if (key == Keyboard::Key::Escape) return Rml::Input::KeyIdentifier::KI_ESCAPE;
-            if (key == Keyboard::Key::PageUp) return Rml::Input::KeyIdentifier::KI_PRIOR;
-            if (key == Keyboard::Key::PageDown) return Rml::Input::KeyIdentifier::KI_NEXT;
-
-            if (key == Keyboard::Key::Up) return Rml::Input::KeyIdentifier::KI_UP;
-            if (key == Keyboard::Key::Down) return Rml::Input::KeyIdentifier::KI_DOWN;
-            if (key == Keyboard::Key::Left) return Rml::Input::KeyIdentifier::KI_LEFT;
-            if (key == Keyboard::Key::Right) return Rml::Input::KeyIdentifier::KI_RIGHT;
-            if (key == Keyboard::Key::Delete) return Rml::Input::KeyIdentifier::KI_DELETE;
-            if (key == Keyboard::Key::Insert) return Rml::Input::KeyIdentifier::KI_INSERT;
-
-            if (key == Keyboard::Key::F1 ) return Rml::Input::KeyIdentifier::KI_F1 ;
-            if (key == Keyboard::Key::F2 ) return Rml::Input::KeyIdentifier::KI_F2 ;
-            if (key == Keyboard::Key::F3 ) return Rml::Input::KeyIdentifier::KI_F3 ;
-            if (key == Keyboard::Key::F4 ) return Rml::Input::KeyIdentifier::KI_F4 ;
-            if (key == Keyboard::Key::F5 ) return Rml::Input::KeyIdentifier::KI_F5 ;
-            if (key == Keyboard::Key::F6 ) return Rml::Input::KeyIdentifier::KI_F6 ;
-            if (key == Keyboard::Key::F7 ) return Rml::Input::KeyIdentifier::KI_F7 ;
-            if (key == Keyboard::Key::F8 ) return Rml::Input::KeyIdentifier::KI_F8 ;
-            if (key == Keyboard::Key::F9 ) return Rml::Input::KeyIdentifier::KI_F9 ;
-            if (key == Keyboard::Key::F10) return Rml::Input::KeyIdentifier::KI_F10;
-            if (key == Keyboard::Key::F11) return Rml::Input::KeyIdentifier::KI_F11;
-            if (key == Keyboard::Key::F12) return Rml::Input::KeyIdentifier::KI_F12;
-
-            if (key == Keyboard::Key::LShift) return Rml::Input::KeyIdentifier::KI_LSHIFT;
-            if (key == Keyboard::Key::RShift) return Rml::Input::KeyIdentifier::KI_RSHIFT;
-
-            if (key == Keyboard::Key::LControl) return Rml::Input::KeyIdentifier::KI_LCONTROL;
-            if (key == Keyboard::Key::RControl) return Rml::Input::KeyIdentifier::KI_RCONTROL;
-
-            return Rml::Input::KeyIdentifier::KI_UNKNOWN;
-        }
-
-    int getModifications(const int& modifications) {
-        int mods = 0;
-        if (modifications & GLFW_MOD_ALT)       mods |= Rml::Input::KeyModifier::KM_ALT;
-        if (modifications & GLFW_MOD_CAPS_LOCK) mods |= Rml::Input::KeyModifier::KM_CAPSLOCK;
-        if (modifications & GLFW_MOD_CONTROL)   mods |= Rml::Input::KeyModifier::KM_CTRL;
-        if (modifications & GLFW_MOD_NUM_LOCK)  mods |= Rml::Input::KeyModifier::KM_NUMLOCK;
-        if (modifications & GLFW_MOD_SHIFT)     mods |= Rml::Input::KeyModifier::KM_SHIFT;
-        return mods;
-    }
-
-    int getModifications() {
-        int mods = 0;
-        if (keyButtons[(int)Keyboard::Key::LControl] || keyButtons[(int)Keyboard::Key::RControl]) mods |= Rml::Input::KeyModifier::KM_CTRL;
-        if (keyButtons[(int)Keyboard::Key::LShift] || keyButtons[(int)Keyboard::Key::RShift]) mods |= Rml::Input::KeyModifier::KM_SHIFT;
-        if (keyButtons[(int)Keyboard::Key::LAlt] || keyButtons[(int)Keyboard::Key::RAlt]) mods |= Rml::Input::KeyModifier::KM_ALT;
-        if (keyButtons[(int)Keyboard::Key::CapsLock]) mods |= Rml::Input::KeyModifier::KM_CTRL;
-        return mods;
     }
 
     /*
@@ -444,31 +316,23 @@ public:
         glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
             scrollX = xoffset; scrollY = yoffset;
         
-            context->ProcessMouseWheel(-(float)scrollY, getModifications());
             ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
             });
         glfwSetCharCallback(window, [](GLFWwindow* window, uint32_t codepoint) {
-            context->ProcessTextInput((char)codepoint);
             ImGui_ImplGlfw_CharCallback(window, codepoint);
             });
         glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
             keyButtons[key] = action;
-        
-            if (action != GLFW_RELEASE) { context->ProcessKeyDown(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
-            else { context->ProcessKeyUp(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
 
             ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
             });
         
         glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) {
-            context->ProcessMouseMove((int)xpos, (int)ypos, getModifications());
             ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
             });
         glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
             mouseButtons[button] = action;
         
-            if (action != GLFW_RELEASE) { context->ProcessMouseButtonDown(button, getModifications(mods)); }
-            else { context->ProcessMouseButtonUp(button, getModifications(mods)); }
             ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
             });
 
