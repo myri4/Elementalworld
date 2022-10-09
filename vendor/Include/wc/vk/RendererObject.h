@@ -3,7 +3,7 @@
 template <class T>
 class RendererObject {
 protected:
-	T m_RendererID;
+	T m_RendererID = VK_NULL_HANDLE;
 public:
 
 	operator T& () { return m_RendererID; }

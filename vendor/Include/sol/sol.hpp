@@ -24,6 +24,7 @@
 // This header was generated with sol v3.2.1 (revision 48eea7b5)
 // https://github.com/ThePhD/sol2
 
+#pragma once
 #ifndef SOL_SINGLE_INCLUDE_HPP
 #define SOL_SINGLE_INCLUDE_HPP
 

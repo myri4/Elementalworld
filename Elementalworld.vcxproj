@@ -144,14 +144,15 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>RMLUI_STATIC_LIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <EnableModules>false</EnableModules>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -165,7 +166,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>RMLUI_STATIC_LIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX</PreprocessorDefinitions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
@@ -174,6 +175,7 @@
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <EnableModules>false</EnableModules>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -189,13 +191,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>RMLUI_STATIC_LIB</PreprocessorDefinitions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PreprocessorDefinitions>NOMINMAX</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+      <EnableModules>false</EnableModules>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -209,14 +212,15 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>RMLUI_STATIC_LIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <EnableModules>false</EnableModules>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -230,7 +234,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>RMLUI_STATIC_LIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX</PreprocessorDefinitions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -238,6 +242,7 @@
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <EnableModules>false</EnableModules>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -253,12 +258,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>RMLUI_STATIC_LIB</PreprocessorDefinitions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PreprocessorDefinitions>NOMINMAX</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+      <EnableModules>false</EnableModules>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -271,7 +277,6 @@
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="vendor\Include\imgui\imgui.cpp" />
-    <ClCompile Include="vendor\Include\imgui\imgui_demo.cpp" />
     <ClCompile Include="vendor\Include\imgui\imgui_draw.cpp" />
     <ClCompile Include="vendor\Include\imgui\imgui_impl_glfw.cpp" />
     <ClCompile Include="vendor\Include\imgui\imgui_impl_vulkan.cpp" />
@@ -285,7 +290,6 @@
     <ClCompile Include="vendor\Include\spirv_cross\spirv_glsl.cpp" />
     <ClCompile Include="vendor\Include\spirv_cross\spirv_parser.cpp" />
     <ClCompile Include="vendor\Include\spirv_cross\spirv_reflect.cpp" />
-    <ClCompile Include="vendor\Include\vkbootstrap\VkBootstrap.cpp" />
     <ClCompile Include="vendor\Include\yaml-src\binary.cpp" />
     <ClCompile Include="vendor\Include\yaml-src\contrib\graphbuilder.cpp" />
     <ClCompile Include="vendor\Include\yaml-src\contrib\graphbuilderadapter.cpp" />
@@ -335,6 +339,7 @@
     <ClInclude Include="src\Game Mechanics\Model\Bone.h" />
     <ClInclude Include="src\Game Mechanics\Model\Mesh.h" />
     <ClInclude Include="src\Game Mechanics\Model\Model.h" />
+    <ClInclude Include="src\Game Mechanics\PostProcesser.h" />
     <ClInclude Include="src\Globals.h" />
     <ClInclude Include="src\world\Biome.h" />
     <ClInclude Include="src\world\Block.h" />
@@ -359,7 +364,6 @@
     <ClInclude Include="vendor\Include\Utils\Memory.h" />
     <ClInclude Include="vendor\Include\Utils\NonCopyable.h" />
     <ClInclude Include="vendor\Include\Utils\Random.h" />
-    <ClInclude Include="vendor\Include\Utils\State.h" />
     <ClInclude Include="vendor\Include\Utils\Time.h" />
     <ClInclude Include="vendor\Include\Utils\Window.h" />
     <ClInclude Include="vendor\Include\Utils\YAML.h" />
@@ -373,6 +377,11 @@
     <ClInclude Include="vendor\Include\vk\Renderpass.h" />
     <ClInclude Include="vendor\Include\vk\Synchronization.h" />
     <ClInclude Include="vendor\Include\wc\Framebuffer.h" />
+    <ClInclude Include="vendor\Include\wc\GUI\AssetManager.h" />
+    <ClInclude Include="vendor\Include\wc\GUI\GUI.h" />
+    <ClInclude Include="vendor\Include\wc\Maths\AssimpGLMHelpers.h" />
+    <ClInclude Include="vendor\Include\wc\Maths\Camera.h" />
+    <ClInclude Include="vendor\Include\wc\Maths\Frustum.h" />
     <ClInclude Include="vendor\Include\wc\Shader.h" />
     <ClInclude Include="vendor\Include\vk\Initializers.h" />
     <ClInclude Include="vendor\Include\vk\VulkanContext.h" />
@@ -381,6 +390,26 @@
     <ClInclude Include="vendor\Include\wc\Model\Mesh.h" />
     <ClInclude Include="vendor\Include\wc\Model\Model.h" />
     <ClInclude Include="vendor\Include\pch.h" />
+    <ClInclude Include="vendor\Include\wc\Utils\Bits.h" />
+    <ClInclude Include="vendor\Include\wc\Utils\DeletionQueue.h" />
+    <ClInclude Include="vendor\Include\wc\Utils\List.h" />
+    <ClInclude Include="vendor\Include\wc\Utils\Log.h" />
+    <ClInclude Include="vendor\Include\wc\Utils\Memory.h" />
+    <ClInclude Include="vendor\Include\wc\Utils\NonCopyable.h" />
+    <ClInclude Include="vendor\Include\wc\Utils\Random.h" />
+    <ClInclude Include="vendor\Include\wc\Utils\Time.h" />
+    <ClInclude Include="vendor\Include\wc\Utils\Window.h" />
+    <ClInclude Include="vendor\Include\wc\Utils\YAML.h" />
+    <ClInclude Include="vendor\Include\wc\vk\Buffer.h" />
+    <ClInclude Include="vendor\Include\wc\vk\Commands.h" />
+    <ClInclude Include="vendor\Include\wc\vk\Descriptors.h" />
+    <ClInclude Include="vendor\Include\wc\vk\Images.h" />
+    <ClInclude Include="vendor\Include\wc\vk\Pipeline.h" />
+    <ClInclude Include="vendor\Include\wc\vk\RendererContext.h" />
+    <ClInclude Include="vendor\Include\wc\vk\RendererObject.h" />
+    <ClInclude Include="vendor\Include\wc\vk\Renderpass.h" />
+    <ClInclude Include="vendor\Include\wc\vk\Synchronization.h" />
+    <ClInclude Include="vendor\Include\wc\vk\VulkanContext.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

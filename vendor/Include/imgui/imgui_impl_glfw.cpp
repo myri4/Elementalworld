@@ -110,7 +110,6 @@
 enum GlfwClientApi
 {
     GlfwClientApi_Unknown,
-    GlfwClientApi_OpenGL,
     GlfwClientApi_Vulkan
 };
 
@@ -563,11 +562,6 @@ static bool ImGui_ImplGlfw_Init(GLFWwindow* window, bool install_callbacks, Glfw
     return true;
 }
 
-bool ImGui_ImplGlfw_InitForOpenGL(GLFWwindow* window, bool install_callbacks)
-{
-    return ImGui_ImplGlfw_Init(window, install_callbacks, GlfwClientApi_OpenGL);
-}
-
 bool ImGui_ImplGlfw_InitForVulkan(GLFWwindow* window, bool install_callbacks)
 {
     return ImGui_ImplGlfw_Init(window, install_callbacks, GlfwClientApi_Vulkan);
@@ -894,7 +888,7 @@ static void ImGui_ImplGlfw_CreateWindow(ImGuiViewport* viewport)
 #if GLFW_HAS_WINDOW_TOPMOST
     glfwWindowHint(GLFW_FLOATING, (viewport->Flags & ImGuiViewportFlags_TopMost) ? true : false);
 #endif
-    GLFWwindow* share_window = (bd->ClientApi == GlfwClientApi_OpenGL) ? bd->Window : NULL;
+    GLFWwindow* share_window = bd->Window;// (bd->ClientApi == GlfwClientApi_OpenGL) ? bd->Window : NULL;
     vd->Window = glfwCreateWindow((int)viewport->Size.x, (int)viewport->Size.y, "No Title Yet", NULL, share_window);
     vd->WindowOwned = true;
     viewport->PlatformHandle = (void*)vd->Window;
@@ -916,11 +910,6 @@ static void ImGui_ImplGlfw_CreateWindow(ImGuiViewport* viewport)
     glfwSetWindowCloseCallback(vd->Window, ImGui_ImplGlfw_WindowCloseCallback);
     glfwSetWindowPosCallback(vd->Window, ImGui_ImplGlfw_WindowPosCallback);
     glfwSetWindowSizeCallback(vd->Window, ImGui_ImplGlfw_WindowSizeCallback);
-    if (bd->ClientApi == GlfwClientApi_OpenGL)
-    {
-        glfwMakeContextCurrent(vd->Window);
-        glfwSwapInterval(0);
-    }
 }
 
 static void ImGui_ImplGlfw_DestroyWindow(ImGuiViewport* viewport)
@@ -1090,19 +1079,12 @@ static void ImGui_ImplGlfw_RenderWindow(ImGuiViewport* viewport, void*)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
     ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
-    if (bd->ClientApi == GlfwClientApi_OpenGL)
-        glfwMakeContextCurrent(vd->Window);
 }
 
 static void ImGui_ImplGlfw_SwapBuffers(ImGuiViewport* viewport, void*)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
     ImGui_ImplGlfw_ViewportData* vd = (ImGui_ImplGlfw_ViewportData*)viewport->PlatformUserData;
-    if (bd->ClientApi == GlfwClientApi_OpenGL)
-    {
-        glfwMakeContextCurrent(vd->Window);
-        glfwSwapBuffers(vd->Window);
-    }
 }
 
 //--------------------------------------------------------------------------------------------------------

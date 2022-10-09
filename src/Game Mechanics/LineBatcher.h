@@ -1,6 +1,6 @@
 #pragma once
 #include <pch.h>
-#include <Maths/Frustum.h>
+#include <wc/Maths/Frustum.h>
 
 
 namespace wc {
@@ -116,7 +116,7 @@ namespace wc {
 		void Flush(const bool render = true) {
 			if (!IndexCount) return;
 			if (render) {
-				wc::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
+				wc::CommandBuffer& cmd = RendererContext::mainCommandBuffer;
 				shader.Bind(cmd);
 				cmd.BindVertexBuffer(lineBuffer);
 				cmd.Draw(IndexCount);

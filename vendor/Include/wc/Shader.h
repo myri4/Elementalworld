@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vk/Pipeline.h>
-#include <vk/Renderpass.h>
-#include <vk/Buffer.h>
-#include <vk/Descriptors.h>
 #include <magic_enum.hpp>
+#include "vk/Buffer.h"
+#include "vk/Pipeline.h"
+#include "vk/Renderpass.h"
+#include "vk/Descriptors.h"
 
 namespace wc {
 
@@ -141,7 +141,7 @@ namespace wc {
 						auto& pushConstantRange = ranges.emplace_back();
 						pushConstantRange.stageFlags = shaderStage;
 						pushConstantRange.size = bufferSize;
-						pushConstantRange.offset = offset;
+						pushConstantRange.offset = 0;
 					}
 					
 
@@ -292,7 +292,16 @@ namespace wc {
 			colorBlend.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 			colorBlend.alphaBlendOp = VK_BLEND_OP_ADD;
 
-			pipelineBuilder.depthStencil = wc::depth_stencil_create_info(createInfo.depthTest, createInfo.depthTest, VK_COMPARE_OP_LESS_OR_EQUAL);
+			pipelineBuilder.depthStencil = { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
+
+			pipelineBuilder.depthStencil.depthTestEnable = createInfo.depthTest;
+			pipelineBuilder.depthStencil.depthWriteEnable = createInfo.depthTest; // should be depth write
+			pipelineBuilder.depthStencil.depthCompareOp = createInfo.depthTest ? VK_COMPARE_OP_LESS_OR_EQUAL : VK_COMPARE_OP_ALWAYS; // should be changeable
+			pipelineBuilder.depthStencil.depthBoundsTestEnable = false;
+			pipelineBuilder.depthStencil.minDepthBounds = 0.0f; // Optional
+			pipelineBuilder.depthStencil.maxDepthBounds = 1.0f; // Optional
+			pipelineBuilder.depthStencil.stencilTestEnable = false;
+
 			pipelineBuilder.topology = createInfo.topology;
 			//finally build the pipeline
 			pipeline = pipelineBuilder.build_pipeline(createInfo.renderPass, pipelineLayout);
@@ -332,7 +341,6 @@ namespace wc {
 					spirv_cross::Compiler compiler(shaderModule.getBinary());
 					spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 					VkShaderStageFlags shaderStage = VK_SHADER_STAGE_COMPUTE_BIT;
-
 
 					for (auto& resource : resources.uniform_buffers) {
 						bool add = true;
@@ -435,18 +443,18 @@ namespace wc {
 
 				VkPipelineLayoutCreateInfo info = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 
-				info.flags = 0;
 				info.setLayoutCount = 1;
 				info.pSetLayouts = descriptorLayout.GetPointer();
 
+				VkPushConstantRange range;
+				range.size = 0;
+				range.offset = 0;
+				range.stageFlags = shaderStage;
 				if (resources.push_constant_buffers.size() > 0) {
 					auto& baseType = compiler.get_type(resources.push_constant_buffers[0].base_type_id);
-					auto bufferSize = compiler.get_declared_struct_size(baseType);
+					uint32_t bufferSize = compiler.get_declared_struct_size(baseType);
 
-					VkPushConstantRange range;
-					range.offset = 0;
-					range.stageFlags = shaderStage;
-					range.size = bufferSize;
+					range.size = compiler.get_declared_struct_size(baseType);
 
 					info.pPushConstantRanges = &range;
 					info.pushConstantRangeCount = 1;

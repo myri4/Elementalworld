@@ -7,7 +7,7 @@
 #include "Mesh.h"
 
 #include <unordered_map>
-#include <Maths/AssimpGLMHelpers.h>
+#include <wc/Maths/AssimpGLMHelpers.h>
 #include <wc/Shader.h>
 
 namespace wc {

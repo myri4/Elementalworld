@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
-#include <vk/Buffer.h>
-#include <vk/Pipeline.h>
+#include <wc/vk/Buffer.h>
+#include <wc/vk/Pipeline.h>
 
 //@Todo try with size_t 
 const uint16_t chunkSize = 16;

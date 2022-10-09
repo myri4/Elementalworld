@@ -7,24 +7,6 @@
 
 namespace wc {
 
-	class Queue : public RendererObject<VkQueue> {
-		uint32_t queueFamily; //family of that queue
-	public:
-
-		void GetIndex(const vkb::QueueType& type, const vkb::Device& vkbDevice) {
-			m_RendererID = vkbDevice.get_queue(type).value();
-			queueFamily = vkbDevice.get_queue_index(type).value();
-		}
-
-		VkResult Submit(const VkSubmitInfo& submit_info, const Fence& fence) const { return vkQueueSubmit(m_RendererID, 1, &submit_info, fence);	}
-
-		VkResult PresentKHR(const VkPresentInfoKHR& present_info) const { return vkQueuePresentKHR(m_RendererID, &present_info); }
-
-		void WaitIdle() { vkQueueWaitIdle(m_RendererID); }
-
-		uint32_t GetFamily() const { return queueFamily; }
-	};
-
 
 	class CommandBuffer : public RendererObject<VkCommandBuffer> {
 	public:
@@ -92,6 +74,14 @@ namespace wc {
 			vkCmdDispatch(m_RendererID, groupCount.x, groupCount.y, groupCount.z);
 		}
 
+		void Dispatch(const glm::ivec2& groupCount) const {
+			vkCmdDispatch(m_RendererID, groupCount.x, groupCount.y, 1);
+		}
+
+		void Dispatch(const glm::vec2& groupCount) const {
+			Dispatch(glm::ivec2(groupCount));
+		}
+
 		void DispatchIndirect(const VkBuffer& buffer, const VkDeviceSize& offset = 0) const {
 			vkCmdDispatchIndirect(m_RendererID, buffer, offset);
 		}
@@ -103,6 +93,9 @@ namespace wc {
 		VkResult End() const { return vkEndCommandBuffer(m_RendererID); }
 
 		VkResult Reset(const VkCommandBufferResetFlags& flags = 0) const { return vkResetCommandBuffer(m_RendererID, flags); }
+
+		void SetName(const char* name)        { VulkanContext::SetObjectName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)m_RendererID, name);	}
+		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)m_RendererID, name.c_str()); }
 	};
 
 
@@ -120,10 +113,8 @@ namespace wc {
 			return Create(commandPoolInfo);
 		}
 
-		VkResult Allocate(const VkCommandBufferLevel& level, CommandBuffer& commandBuffer) { // @TODO: add support for allocating multiple command buffers
-			VkCommandBufferAllocateInfo cmdAllocInfo = {};
-			cmdAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-			cmdAllocInfo.pNext = nullptr;
+		VkResult Allocate(const VkCommandBufferLevel& level, CommandBuffer& commandBuffer) const { // @TODO: add support for allocating multiple command buffers
+			VkCommandBufferAllocateInfo cmdAllocInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
 
 			//commands will be made from our _commandPool
 			cmdAllocInfo.commandPool = m_RendererID;
@@ -143,6 +134,10 @@ namespace wc {
 		void Free(const CommandBuffer& cmd) { vkFreeCommandBuffers(VulkanContext::GetDevice(), m_RendererID, 1, cmd.GetPointer()); }
 
 		void Destroy() { vkDestroyCommandPool(VulkanContext::GetDevice(), m_RendererID, nullptr); }
+
+
+		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)m_RendererID, name); }
+		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)m_RendererID, name.c_str()); }
 	};
 
 	namespace UploadContext	{
@@ -150,14 +145,11 @@ namespace wc {
 		namespace {
 			Fence uploadFence;
 			CommandPool commandPool;
-			CommandBuffer commandBuffer;			
-
-			Queue graphicsQueue;
+			CommandBuffer commandBuffer;
 		}
 
-		void Init(const Queue& queue) {
-			graphicsQueue = queue;
-			commandPool.Create(graphicsQueue.GetFamily(), 0);
+		void Init() {
+			commandPool.Create(VulkanContext::graphicsQueue.GetFamily(), 0);
 			commandPool.Allocate(VK_COMMAND_BUFFER_LEVEL_PRIMARY, commandBuffer);
 
 			uploadFence.Create(0);
@@ -179,9 +171,7 @@ namespace wc {
 
 			cmd.End();
 
-			VkSubmitInfo submit = {};
-			submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			submit.pNext = nullptr;
+			VkSubmitInfo submit = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
 
 			submit.waitSemaphoreCount = 0;
 			submit.pWaitSemaphores = nullptr;
@@ -193,7 +183,7 @@ namespace wc {
 
 			//submit command buffer to the queue and execute it.
 			// _uploadFence will now block until the graphic commands finish execution
-			graphicsQueue.Submit(submit, uploadFence);
+			VulkanContext::graphicsQueue.Submit(submit, uploadFence);
 
 			uploadFence.Wait();
 			uploadFence.Reset();

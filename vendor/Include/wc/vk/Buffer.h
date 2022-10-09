@@ -28,18 +28,13 @@ namespace wc {
 		VmaAllocation allocation;
 	public:
 		VkResult Create(const VkDeviceSize& bufferSize) {
-			//allocate vertex buffer
 			VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-			//this is the total size, in bytes, of the buffer we are allocating
 			bufferInfo.size = bufferSize;
-			//this buffer is going to be used as a Vertex Buffer
 			bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
-			//let the VMA library know that this data should be writeable by CPU, but also readable by GPU
 			VmaAllocationCreateInfo vmaallocInfo = {};
 			vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 
-			//allocate the buffer
 			return vmaCreateBuffer(VulkanContext::GetMemoryAllocator(), &bufferInfo, &vmaallocInfo,
 				&m_RendererID,
 				&allocation,
@@ -67,6 +62,9 @@ namespace wc {
 		}
 
 		void Destroy() { vmaDestroyBuffer(VulkanContext::GetMemoryAllocator(), m_RendererID, allocation); }
+
+		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)m_RendererID, name); }
+		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)m_RendererID, name.c_str()); }
 	};
 
     class Buffer : public RendererObject<VkBuffer> {
@@ -74,18 +72,13 @@ namespace wc {
         VmaAllocation allocation;
     public:
         VkResult Create(const VkDeviceSize& bufferSize, const uint32_t& usage) {
-			//allocate vertex buffer
 			VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-			//this is the total size, in bytes, of the buffer we are allocating
 			bufferInfo.size = bufferSize;
-			//this buffer is going to be used as a Vertex Buffer
 			bufferInfo.usage = usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
-			//let the VMA library know that this data should be writeable by CPU, but also readable by GPU
 			VmaAllocationCreateInfo vmaallocInfo = {};
 			vmaallocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-			//allocate the buffer
 			return vmaCreateBuffer(VulkanContext::GetMemoryAllocator(), &bufferInfo, &vmaallocInfo,
 				&m_RendererID,
 				&allocation,
@@ -124,14 +117,14 @@ namespace wc {
 
 		VkDescriptorBufferInfo GetDescriptorInfo(const VkDeviceSize& size = VK_WHOLE_SIZE, const VkDeviceSize& offset = 0) {
 			VkDescriptorBufferInfo info;
-			//it will be the camera buffer
 			info.buffer = m_RendererID;
-			//at 0 offset
 			info.offset = offset;
-			//of the size of a camera data struct
 			info.range = size;
 			return info;
 		}
+
+		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)m_RendererID, name); }
+		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)m_RendererID, name.c_str()); }
     };
 
 	template<class T>

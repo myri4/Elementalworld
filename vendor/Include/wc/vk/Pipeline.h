@@ -20,6 +20,9 @@ namespace wc {
 		Pipeline(const VkPipeline& handle) { m_RendererID = handle; }
 
 		void Destroy() { vkDestroyPipeline(VulkanContext::GetDevice(), m_RendererID, nullptr); }
+
+		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)m_RendererID, name); }
+		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)m_RendererID, name.c_str()); }
 	};
 
 	struct PipelineCache : public RendererObject<VkPipelineCache> {
@@ -41,6 +44,9 @@ namespace wc {
 			vkGetPipelineCacheData(VulkanContext::GetDevice(), m_RendererID, nullptr, data); // @TODO: 4th arg is probably incorrect
 			return data;
 		}
+
+		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE_CACHE, (uint64_t)m_RendererID, name); }
+		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE_CACHE, (uint64_t)m_RendererID, name.c_str()); }
 	};
 
 
@@ -173,5 +179,8 @@ namespace wc {
 		}
 
 		void Destroy() { vkDestroyPipelineLayout(VulkanContext::GetDevice(), m_RendererID, nullptr); }
+
+		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)m_RendererID, name); }
+		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)m_RendererID, name.c_str()); }
 	};
 }

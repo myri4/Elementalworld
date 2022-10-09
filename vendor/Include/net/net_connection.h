@@ -4,7 +4,7 @@
 #include "tsqueue.h"
 #include "message.h"
 
-#include <Utils/Log.h>
+#include "../wc/Utils/Log.h"
 
 namespace wc
 {

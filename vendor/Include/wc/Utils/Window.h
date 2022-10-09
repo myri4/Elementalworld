@@ -135,155 +135,8 @@ namespace wc {
                 Return = Enter         ///<  Use Enter instead
             };
 
-        int getKey(const Key& key)
-        {
-            return keyButtons[(uint32_t)key];
-        }
+        int getKey(const Key& key) { return keyButtons[(uint32_t)key]; }
     }
-
-    /*
-	class Window {
-	public:
-        Window() = default;
-		~Window() {}
-
-		void Create(const glm::ivec2& size, const char* title, const bool& vsync = false, const bool& fullscreen = false) {
-			GLFWmonitor* mode = nullptr;
-
-            if (fullscreen) mode = glfwGetPrimaryMonitor();            
-
-			window = glfwCreateWindow(size.x, size.y, title, mode, nullptr);
-			glfwMakeContextCurrent(window);
-
-            // Remove when transition to vulkan
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
-			if (!vsync) glfwSwapInterval(0);
-
-            glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) { resized = true; });
-			glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
-                scrollX = xoffset; scrollY = yoffset;
-
-                context->ProcessMouseWheel(-(float)scrollY, getModifications());
-                });
-			glfwSetCharCallback(window, [](GLFWwindow* window, uint32_t codepoint) {
-                context->ProcessTextInput((char)codepoint);
-                });
-			glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-                keyButtons[key] = action;
-
-                if (action != GLFW_RELEASE) { context->ProcessKeyDown(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
-                else { context->ProcessKeyUp(convertToRmlKey((Keyboard::Key)key), getModifications(mods)); }
-				});
-
-            glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) {
-                context->ProcessMouseMove((int)xpos, (int)ypos, getModifications());
-            });
-			glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
-                mouseButtons[button] = action;
-
-                if (action != GLFW_RELEASE) { context->ProcessMouseButtonDown(button, getModifications(mods)); }
-                else { context->ProcessMouseButtonUp(button, getModifications(mods)); }
-				});
-
-           // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-		}
-
-		void Destroy() const {
-			glfwDestroyWindow(window);
-		}
-
-        float getContentScale() {
-            float xscale, yscale;
-            glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &xscale, &yscale);
-            return xscale;
-        }
-
-		void display() const {
-			resized = false;
-            scrollY = 0.f;
-            scrollX = 0.f;
-            memset(mouseButtons, GLFW_RELEASE, sizeof(mouseButtons));
-            memset(keyButtons, GLFW_RELEASE, sizeof(keyButtons));
-			glfwSwapBuffers(window);
-			glfwPollEvents();
-		}
-
-		const char* getClipboard() {
-			return glfwGetClipboardString(window);
-		}
-
-		void setClipboard(const char* string) {
-			glfwSetClipboardString(window, string);
-		}
-
-		glm::ivec2 GetPos() const {
-			int xpos, ypos;
-			glfwGetWindowPos(window, &xpos, &ypos);
-			return { xpos, ypos };
-		}
-
-		glm::ivec2 GetSize() const {
-			int width, height;
-			glfwGetWindowSize(window, &width, &height);
-			return { width, height };
-		}
-
-		void close() const {
-			glfwSetWindowShouldClose(window, true);
-		}
-
-		bool isOpen() const {
-			return !glfwWindowShouldClose(window);
-		}
-
-		bool hasFocus() const {
-			return glfwGetWindowAttrib(window, GLFW_FOCUSED);
-		}
-
-		void setActive() const {
-			glfwMakeContextCurrent(window);
-		}
-
-		void setCursorPos(const glm::ivec2& pos) {
-			glfwSetCursorPos(window, pos.x, pos.y);
-		}
-
-        void setMaximized(const bool& maximized) {
-            if (maximized) glfwMaximizeWindow(window);
-            else glfwRestoreWindow(window);
-        }
-
-		void ShowMouse(const bool& show) {
-			if (show) 
-				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);			
-			else
-				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-		}
-
-        int getKey(const int& key) {
-            return glfwGetKey(window, key);
-        }
-
-        int getMouse(const int& key) {
-            return glfwGetMouseButton(window, key);
-        }
-
-		glm::ivec2 getCursorPos() {
-			double x, y;
-			glfwGetCursorPos(window, &x, &y);
-			return glm::ivec2(x, y);
-		}
-
-        inline operator GLFWwindow* () { return window; }
-        inline operator GLFWwindow* () const { return window; }
-
-	private:
-		GLFWwindow* window = nullptr;
-	};
-    */
 
 struct WindowCreateInfo {
     uint32_t width = 0;
@@ -303,14 +156,13 @@ public:
     Window() = default;
     ~Window() {}
 
-    void Create(const glm::ivec2& size, const char* title, const bool& fullscreen = false) {
+    void Create(const WindowCreateInfo& info) {
         GLFWmonitor* mode = nullptr;
 
-        if (fullscreen) mode = glfwGetPrimaryMonitor();
+        if (info.startFullscreen) mode = glfwGetPrimaryMonitor();
 
         glfwWindowHint(GLFW_RESIZABLE, false);
-        //glfwWindowHint(GLFW_DECORATED, false);
-        window = glfwCreateWindow(size.x, size.y, title, mode, nullptr);
+        window = glfwCreateWindow(info.width, info.height, info.appName.c_str(), mode, nullptr);
         glfwSetWindowUserPointer(window, this);
 
         glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
@@ -334,9 +186,11 @@ public:
             mouseButtons[button] = action;
         
             ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
-            });
+            });        
+    }
 
-        // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    void CreateSwapchain(const VkPhysicalDevice& physicalDevice, const VkDevice& device, const VkSurfaceKHR& surface, const uint32_t& width, const uint32_t& height) {
+
     }
 
     void SetCursorPosCallback(const GLFWcursorposfun& callback) const {
@@ -345,7 +199,6 @@ public:
 
     void SetFramebufferSizeCallback(const GLFWframebuffersizefun& callback) {
         glfwSetFramebufferSizeCallback(window, callback);
-        //glfwSetWindowSize
     }
 
     void SetScrollCallback(const GLFWscrollfun& callback) {
@@ -379,7 +232,7 @@ public:
         return float((float)size.x / (float)size.y);
     }
 
-    void display() const {
+    void poolEvents() const {
         scrollY = 0.f;
         scrollX = 0.f;
         memset(mouseButtons, GLFW_RELEASE, sizeof(mouseButtons));
@@ -461,8 +314,37 @@ public:
         return glm::ivec2(x, y);
     }
 
+    void Present(const uint32_t& swapchainImageIndex, const VkSemaphore& renderSemaphore, const VkQueue& presentQueue) {
+        VkPresentInfoKHR presentInfo = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
+
+        presentInfo.pSwapchains = &swapchain;
+        presentInfo.swapchainCount = 1;
+
+        presentInfo.pWaitSemaphores = &renderSemaphore;
+        presentInfo.waitSemaphoreCount = 1;
+
+        presentInfo.pImageIndices = &swapchainImageIndex;
+
+        vkQueuePresentKHR(presentQueue, &presentInfo);
+    }
+
     inline operator GLFWwindow* () { return window; }
     inline operator GLFWwindow* () const { return window; }
+
+    VkSwapchainKHR swapchain; // from other articles
+
+    // image format expected by the windowing system
+    VkFormat swapchainImageFormat;
+
+    //array of images from the swapchain
+    std::vector<VkImage> swapchainImages;
+
+    //array of image-views from the swapchain
+    std::vector<VkImageView> swapchainImageViews;
+
+    std::vector<VkFramebuffer> framebuffers;
+
+    VkSurfaceKHR surface; // Vulkan window surface	
 
 private:
     GLFWwindow* window = nullptr;

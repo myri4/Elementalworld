@@ -3,17 +3,17 @@
 #include <pch.h>
 #include "Chunk.h"
 #include "Biome.h"
-#include <Maths/Frustum.h>
 #include <FastNoise/FastNoiseLite.h>
 #include "../entities/Player.h"
 #include "../Game Mechanics/Model/Animation.h"
 #include "../Game Mechanics/LineBatcher.h"
 #include "../Game Mechanics/CommandParser.h"
-#include <Utils/Memory.h>
 
+#include <wc/Utils/Memory.h>
 #include <wc/Shader.h>
 #include <wc/Framebuffer.h>
-#include <Utils/DeletionQueue.h>
+#include <wc/Utils/DeletionQueue.h>
+#include <wc/Maths/Frustum.h>
 
 namespace wc {
 	enum class GameMsg : uint32_t
@@ -157,40 +157,13 @@ namespace wc {
 		// Composite stuff
 		wc::FramebufferWC screen;
 		wc::Texture scrTexture;
+		wc::CommandBuffer computeCommandBuffer;
+		wc::Fence computeFence;
+		wc::Semaphore computeSemaphore;
 
 
-		//vk::Texture scrTexture;
 		wc::Texture finalImage;
-		wc::ComputeShader compositeShader;
-		wc::Image bloomBuffers[3];
-		wc::ImageView bloomImageView;
-		wc::Sampler bloomSampler;
-
-		glm::ivec2 bloomTexSize = glm::ivec2(0);
-		uint32_t m_BloomComputeWorkGroupSize = 4;
-		uint32_t mips = 1;
-
-		wc::ComputeShader bloomShader;
-
-		enum class BloomMode
-		{
-			Prefilter,
-			Downsample,
-			UpsampleFirst,
-			Upsample
-		};
-
-		struct BloomUBOSettings {
-			glm::vec4 Params = glm::vec4(1.f); // (x) threshold, (y) threshold - knee, (z) knee * 2, (w) 0.25 / knee
-			float LOD = 0.f;
-			int Mode = (int)BloomMode::Prefilter;
-		};
-
-		struct BloomSettings
-		{
-			float Threshold = 1.f;
-			float Knee = 0.1f;
-		}bloomSettings;
+		wc::ComputeShader compositeShader;		
 	public:
 		bool multiPlayer = false;
 		bool renderGUI = true;
@@ -262,8 +235,28 @@ namespace wc {
 
 				delQueue.push_function([=] { skyShader.Destroy(); });
 			}
-			//bloomShader.Create("resourcepacks/" + resourceName + "/shaders/bloomShader.comp");
-			//delQueue.push_function([=] { bloomShader.Destroy(); });
+			{
+				bloomShader.Create("resourcepacks/" + resourceName + "/shaders/bloomShader.comp");
+				
+				VkSamplerCreateInfo bloomSamplerInfo = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+				
+				bloomSamplerInfo.magFilter = VK_FILTER_LINEAR;
+				bloomSamplerInfo.minFilter = VK_FILTER_LINEAR; // .min_filter = GL_LINEAR_MIPMAP_LINEAR
+				bloomSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+				bloomSamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+				bloomSamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+				bloomSamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+				
+				bloomSampler.Create(bloomSamplerInfo);
+				bloomUBO.Create(sizeof(BloomUBOSettings), UNIFORM_BUFFER);
+
+				wc::DescriptorWriter writer;
+				writer.dstSet = bloomShader.descriptorSet;
+				writer.write_buffer(3, bloomUBO.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+				wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+				delQueue.push_function([=] { bloomSampler.Destroy(); bloomShader.Destroy(); bloomUBO.Destroy(); });
+			}
 			{
 				compositeShader.Create("resourcepacks/" + resourceName + "/shaders/composite.comp");
 
@@ -271,8 +264,11 @@ namespace wc {
 				writer.dstSet = compositeShader.descriptorSet;
 				writer
 					.write_image(0, finalImage.GetDescriptorData(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-					.write_image(1, scrTexture.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+					.write_image(1, scrTexture.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+					.write_image(2, bloomBuffers[2].GetDescriptorData(bloomSampler), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+					;
 				
+				wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
 
 				delQueue.push_function([=] { compositeShader.Destroy(); });
 			}
@@ -406,6 +402,13 @@ namespace wc {
 			indices.Destroy();
 #endif
 
+			RendererContext::GetComputePool().Allocate(VK_COMMAND_BUFFER_LEVEL_PRIMARY, computeCommandBuffer);
+			computeFence.Create();
+			computeFence.Reset();
+			computeSemaphore.Create();
+
+			delQueue.push_function([=] { computeSemaphore.Destroy(); });
+			delQueue.push_function([=] { computeFence.Destroy(); });
 			//model.Create("resourcepacks/default/models/player_model.obj", screen.renderPass, windowSize);
 			glm::ivec2 cSize = glm::ivec2(0);
 			render_interface.LoadTexture(crosshair, cSize, "resourcepacks/default/textures/misc/cursor.png");
@@ -424,6 +427,11 @@ namespace wc {
 			
 			box.position = glm::vec3(0.f, 128.f, 0.f);
 			box.size = glm::vec3(1.f);
+
+			for (int i = 0; i < 3; i++) {
+				bloomBuffers[i].sampler = bloomSampler;
+				bloomBuffers[i].dstSet = bloomShader.descriptorSet;
+			}
 		}
 
 		void Destroy() {
@@ -451,7 +459,6 @@ namespace wc {
 		}
 
 		void CreateScreen() {
-
 			// Creating the screen framebuffer
 			wc::AttachmentCreateInfo attachmentInfo = {};
 			attachmentInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT; // GL_RGBA32F
@@ -472,7 +479,10 @@ namespace wc {
 			screen.Create(window.GetSize());
 			
 			scrTexture.Create(screen.attachments[attachment].image, screen.attachments[attachment].view);
-			finalImage.Create(window.GetSize(), VK_FORMAT_R32G32B32A32_SFLOAT);
+			finalImage.Create(window.GetSize(), VK_FORMAT_R32G32B32A32_SFLOAT, 4, false, VK_IMAGE_USAGE_STORAGE_BIT);
+
+			finalImage.GetImage().layout = VK_IMAGE_LAYOUT_GENERAL;
+			UploadContext::immediate_submit([&](VkCommandBuffer cmd) {finalImage.GetImage().setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL); });
 			VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 			
 			sampler.magFilter = VK_FILTER_LINEAR;
@@ -484,25 +494,38 @@ namespace wc {
 			
 			scrTexture.SetSamplerInfo(sampler);
 			finalImage.SetSamplerInfo(sampler);
-			render_interface.AddTextureFramebuffer(scrTexture);
+			render_interface.AddTextureFramebuffer(finalImage);
+
 
 			bloomTexSize = glm::ivec2(window.GetSize().x, window.GetSize().y) / 2;
 			bloomTexSize += glm::ivec2(m_BloomComputeWorkGroupSize - bloomTexSize.x % m_BloomComputeWorkGroupSize, m_BloomComputeWorkGroupSize - bloomTexSize.y % m_BloomComputeWorkGroupSize);
-			mips = wc::GetMipLevelCount(window.GetSize()) - 4;
+			mips = wc::GetMipLevelCount(window.GetSize()) - 4;			
 
-			//gl::TextureProps bloomProps;
-			//bloomProps.internalFormat = GL_RGBA32F;
-			//bloomProps.mips = mips;
-			//bloomProps.min_filter = GL_LINEAR_MIPMAP_LINEAR;
-			//bloomProps.mag_filter = GL_LINEAR;
-			//bloomProps.wrap_s = GL_CLAMP_TO_EDGE;
-			//bloomProps.wrap_t = GL_CLAMP_TO_EDGE;
-			//
-			//bloomProps.SetSize(bloomTexSize);
-			//for (int i = 0; i < 3; i++) {
-			//	bloomBuffers[i].Create(bloomProps);
-			//	//bloomBuffers[i].GenerateMipMap();
-			//}
+			VkImageCreateInfo info = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+
+			info.imageType = VK_IMAGE_TYPE_2D;
+
+			info.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+
+			VkExtent3D& imageExtent = info.extent;
+			imageExtent.width = static_cast<uint32_t>(bloomTexSize.x);
+			imageExtent.height = static_cast<uint32_t>(bloomTexSize.y);
+			imageExtent.depth = 1;
+
+			info.mipLevels = mips;
+			info.arrayLayers = 1;
+			info.samples = VK_SAMPLE_COUNT_1_BIT;
+			info.tiling = VK_IMAGE_TILING_OPTIMAL;
+			info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+
+			for (int i = 0; i < 3; i++) {
+				bloomBuffers[i].Create(info);
+				bloomBuffers[i].image.SetName("bloomBuffers[" + std::to_string(i) + "]");
+				bloomBuffers[i].sampler = bloomSampler;
+				bloomBuffers[i].dstSet = bloomShader.descriptorSet;
+				bloomBuffers[i].image.width = bloomTexSize.x;
+				bloomBuffers[i].image.height = bloomTexSize.y;
+			}
 		}
 
 		void DestroyScreen() {
@@ -511,9 +534,9 @@ namespace wc {
 			scrTexture.ResetSamplerInfo();
 
 			finalImage.Destroy();
-			//
-			//for (int i = 0; i < 3; i++)
-			//	bloomBuffers[i].Destroy();
+			
+			for (int i = 0; i < 3; i++)
+				bloomBuffers[i].Destroy();
 		}
 
 		bool RectVsRect(const AABB& r1, const AABB& r2)
@@ -525,7 +548,9 @@ namespace wc {
 		}
 
 		void Update(const float& deltaTime) {
-			wc::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
+			{
+			wc::CommandBuffer& cmd = RendererContext::mainCommandBuffer;
+			cmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 			VkRenderPassBeginInfo fRPInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
 
@@ -543,7 +568,7 @@ namespace wc {
 			VkClearValue& depthValue = clearValuesFB[1];
 			depthValue.depthStencil.depth = 1.f;
 
-			fRPInfo.clearValueCount = ARRAYSIZE(clearValuesFB);
+			fRPInfo.clearValueCount = std::size(clearValuesFB);
 			fRPInfo.pClearValues = clearValuesFB;
 			//once we start adding rendering commands, they will go here
 			screen.renderPass.Begin(cmd, fRPInfo);
@@ -804,19 +829,150 @@ namespace wc {
 			//	model.Draw(cmd);
 #endif
 			screen.renderPass.End(cmd);
+			cmd.End();
+
+
+			VkSubmitInfo submit = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
+
+			submit.commandBufferCount = 1;
+			submit.pCommandBuffers = cmd.GetPointer();
+
+			VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+			submit.pWaitDstStageMask = &waitStage;
+
+			submit.waitSemaphoreCount = 0;
+			submit.pWaitSemaphores = nullptr;
+
+			submit.signalSemaphoreCount = 1;
+			submit.pSignalSemaphores = computeSemaphore.GetPointer();
+
+			//submit command buffer to the queue and execute it.
+			// renderFence will now block until the graphic commands finish execution
+			//@TODO: prerecord command buffers and remove fences everywhere
+			VulkanContext::graphicsQueue.Submit(submit, RendererContext::renderFence);
+
+			RendererContext::renderFence.Wait();
+			RendererContext::renderFence.Reset();
+			
+			cmd.Reset();
+			}
+
+			// compute pass
+			{
+			wc::CommandBuffer& cmd = computeCommandBuffer;
+			//BeginBloomPass(cmd);
+			//VulkanContext::BeginLabel(cmd, "Bloom pass");
+
+			//VulkanContext::InsertLabel(cmd, "Prefilter");
+			//BloomUBOSettings settings;
+			//settings.Params = glm::vec4(bloomSettings.Threshold, bloomSettings.Threshold - bloomSettings.Knee, bloomSettings.Knee * 2.f, 0.25f / bloomSettings.Knee);
+			//cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
+			//scrTexture.GetImage().setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+			//BindImage(bloomBuffers[0], 0);
+			//BindTexture(1, scrTexture.GetImageView());
+			//BindTexture(2, bloomBuffers[2].wholeView);
+			//cmd.Dispatch(glm::ceil(glm::vec2(bloomTexSize) / glm::vec2(m_BloomComputeWorkGroupSize)));
+
+			//scrTexture.GetImage().setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+			//ExecuteBloomPass(cmd);
+
+			//VulkanContext::InsertLabel(cmd, "Downsample");
+			//for (int currentMip = 1; currentMip < mips; currentMip++)
+			//{
+			//	glm::vec2 mipSize = wc::GetMipSize(currentMip, bloomTexSize);
+			//	mipSize = glm::ceil(mipSize / glm::vec2(m_BloomComputeWorkGroupSize));
+			//	settings.Mode = (int)BloomMode::Downsample;
+			//
+			//	// Ping 
+			//	BeginBloomPass(cmd);
+			//	settings.LOD = currentMip - 1;
+			//	cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
+			//
+			//	BindImage(bloomBuffers[1], currentMip);
+			//	BindTexture(1, bloomBuffers[0].wholeView);
+			//	cmd.Dispatch(mipSize);
+			//	ExecuteBloomPass(cmd);
+			//
+			//	// Pong 
+			//	BeginBloomPass(cmd);
+			//	settings.LOD = currentMip;
+			//	cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
+			//
+			//	BindImage(bloomBuffers[0], currentMip);
+			//	BindTexture(1, bloomBuffers[1].wholeView);
+			//	cmd.Dispatch(mipSize);
+			//	ExecuteBloomPass(cmd);
+			//}
+			//
+			//// First Upsample
+			//BeginBloomPass(cmd);
+			//VulkanContext::InsertLabel(cmd, "First Upsample");
+			//settings.LOD = mips - 2;
+			//settings.Mode = (int)BloomMode::UpsampleFirst;
+			//cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
+			//
+			//BindImage(bloomBuffers[2], mips - 1);
+			//BindTexture(1, bloomBuffers[0].wholeView);
+			//
+			//cmd.Dispatch(glm::ceil((glm::vec2)wc::GetMipSize(mips - 1, bloomTexSize) / glm::vec2(m_BloomComputeWorkGroupSize)));
+			//ExecuteBloomPass(cmd);
+			//
+			//settings.Mode = (int)BloomMode::Upsample;
+			//VulkanContext::InsertLabel(cmd, "Upsample");
+			//for (int currentMip = mips - 2; currentMip >= 0; currentMip--)
+			//{
+			//	BeginBloomPass(cmd);
+			//	settings.LOD = currentMip;
+			//	cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
+			//
+			//	BindImage(bloomBuffers[2], currentMip);
+			//
+			//	cmd.Dispatch(glm::ceil((glm::vec2)wc::GetMipSize(currentMip, bloomTexSize) / glm::vec2(m_BloomComputeWorkGroupSize)));
+			//	ExecuteBloomPass(cmd);
+			//}
+			//VulkanContext::EndLabel(cmd);
+
+			RenderBloom(cmd);
+
+
+
+
+
+
+			cmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+			VulkanContext::BeginLabel(cmd, "Compositing");
+			compositeShader.Bind(cmd);
+			cmd.Dispatch(glm::ceil((glm::vec2)window.GetSize() / glm::vec2(m_BloomComputeWorkGroupSize)));
+			VulkanContext::EndLabel(cmd);
+
+			cmd.End();
+
+
+			VkSubmitInfo submit = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
+
+			submit.commandBufferCount = 1;
+			submit.pCommandBuffers = cmd.GetPointer();
+
+			VkPipelineStageFlags computeWaitStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+			submit.pWaitDstStageMask = &computeWaitStage;
+
+			submit.waitSemaphoreCount = 1;
+			submit.pWaitSemaphores = computeSemaphore.GetPointer();
+
+			submit.signalSemaphoreCount = 0;
+			submit.pSignalSemaphores = nullptr;
+
+			VulkanContext::computeQueue.Submit(submit, computeFence);
+			computeFence.Wait();
+			computeFence.Reset();
+
+			cmd.Reset();
+			}			
 		}
 
 		void RenderGUI() {
-			//RenderBloom();
-			//
-			//finalImage.BindTextureImage(0, GL_WRITE_ONLY);
-			//scrTexture.Bind(1); // use the color attachment texture as the texture of the quad plane	
-			//bloomBuffers[2].Bind(2);
-			//compositeShader.use();
-			//compositeShader.Dispatch(glm::ceil((glm::vec2)sceneData.windowSize / glm::vec2(m_BloomComputeWorkGroupSize)));
-			//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-			//
-			//render_interface.DrawQuad({ 0,0 }, sceneData.windowSize, finalImage);
 			render_interface.DrawQuad({ 0,0 }, window.GetSize(), 99);
 			if (renderGUI) render_interface.DrawQuad(((glm::vec2)window.GetSize() - 20.f) / 2.f, {20, 20}, crosshair);
 		}
@@ -932,16 +1088,6 @@ namespace wc {
 				Mouse::SetMousePosition(t);
 			}
 
-			//if (wc::Keyboard::getKey(wc::Keyboard::Key::F2)) {
-			//	glm::ivec2 size = finalImage.GetSize();
-			//	uint32_t byteSize = size.x * size.y * 4;
-			//	uint8_t* data = new uint8_t[byteSize];
-			//	glReadPixels(0, 0, size.x, size.y, GL_RGBA, GL_UNSIGNED_BYTE, data);
-			//	stbi_flip_vertically_on_write(true);
-			//	stbi_write_png("screenshots/screenshot.png", size.x, size.y, 4, data, size.x * 4);
-			//	delete[] data;
-			//}
-
 			if (wc::Keyboard::getKey(wc::Keyboard::Key::F1)) renderGUI = !renderGUI;
 
 			// PLAYER RELATED
@@ -973,7 +1119,7 @@ namespace wc {
 				p.velocity.y *= 0.009f;
 			//////////////
 
-			camera.Update();
+			camera.Update(window.getAspectRatio());
 
 			bool bBreak = Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT);
 			bool bPlace = Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT);
@@ -1544,11 +1690,11 @@ namespace wc {
 									if (normal == glm::vec3(0.f, 0.f,  1.f)) texID = (uint32_t)BlockTexture::FRONT;
 									if (normal == glm::vec3(0.f, 0.f, -1.f)) texID = (uint32_t)BlockTexture::BACK;
 
-									for (uint32_t i = 0; i < ARRAYSIZE(corner); i++)
+									for (uint32_t i = 0; i < std::size(corner); i++)
 										vertices[i + offset] = Vertex(corner[i] + (glm::vec3)chunkPos, { TexCoords[i], texID }, normal, blockData[blockID].materialID);
 
 									indexCount += 6;
-									offset += ARRAYSIZE(corner);
+									offset += std::size(corner);
 								}
 								// Clear this part of the mask, so we don't add duplicate faces
 								for (l = 0; l < h; l++)
@@ -1678,79 +1824,288 @@ namespace wc {
 
 		// BLOOM
 
-		VkImageViewCreateInfo GetBloomViewInfo(const wc::Image& image, const uint32_t& mipLevel = 0) {
-			VkImageViewCreateInfo createInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			createInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-			createInfo.flags = 0;
-			createInfo.image = image;
-			createInfo.subresourceRange.layerCount = 1;
-			createInfo.subresourceRange.levelCount = mips;
-			createInfo.subresourceRange.baseMipLevel = mipLevel;
-			createInfo.subresourceRange.baseArrayLayer = 0;
-			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		struct BloomImage {
+			Image image;
+			ImageView wholeView;
+			std::vector<ImageView> imageViews;
+			VkDescriptorSet dstSet;
+			VkSampler sampler;
+
+			BloomImage() = default;
+			BloomImage(const Image& img, const ImageView& view) { image = img; wholeView = view; }
+
+			void Create(const VkImageCreateInfo& info) {
+				image.Create(info);
+				UploadContext::immediate_submit([&](VkCommandBuffer cmd) {
+					VkImageSubresourceRange range;
+					range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+					range.baseArrayLayer = 0;
+					range.baseMipLevel = 0;
+					range.layerCount = 1;
+					range.levelCount = info.mipLevels;
+					image.setLayout(cmd, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, range);
+				});
+
+				for (int i = 0; i < info.mipLevels; i++)
+				{
+					VkImageViewCreateInfo createInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+					createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+					createInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+					createInfo.flags = 0;
+					createInfo.image = image;
+					createInfo.subresourceRange.layerCount = 1;
+					createInfo.subresourceRange.levelCount = 1;
+					createInfo.subresourceRange.baseMipLevel = i;
+					createInfo.subresourceRange.baseArrayLayer = 0;
+					createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+					ImageView imageView;
+					imageView.Create(createInfo);
+					imageViews.push_back(imageView);
+				}
+
+				VkImageViewCreateInfo createInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+				createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+				createInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+				createInfo.flags = 0;
+				createInfo.image = image;
+				createInfo.subresourceRange.layerCount = 1;
+				createInfo.subresourceRange.levelCount = info.mipLevels;
+				createInfo.subresourceRange.baseMipLevel = 0;
+				createInfo.subresourceRange.baseArrayLayer = 0;
+				createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				wholeView.Create(createInfo);
+
+
+			}
+
+			void Destroy() {
+				image.Destroy();
+
+				for (auto& view : imageViews) view.Destroy();
+				imageViews.clear();
+				wholeView.Destroy();
+			}
+
+			VkDescriptorImageInfo GetDescriptorData(const VkSampler& sampler) {
+				VkDescriptorImageInfo imageInfo;
+				imageInfo.sampler = sampler;
+				imageInfo.imageView = wholeView;
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+				return imageInfo;
+			}
+
+			void Bind(const uint32_t& binding) {
+
+
+				VkDescriptorImageInfo imageInfo;
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+				imageInfo.sampler = sampler;
+				imageInfo.imageView = wholeView;
+
+				VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+
+				newWrite.descriptorCount = 1;
+				newWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				newWrite.pImageInfo = &imageInfo;
+				newWrite.dstBinding = binding;
+				newWrite.dstSet = dstSet;
+
+				wc::UpdateDescriptorSets(1, &newWrite);
+			}
+
+			void BindTextureImage(const uint32_t& binding, const uint32_t& mipLevel = 0) {
+
+				VkDescriptorImageInfo imageInfo;
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+				imageInfo.sampler = nullptr;
+				imageInfo.imageView = imageViews[mipLevel];
+
+				VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+
+				newWrite.descriptorCount = 1;
+				newWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+				newWrite.pImageInfo = &imageInfo;
+				newWrite.dstBinding = binding; // we know its always 0
+				newWrite.dstSet = dstSet;
+
+				wc::UpdateDescriptorSets(1, &newWrite);
+			}
+
+			glm::ivec2 GetMipSize(int level)
+			{
+				glm::ivec2 size = glm::ivec2(image.width, image.height);
+				while (level != 0)
+				{
+					size.x /= 2;
+					size.y /= 2;
+					level--;
+				}
+
+				return size;
+			}
+
+		} bloomBuffers[3];
+
+		void Bind(const uint32_t& binding, const VkImageView& wholeView) {
+
+
+			VkDescriptorImageInfo imageInfo;
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+			imageInfo.sampler = bloomSampler;
+			imageInfo.imageView = wholeView;
+
+			VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+
+			newWrite.descriptorCount = 1;
+			newWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			newWrite.pImageInfo = &imageInfo;
+			newWrite.dstBinding = binding;
+			newWrite.dstSet = bloomShader.descriptorSet;
+
+			wc::UpdateDescriptorSets(1, &newWrite);
 		}
 
-		void RenderBloom(const wc::CommandBuffer& cmd)
+		wc::Sampler bloomSampler;
+
+		glm::ivec2 bloomTexSize = glm::ivec2(0);
+		uint32_t m_BloomComputeWorkGroupSize = 4; // @TODO: remove
+		uint32_t mips = 1;
+
+		wc::ComputeShader bloomShader;
+		wc::Buffer bloomUBO;
+
+		enum class BloomMode
 		{
+			Prefilter,
+			Downsample,
+			UpsampleFirst,
+			Upsample
+		};
+
+		struct BloomUBOSettings {
+			glm::vec4 Params = glm::vec4(1.f); // (x) threshold, (y) threshold - knee, (z) knee * 2, (w) 0.25 / knee
+			float LOD = 0.f;
+			int Mode = (int)BloomMode::Prefilter;
+		};
+
+		struct BloomSettings
+		{
+			float Threshold = 1.f;
+			float Knee = 0.1f;
+		}bloomSettings;		
+
+		void ExecuteBloomPass(const wc::CommandBuffer& cmd) {
+			cmd.End();
+			VkSubmitInfo submit = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
+
+			submit.commandBufferCount = 1;
+			submit.pCommandBuffers = cmd.GetPointer();
+
+			VkPipelineStageFlags computeWaitStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+			submit.pWaitDstStageMask = &computeWaitStage;
+
+			submit.waitSemaphoreCount = 0;
+			submit.pWaitSemaphores = nullptr;
+
+			submit.signalSemaphoreCount = 0;
+			submit.pSignalSemaphores = nullptr;
+
+			VulkanContext::computeQueue.Submit(submit, computeFence);
+			computeFence.Wait();
+			computeFence.Reset();
+			cmd.Reset();
+		}
+
+		void BeginBloomPass(const wc::CommandBuffer& cmd) {
+			cmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 			bloomShader.Bind(cmd);
+		}
+
+		void RenderBloom(const CommandBuffer& cmd)
+		{
+			BeginBloomPass(cmd);
 			BloomUBOSettings settings;
 			settings.Params = glm::vec4(bloomSettings.Threshold, bloomSettings.Threshold - bloomSettings.Knee, bloomSettings.Knee * 2.f, 0.25f / bloomSettings.Knee);
-			cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
-			GetBloomViewInfo(bloomBuffers[0]);
+			bloomUBO.SetData(&settings, sizeof(settings));
+			bloomBuffers[0].BindTextureImage(0);
+
 			//scrTexture.Bind(1);
-			cmd.Dispatch({ (glm::ivec2)glm::ceil(glm::vec2(bloomTexSize) / glm::vec2(m_BloomComputeWorkGroupSize)) , 1 });
-			//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-			
-			//bloomBuffers[0].Bind(1);
+			scrTexture.GetImage().setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+
+
+			VkDescriptorImageInfo imageInfo;
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+			imageInfo.sampler = bloomSampler;
+			imageInfo.imageView = scrTexture.GetImageView();
+
+			VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+
+			newWrite.descriptorCount = 1;
+			newWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			newWrite.pImageInfo = &imageInfo;
+			newWrite.dstBinding = 1;
+			newWrite.dstSet = bloomShader.descriptorSet;
+
+			wc::UpdateDescriptorSets(1, &newWrite);
+
+			bloomBuffers[2].Bind(2);
+			cmd.Dispatch(glm::ceil(glm::vec2(bloomTexSize) / glm::vec2(m_BloomComputeWorkGroupSize)));
+			scrTexture.GetImage().setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+			ExecuteBloomPass(cmd);
+
+			bloomBuffers[0].Bind(1);
 			for (int currentMip = 1; currentMip < mips; currentMip++)
 			{
-				//glm::vec2 mipSize = bloomBuffers[0].GetMipSize(currentMip);
-				//mipSize = glm::ceil(mipSize / glm::vec2(m_BloomComputeWorkGroupSize));
+				BeginBloomPass(cmd);
+				glm::vec2 mipSize = bloomBuffers[0].GetMipSize(currentMip);
+				mipSize = glm::ceil(mipSize / glm::vec2(m_BloomComputeWorkGroupSize));
 				settings.Mode = (int)BloomMode::Downsample;
-			
+
 				// Ping 
 				settings.LOD = currentMip - 1;
-				cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
-			
+				bloomUBO.SetData(&settings, sizeof(settings));
 
-				GetBloomViewInfo(bloomBuffers[1], currentMip);
-				//bloomShader.Dispatch(mipSize);
-				//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-			
+				bloomBuffers[1].BindTextureImage(0, currentMip);
+				cmd.Dispatch(mipSize);
+				ExecuteBloomPass(cmd);
+
 				// Pong 
+				BeginBloomPass(cmd);
 				settings.LOD = currentMip;
-				cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
+				bloomUBO.SetData(&settings, sizeof(settings));
 
-				GetBloomViewInfo(bloomBuffers[0], currentMip);
-				//bloomBuffers[1].Bind(1);
-				//bloomShader.Dispatch(mipSize);
-				//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+				bloomBuffers[0].BindTextureImage(0, currentMip);
+				bloomBuffers[1].Bind(1);
+				cmd.Dispatch(mipSize);
+				ExecuteBloomPass(cmd);
 			}
-			
-			// First Upsample		
+
+			// First Upsample	
+			BeginBloomPass(cmd);
 			settings.LOD = mips - 2;
 			settings.Mode = (int)BloomMode::UpsampleFirst;
-			cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
-			
+			bloomUBO.SetData(&settings, sizeof(settings));
 
-			GetBloomViewInfo(bloomBuffers[2], mips - 1);
-			//bloomBuffers[0].Bind(1);
-			
-			//bloomShader.Dispatch(glm::ceil((glm::vec2)bloomBuffers[2].GetMipSize(mips - 1) / glm::vec2(m_BloomComputeWorkGroupSize)));
-			//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-			
-			//bloomBuffers[2].Bind(2);
+			bloomBuffers[2].BindTextureImage(0, mips - 1);
+			bloomBuffers[0].Bind(1);
+
+			cmd.Dispatch(glm::ceil((glm::vec2)bloomBuffers[2].GetMipSize(mips - 1) / glm::vec2(m_BloomComputeWorkGroupSize)));
+			ExecuteBloomPass(cmd);
+
+			bloomBuffers[2].Bind(2);
 			settings.Mode = (int)BloomMode::Upsample;
 			for (int currentMip = mips - 2; currentMip >= 0; currentMip--)
 			{
+				BeginBloomPass(cmd);
 				settings.LOD = currentMip;
-				cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
+				bloomUBO.SetData(&settings, sizeof(settings));
 
-				GetBloomViewInfo(bloomBuffers[2], currentMip);
-			
-				//bloomShader.Dispatch(glm::ceil((glm::vec2)bloomBuffers[2].GetMipSize(currentMip) / glm::vec2(m_BloomComputeWorkGroupSize)));
-				//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+				bloomBuffers[2].BindTextureImage(0, currentMip);
+
+				cmd.Dispatch(glm::ceil((glm::vec2)bloomBuffers[2].GetMipSize(currentMip) / glm::vec2(m_BloomComputeWorkGroupSize)));
+				ExecuteBloomPass(cmd);
 			}
 		}
 	};

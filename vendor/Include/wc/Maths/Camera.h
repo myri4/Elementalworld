@@ -1,7 +1,6 @@
 #pragma once
 
 #include <glm/gtc/matrix_transform.hpp>
-#include <Utils/Window.h>
 
 namespace wc{
 
@@ -30,7 +29,7 @@ namespace wc{
 		// returns the view matrix calculated using Euler Angles and the LookAt Matrix
 		glm::mat4 GetViewMatrix() const { return glm::lookAt(Position, Position + Front, Up); }
 
-		void Update() {
+		void Update(const float& aspectRatio) {
 			// update Front, Right and Up Vectors using the updated Euler angles
 			// calculates the new Front vector from the Camera's (updated) Euler Angles
 			float yaw = glm::radians(Yaw);
@@ -53,8 +52,7 @@ namespace wc{
 
 			float theta = glm::tan(FOV * 0.5f);
 			float viewport_height = 2.f * theta;
-			glm::vec2 windSize = window.GetSize();
-			float viewport_width = windSize.x / windSize.y * viewport_height;
+			float viewport_width = aspectRatio * viewport_height;
 
 			glm::vec3 Right = normalize(cross(Front, up));  // u normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
 			Up = normalize(cross(Right, Front));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.

@@ -16,6 +16,9 @@ namespace wc {
 		}
 
 		void End(const CommandBuffer& commandBuffer) const { vkCmdEndRenderPass(commandBuffer); }
+
+		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)m_RendererID, name); }
+		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)m_RendererID, name.c_str()); }
 	};
 
 	struct Framebuffer : public RendererObject<VkFramebuffer> {
@@ -23,5 +26,8 @@ namespace wc {
 		void Create(const VkFramebufferCreateInfo& framebuffer_create_info) { vkCreateFramebuffer(VulkanContext::GetDevice(), &framebuffer_create_info, nullptr, &m_RendererID); }
 
 		void Destroy() { vkDestroyFramebuffer(VulkanContext::GetDevice(), m_RendererID, nullptr); }
+
+		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)m_RendererID, name); }
+		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)m_RendererID, name.c_str()); }
 	};
 }

@@ -4,14 +4,14 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include <Maths/AssimpGLMHelpers.h>
-#include <Utils/Log.h>
+#include <wc/Maths/AssimpGLMHelpers.h>
+#include <wc/Utils/Log.h>
 #include "../Game Mechanics/Item.h"
 #include <magic_enum.hpp>
-#include <Utils/List.h>
-#include <Utils/YAML.h>
+#include <wc/Utils/List.h>
+#include <wc/Utils/YAML.h>
 #include <sol/sol.hpp>
-#include <GUI/AssetManager.h>
+#include <wc/GUI/AssetManager.h>
 #include "../Globals.h"
 
 namespace wc{

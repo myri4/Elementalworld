@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vk/Renderpass.h>
+#include "vk/Renderpass.h"
 
 namespace wc {
 	/**
@@ -136,9 +136,7 @@ namespace wc {
 			image.usage = createinfo.usage;
 
 			// Create image for this attachment
-			VmaAllocationCreateInfo dimg_allocinfo = {};
-			dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-			attachment.image.Create(image, dimg_allocinfo);
+			attachment.image.Create(image);
 
 			attachment.subresourceRange = {};
 			attachment.subresourceRange.aspectMask = aspectMask;

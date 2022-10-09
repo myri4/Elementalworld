@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <assimp/scene.h>
-#include <Maths/AssimpGLMHelpers.h>
+#include <wc/Maths/AssimpGLMHelpers.h>
 
 namespace wc {
 

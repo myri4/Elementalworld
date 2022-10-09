@@ -2,11 +2,11 @@
 
 #include <glm/glm.hpp>
 
-#include <vk/Buffer.h>
-#include <vk/Images.h>
-#include <wc/Shader.h>
-#include <vk/Renderpass.h>
-#include <vk/RendererContext.h>
+#include "../vk/Buffer.h"
+#include "../vk/Images.h"
+#include "../Shader.h"
+#include "../vk/Renderpass.h"
+#include "../vk/RendererContext.h"
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -14,7 +14,7 @@ namespace wc {
 
 	class RenderInterface
 	{
-		static const uint32_t MaxQuadCount = 10000;
+		static const uint32_t MaxQuadCount = 100;
 		static const uint32_t MaxQuadVertexCount = MaxQuadCount * 4;
 		static const uint32_t MaxQuadIndexCount = MaxQuadCount * 6;
 
@@ -216,7 +216,7 @@ namespace wc {
 		}
 
 		void Flush() {
-			wc::CommandBuffer& cmd = RendererContext::GetCommandBuffer();
+			wc::CommandBuffer& cmd = RendererContext::mainCommandBuffer;
 			if (!IndexCount) return;
 
 			indices.Unmap();
