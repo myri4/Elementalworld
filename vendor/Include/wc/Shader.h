@@ -5,6 +5,7 @@
 #include "vk/Pipeline.h"
 #include "vk/Renderpass.h"
 #include "vk/Descriptors.h"
+#include "vk/RendererContext.h"
 
 namespace wc {
 
@@ -476,6 +477,45 @@ namespace wc {
 		void Bind(const wc::CommandBuffer& cmd) {
 			cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, 0, pipelineLayout, descriptorSet);
 			cmd.BindPipeline(pipeline);
+		}
+
+		void Dispatch(const glm::ivec3& dispatchSize, const VkSemaphore* semaphore = nullptr) {
+			wc::CommandBuffer& cmd = RendererContext::computeCommandBuffer;
+			cmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+			Bind(cmd);
+			cmd.Dispatch(dispatchSize);
+			
+			cmd.End();
+
+
+			VkSubmitInfo submit = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
+
+			submit.commandBufferCount = 1;
+			submit.pCommandBuffers = cmd.GetPointer();
+
+			VkPipelineStageFlags computeWaitStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+			submit.pWaitDstStageMask = &computeWaitStage;
+
+			if (semaphore) {
+				submit.waitSemaphoreCount = 1;
+				submit.pWaitSemaphores = semaphore;
+			}
+
+			submit.signalSemaphoreCount = 0;
+			submit.pSignalSemaphores = nullptr;
+
+			VulkanContext::computeQueue.Submit(submit, RendererContext::computeFence);
+			RendererContext::computeFence.Wait();
+			RendererContext::computeFence.Reset();
+		}
+
+		void Dispatch(const glm::ivec2& groupCount, const VkSemaphore* semaphore = nullptr) {
+			Dispatch(glm::ivec3(groupCount, 1), semaphore);
+		}
+
+		void Dispatch(const glm::vec2& groupCount, const VkSemaphore* semaphore = nullptr) {
+			Dispatch(glm::ivec2(groupCount), semaphore);
 		}
 
 		void Destroy() {

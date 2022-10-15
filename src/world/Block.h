@@ -92,6 +92,22 @@ struct BlockMesh { // @TODO: Improve
 			processNode(node->mChildren[i], scene, offset, materialID, vertices, indices);
 	}
 
+	void GetMeshSize(const aiNode* node, const aiScene& scene, uint32_t& totalIndices, uint32_t& totalVertices) {
+		// process each mesh located at the current node		
+		// the node object only contains indices to index the actual objects in the scene. 
+		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
+		for (uint32_t j = 0; j < node->mNumMeshes; j++) {
+			auto& mesh = scene.mMeshes[node->mMeshes[j]];
+			totalVertices += mesh->mNumVertices;
+			for (uint32_t i = 0; i < mesh->mNumFaces; i++)
+				totalIndices += mesh->mFaces[i].mNumIndices;
+
+		}
+		// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
+		for (uint32_t i = 0; i < node->mNumChildren; i++)
+			GetMeshSize(node->mChildren[i], scene, totalIndices, totalVertices);
+	}
+
 	void Destroy() {
 		indexBuffer.Destroy();
 		vertexBuffer.Destroy();

@@ -12,10 +12,13 @@ namespace RendererContext {
 
 	
 	wc::Semaphore presentSemaphore, renderSemaphore;
+	wc::Semaphore computeSemaphore;
+
 	wc::Fence renderFence;
+	wc::Fence computeFence;
 
 	wc::CommandBuffer mainCommandBuffer;
-	
+	wc::CommandBuffer computeCommandBuffer;	
 
 	wc::CommandPool commandPool;
 	wc::CommandPool computeCommandPool;
@@ -64,7 +67,9 @@ namespace RendererContext {
 		subpass.pDepthStencilAttachment = &depth_attachment_ref;
 
 		//1 dependency, which is from "outside" into the subpass. And we can read or write color
-		VkSubpassDependency dependency = {};
+		VkSubpassDependency dependencies[2] = {};
+
+		VkSubpassDependency& dependency = dependencies[0];
 		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 		dependency.dstSubpass = 0;
 		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -72,15 +77,13 @@ namespace RendererContext {
 		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-		VkSubpassDependency depth_dependency = {};
+		VkSubpassDependency& depth_dependency = dependencies[1];
 		depth_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 		depth_dependency.dstSubpass = 0;
 		depth_dependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 		depth_dependency.srcAccessMask = 0;
 		depth_dependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 		depth_dependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-		VkSubpassDependency dependencies[2] = { dependency, depth_dependency };
 
 		VkRenderPassCreateInfo render_pass_info = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
 		render_pass_info.attachmentCount = std::size(attachments);
@@ -123,12 +126,17 @@ namespace RendererContext {
 		computeCommandPool.Create(VulkanContext::computeQueue.GetFamily());
 
 		commandPool.Allocate(VK_COMMAND_BUFFER_LEVEL_PRIMARY, mainCommandBuffer);
+		computeCommandPool.Allocate(VK_COMMAND_BUFFER_LEVEL_PRIMARY, computeCommandBuffer);
 
 		renderFence.Create();
 		renderFence.Reset();
 
+		computeFence.Create();
+		computeFence.Reset();
+
 		presentSemaphore.Create();
 		renderSemaphore.Create();
+		computeSemaphore.Create();
 	}
 
 	void DestroySwapchain(const wc::Window& window) {
@@ -146,12 +154,17 @@ namespace RendererContext {
 	}
 
 	void Destroy(const wc::Window& window) {
+		DestroySwapchain(window);
+
 		commandPool.Destroy();
 		computeCommandPool.Destroy();
-		DestroySwapchain(window);
+
 		renderFence.Destroy();
 		renderSemaphore.Destroy();
 		presentSemaphore.Destroy();
+
+		computeSemaphore.Destroy();
+		computeFence.Destroy();
 	}
 
 	void RecreateSwapchain(wc::Window& window) {

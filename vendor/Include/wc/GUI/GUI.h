@@ -322,14 +322,5 @@ namespace wc {
 			m_Textures[m_Textures.size() - 1] = texture;
 			return m_Textures.size() - 1;
 		}
-
-		void RemoveTexture(const uint32_t& handle) {
-			std::swap(m_Textures[m_NumTextures], m_Textures[handle]);
-			m_NumTextures--;
-		}
-
-		void UpdateTexture(const wc::RenderableTexture& texture) {
-			m_Textures[texture.handle] = texture;
-		}
 	} render_interface;
 }

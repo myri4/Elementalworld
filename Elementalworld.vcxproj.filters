@@ -406,5 +406,8 @@
     <ClInclude Include="src\Game Mechanics\PostProcesser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game Mechanics\Renderer3D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

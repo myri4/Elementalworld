@@ -183,16 +183,15 @@ namespace VulkanContext {
 		}
 	};
 
-	std::vector<const char*> getRequiredExtensions() {
+	std::vector<const char*> getRequiredExtensions() { // @TODO: remove
 		uint32_t glfwExtensionCount = 0;
 		const char** glfwExtensions;
 		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-		if (enableValidationLayers) {
-			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-		}
+		if (enableValidationLayers) 
+			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);		
 
 		return extensions;
 	}
@@ -256,7 +255,7 @@ namespace VulkanContext {
 		VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
 		appInfo.pApplicationName = "Hello Triangle";
 		appInfo.applicationVersion = VK_MAKE_VERSION(1, 1, 0);
-		appInfo.pEngineName = "No Engine";
+		appInfo.pEngineName = "WC Engine";
 		appInfo.engineVersion = VK_MAKE_VERSION(1, 1, 0);
 		appInfo.apiVersion = VK_API_VERSION_1_1;
 
@@ -302,7 +301,7 @@ namespace VulkanContext {
 
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
 		for (const auto& availableFormat : availableFormats) 
-			if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) 
+			if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 				return availableFormat;		
 
 		return availableFormats[0];

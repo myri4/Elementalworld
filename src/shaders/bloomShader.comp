@@ -1,19 +1,19 @@
 #pragma shader_stage(compute)
 
 layout(local_size_x = 4, local_size_y = 4) in;
-layout(binding = 0, rgba32f, set = 0) restrict writeonly uniform image2D o_Image;
-layout(binding = 1, set = 0) uniform sampler2D u_Texture;
-layout(binding = 2, set = 0) uniform sampler2D u_BloomTexture;
+layout(binding = 0, rgba32f) restrict writeonly uniform image2D o_Image;
 
-#include "include/constants.glsl"
+const float Epsilon = 1.0e-4;
 
+layout(binding = 1) uniform sampler2D u_Texture;
+layout(binding = 2) uniform sampler2D u_BloomTexture;
 
 #define MODE_PREFILTER      0
 #define MODE_DOWNSAMPLE     1
 #define MODE_UPSAMPLE_FIRST 2
 #define MODE_UPSAMPLE       3
 
-layout (std140, binding = 3, set = 0) uniform IndexData
+layout (std140, binding = 3) uniform IndexData
 {
     vec4 Params; // (x) threshold, (y) threshold - knee, (z) knee * 2, (w) 0.25 / knee
     float LOD;
@@ -101,7 +101,7 @@ vec3 UpsampleTent9(sampler2D tex, float lod, vec2 uv, vec2 texelSize, float radi
     result += textureLod(tex, uv + offset.wy, lod).rgb * 2.0;
     result += textureLod(tex, uv + offset.xy, lod).rgb;
 
-    return result * (1.0f / 16.0f);
+    return result * (1.f / 16.f);
 }
 
 void main()

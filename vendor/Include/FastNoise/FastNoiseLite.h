@@ -53,8 +53,6 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtx/compatibility.hpp>
-#undef min
-#undef max
 
 class FastNoiseLite
 {

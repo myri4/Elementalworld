@@ -8,38 +8,8 @@ namespace wc {
 	static const uint32_t MaxLineVertexCount = 100 * 2;
 
 	struct LineVertex {
-		glm::vec3 pos;
+		glm::vec4 pos;
 		glm::vec4 color;
-
-		static wc::VertexInputDescription get_vertex_description() {
-			wc::VertexInputDescription description;
-
-			//we will have just 1 vertex buffer binding, with a per-vertex rate
-			VkVertexInputBindingDescription mainBinding = {};
-			mainBinding.binding = 0;
-			mainBinding.stride = sizeof(LineVertex);
-			mainBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-			description.bindings.push_back(mainBinding);
-
-			//Position will be stored at Location 0
-			VkVertexInputAttributeDescription positionAttribute = {};
-			positionAttribute.binding = 0;
-			positionAttribute.location = 0;
-			positionAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-			positionAttribute.offset = offsetof(LineVertex, pos);
-
-			//Normal will be stored at Location 1
-			VkVertexInputAttributeDescription colorAttribute = {};
-			colorAttribute.binding = 0;
-			colorAttribute.location = 1;
-			colorAttribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-			colorAttribute.offset = offsetof(LineVertex, color);
-
-			description.attributes.push_back(positionAttribute);
-			description.attributes.push_back(colorAttribute);
-			return description;
-		}
 	};
 
 	class LineBatcher {
@@ -55,21 +25,23 @@ namespace wc {
 			createInfo.fragmentShader = "resourcepacks/default/shaders/Line3D.frag";
 			createInfo.windowSize = window.GetSize();
 			createInfo.renderPass = renderPass;
-			createInfo.vertexDescription = LineVertex::get_vertex_description();
+			wc::VertexInputDescription desc;
+			createInfo.vertexDescription = desc;
 			createInfo.blending = false;
 			createInfo.depthTest = true;
 			createInfo.invertY = true;
 			createInfo.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 			shader.Create(createInfo);
 
+			lineBuffer.Create(MaxLineVertexCount * sizeof(LineVertex), wc::STORAGE_BUFFER);
+
 			wc::DescriptorWriter writer;
 
 			writer.dstSet = shader.descriptorSet;
 			writer.write_buffer(0, ubo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+			writer.write_buffer(1, lineBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
 			wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
-
-			lineBuffer.Create(MaxLineVertexCount * sizeof(LineVertex), wc::VERTEX_BUFFER);
 		}
 
 		void Destroy() {
@@ -82,8 +54,8 @@ namespace wc {
 
 			float vertices[] = {
 				// positions
-				start.x, start.y, start.z, color.r, color.g, color.b, color.a,
-				end.x,   end.y,   end.z  , color.r, color.g, color.b, color.a
+				start.x, start.y, start.z, 0.f, color.r, color.g, color.b, color.a,
+				end.x,   end.y,   end.z  , 0.f, color.r, color.g, color.b, color.a
 			};
 
 			lineBuffer.SetData(vertices, sizeof(vertices), byteOffset);
@@ -118,7 +90,6 @@ namespace wc {
 			if (render) {
 				wc::CommandBuffer& cmd = RendererContext::mainCommandBuffer;
 				shader.Bind(cmd);
-				cmd.BindVertexBuffer(lineBuffer);
 				cmd.Draw(IndexCount);
 			}
 			byteOffset = 0;

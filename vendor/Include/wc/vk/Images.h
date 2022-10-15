@@ -60,12 +60,34 @@ namespace wc {
         VkResult Create(const VkImageCreateInfo& dimg_info) {
             VmaAllocationCreateInfo dimg_allocinfo = {};
             dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+            width = dimg_info.extent.width;
+            height = dimg_info.extent.height;
+            mipLevels = dimg_info.mipLevels;
 
             return vmaCreateImage(VulkanContext::GetMemoryAllocator(), &dimg_info, &dimg_allocinfo, &m_RendererID, &allocation, nullptr);
         }
 
         void Destroy() {
             vmaDestroyImage(VulkanContext::GetMemoryAllocator(), m_RendererID, allocation);
+        }
+
+        glm::ivec2 GetMipSize(int level)
+        {
+            glm::ivec2 size = { width, height };
+            while (level != 0)
+            {
+                size.x /= 2;
+                size.y /= 2;
+                level--;
+            }
+
+            return size;
+        }
+
+        int GetMipLevelCount()
+        {
+            glm::vec2 textureSize = { width, height };
+            return (int)glm::floor(glm::log2(glm::min(textureSize.x, textureSize.y)));
         }
 
         void setLayout(
@@ -288,7 +310,7 @@ namespace wc {
 
             image.Create(info);
 
-            view.Create(image_format, image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, image.mipLevels);
+            view.Create(info.format, image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, image.mipLevels);
         }
 
         void Create(const Image& img, const ImageView& imgView) {
@@ -369,11 +391,6 @@ namespace wc {
         texture.SetData({ texWidth, texHeight }, pixels);
         return pixels != nullptr;
     }
-
-    class RenderableTexture : public Texture {
-    public:
-        uint32_t handle = 0;
-    };
 
     class TextureArray {
         Image image;
@@ -568,8 +585,10 @@ namespace wc {
 
             if (data) {
                 VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-                sampler.magFilter = VK_FILTER_LINEAR;
-                sampler.minFilter = VK_FILTER_LINEAR;
+                VkFilter filter = VK_FILTER_LINEAR;
+                if (width <= 128 || height <= 128) filter = VK_FILTER_NEAREST;
+                sampler.magFilter = filter;
+                sampler.minFilter = filter;
                 sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
                 sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
                 sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
@@ -585,7 +604,6 @@ namespace wc {
 
             delete data;
         }
-
 
         operator ImTextureID () { return (ImTextureID)imageID; }
 

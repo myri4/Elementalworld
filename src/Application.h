@@ -12,6 +12,15 @@ namespace wc {
 
 		wc::DescriptorPool imguiPool;
 
+		ImVec2 scaleRes(ImVec2 position) {
+			const ImVec2 malenRes = ImVec2(1920, 1080);
+			ImVec2 windowRes = ImVec2(window.GetSize().x, window.GetSize().y);
+			ImVec2 finalPos;
+			finalPos.x = position.x / malenRes.x * windowRes.x;
+			finalPos.y = position.y / malenRes.y * windowRes.y;
+			return finalPos;
+		}
+
 		//----------------------------------------------------------------------------------------------------------------------
 		bool IsEngineOK() { return window.isOpen(); }
 		//----------------------------------------------------------------------------------------------------------------------
@@ -85,6 +94,7 @@ namespace wc {
 
 			ImGuiIO& io = ImGui::GetIO();
 			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+			io.IniFilename = nullptr;
 			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 			//io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
 			//this initializes the core structures of imgui
@@ -115,7 +125,6 @@ namespace wc {
 			mode = 0;
 			world.Join("25.32.4.119", "321");
 		}
-		VkDescriptorSet imageID;
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnUpdate() {
 			deltaTime = deltaTimer.restart();
@@ -128,6 +137,7 @@ namespace wc {
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
 
+			//ImGui::ShowMetricsWindow();
 			ImGui::Render();
 
 
