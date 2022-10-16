@@ -7,9 +7,21 @@
 #include <FastNoise/FastNoiseLite.h>
 #include "../entities/Player.h"
 #include "../Game Mechanics/Model/Animation.h"
-#include "../Game Mechanics/LineBatcher.h"
 #include "../Game Mechanics/CommandParser.h"
+<<<<<<< Updated upstream
 #include <Utils/Memory.h>
+=======
+
+#include <wc/Utils/Memory.h>
+#include <wc/Framebuffer.h>
+#include <wc/Utils/DeletionQueue.h>
+#include <wc/Maths/Frustum.h>
+
+#include "../Rendering/AssetManager.h"
+#include "../Rendering/LineBatcher.h"
+#include "../Rendering/Renderer2D.h"
+#include "../Rendering/Renderer3D.h"
+>>>>>>> Stashed changes
 
 namespace wc {
 	enum class GameMsg : uint32_t
@@ -378,6 +390,7 @@ namespace wc {
 
 		void CreateScreen() {
 			// Creating the screen framebuffer
+<<<<<<< Updated upstream
 			gl::TextureProps scrProps;
 			scrProps.internalFormat = GL_RGBA32F;
 			scrProps.min_filter = GL_LINEAR_MIPMAP_LINEAR;
@@ -392,6 +405,51 @@ namespace wc {
 			screen.addTexture(scrTexture);
 
 			bloomTexSize = glm::ivec2(scrProps.Width, scrProps.Height) / 2;
+=======
+			wc::AttachmentCreateInfo attachmentInfo = {};
+			attachmentInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT; // GL_RGBA32F
+			attachmentInfo.width = window.GetSize().x;
+			attachmentInfo.height = window.GetSize().y;
+			attachmentInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+			uint32_t attachment = framebuffer.addAttachment(attachmentInfo);
+			
+			wc::AttachmentCreateInfo depthAttachmentInfo = {};
+			depthAttachmentInfo.format = RendererContext::GetDepthBuffer().GetFormat();
+			depthAttachmentInfo.width = window.GetSize().x;
+			depthAttachmentInfo.height = window.GetSize().y;
+			depthAttachmentInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+			framebuffer.addAttachment(depthAttachmentInfo);
+			
+			framebuffer.Create(window.GetSize());
+			
+			scrTexture.Create(framebuffer.attachments[attachment].image, framebuffer.attachments[attachment].view);
+			finalImage.Create(window.GetSize(), VK_FORMAT_R32G32B32A32_SFLOAT, 4, false, VK_IMAGE_USAGE_STORAGE_BIT);
+
+			finalImage.GetImage().layout = VK_IMAGE_LAYOUT_GENERAL;
+			UploadContext::immediate_submit([&](VkCommandBuffer cmd) {finalImage.GetImage().setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL); });
+			VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+			
+			sampler.magFilter = VK_FILTER_LINEAR;
+			sampler.minFilter = VK_FILTER_LINEAR;
+			sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+			sampler.minLod = 0.f;
+			sampler.maxLod = 0.25f;
+			sampler.compareEnable = false;
+			sampler.anisotropyEnable = false;
+			sampler.mipLodBias = 0.f;
+			
+			scrTexture.SetSamplerInfo(sampler);
+			finalImage.SetSamplerInfo(sampler);
+			render_interface.AddTextureFramebuffer(finalImage);
+
+
+
+
+			bloomTexSize = glm::ivec2(window.GetSize().x, window.GetSize().y) / 2;
+>>>>>>> Stashed changes
 			bloomTexSize += glm::ivec2(m_BloomComputeWorkGroupSize - bloomTexSize.x % m_BloomComputeWorkGroupSize, m_BloomComputeWorkGroupSize - bloomTexSize.y % m_BloomComputeWorkGroupSize);
 			mips = scrTexture.GetMipLevelCount() - 4;
 			gl::TextureProps bloomProps;

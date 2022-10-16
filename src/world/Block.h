@@ -8,10 +8,16 @@
 #include <Utils/Log.h>
 #include "../Game Mechanics/Item.h"
 #include <magic_enum.hpp>
+<<<<<<< Updated upstream
 #include <Utils/List.h>
 #include <Utils/YAML.h>
 #include <sol/sol.hpp>
 #include <GUI/AssetManager.h>
+=======
+#include <wc/Utils/List.h>
+#include <wc/Utils/YAML.h>
+#include "../Rendering/AssetManager.h"
+>>>>>>> Stashed changes
 #include "../Globals.h"
 
 namespace wc{
@@ -21,8 +27,8 @@ enum ConnectionType : uint8_t { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT,
 	CANT_CONNECT, AIR, CUSTOM_MODEL, NON_EXISTENT};
 enum class BlockTexture : uint8_t { RIGHT, TOP, FRONT, LEFT, BOTTOM, BACK, LENGTH };
 
-const uint8_t WC_MODEL_BIT = 0x1;
-const uint8_t WC_CULL_BIT = 0x2;
+const uint8_t WC_MODEL_BIT = 0b00000001;
+const uint8_t WC_CULL_BIT = 0b00000010;
 
 struct BlockMesh { // @TODO: Improve
 	gl::DrawElementsIndirectCommand cmd;

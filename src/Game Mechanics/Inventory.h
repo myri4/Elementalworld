@@ -1,6 +1,10 @@
 #pragma once
 #include "Item.h"
+<<<<<<< Updated upstream
 #include <GUI/AssetManager.h>
+=======
+#include "../Rendering/AssetManager.h"
+>>>>>>> Stashed changes
 
 namespace wc {
 

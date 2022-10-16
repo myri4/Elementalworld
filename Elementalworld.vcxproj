@@ -313,11 +313,16 @@
     <ClInclude Include="src\Game Mechanics\CommandParser.h" />
     <ClInclude Include="src\Game Mechanics\Inventory.h" />
     <ClInclude Include="src\Game Mechanics\Item.h" />
-    <ClInclude Include="src\Game Mechanics\LineBatcher.h" />
+    <ClInclude Include="src\Rendering\LineBatcher.h" />
     <ClInclude Include="src\Game Mechanics\Model\Animation.h" />
     <ClInclude Include="src\Game Mechanics\Model\Bone.h" />
     <ClInclude Include="src\Game Mechanics\Model\Mesh.h" />
     <ClInclude Include="src\Game Mechanics\Model\Model.h" />
+<<<<<<< Updated upstream
+=======
+    <ClInclude Include="src\Rendering\PostProcesser.h" />
+    <ClInclude Include="src\Rendering\Renderer3D.h" />
+>>>>>>> Stashed changes
     <ClInclude Include="src\Globals.h" />
     <ClInclude Include="src\world\Biome.h" />
     <ClInclude Include="src\world\Block.h" />
@@ -352,6 +357,27 @@
     <ClInclude Include="vendor\Include\Utils\Time.h" />
     <ClInclude Include="vendor\Include\Utils\Window.h" />
     <ClInclude Include="vendor\Include\Utils\YAML.h" />
+<<<<<<< Updated upstream
+=======
+    <ClInclude Include="vendor\Include\vk\Buffer.h" />
+    <ClInclude Include="vendor\Include\vk\Commands.h" />
+    <ClInclude Include="vendor\Include\vk\Descriptors.h" />
+    <ClInclude Include="vendor\Include\vk\Images.h" />
+    <ClInclude Include="vendor\Include\vk\Pipeline.h" />
+    <ClInclude Include="vendor\Include\vk\RendererContext.h" />
+    <ClInclude Include="vendor\Include\vk\RendererObject.h" />
+    <ClInclude Include="vendor\Include\vk\Renderpass.h" />
+    <ClInclude Include="vendor\Include\vk\Synchronization.h" />
+    <ClInclude Include="vendor\Include\wc\Framebuffer.h" />
+    <ClInclude Include="src\Rendering\AssetManager.h" />
+    <ClInclude Include="src\Rendering\Renderer2D.h" />
+    <ClInclude Include="vendor\Include\wc\Maths\AssimpGLMHelpers.h" />
+    <ClInclude Include="vendor\Include\wc\Maths\Camera.h" />
+    <ClInclude Include="vendor\Include\wc\Maths\Frustum.h" />
+    <ClInclude Include="vendor\Include\wc\Shader.h" />
+    <ClInclude Include="vendor\Include\vk\Initializers.h" />
+    <ClInclude Include="vendor\Include\vk\VulkanContext.h" />
+>>>>>>> Stashed changes
     <ClInclude Include="vendor\Include\wc\Model\Animation.h" />
     <ClInclude Include="vendor\Include\wc\Model\Bone.h" />
     <ClInclude Include="vendor\Include\wc\Model\Mesh.h" />
