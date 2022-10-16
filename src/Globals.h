@@ -21,7 +21,7 @@ using MeshID = uint32_t;
 std::string resourceName = "default";
 
 //@TODO: REMOVE
-enum MenuMode { GAME, INVENTORY, MAINMENU, SETTINGS, MULTIPLAYER, ESCMENU };
+enum MenuMode { GAME, INVENTORY, MAINMENU, SETTINGS, MULTIPLAYER, ESCMENU, WORLD_SELECTION, WORLD_CREATION};
 uint32_t mode = MenuMode::MAINMENU;
 
 uint32_t convertColor(const glm::vec4& color) {

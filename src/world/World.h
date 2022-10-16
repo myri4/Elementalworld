@@ -52,7 +52,7 @@ namespace wc {
 		// Graphics
 		LineBatcher lineBatcher;
 
-		uint32_t crosshair; // Temp
+		ImGuiTexture crosshair;
 
 		float rotateSpeed = 1.f * 0.6f; // one cycle is one unit (in minutes)
 		float angle = 0.f;
@@ -104,8 +104,7 @@ namespace wc {
 		uint32_t localPlayerID = 0;
 		std::unordered_map<uint32_t, PlayerDescription> players;
 
-		// Data managing
-		std::string worldName = "New world";
+		
 		//Animation animation;
 		Model model;
 		wc::Buffer animationBuffer; // ubo
@@ -196,6 +195,9 @@ namespace wc {
 		bool renderGUI = true;
 		Player p;
 
+		// Data managing
+		std::string worldName = "New world";
+
 		void Create(const glm::vec2& windowSize) {						
 			sceneDataBuffer.Create(sizeof(SceneData), wc::UNIFORM_BUFFER); // 0
 			delQueue.push_function([=] { sceneDataBuffer.Destroy(); });
@@ -277,6 +279,7 @@ namespace wc {
 				delQueue.push_function([=] { compositeShader.Destroy(); });
 			}
 			
+
 			sol::state worldGenState;
 			worldGenState.new_usertype<FastNoiseLite>("Noise", sol::constructors<void()>(),
 				"SetOctaves", &FastNoiseLite::SetFractalOctaves,
@@ -407,8 +410,7 @@ namespace wc {
 #endif
 
 			//model.Create("resourcepacks/default/models/player_model.obj", screen.renderPass, windowSize);
-			glm::ivec2 cSize = glm::ivec2(0);
-			render_interface.LoadTexture(crosshair, cSize, "resourcepacks/default/textures/misc/cursor.png");
+			crosshair.Load("resourcepacks/default/textures/misc/cursor.png");
 			//animation.Create("resourcepacks/default/models/dancing_vampire.dae", model);
 			
 			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 0.891f, 0.796f, 0.f)));
@@ -430,6 +432,7 @@ namespace wc {
 			if (multiPlayer) clientInstance.Disconnect();
 			else SaveWorld();
 			delQueue.flush();
+			crosshair.Destroy();
 		}
 
 		// Common blocks
@@ -816,9 +819,54 @@ namespace wc {
 			//compositeShader.Dispatch(glm::ceil((glm::vec2)sceneData.windowSize / glm::vec2(m_BloomComputeWorkGroupSize)));
 			//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			//
-			//render_interface.DrawQuad({ 0,0 }, sceneData.windowSize, finalImage);
+			//render_interface.DrawQuad({ 0,0 }, sceneData.windowSize, finalImage); 
 			render_interface.DrawQuad({ 0,0 }, window.GetSize(), 99);
-			if (renderGUI) render_interface.DrawQuad(((glm::vec2)window.GetSize() - 20.f) / 2.f, {20, 20}, crosshair);
+		}
+
+		void RenderImGuiDebugMenu(int fps) {
+			ImGui::SetNextWindowSize(ImVec2(100, 50));
+			ImGui::SetNextWindowPos(ImVec2(0, 0));
+			ImGui::Begin("Debug Menu", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
+			std::string text = "FPS: " + std::to_string(fps);
+			ImGui::Text(text.c_str());	
+			ImGui::End();
+		}
+
+		int a = 20;
+		void RenderImGuiCrosshair() {
+			ImGui::SetNextWindowPos(ImVec2(0, 0));
+			ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
+			ImGui::Begin("crosshair", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
+			ImGui::SetCursorPos(ImVec2((window.GetSize().x - a)/2, (window.GetSize().y - a) / 2));
+			ImGui::Image(crosshair, ImVec2(a, a));
+			ImGui::End();
+		}
+		char str[256];
+		int i = 0;
+		void RenderImGuiConsole() {
+			if (console) {
+				ImGui::SetNextWindowPos(ImVec2(0, 0));
+				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
+				ImGui::Begin("Console Log", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground);
+				ImGui::SetKeyboardFocusHere();
+				ImGui::InputText("Log", str, IM_ARRAYSIZE(str));
+				ImGui::End();
+			}
+		}
+
+		void RenderImGuiEscapeMenu() {
+			ImGui::SetNextWindowSize(ImVec2(400, 400));
+			ImGui::SetNextWindowPos(ImVec2((window.GetSize().x - 400)/2, (window.GetSize().y - 400) / 2));
+			ImGui::Begin("Elemental World", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+			ImGui::Text("Escape Menu");
+			if (ImGui::Button("Resume")) { 
+			mode = MenuMode::GAME; 
+			Mouse::SetMousePosition(glm::vec2(window.GetSize().x / 2, window.GetSize().y / 2));
+			}
+			if (ImGui::Button("Exit to Main Menu"))mode = MenuMode::MAINMENU;
+			if (ImGui::Button("Exit to Desktop")) window.close();
+
+			ImGui::End();
 		}
 
 		void ParseCommand(std::string& command) {
@@ -843,11 +891,11 @@ namespace wc {
 			command = "";
 		}
 
+		bool console = false;
 		void OnInput(const float& deltaTime) {
 			// MENU MANAGMENT
 
-			//if (/*!textbox.isSelected*/true)
-			{
+			if (!console) {
 				// GAMEPLAY
 				float yaw = glm::radians(p.rotation.x);
 				float yaw90 = glm::radians(p.rotation.x + 90.f);
@@ -941,9 +989,14 @@ namespace wc {
 			//	stbi_write_png("screenshots/screenshot.png", size.x, size.y, 4, data, size.x * 4);
 			//	delete[] data;
 			//}
-
+			int i = 0;
 			if (wc::Keyboard::getKey(wc::Keyboard::Key::F1)) renderGUI = !renderGUI;
+			if (Keyboard::getKey(Keyboard::Key::Enter) && console) {
+				WC_INFO(str);
+				memset(str, 0, sizeof(str));
 
+			}
+			if (Keyboard::getKey(Keyboard::Key::Enter)) console = !console;
 			// PLAYER RELATED
 			p.velocity += p.acceleration;
 			p.acceleration = { 0.f,0.f,0.f };
@@ -1048,15 +1101,8 @@ namespace wc {
 				}
 				vMapLastCheck = vMapCheck;
 			}
-		}		
+		}	
 
-	private:
-
-		std::string getChunkPath(const glm::ivec3& pos) {
-			return "worlds/" + worldName + "/Chunk data/Island 0/r." + std::to_string(pos.x) + "." + std::to_string(pos.y) + "." + std::to_string(pos.z) + ".ewr";
-		}
-
-		// SERIALIZATION/DESERIALIZATION
 		void CreateNewWorld(const std::string& name) {
 			worldName = name;
 			std::filesystem::create_directories("worlds/" + worldName + "/Chunk data/Island 0");
@@ -1075,12 +1121,22 @@ namespace wc {
 				UpdateNeighbours(chunkID);
 				TryToLoadChunk(chunkID);
 			}
-			if (!multiPlayer) {
+			if (!multiPlayer && std::filesystem::exists("worlds/" + worldName + "/world.properties")) {
 				YAML::Node config = YAML::LoadFile("worlds/" + worldName + "/world.properties");
 				if (config["time"]) angle = config["time"].as<float>();
 				if (config["seed"]) worldNoise.SetSeed(config["seed"].as<int>());
 			}
+			else WC_ERROR("ne moje da nameri fail!");
 		}
+
+	private:
+
+		std::string getChunkPath(const glm::ivec3& pos) {
+			return "worlds/" + worldName + "/Chunk data/Island 0/r." + std::to_string(pos.x) + "." + std::to_string(pos.y) + "." + std::to_string(pos.z) + ".ewr";
+		}
+
+		// SERIALIZATION/DESERIALIZATION
+
 
 		void SaveWorld() {
 			for (ChunkID chunkID = 0; chunkID < chunks.size(); chunkID++) SaveChunk(chunkID);

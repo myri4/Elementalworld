@@ -4,6 +4,7 @@
 #include "Buffer.h"
 #include "Initializers.h"
 #include <stb_image/stb_image.h>
+#include <imgui/imgui_impl_vulkan.h>
 
 namespace wc {
 
@@ -45,27 +46,33 @@ namespace wc {
         }
 
         void Destroy() { vkDestroyImageView(VulkanContext::GetDevice(), m_RendererID, nullptr); }
+
+        //void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_RendererID, name); }
+        //void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_RendererID, name.c_str()); }
     };
 
     class Image : public RendererObject<VkImage> {
         VmaAllocation allocation;
     public:
 
-        VkResult Create(const VkImageCreateInfo& dimg_info, const VmaAllocationCreateInfo& dimg_allocinfo) {
+        VkResult Create(const VkImageCreateInfo& dimg_info) {
+            VmaAllocationCreateInfo dimg_allocinfo = {};
+            dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
             return vmaCreateImage(VulkanContext::GetMemoryAllocator(), &dimg_info, &dimg_allocinfo, &m_RendererID, &allocation, nullptr);
         }
 
         void Destroy() {
-            if (m_RendererID != VK_NULL_HANDLE) vmaDestroyImage(VulkanContext::GetMemoryAllocator(), m_RendererID, allocation);
+            vmaDestroyImage(VulkanContext::GetMemoryAllocator(), m_RendererID, allocation);
         }
 
         void setLayout(
-            VkCommandBuffer cmdbuffer,
-            VkImageLayout oldImageLayout,
-            VkImageLayout newImageLayout,
-            VkImageSubresourceRange subresourceRange,
-            VkPipelineStageFlags srcStageMask,
-            VkPipelineStageFlags dstStageMask)
+            const VkCommandBuffer& cmdbuffer,
+            const VkImageLayout& oldImageLayout,
+            const VkImageLayout& newImageLayout,
+            const VkImageSubresourceRange& subresourceRange,
+            const VkPipelineStageFlags& srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            const VkPipelineStageFlags& dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)
         {
             // Create an image barrier object
             VkImageMemoryBarrier imageMemoryBarrier = init::imageMemoryBarrier();
@@ -182,12 +189,12 @@ namespace wc {
 
         // Fixed sub resource on first mip level and layer
         void setLayout(
-            VkCommandBuffer cmdbuffer,
-            VkImageAspectFlags aspectMask,
-            VkImageLayout oldImageLayout,
-            VkImageLayout newImageLayout,
-            VkPipelineStageFlags srcStageMask,
-            VkPipelineStageFlags dstStageMask)
+            const VkCommandBuffer& cmdbuffer,
+            const VkImageAspectFlags& aspectMask,
+            const VkImageLayout& oldImageLayout,
+            const VkImageLayout& newImageLayout,
+            const VkPipelineStageFlags& srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            const VkPipelineStageFlags& dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)
         {
             VkImageSubresourceRange subresourceRange = {};
             subresourceRange.aspectMask = aspectMask;
@@ -196,10 +203,43 @@ namespace wc {
             subresourceRange.layerCount = 1;
             setLayout(cmdbuffer, oldImageLayout, newImageLayout, subresourceRange, srcStageMask, dstStageMask);
         }
+
+        void insertImageMemoryBarrier(
+            const VkCommandBuffer& cmdbuffer,
+            const VkAccessFlags& srcAccessMask,
+            const VkAccessFlags& dstAccessMask,
+            const VkImageLayout& oldImageLayout,
+            const VkImageLayout& newImageLayout,
+            const VkPipelineStageFlags& srcStageMask,
+            const VkPipelineStageFlags& dstStageMask,
+            const VkImageSubresourceRange& subresourceRange)
+        {
+            VkImageMemoryBarrier imageMemoryBarrier = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+            imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageMemoryBarrier.srcAccessMask = srcAccessMask;
+            imageMemoryBarrier.dstAccessMask = dstAccessMask;
+            imageMemoryBarrier.oldLayout = oldImageLayout;
+            imageMemoryBarrier.newLayout = newImageLayout;
+            imageMemoryBarrier.image = m_RendererID;
+            imageMemoryBarrier.subresourceRange = subresourceRange;
+
+            vkCmdPipelineBarrier(
+                cmdbuffer,
+                srcStageMask,
+                dstStageMask,
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &imageMemoryBarrier);
+        }
+
+       // void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)m_RendererID, name); }
+       //void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)m_RendererID, name.c_str()); }
     };
 
-    class Sampler : public RendererObject<VkSampler> {
-    public:
+    struct Sampler : public RendererObject<VkSampler> {
+
         VkResult Create(const VkSamplerCreateInfo& create_info) {
             return vkCreateSampler(VulkanContext::GetDevice(), &create_info, nullptr, &m_RendererID);
         }
@@ -207,8 +247,11 @@ namespace wc {
         void Destroy() {
             vkDestroySampler(VulkanContext::GetDevice(), m_RendererID, nullptr);
         }
+
+        //void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_SAMPLER, (uint64_t)m_RendererID, name); }
+        //void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_SAMPLER, (uint64_t)m_RendererID, name.c_str()); }
     };
-#undef max
+
     class Texture {
         Image image;
         ImageView view;
@@ -218,21 +261,12 @@ namespace wc {
     public:
         VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        void Create(const glm::ivec2& size, const VkFormat& image_format = VK_FORMAT_R8G8B8A8_SRGB, const uint32_t& image_channels = 4, const bool& mipmapping = false) {
-            VkDeviceSize imageSize = size.x * size.y * image_channels;                     
+        void Create(const glm::ivec2& size, const VkFormat& image_format = VK_FORMAT_R8G8B8A8_SRGB, const uint32_t& image_channels = 4, const bool& mipmapping = false, const uint32_t& flags = 0) {
+            VkDeviceSize imageSize = size.x * size.y * image_channels;
 
             width = size.x;
             height = size.y;
             if (mipmapping) mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
-            else mipLevels = 1;
-
-            VkExtent3D imageExtent;
-            imageExtent.width = static_cast<uint32_t>(size.x);
-            imageExtent.height = static_cast<uint32_t>(size.y);
-            imageExtent.depth = 1;
-
-            VmaAllocationCreateInfo dimg_allocinfo = {};
-            dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
             //allocate and create the image
             VkImageCreateInfo info = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
@@ -240,18 +274,20 @@ namespace wc {
             info.imageType = VK_IMAGE_TYPE_2D;
 
             info.format = image_format;
-            info.extent = imageExtent;
+
+            info.extent.width = static_cast<uint32_t>(size.x);
+            info.extent.height = static_cast<uint32_t>(size.y);
+            info.extent.depth = 1;
 
             info.mipLevels = mipLevels;
             info.arrayLayers = 1;
             info.samples = VK_SAMPLE_COUNT_1_BIT;
             info.tiling = VK_IMAGE_TILING_OPTIMAL;
-            info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | flags;
 
-            image.Create(info, dimg_allocinfo);
+            image.Create(info);
 
-            auto mask = VK_IMAGE_ASPECT_COLOR_BIT;
-            view.Create(image_format, image, mask, VK_IMAGE_VIEW_TYPE_2D, mipLevels);
+            view.Create(image_format, image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, mipLevels);
         }
 
         void Create(const Image& img, const ImageView& imgView) {
@@ -271,19 +307,17 @@ namespace wc {
             stagingBuffer.Create(imageSize);
             stagingBuffer.SetData(data, imageSize);
 
-            auto mask = VK_IMAGE_ASPECT_COLOR_BIT;
-
             //transition image to transfer-receiver	
             UploadContext::immediate_submit([&](VkCommandBuffer cmd) {
                 //barrier the image into the transfer-receive layout
-                image.setLayout(cmd, mask, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+                image.setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 VkBufferImageCopy copyRegion = {};
                 copyRegion.bufferOffset = 0;
                 copyRegion.bufferRowLength = 0;
                 copyRegion.bufferImageHeight = 0;
 
-                copyRegion.imageSubresource.aspectMask = mask;
+                copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                 copyRegion.imageSubresource.mipLevel = 0;
                 copyRegion.imageSubresource.baseArrayLayer = 0;
                 copyRegion.imageSubresource.layerCount = mipLevels;
@@ -293,7 +327,7 @@ namespace wc {
                 vkCmdCopyBufferToImage(cmd, stagingBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
                 // @TODO: Fix pipelina stage
-                image.setLayout(cmd, mask, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+                image.setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
                 });
 
             stagingBuffer.Destroy();
@@ -311,7 +345,7 @@ namespace wc {
             VkDescriptorImageInfo imageInfo;
             imageInfo.sampler = sampler;
             imageInfo.imageView = view;
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageLayout = layout;
             return imageInfo;
         }
 
@@ -320,6 +354,10 @@ namespace wc {
             view.Destroy();
             sampler.Destroy();
         }
+
+        wc::Image& GetImage() { return image; }
+        wc::ImageView& GetImageView() { return view; }
+        wc::Sampler& GetSampler() { return sampler; }
     };
 
     bool loadTexture(const std::string& filepath, Texture& texture, const bool& mipmaps = false) {
@@ -341,7 +379,7 @@ namespace wc {
         ImageView view;
         Sampler sampler;
 
-        glm::ivec3 size = {32, 32, 40}; // width, height, maxTextures
+        glm::ivec3 size = { 32, 32, 40 }; // width, height, maxTextures
         uint32_t channels = 4;
     public:
 
@@ -354,9 +392,6 @@ namespace wc {
             imageExtent.width = static_cast<uint32_t>(size.x);
             imageExtent.height = static_cast<uint32_t>(size.y);
             imageExtent.depth = 1;
-
-            VmaAllocationCreateInfo dimg_allocinfo = {};
-            dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
             //allocate and create the image
 
@@ -373,7 +408,7 @@ namespace wc {
             createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
             createInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-            image.Create(createInfo, dimg_allocinfo);
+            image.Create(createInfo);
 
             VkImageViewCreateInfo viewInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
 
@@ -402,8 +437,6 @@ namespace wc {
             stagingBuffer.Create(imageSize);
             stagingBuffer.SetData(data, imageSize);
 
-            auto mask = VK_IMAGE_ASPECT_COLOR_BIT;
-
             //transition image to transfer-receiver	
             UploadContext::immediate_submit([&](VkCommandBuffer cmd) {
                 //barrier the image into the transfer-receive layout
@@ -425,7 +458,7 @@ namespace wc {
                 copyRegion.bufferRowLength = 0;
                 copyRegion.bufferImageHeight = 0;
 
-                copyRegion.imageSubresource.aspectMask = mask;
+                copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                 copyRegion.imageSubresource.mipLevel = 0;
                 copyRegion.imageSubresource.baseArrayLayer = textureID;
                 copyRegion.imageSubresource.layerCount = 1;
@@ -496,6 +529,9 @@ namespace wc {
             //allocate and create the image
             vmaCreateImage(VulkanContext::GetMemoryAllocator(), &dimg_info, &dimg_allocinfo, &m_RendererID, &allocation, nullptr);
 
+
+            //VulkanContext::SetObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)m_RendererID, "Depth buffer");
+
             return depthImageView.Create(VK_FORMAT_D32_SFLOAT, m_RendererID, VK_IMAGE_ASPECT_DEPTH_BIT);
         }
 
@@ -506,5 +542,51 @@ namespace wc {
 
         VkFormat GetFormat() const { return VK_FORMAT_D32_SFLOAT; }
         const VkImageView& GetImageView() const { return depthImageView; }
+    };
+
+    class ImGuiTexture {
+    private:
+        Texture texture;
+        VkDescriptorSet imageID;// = ImGui_ImplVulkan_AddTexture(sampler, );
+    public:
+
+        ImGuiTexture() = default;
+        ImGuiTexture(const Texture& tex) : texture(tex) {}
+
+        void Load(const std::string& filepath) {
+            int32_t width = 0, height = 0, fnrComponents;
+            auto data = stbi_load(filepath.c_str(), &width, &height, &fnrComponents, 0);
+
+            if (data) {
+                VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+                VkFilter filter = VK_FILTER_LINEAR;
+                if (width <= 128 || height <= 128) filter = VK_FILTER_NEAREST;
+                sampler.magFilter = filter;
+                sampler.minFilter = filter;
+                sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+
+                texture.Create(glm::ivec2(width, height));
+                texture.SetData(glm::ivec2(width, height), data);
+                texture.SetSamplerInfo(sampler);
+                imageID = ImGui_ImplVulkan_AddTexture(texture.GetSampler(), texture.GetImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            }
+            else
+                WC_ERROR("Could not find file at location {0}", filepath.c_str());
+
+            delete data;
+        }
+
+        void Load(const Texture& tex) {
+            texture = tex;
+        }
+
+        operator ImTextureID () { return (ImTextureID)imageID; }
+
+        void Destroy() {
+            texture.Destroy();
+        }
     };
 }
