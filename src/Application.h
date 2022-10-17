@@ -12,7 +12,7 @@ namespace wc {
 
 		wc::DescriptorPool imguiPool;
 
-		ImVec2 scaleRes(ImVec2 position) {
+		ImVec2 scaleRes(const ImVec2& position) {
 			const ImVec2 malenRes = ImVec2(1920, 1080);
 			ImVec2 windowRes = ImVec2(window.GetSize().x, window.GetSize().y);
 			ImVec2 finalPos;
@@ -31,7 +31,7 @@ namespace wc {
 			if (hasFocus) {
 				if (mode == MenuMode::GAME) world.OnInput(deltaTime);
 
-				Mouse::ShowMouse(false); // @TODO: rework		
+				window.ShowMouse(false); // @TODO: rework		
 			}
 		}
 		//----------------------------------------------------------------------------------------------------------------------

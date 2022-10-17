@@ -38,8 +38,6 @@
 #include <sol/sol.hpp>
 
 // GUI
-#include <wc/GUI/AssetManager.h>
-#include <wc/GUI/GUI.h>
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_vulkan.h>
 #include <imgui/imgui_impl_glfw.h>

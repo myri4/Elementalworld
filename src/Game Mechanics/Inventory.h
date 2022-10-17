@@ -1,6 +1,6 @@
 #pragma once
 #include "Item.h"
-#include <wc/GUI/AssetManager.h>
+#include "../Rendering/AssetManager.h"
 
 namespace wc {
 

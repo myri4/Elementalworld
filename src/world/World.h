@@ -1,21 +1,22 @@
 #pragma once
 
 #include <pch.h>
+#include "../Rendering/AssetManager.h"
 #include "Chunk.h"
 #include "Biome.h"
 #include <FastNoise/FastNoiseLite.h>
 #include "../entities/Player.h"
-#include "../Game Mechanics/Model/Animation.h"
-#include "../Game Mechanics/LineBatcher.h"
+#include "../Rendering/Model/Animation.h"
+#include "../Rendering/LineBatcher.h"
 #include "../Game Mechanics/CommandParser.h"
 
 #include <wc/Utils/Memory.h>
 #include <wc/Shader.h>
 #include <wc/Framebuffer.h>
 #include <wc/Utils/DeletionQueue.h>
-#include <wc/Maths/Frustum.h>
 
-#include "../Game Mechanics/Renderer3D.h"
+#include "../Rendering/Renderer2D.h"
+#include "../Rendering/Renderer3D.h"
 
 namespace wc {
 	enum class GameMsg : uint32_t
@@ -399,7 +400,7 @@ namespace wc {
 			sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 			sampler.minLod = 0.f;
-			sampler.maxLod = 0.f;
+			sampler.maxLod = 0.25f;
 			
 			scrTexture.SetSamplerInfo(sampler);
 			finalImage.SetSamplerInfo(sampler);
@@ -822,7 +823,7 @@ namespace wc {
 				if (p.rotation.x > 360.f) p.rotation.x = 0.f;
 				else if (p.rotation.x < 0.f) p.rotation.x = 360.f;
 
-				Mouse::SetMousePosition(t);
+				window.setCursorPos(t);
 			}
 
 			if (wc::Keyboard::getKey(wc::Keyboard::Key::F1)) renderGUI = !renderGUI;

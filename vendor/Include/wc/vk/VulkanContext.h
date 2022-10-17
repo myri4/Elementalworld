@@ -1,11 +1,9 @@
 #pragma once
 
 #include "../Utils/Window.h"
-#include "../Utils/NonCopyable.h"
 #include "RendererObject.h"
 #include <vma/vk_mem_alloc.h>
-#include <magic_enum.hpp>
-#include <set>
+#include <unordered_set>
 
 enum class Vendor : uint32_t {
 	AMD = 0x1002,
@@ -15,6 +13,8 @@ enum class Vendor : uint32_t {
 	Qualcomm = 0x5143,
 	INTEL = 0x8086
 };
+
+const bool enableValidationLayers = false;
 
 namespace VulkanContext {
 	namespace {
@@ -58,19 +58,6 @@ namespace VulkanContext {
 			return true;
 		}
 
-		//@TODO: Remove
-		const char* toVendor(const uint32_t& id) {
-			switch ((Vendor)id) {
-				case Vendor::AMD: return "AMD";
-				case Vendor::ImgTec: return "ImgTec";
-				case Vendor::NVIDIA: return "NVIDIA";
-				case Vendor::ARM: return "ARM";
-				case Vendor::Qualcomm: return "Qualcomm";
-				case Vendor::INTEL: return "INTEL";
-			}
-			return "Unknown";
-		}
-
 		PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabel = nullptr;
 		PFN_vkCmdInsertDebugUtilsLabelEXT vkCmdInsertDebugUtilsLabel = nullptr;
 		PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabel = nullptr;
@@ -80,8 +67,6 @@ namespace VulkanContext {
 		PFN_vkQueueEndDebugUtilsLabelEXT vkQueueEndDebugUtilsLabel = nullptr;
 
 		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectName = nullptr;
-
-
 	}
 
 	VkInstance GetInstance() { return instance; }
@@ -109,7 +94,7 @@ namespace VulkanContext {
 		label.color[1] = color[1];
 		label.color[2] = color[2];
 		label.color[3] = color[3];
-		vkCmdBeginDebugUtilsLabel(command_buffer, &label);
+		if (enableValidationLayers) vkCmdBeginDebugUtilsLabel(command_buffer, &label);
 	}
 
 	void InsertLabel(const VkCommandBuffer& command_buffer, const char* label_name, const glm::vec4& color = glm::vec4(1.f))
@@ -120,10 +105,10 @@ namespace VulkanContext {
 		label.color[1] = color[1];
 		label.color[2] = color[2];
 		label.color[3] = color[3];
-		vkCmdInsertDebugUtilsLabel(command_buffer, &label);
+		if (enableValidationLayers) vkCmdInsertDebugUtilsLabel(command_buffer, &label);
 	}
 
-	void EndLabel(VkCommandBuffer command_buffer) { vkCmdEndDebugUtilsLabel(command_buffer); }
+	void EndLabel(VkCommandBuffer command_buffer) { if (enableValidationLayers) vkCmdEndDebugUtilsLabel(command_buffer); }
 
 
 	void BeginLabel(const VkQueue& queue, const char* label_name, const glm::vec4& color = glm::vec4(1.f))
@@ -134,7 +119,7 @@ namespace VulkanContext {
 		label.color[1] = color[1];
 		label.color[2] = color[2];
 		label.color[3] = color[3];
-		vkQueueBeginDebugUtilsLabel(queue, &label);
+		if (enableValidationLayers) vkQueueBeginDebugUtilsLabel(queue, &label);
 	}
 
 	void InsertLabel(const VkQueue& queue, const char* label_name, const glm::vec4& color = glm::vec4(1.f))
@@ -145,7 +130,7 @@ namespace VulkanContext {
 		label.color[1] = color[1];
 		label.color[2] = color[2];
 		label.color[3] = color[3];
-		vkQueueInsertDebugUtilsLabel(queue, &label);
+		if (enableValidationLayers) vkQueueInsertDebugUtilsLabel(queue, &label);
 	}
 
 	void EndLabel(const VkQueue& queue) { vkQueueEndDebugUtilsLabel(queue); }
@@ -156,7 +141,7 @@ namespace VulkanContext {
 		name_info.objectType = object_type;
 		name_info.objectHandle = object_handle;
 		name_info.pObjectName = object_name;
-		vkSetDebugUtilsObjectName(device, &name_info);
+		if (enableValidationLayers) vkSetDebugUtilsObjectName(device, &name_info);
 	}
 
 
@@ -164,7 +149,6 @@ namespace VulkanContext {
 	const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 	const std::vector<const char*> deviceExtensions = {	VK_KHR_SWAPCHAIN_EXTENSION_NAME	};
 
-	const bool enableValidationLayers = true;
 
 	struct SwapChainSupportDetails {
 		VkSurfaceCapabilitiesKHR capabilities;
@@ -228,22 +212,12 @@ namespace VulkanContext {
 		std::vector<VkLayerProperties> availableLayers(layerCount);
 		vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-		for (const char* layerName : validationLayers) {
-			bool layerFound = false;
+		for (const char* layerName : validationLayers) 
+			for (const auto& layerProperties : availableLayers) 
+				if (strcmp(layerName, layerProperties.layerName) == 0) 
+					return true;	
 
-			for (const auto& layerProperties : availableLayers) {
-				if (strcmp(layerName, layerProperties.layerName) == 0) {
-					layerFound = true;
-					break;
-				}
-			}
-
-			if (!layerFound) {
-				return false;
-			}
-		}
-
-		return true;
+		return false;
 	}
 
 	void createInstance() {
@@ -253,7 +227,7 @@ namespace VulkanContext {
 			WC_ERROR("Validation layers requested, but not available!");		
 
 		VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
-		appInfo.pApplicationName = "Hello Triangle";
+		appInfo.pApplicationName = "WC Application";
 		appInfo.applicationVersion = VK_MAKE_VERSION(1, 1, 0);
 		appInfo.pEngineName = "WC Engine";
 		appInfo.engineVersion = VK_MAKE_VERSION(1, 1, 0);
@@ -274,11 +248,6 @@ namespace VulkanContext {
 			populateDebugMessengerCreateInfo(debugCreateInfo);
 			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 		}
-		else {
-			createInfo.enabledLayerCount = 0;
-
-			createInfo.pNext = nullptr;
-		}
 
 		if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) 
 			WC_ERROR("Failed to create instance!");		
@@ -291,7 +260,7 @@ namespace VulkanContext {
 		std::vector<VkExtensionProperties> availableExtensions(extensionCount);
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
-		std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+		std::unordered_set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
 		for (const auto& extension : availableExtensions) 
 			requiredExtensions.erase(extension.extensionName);		
@@ -433,7 +402,7 @@ namespace VulkanContext {
 		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+		std::unordered_set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 		float queuePriority = 1.0f;
 		for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -473,12 +442,12 @@ namespace VulkanContext {
 		transferQueue.GetDeviceQueue(indices.transferFamily.value());
 	}
 
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, wc::Window& window) {
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
 		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) 
 			return capabilities.currentExtent;		
 		else {
 			int width, height;
-			glfwGetFramebufferSize(window, &width, &height);
+			glfwGetFramebufferSize(wc::window, &width, &height);
 
 			VkExtent2D actualExtent = {
 				static_cast<uint32_t>(width),
@@ -497,7 +466,7 @@ namespace VulkanContext {
 
 		VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 		VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-		VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, window);
+		VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 
 		uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
 		if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) 
@@ -581,23 +550,24 @@ namespace VulkanContext {
 		allocatorInfo.instance = instance;
 		vmaCreateAllocator(&allocatorInfo, &allocator);
 
+		if (enableValidationLayers) {
+			vkCmdBeginDebugUtilsLabel = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT");
+			vkCmdInsertDebugUtilsLabel = (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdInsertDebugUtilsLabelEXT");
+			vkCmdEndDebugUtilsLabel = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT");
 
-		 vkCmdBeginDebugUtilsLabel = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT");
-		 vkCmdInsertDebugUtilsLabel = (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdInsertDebugUtilsLabelEXT");
-		 vkCmdEndDebugUtilsLabel = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT");
+			vkQueueBeginDebugUtilsLabel = (PFN_vkQueueBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueBeginDebugUtilsLabelEXT");
+			vkQueueInsertDebugUtilsLabel = (PFN_vkQueueInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueInsertDebugUtilsLabelEXT");
+			vkQueueEndDebugUtilsLabel = (PFN_vkQueueEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueEndDebugUtilsLabelEXT");
 
-		 vkQueueBeginDebugUtilsLabel = (PFN_vkQueueBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueBeginDebugUtilsLabelEXT");
-		 vkQueueInsertDebugUtilsLabel = (PFN_vkQueueInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueInsertDebugUtilsLabelEXT");
-		 vkQueueEndDebugUtilsLabel = (PFN_vkQueueEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueEndDebugUtilsLabelEXT");
-
-		 vkSetDebugUtilsObjectName = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
+			vkSetDebugUtilsObjectName = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
+		}
 	}
 
 	void Destroy() {
-		vmaDestroyAllocator(allocator);
-
-		vkDestroyDevice(device, nullptr);
 		vkDestroySurfaceKHR(instance, wc::window.surface, nullptr);
+
+		vmaDestroyAllocator(allocator);
+		vkDestroyDevice(device, nullptr);
 
 		auto vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 		if (vkDestroyDebugUtilsMessengerEXT != nullptr)

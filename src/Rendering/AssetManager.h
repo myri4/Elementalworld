@@ -1,5 +1,5 @@
 #pragma once
-#include "../vk/Images.h"
+#include <wc/vk/Images.h>
 
 namespace wc {
 
@@ -9,7 +9,7 @@ public:
 	void Create(const uint32_t& arraySize) {
 		const uint32_t width = 128;
 		const uint32_t height = 128;
-		texArr.Create({ width, height ,arraySize });
+		texArr.Create({ width, height ,arraySize }, VK_FORMAT_R8G8B8A8_UNORM);
 		textureMaterialArr.Create({ width, height ,arraySize });
 
 		uint32_t* data = new uint32_t[width * height];

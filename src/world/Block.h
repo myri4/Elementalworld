@@ -11,7 +11,7 @@
 #include <wc/Utils/List.h>
 #include <wc/Utils/YAML.h>
 #include <sol/sol.hpp>
-#include <wc/GUI/AssetManager.h>
+#include "../Rendering/AssetManager.h"
 #include "../Globals.h"
 
 namespace wc{

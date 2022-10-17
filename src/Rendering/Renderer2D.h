@@ -2,11 +2,11 @@
 
 #include <glm/glm.hpp>
 
-#include "../vk/Buffer.h"
-#include "../vk/Images.h"
-#include "../Shader.h"
-#include "../vk/Renderpass.h"
-#include "../vk/RendererContext.h"
+#include <wc/vk/Buffer.h>
+#include <wc/vk/Images.h>
+#include <wc/Shader.h>
+#include <wc/vk/Renderpass.h>
+#include <wc/vk/RendererContext.h>
 
 #include <glm/gtc/type_ptr.hpp>
 

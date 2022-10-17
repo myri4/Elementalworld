@@ -1,6 +1,5 @@
 #pragma once
 #include <pch.h>
-#include <wc/Maths/Frustum.h>
 
 
 namespace wc {

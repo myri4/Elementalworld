@@ -1,6 +1,6 @@
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
+#include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <glm/glm.hpp>
@@ -359,13 +359,6 @@ private:
     }
 
 	namespace Mouse {
-		void SetMousePosition(const glm::ivec2& pos) {
-            window.setCursorPos(pos);
-		}
-
-		void SetMousePosition(const int& x, const int& y) {
-			SetMousePosition({ x,y });
-		}
 
 		glm::ivec2 GetMousePos() {			
             return window.getCursorPos() + window.GetPos();
@@ -373,10 +366,6 @@ private:
 
 		glm::ivec2 GetMousePosToWindow() {
 			return window.getCursorPos();
-		}
-
-		void ShowMouse(const bool& show) {
-			window.ShowMouse(show);
 		}
 
         int getMouse(const int& key) {

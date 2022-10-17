@@ -184,7 +184,7 @@
     <ClInclude Include="src\Game Mechanics\Item.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game Mechanics\LineBatcher.h">
+    <ClInclude Include="src\Rendering\LineBatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\entities\Entity.h">
@@ -268,16 +268,16 @@
     <ClInclude Include="vendor\Include\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game Mechanics\Model\Animation.h">
+    <ClInclude Include="src\Rendering\Model\Animation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game Mechanics\Model\Bone.h">
+    <ClInclude Include="src\Rendering\Model\Bone.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game Mechanics\Model\Mesh.h">
+    <ClInclude Include="src\Rendering\Model\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game Mechanics\Model\Model.h">
+    <ClInclude Include="src\Rendering\Model\Model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Globals.h">
@@ -394,19 +394,13 @@
     <ClInclude Include="vendor\Include\wc\Maths\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\Maths\Frustum.h">
+    <ClInclude Include="src\Rendering\AssetManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\GUI\AssetManager.h">
+    <ClInclude Include="src\Rendering\Renderer2D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\GUI\GUI.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game Mechanics\PostProcesser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game Mechanics\Renderer3D.h">
+    <ClInclude Include="src\Rendering\Renderer3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
