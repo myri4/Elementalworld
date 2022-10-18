@@ -14,7 +14,7 @@ enum class Vendor : uint32_t {
 	INTEL = 0x8086
 };
 
-const bool enableValidationLayers = false;
+const bool enableValidationLayers = true;
 
 namespace VulkanContext {
 	namespace {

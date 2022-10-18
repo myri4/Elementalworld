@@ -391,27 +391,30 @@ namespace wc {
 
 			finalImage.GetImage().layout = VK_IMAGE_LAYOUT_GENERAL;
 			UploadContext::immediate_submit([&](VkCommandBuffer cmd) {finalImage.GetImage().setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL); });
+			
+			bloomTexSize = glm::ivec2(window.GetSize().x, window.GetSize().y) / 2;
+			bloomTexSize += glm::ivec2(m_BloomComputeWorkGroupSize - bloomTexSize.x % m_BloomComputeWorkGroupSize, m_BloomComputeWorkGroupSize - bloomTexSize.y % m_BloomComputeWorkGroupSize);
+			mips = scrTexture.GetImage().GetMipLevelCount() - 4;
+			
 			VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 			
 			sampler.magFilter = VK_FILTER_LINEAR;
 			sampler.minFilter = VK_FILTER_LINEAR;
+			sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 			sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+			sampler.compareOp = VK_COMPARE_OP_NEVER;
 			sampler.minLod = 0.f;
-			sampler.maxLod = 0.25f;
-			
+			sampler.maxLod = float(mips);
+			sampler.maxAnisotropy = 1.0;
+			sampler.anisotropyEnable = false;
+
 			scrTexture.SetSamplerInfo(sampler);
 			finalImage.SetSamplerInfo(sampler);
+			finalImage.GetSampler().SetName("finalImageSampler");
 			render_interface.AddTextureFramebuffer(finalImage);
 
-
-
-
-			bloomTexSize = glm::ivec2(window.GetSize().x, window.GetSize().y) / 2;
-			bloomTexSize += glm::ivec2(m_BloomComputeWorkGroupSize - bloomTexSize.x % m_BloomComputeWorkGroupSize, m_BloomComputeWorkGroupSize - bloomTexSize.y % m_BloomComputeWorkGroupSize);
-			mips = scrTexture.GetImage().GetMipLevelCount() - 4;
 
 			bloomImageSampler.Create(sampler);
 			for (int i = 0; i < 3; i++) {
