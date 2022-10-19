@@ -132,73 +132,7 @@ namespace wc {
 			
 			blockTransformBuffer.Create(sizeof(glm::vec4) * chunks.size() * chunkVolume, wc::STORAGE_BUFFER); // 4
 			delQueue.push_function([=] { blockTransformBuffer.Destroy(); });			
-			
-			assets.Create(40);
-			delQueue.push_function([] { assets.Destroy(); });
-
-			{
-				wc::ShaderCreateInfo createInfo;
-				createInfo.vertexShader = "resourcepacks/" + resourceName + "/shaders/chunkShader.vert";
-				createInfo.fragmentShader = "resourcepacks/" + resourceName + "/shaders/chunkShader.frag";
-				createInfo.windowSize = windowSize;
-				createInfo.renderPass = framebuffer.renderPass;
-				createInfo.vertexDescription = Vertex::get_vertex_description();
-				createInfo.blending = true;
-				createInfo.depthTest = true;
-				createInfo.invertY = true; // doesnt matter
-				Renderer3D::shader.Create(createInfo);
-
-				wc::DescriptorWriter writer;
-				writer.dstSet = Renderer3D::shader.descriptorSet;
-				writer.write_buffer(0, sceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-					.write_buffer(1, lightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-					.write_buffer(2, materialsBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-					.write_buffer(3, blockTransformBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-					.write_image(4, assets.texArr.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-					.write_image(5, assets.textureMaterialArr.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-
-				wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
-			}
-			{
-				wc::ShaderCreateInfo createInfo;
-				createInfo.vertexShader = "resourcepacks/" + resourceName + "/shaders/skybox.vert";
-				createInfo.fragmentShader = "resourcepacks/" + resourceName + "/shaders/skybox.frag";
-				createInfo.windowSize = windowSize;
-				createInfo.renderPass = framebuffer.renderPass;
-				wc::VertexInputDescription desc; // empty
-				createInfo.vertexDescription = desc;
-				createInfo.blending = false;
-				createInfo.depthTest = false;
-				createInfo.invertY = true; // doesnt matter
-				skyShader.Create(createInfo);
-
-				wc::DescriptorWriter writer;
-				writer.dstSet = skyShader.descriptorSet;
-				writer.write_buffer(0, sceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-					.write_buffer(1, lightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-
-				wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
-
-				delQueue.push_function([=] { skyShader.Destroy(); });
-			}
-			CreateBloomPipeline();
-			{
-				compositeShader.Create("resourcepacks/" + resourceName + "/shaders/composite.comp");
-
-				wc::DescriptorWriter writer;
-				writer.dstSet = compositeShader.descriptorSet;
-				writer
-					.write_image(0, finalImage.GetDescriptorData(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-					.write_image(1, scrTexture.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-					.write_image(2, bloomBuffers[2].GetDescriptorData(bloomImageSampler, 0, VK_IMAGE_LAYOUT_GENERAL), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-					;
-				
-				wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
-
-				delQueue.push_function([=] { compositeShader.Destroy(); });
-			}
-
-			
+						
 			sol::state worldGenState;
 			worldGenState.new_usertype<FastNoiseLite>("Noise", sol::constructors<void()>(),
 				"SetOctaves", &FastNoiseLite::SetFractalOctaves,
@@ -229,7 +163,10 @@ namespace wc {
 			std::string diffusePath = "resourcepacks/" + resourceName + "/textures/block/diffuse/";
 			std::string materialPath = "resourcepacks/" + resourceName + "/textures/block/materials/";
 			
+			Renderer3D::CreateMesh(MaxVertexCount * chunks.size(), MaxIndexCount * chunks.size());
 			//Loading blocks
+			std::vector<Vertex> modelVertices;
+			std::vector<uint32_t> modelIndices;
 			for (auto& p : std::filesystem::directory_iterator("scripts/blockScripts")) {
 				std::string filename = p.path().stem().string();
 				if (p.is_regular_file()) { //AddBlockScript
@@ -275,28 +212,26 @@ namespace wc {
 						std::string path = blockState["modelPath"].as<std::string>();
 						block.meshID = blockMeshes.size();
 						uint32_t id = block.meshID;
-						blockMeshes[id].Load("resourcepacks/" + resourceName + "/models/" + path, block.materialID);
-						delQueue.push_function([=] { blockMeshes[id].Destroy(); });
+						blockMeshes[id].Load("resourcepacks/" + resourceName + "/models/" + path, block.materialID, modelVertices, modelIndices);
 						blockMeshes.counter++;
 					}
 			
 					blockData.push_back(block);
 				}
 			}
-			assets.Free();
+			assets.LoadAll();
 			matBuffer.Unmap();
 			materialsBuffer.SetData(matBuffer, materialData.byte_size());
 			matBuffer.Destroy();
 			
 			lineBatcher.Create(framebuffer.renderPass, sceneDataBuffer.GetDescriptorInfo());
-			delQueue.push_function([=] { lineBatcher.Destroy(); });
 
 			indirectBuffer.Create(chunks.size() * sizeof(VkDrawIndexedIndirectCommand), wc::INDIRECT_BUFFER);
 			delQueue.push_function([=] { indirectBuffer.Destroy(); });
 
-			Renderer3D::CreateMesh(MaxVertexCount * chunks.size(), MaxIndexCount * chunks.size());
 			Renderer3D::BuildBuffers();
-			delQueue.push_function([=] { Renderer3D::Destroy(); });
+			Renderer3D::vertexBuffer.SetData(modelVertices.data(), sizeof(Vertex) * modelVertices.size(), sizeof(Vertex) * MaxVertexCount * chunks.size());
+			Renderer3D::indexBuffer.SetData(modelIndices.data(), sizeof(uint32_t) * modelIndices.size(), sizeof(uint32_t) * MaxIndexCount * chunks.size());
 
 						
 			lights.Create(maxLights * sizeof(Light));
@@ -338,14 +273,80 @@ namespace wc {
 			sand = getBlockID("sand");
 			oak = getBlockID("wood");
 			leaves = getBlockID("leaves");
-			coal = getBlockID("campfire");
+			coal = getBlockID("coal_ore");
 			dirt = getBlockID("dirt");
+			campfire = getBlockID("campfire");
+			murshroom = getBlockID("murshroom");
+			blockHolding = campfire;
+
+			{
+				wc::ShaderCreateInfo createInfo;
+				createInfo.vertexShader = "resourcepacks/" + resourceName + "/shaders/chunkShader.vert";
+				createInfo.fragmentShader = "resourcepacks/" + resourceName + "/shaders/chunkShader.frag";
+				createInfo.windowSize = windowSize;
+				createInfo.renderPass = framebuffer.renderPass;
+				createInfo.vertexDescription = Vertex::get_vertex_description();
+				createInfo.blending = true;
+				createInfo.depthTest = true;
+				createInfo.invertY = true;
+				Renderer3D::shader.Create(createInfo);
+
+				wc::DescriptorWriter writer;
+				writer.dstSet = Renderer3D::shader.descriptorSet;
+				writer.write_buffer(0, sceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+					.write_buffer(1, lightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+					.write_buffer(2, materialsBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+					.write_buffer(3, blockTransformBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+					.write_image(4, assets.texArr.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+					.write_image(5, assets.textureMaterialArr.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+
+				wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+			}
+			{
+				wc::ShaderCreateInfo createInfo;
+				createInfo.vertexShader = "resourcepacks/" + resourceName + "/shaders/skybox.vert";
+				createInfo.fragmentShader = "resourcepacks/" + resourceName + "/shaders/skybox.frag";
+				createInfo.windowSize = windowSize;
+				createInfo.renderPass = framebuffer.renderPass;
+				wc::VertexInputDescription desc; // empty
+				createInfo.vertexDescription = desc;
+				createInfo.blending = false;
+				createInfo.depthTest = false;
+				createInfo.invertY = true;
+				skyShader.Create(createInfo);
+
+				wc::DescriptorWriter writer;
+				writer.dstSet = skyShader.descriptorSet;
+				writer.write_buffer(0, sceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+					.write_buffer(1, lightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+				wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+			}
+			CreateBloomPipeline();
+			{
+				compositeShader.Create("resourcepacks/" + resourceName + "/shaders/composite.comp");
+
+				wc::DescriptorWriter writer;
+				writer.dstSet = compositeShader.descriptorSet;
+				writer
+					.write_image(0, finalImage.GetDescriptorData(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+					.write_image(1, scrTexture.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+					.write_image(2, bloomBuffers[2].GetDescriptorData(bloomImageSampler, 0, VK_IMAGE_LAYOUT_GENERAL), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+					;
+
+				wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+			}
 		}
 
 		void Destroy() {
 			if (multiPlayer) clientInstance.Disconnect();
 			else SaveWorld();
 			delQueue.flush();
+			Renderer3D::Destroy();
+			lineBatcher.Destroy();
+			skyShader.Destroy();
+			compositeShader.Destroy();
+			assets.Destroy();
 		}
 
 		// Common blocks
@@ -357,6 +358,10 @@ namespace wc {
 		BlockID leaves = 0;
 		BlockID coal = 0;
 		BlockID dirt = 0;
+		BlockID campfire = 0;
+		BlockID murshroom = 0;
+
+		BlockID blockHolding = 0;
 
 		void Join(const std::string& ip, const std::string& playerName) {
 			if (multiPlayer) {
@@ -412,7 +417,6 @@ namespace wc {
 
 			scrTexture.SetSamplerInfo(sampler);
 			finalImage.SetSamplerInfo(sampler);
-			finalImage.GetSampler().SetName("finalImageSampler");
 			render_interface.AddTextureFramebuffer(finalImage);
 
 
@@ -668,8 +672,8 @@ namespace wc {
 			for (uint32_t i = 0; i < blockMeshes.size(); i++) {
 				BlockMesh& mesh = blockMeshes[i];
 				if (mesh.cmd.instanceCount > 0) {
-					cmd.BindIndexBuffer(mesh.indexBuffer);
-					cmd.BindVertexBuffer(mesh.vertexBuffer);
+					//cmd.BindIndexBuffer(mesh.indexBuffer);
+					//cmd.BindVertexBuffer(mesh.vertexBuffer);
 			
 					cmd.DrawIndexedIndirect(mesh.cmd);
 					shaderTransformOffset += mesh.cmd.instanceCount;
@@ -865,6 +869,9 @@ namespace wc {
 			bool bBreak = Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT);
 			bool bPlace = Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT);
 
+			if (wc::Keyboard::isKeyPressed(Keyboard::Key::Num1)) blockHolding = campfire;
+			if (wc::Keyboard::isKeyPressed(Keyboard::Key::Num2)) blockHolding = murshroom;
+
 			float breakTime = 1.f / 12.f;
 			if (bBreak && !startBreaking) {
 				startBreaking = true;
@@ -925,7 +932,7 @@ namespace wc {
 						startBreaking = false;
 					}
 					else if (bPlace) 
-						setBlock(vMapLastCheck, coal, true, true);
+						setBlock(vMapLastCheck, blockHolding, true, true);
 					
 					bTileFound = true;
 				}

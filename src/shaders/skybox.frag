@@ -53,17 +53,25 @@ float SmoothNoise( vec3 p )
     return f * (1.0 / (0.5 + 0.25));
 }
 
-vec3 getStars(in vec3 from, in vec3 dir, int levels, float power) 
+vec3 getNebula(in vec3 from, in vec3 dir, float level, float power) 
 {
-	vec3 color = vec3(0.0);
-	vec3 st = (dir * 2.f + vec3(0.3f, 2.5f, 1.25f)) * 0.3f;
-	for (int i = 0; i < levels; i++) st = abs(st) / dot(st, st) - 0.9f;
-    float star = min(1.f, pow(min(5.f, length(st)), 3.f) * 0.0025f ) * 1.5f;
+    vec3 color = vec3(0.0);
+    float nebula = pow(SmoothNoise(dir+3.0), 12.0);
+    
+    if (nebula > 0.0)
+    {
+    	vec3 pos = (dir.xyz + dir.xzy + dir.zyx) / 3.0;
+    	vec3 randc = vec3(SmoothNoise( dir.xyz*10.0*level));
+		color = nebula * randc;
+    }
 
-   	vec3 randc = vec3(SmoothNoise(dir.xyz * 10.f * float(levels)), SmoothNoise( dir.xzy*10.0*float(levels) ), SmoothNoise( dir.yzx*10.0*float(levels) ));
-	color += star * randc;
+	return pow(color*2.25, vec3(power));
+}
 
-	return pow(color * 2.25f, vec3(power));
+vec3 getStars(in vec3 from, in vec3 dir, float power) 
+{
+	vec3 color = vec3(pow(SmoothNoise(dir*320.0), 16.0));
+	return pow(color*2.25, vec3(power));
 }
 
 vec3 position = vec3(0.f);
@@ -149,16 +157,21 @@ layout(location = 0) in vec2 uv;
 void main()
 {    
     vec3 rayDir = normalize(lower_left_corner + uv.x * horizontal + uv.y * vertical - cameraPos);
-	vec3 color;
 
-    vec3 color1 = clamp(getStars(cameraPos, rayDir, 1, 0.5) * 1.5, 0.0, 1.0) * vec3(0.0, 0.0, 1.0);
-	vec3 color2 = clamp(getStars(cameraPos, -rayDir, 2, 0.5) * 0.9, 0.0, 1.0) * vec3(1.0, 0.0, 0.0);
-	vec3 color3 = clamp(getStars(cameraPos, -rayDir, 3, 0.5) * 0.7, 0.0, 1.0) * vec3(1.0, 1.0, 0.0);
+	vec3 color =clamp(getNebula(cameraPos, rayDir, 1.0, 0.5) * 1.5, 0.0, 1.0) * vec3(0.0, 0.0, 1.0);
+    vec3 color2=clamp(getNebula(cameraPos, rayDir, 2.0, 0.5) * 1.5, 0.0, 1.0) * vec3(0.0, 1.0, 1.0);
 	
-	vec3 colorStars = getStars(cameraPos, rayDir, 17, 0.9);
+    vec3 color3=clamp(getNebula(cameraPos, -rayDir, 2.0, 0.5) * 0.9, 0.0, 1.0) * vec3(1.0, 0.0, 0.0);
+    vec3 color4=clamp(getNebula(cameraPos, -rayDir, 3.0, 0.5) * 0.7, 0.0, 1.0) * vec3(1.0, 1.0, 0.0);
+    
+    vec3 color5=clamp(getNebula(cameraPos, rayDir.yxz + rayDir.yzx, 1.5, 0.5) * 0.9, 0.0, 1.0) * vec3(0.0, 1.0, 0.0);
+    vec3 color6=clamp(getNebula(cameraPos, rayDir.yxz + rayDir.yzx, 2.5, 0.5) * 0.7, 0.0, 1.0) * vec3(0.333, 0.333, 0.333);
+    
+    vec3 colorStars=clamp(getStars(cameraPos, rayDir, 0.9), 0.0, 1.0);
+	
 	float mixer = 0.f;
 	vec3 daySky = computeIncidentLight(vec3(cameraPos.x, earthRadius + 1.f, cameraPos.z), rayDir, mixer);
-	vec3 nightSky = color1 + color2 + color3 + colorStars;
+	vec3 nightSky = color + color2 + color3 + color4 + color5 + color6 + colorStars;
 	color = mix(daySky, nightSky, mixer);
 
     FragColor = vec4(color, 1.f);

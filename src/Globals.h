@@ -18,6 +18,16 @@ using BlockID = uint8_t;
 using MaterialID = uint8_t;
 using MeshID = uint32_t;
 
+enum ConnectionType : uint8_t {
+	CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT,
+	SLAB_DOWN, SLAB_UP, SLAB_LEFT, SLAB_RIGHT, SLAB_FRONT, SLAB_BACK,
+	CANT_CONNECT, AIR, CUSTOM_MODEL, NON_EXISTENT
+};
+enum class BlockTexture : uint8_t { RIGHT, TOP, FRONT, LEFT, BOTTOM, BACK };
+
+const uint8_t WC_MODEL_BIT = 0x1;
+const uint8_t WC_CULL_BIT = 0x2;
+
 std::string resourceName = "default";
 
 //@TODO: REMOVE

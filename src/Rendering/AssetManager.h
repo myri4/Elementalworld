@@ -1,73 +1,92 @@
 #pragma once
 #include <wc/vk/Images.h>
+#include <filesystem>
 
 namespace wc {
 
 class AssetManager {
 public:
 	AssetManager() {}
-	void Create(const uint32_t& arraySize) {
-		const uint32_t width = 128;
-		const uint32_t height = 128;
-		texArr.Create({ width, height ,arraySize }, VK_FORMAT_R8G8B8A8_UNORM);
-		textureMaterialArr.Create({ width, height ,arraySize });
 
-		uint32_t* data = new uint32_t[width * height];
+	uint32_t LoadTexture(const std::string& file)
+	{
+		if (m_DiffuseCache.find(file) != m_DiffuseCache.end()) return m_DiffuseCache[file];  // If this texture exist
+		if (std::filesystem::exists(file)) { 
+			m_DiffuseCache[file] = textureCounter;
+			textureCounter++;
+			return textureCounter - 1;
+		}
+		
+		m_DiffuseCache[file] = -1;
+		WC_ERROR("Cannot find file at location: {0}", file); 
+		return 0;/*@TODO: Return some kind of debug texture to indicate that the texture is missing*/			
+	}
 
-		for (uint32_t i = 0; i < width * height; i++)
-			data[i] = 0xFFFFFFFF;
+	uint32_t LoadTextureMaterial(const std::string& file)
+	{
+		if (m_MaterialCache.find(file) != m_MaterialCache.end()) return m_MaterialCache[file];  // If this texture exist
+		if (std::filesystem::exists(file)) {
+			m_MaterialCache[file] = materialCounter;
+			materialCounter++;
+			return materialCounter - 1;
+		}
 
-		texArr.SetTextureData(data, 0);
+		m_MaterialCache[file] = -1;
+		WC_ERROR("Cannot find file at location: {0}", file);
+		return 0;/*@TODO: Return some kind of debug texture to indicate that the texture is missing*/
+	}
+
+	void LoadAll() {
+
+		{
+			const uint32_t width = 128;
+			const uint32_t height = 128;
+			texArr.Create({ width, height , textureCounter }, VK_FORMAT_R8G8B8A8_UNORM);
+			textureMaterialArr.Create({ width, height , materialCounter });
+
+			uint32_t* data = new uint32_t[width * height];
+
+			for (uint32_t i = 0; i < width * height; i++)
+				data[i] = 0xFFFFFFFF;
+
+			texArr.SetTextureData(data, 0);
+			delete[] data;
+		}
 
 		VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 
 		sampler.magFilter = VK_FILTER_NEAREST;
 		sampler.minFilter = VK_FILTER_NEAREST;
+		sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 		sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
 		texArr.SetSamplerInfo(sampler);
 		textureMaterialArr.SetSamplerInfo(sampler);
-		delete[] data;
-	}
 
-	uint32_t LoadTexture(const std::string& file)
-	{
-		if (m_TextureCache.find(file) != m_TextureCache.end()) return m_TextureCache[file];  // If this texture exist
-
-		int fnrComponents = 0, fwidth = 0, fheight = 0;
-		auto* data = stbi_load(file.c_str(), &fwidth, &fheight, &fnrComponents, 0);
-		uint32_t location = textureCounter;
-		if (data) {
-			texArr.SetTextureData(data, textureCounter);
-			m_TextureCache[file] = textureCounter;
-			textureCounter++;
+		for (auto& [file, id] : m_DiffuseCache) {
+			if (id != -1) {
+				int fnrComponents = 0, fwidth = 0, fheight = 0;
+				auto* data = stbi_load(file.c_str(), &fwidth, &fheight, &fnrComponents, 0);
+				
+				texArr.SetTextureData(data, id);
+				stbi_image_free(data);				
+			}
 		}
-		else WC_ERROR("Cannot find file at location: {0}", file);
-		return location;
-	}
 
-	uint32_t LoadTextureMaterial(const std::string& file)
-	{
-		if (m_TextureCache.find(file) != m_TextureCache.end()) return m_TextureCache[file];  // If this texture exist
+		for (auto& [file, id] : m_MaterialCache) {
+			if (id != -1) {
+				int fnrComponents = 0, fwidth = 0, fheight = 0;
+				auto* data = stbi_load(file.c_str(), &fwidth, &fheight, &fnrComponents, 0);
 
-		int fnrComponents = 0, fwidth = 0, fheight = 0;
-		auto* data = stbi_load(file.c_str(), &fwidth, &fheight, &fnrComponents, 0);
-		uint32_t location = materialCounter;
-		if (data) {
-			textureMaterialArr.SetTextureData(data, materialCounter);
-			m_TextureCache[file] = materialCounter;
-			materialCounter++;
+				textureMaterialArr.SetTextureData(data, id);
+				stbi_image_free(data);
+			}
 		}
-		else WC_ERROR("Cannot find file at location: {0}", file);
-		return location;
-	}
 
-	void Free() {
-		//for (const auto& [key, value] : m_TextureCache) WC_INFO("{0} {1}", key.c_str(), value);
-
-		m_TextureCache.clear();
+		m_DiffuseCache.clear();
+		m_MaterialCache.clear();
 		//texArr.GenerateMipmap();
 		//textureMaterialArr.GenerateMipmap();
 	}
@@ -80,7 +99,8 @@ public:
 	wc::TextureArray texArr;
 	wc::TextureArray textureMaterialArr;
 private:
-	std::unordered_map<std::string, int> m_TextureCache;
+	std::unordered_map<std::string, int> m_DiffuseCache;
+	std::unordered_map<std::string, int> m_MaterialCache;
 	uint32_t textureCounter = 1;
 	uint32_t materialCounter = 1;
 }assets;

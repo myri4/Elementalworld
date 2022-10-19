@@ -12,26 +12,17 @@
 #include <wc/Utils/YAML.h>
 #include <sol/sol.hpp>
 #include "../Rendering/AssetManager.h"
+#include "../Rendering/Renderer3D.h"
 #include "../Globals.h"
 
 namespace wc{
 
-enum ConnectionType : uint8_t { CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT, 
-	SLAB_DOWN, SLAB_UP, SLAB_LEFT, SLAB_RIGHT, SLAB_FRONT, SLAB_BACK,
-	CANT_CONNECT, AIR, CUSTOM_MODEL, NON_EXISTENT};
-enum class BlockTexture : uint8_t { RIGHT, TOP, FRONT, LEFT, BOTTOM, BACK };
-
-const uint8_t WC_MODEL_BIT = 0x1;
-const uint8_t WC_CULL_BIT = 0x2;
-
 struct BlockMesh { // @TODO: Improve
-	wc::Buffer vertexBuffer;
-	wc::Buffer indexBuffer; 
 	VkDrawIndexedIndirectCommand cmd = {};
 
 	BlockMesh() = default;
 
-	void Load(const std::string& path, const uint32_t& materialID) {
+	void Load(const std::string& path, const uint32_t& materialID, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices) {
 		Assimp::Importer importer;
 		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_OptimizeMeshes | aiProcess_JoinIdenticalVertices | aiProcess_GenNormals | aiProcess_FlipUVs);
 		
@@ -41,21 +32,17 @@ struct BlockMesh { // @TODO: Improve
 			return;
 		}
 		uint32_t offset = 0;
-		std::vector<Vertex> vertices;
-		std::vector<uint32_t> indices;
-		processNode(scene->mRootNode, *scene, offset, materialID, vertices, indices);
-		indexBuffer.Create(sizeof(uint32_t) * indices.size(), wc::INDEX_BUFFER);
-		indexBuffer.SetData(indices.data(), sizeof(uint32_t) * indices.size());
-
-		vertexBuffer.Create(sizeof(Vertex) * vertices.size(), wc::VERTEX_BUFFER);
-		vertexBuffer.SetData(vertices.data(), sizeof(Vertex) * vertices.size());
+		processNode(scene->mRootNode, *scene, offset, materialID, vertices, indices);		
 		
-		cmd.indexCount = indices.size();
+		uint32_t totalVertices = 0;
+		GetMeshSize(scene->mRootNode, *scene, cmd.indexCount, totalVertices);
 		cmd.instanceCount = 0;
 
+		Mesh mesh = Renderer3D::CreateMesh(totalVertices, cmd.indexCount);
+		cmd.vertexOffset = mesh.vertexOffset;
+		cmd.firstIndex = mesh.indexOffset;
+
 		importer.FreeScene();
-		vertices.clear();
-		indices.clear();
 	}
 
 	void processNode(const aiNode* node, const aiScene& scene, uint32_t& offset, const uint32_t& materialID, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices) {
@@ -106,11 +93,6 @@ struct BlockMesh { // @TODO: Improve
 		// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
 		for (uint32_t i = 0; i < node->mNumChildren; i++)
 			GetMeshSize(node->mChildren[i], scene, totalIndices, totalVertices);
-	}
-
-	void Destroy() {
-		indexBuffer.Destroy();
-		vertexBuffer.Destroy();
 	}
 };
 
