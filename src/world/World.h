@@ -832,24 +832,36 @@ namespace wc {
 			ImGui::End();
 		}
 
-		int a = 20;
 		void RenderImGuiCrosshair() {
 			ImGui::SetNextWindowPos(ImVec2(0, 0));
 			ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
 			ImGui::Begin("crosshair", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
-			ImGui::SetCursorPos(ImVec2((window.GetSize().x - a)/2, (window.GetSize().y - a) / 2));
-			ImGui::Image(crosshair, ImVec2(a, a));
+			ImGui::SetCursorPos(ImVec2((window.GetSize().x - 20)/2, (window.GetSize().y - 20) / 2));
+			ImGui::Image(crosshair, ImVec2(20, 20));
 			ImGui::End();
 		}
-		char str[256];
-		int i = 0;
+		std::vector<std::string> consoleN;
+		char consoleBuffer[256];
 		void RenderImGuiConsole() {
 			if (console) {
+				//input
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
-				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
-				ImGui::Begin("Console Log", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground);
-				ImGui::SetKeyboardFocusHere();
-				ImGui::InputText("Log", str, IM_ARRAYSIZE(str));
+				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, 55));
+				ImGui::Begin("Console Log", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+				if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+					ImGui::SetKeyboardFocusHere(0);
+				ImGui::InputText("Log", consoleBuffer, IM_ARRAYSIZE(consoleBuffer));
+				ImGui::End();
+
+				//history log
+				ImGui::SetNextWindowPos(ImVec2(0, 55));
+				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y - 55));
+				ImGui::Begin("History Log", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse );
+				for (int i = consoleN.size() - 1; i >= 0; i--) {
+					if (ImGui::Button(consoleN[i].c_str())) {
+						memcpy(consoleBuffer, consoleN[i].c_str(), sizeof(consoleBuffer));
+					}
+				}
 				ImGui::End();
 			}
 		}
@@ -864,6 +876,7 @@ namespace wc {
 			Mouse::SetMousePosition(glm::vec2(window.GetSize().x / 2, window.GetSize().y / 2));
 			}
 			if (ImGui::Button("Exit to Main Menu"))mode = MenuMode::MAINMENU;
+			if (ImGui::Button("Open Settings"))mode = MenuMode::SETTINGS;
 			if (ImGui::Button("Exit to Desktop")) window.close();
 
 			ImGui::End();
@@ -992,9 +1005,8 @@ namespace wc {
 			int i = 0;
 			if (wc::Keyboard::getKey(wc::Keyboard::Key::F1)) renderGUI = !renderGUI;
 			if (Keyboard::getKey(Keyboard::Key::Enter) && console) {
-				WC_INFO(str);
-				memset(str, 0, sizeof(str));
-
+				consoleN.push_back(consoleBuffer);
+				memset(consoleBuffer, 0, sizeof(consoleBuffer));
 			}
 			if (Keyboard::getKey(Keyboard::Key::Enter)) console = !console;
 			// PLAYER RELATED
@@ -1028,8 +1040,8 @@ namespace wc {
 
 			camera.Update();
 
-			bool bBreak = Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT);
-			bool bPlace = Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT);
+			bool bBreak = Mouse::getMouse(GLFW_MOUSE_BUTTON_LEFT) && !console;
+			bool bPlace = Mouse::getMouse(GLFW_MOUSE_BUTTON_RIGHT) && !console;
 
 			float breakTime = 1.f / 12.f;
 			if (bBreak && !startBreaking) {
