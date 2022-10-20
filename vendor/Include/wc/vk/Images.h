@@ -284,12 +284,9 @@ namespace wc {
         Sampler sampler;
     public:
 
-        void Create(const glm::ivec2& size, const VkFormat& image_format = VK_FORMAT_R8G8B8A8_SRGB, const uint32_t& image_channels = 4, const bool& mipmapping = false, const uint32_t& flags = 0) {
-            VkDeviceSize imageSize = size.x * size.y * image_channels;                     
-
+        void Create(const glm::ivec2& size, const VkFormat& image_format = VK_FORMAT_R8G8B8A8_SRGB, const uint32_t& flags = 0) {
             image.width = size.x;
             image.height = size.y;
-            if (mipmapping) image.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(image.width, image.height)))) + 1;
 
             //allocate and create the image
             VkImageCreateInfo info = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
@@ -313,9 +310,10 @@ namespace wc {
             view.Create(info.format, image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, image.mipLevels);
         }
 
-        void Create(const Image& img, const ImageView& imgView) {
-            image = img;
-            view = imgView;
+        void Create(const Image& _image, const ImageView& _imageView, const Sampler& _sampler) {
+            image = _image;
+            view = _imageView;
+            sampler = _sampler;
         }
 
         void SetData(const glm::ivec2& size, const void* data) {
@@ -382,15 +380,6 @@ namespace wc {
         wc::ImageView& GetImageView() { return view; }
         wc::Sampler& GetSampler() { return sampler; }
     };
-
-    bool loadTexture(const std::string& filepath, Texture& texture, const bool& mipmaps = false) {
-        int texWidth, texHeight, texChannels;
-        uint8_t* pixels = stbi_load(filepath.c_str(), &texWidth, &texHeight, &texChannels, 0);
-
-        texture.Create({ texWidth, texHeight }, VK_FORMAT_R8G8B8A8_SRGB, 4, mipmaps);
-        texture.SetData({ texWidth, texHeight }, pixels);
-        return pixels != nullptr;
-    }
 
     class TextureArray {
         Image image;
@@ -611,4 +600,20 @@ namespace wc {
             texture.Destroy();
         }
     };
+
+    VkDescriptorImageInfo GetDescriptorData(const VkSampler& sampler, const VkImageView& view, const Image& image) {
+        VkDescriptorImageInfo imageInfo;
+        imageInfo.sampler = sampler;
+        imageInfo.imageView = view;
+        imageInfo.imageLayout = image.layout;
+        return imageInfo;
+    }
+
+    VkDescriptorImageInfo GetDescriptorData(const VkSampler& sampler, const VkImageView& view, const VkImageLayout& imageLayout) {
+        VkDescriptorImageInfo imageInfo;
+        imageInfo.sampler = sampler;
+        imageInfo.imageView = view;
+        imageInfo.imageLayout = imageLayout;
+        return imageInfo;
+    }
 }

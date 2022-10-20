@@ -17,6 +17,7 @@
 
 #include "../Rendering/Renderer2D.h"
 #include "../Rendering/Renderer3D.h"
+#include <stb_image/stb_write.h>
 
 namespace wc {
 	enum class GameMsg : uint32_t
@@ -109,7 +110,9 @@ namespace wc {
 		uint32_t maxLights = chunkVolume;
 		// Composite stuff
 		wc::FramebufferWC framebuffer;
-		wc::Texture scrTexture;
+		wc::Image scrTexture;
+		wc::ImageView screenImageView;
+		wc::Sampler screenSampler;
 
 
 		wc::Texture finalImage;
@@ -330,7 +333,7 @@ namespace wc {
 				writer.dstSet = compositeShader.descriptorSet;
 				writer
 					.write_image(0, finalImage.GetDescriptorData(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-					.write_image(1, scrTexture.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+					.write_image(1, GetDescriptorData(screenSampler, screenImageView, scrTexture), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 					.write_image(2, bloomBuffers[2].GetDescriptorData(bloomImageSampler, 0, VK_IMAGE_LAYOUT_GENERAL), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 					;
 
@@ -391,15 +394,35 @@ namespace wc {
 			
 			framebuffer.Create(window.GetSize());
 			
-			scrTexture.Create(framebuffer.attachments[attachment].image, framebuffer.attachments[attachment].view);
-			finalImage.Create(window.GetSize(), VK_FORMAT_R32G32B32A32_SFLOAT, 4, false, VK_IMAGE_USAGE_STORAGE_BIT);
+			scrTexture = framebuffer.attachments[attachment].image;
+			screenImageView = framebuffer.attachments[attachment].view;
+			{
+				//allocate and create the image
+				VkImageCreateInfo info = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
 
-			finalImage.GetImage().layout = VK_IMAGE_LAYOUT_GENERAL;
-			UploadContext::immediate_submit([&](VkCommandBuffer cmd) {finalImage.GetImage().setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL); });
+				info.imageType = VK_IMAGE_TYPE_2D;
+
+				info.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+
+				info.extent.width = static_cast<uint32_t>(window.GetSize().x);
+				info.extent.height = static_cast<uint32_t>(window.GetSize().y);
+				info.extent.depth = 1;
+
+				info.mipLevels = 1;
+				info.arrayLayers = 1;
+				info.samples = VK_SAMPLE_COUNT_1_BIT;
+				info.tiling = VK_IMAGE_TILING_OPTIMAL;
+				info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+
+				finalImage.Create(window.GetSize(), VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_STORAGE_BIT);
+
+				finalImage.GetImage().layout = VK_IMAGE_LAYOUT_GENERAL;
+				UploadContext::immediate_submit([&](VkCommandBuffer cmd) {finalImage.GetImage().setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL); });
+			}
 			
 			bloomTexSize = glm::ivec2(window.GetSize().x, window.GetSize().y) / 2;
 			bloomTexSize += glm::ivec2(m_BloomComputeWorkGroupSize - bloomTexSize.x % m_BloomComputeWorkGroupSize, m_BloomComputeWorkGroupSize - bloomTexSize.y % m_BloomComputeWorkGroupSize);
-			mips = scrTexture.GetImage().GetMipLevelCount() - 4;
+			mips = scrTexture.GetMipLevelCount() - 4;
 			
 			VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 			
@@ -415,8 +438,8 @@ namespace wc {
 			sampler.maxAnisotropy = 1.0;
 			sampler.anisotropyEnable = false;
 
-			scrTexture.SetSamplerInfo(sampler);
 			finalImage.SetSamplerInfo(sampler);
+			screenSampler.Create(sampler);
 			render_interface.AddTextureFramebuffer(finalImage);
 
 
@@ -432,7 +455,7 @@ namespace wc {
 			for (int i = 0; i < 3; i++) bloomBuffers[i].Destroy();			
 			framebuffer.Destroy();
 			framebuffer.DestroyAttachments();
-			scrTexture.ResetSamplerInfo();
+			screenSampler.Destroy();
 
 			finalImage.Destroy();			
 		}
@@ -834,6 +857,16 @@ namespace wc {
 			}
 
 			if (wc::Keyboard::getKey(wc::Keyboard::Key::F1)) renderGUI = !renderGUI;
+			if (wc::Keyboard::getKey(wc::Keyboard::Key::F2)) {
+				//glm::ivec2 size = window.GetSize();
+				//uint32_t byteSize = size.x * size.y * 4;
+				//uint8_t* data = new uint8_t[byteSize];
+				//finalImage.GetData(data);
+				//stbi_flip_vertically_on_write(true);
+				//stbi_write_png("screenshots/screenshot.png", size.x, size.y, 4, data, size.x * 4);
+				//delete[] data;
+				WC_INFO("TODO: Implement screenshots back");
+			}
 
 			// PLAYER RELATED
 			p.velocity += p.acceleration;
@@ -1684,7 +1717,7 @@ namespace wc {
 			bloomBuffers[0].BindImage(0, bloomShader.descriptorSet);
 			wc::DescriptorWriter writer;
 			writer.dstSet = bloomShader.descriptorSet;
-			writer.write_image(1, scrTexture.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+			writer.write_image(1, GetDescriptorData(screenSampler, screenImageView, scrTexture.layout), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 			wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
 
 			bloomBuffers[2].Bind(2, bloomShader.descriptorSet, bloomImageSampler);

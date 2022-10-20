@@ -20,8 +20,6 @@ namespace wc {
 
 		static const uint8_t MaxTextures = 32;
 
-		bool transformEnabled = false;
-
 		wc::Buffer VBO;
 		wc::Buffer EBO;
 
@@ -154,40 +152,6 @@ namespace wc {
 			shader.Destroy();
 		}
 
-		void RenderGeometry(Vertex2D* p_vertices, int num_vertices, int* p_indices, int num_indices, uint32_t texture, const glm::vec2& translation) {
-			//if (IndexCount + num_indices >= MaxQuadIndexCount || TextureSlotIndex >= MaxTextures) Flush();
-			//
-			//uint32_t texID = texture;
-			////if (texID == 0) texID = whiteTexture;
-			//float textureIndex = (float)getTexture(texID);
-			//
-			//for (int32_t i = 0; i < num_indices; i++) {
-			//	indices[IndexCount] = p_indices[i] + VertexCount;
-			//	IndexCount++;
-			//}
-			//
-			//glm::mat4 trans = glm::mat4(1.f);
-			//
-			//if (transformEnabled) {
-			//	transformEnabled = false;
-			//	trans = transform;
-			//}
-			//
-			//for (int32_t i = 0; i < num_vertices; i++) {
-			//	RmlVertex& vertex = vertices[VertexCount];
-			//	vertex.position = (glm::vec2(p_vertices[i].position.x + translation.x, p_vertices[i].position.y + translation.y) / windowSize) * 2.f - 1.f;
-			//
-			//	glm::vec4 Pos = glm::vec4(vertex.position.x, vertex.position.y, 0.f, 0.f) * trans;
-			//	vertex.position = glm::vec2(Pos.x, Pos.y);
-			//
-			//	glm::vec4 color = glm::vec4(p_vertices[i].colour.red, p_vertices[i].colour.green, p_vertices[i].colour.blue, p_vertices[i].colour.alpha);
-			//	vertex.color = (uint32_t)(color.r) << 24 | (uint32_t)(color.g) << 16 | (uint32_t)(color.b) << 8 | (uint32_t)(color.a);
-			//
-			//	vertex.tex_coord = glm::vec3(p_vertices[i].tex_coord.x, p_vertices[i].tex_coord.y, textureIndex);
-			//	VertexCount++;
-			//}
-		}
-
 		void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const uint32_t& texID) {
 			if (IndexCount >= MaxQuadIndexCount || TextureSlotIndex >= MaxTextures) Flush();
 
@@ -260,42 +224,6 @@ namespace wc {
 			TextureSlotIndex = 0;
 			IndexCount = 0;
 			VertexCount = 0;
-		}
-
-		bool LoadTexture(uint32_t& texture_handle, glm::ivec2& texture_dimensions, const std::string& source) {
-			std::string src = (std::string)source.c_str();
-
-			wc::Texture& texture = m_Textures[m_NumTextures];
-
-			int fnrComponents;
-			auto data = stbi_load(source.c_str(), &texture_dimensions.x, &texture_dimensions.y, &fnrComponents, 0);
-
-			if (data) {
-				VkFilter filter = VK_FILTER_LINEAR;
-				if (texture_dimensions.x <= 120 || texture_dimensions.y <= 120) filter = VK_FILTER_NEAREST;
-
-
-				VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-
-				sampler.magFilter = filter;
-				sampler.minFilter = filter;
-				sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-				sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-				sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-
-
-				texture.Create(glm::ivec2(texture_dimensions.x, texture_dimensions.y));
-				texture.SetData(glm::ivec2(texture_dimensions.x, texture_dimensions.y), data);
-				texture.SetSamplerInfo(sampler);
-			}
-			else WC_ERROR("Could not open file location at path {0}!", source.c_str());
-
-			delete data; // stbi free
-
-			texture_handle = m_NumTextures;
-			m_NumTextures++;
-
-			return true;
 		}
 
 		bool GenerateTexture(uint32_t& texture_handle, const void* source, const glm::ivec2& source_dimensions) {

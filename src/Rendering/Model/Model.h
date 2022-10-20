@@ -55,7 +55,7 @@ namespace wc {
 			sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 			sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
-			wc::loadTexture(file, diffuseTexture);
+			//wc::loadTexture(file, diffuseTexture);
 			diffuseTexture.SetSamplerInfo(sampler);
 
 			{

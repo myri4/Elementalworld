@@ -27,10 +27,10 @@ namespace wc {
 	private:
 		VmaAllocation allocation;
 	public:
-		VkResult Create(const VkDeviceSize& bufferSize) {
+		VkResult Create(const VkDeviceSize& bufferSize, const VkBufferUsageFlagBits& usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT) {
 			VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 			bufferInfo.size = bufferSize;
-			bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+			bufferInfo.usage = usage;
 
 			VmaAllocationCreateInfo vmaallocInfo = {};
 			vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
