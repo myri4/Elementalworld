@@ -334,8 +334,9 @@ namespace wc {
 				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::Begin("World Creation", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
-				ImGui::SetKeyboardFocusHere();
 				char str[256];
+				if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+					ImGui::SetKeyboardFocusHere(0);
 				ImGui::InputText("World Name", str, IM_ARRAYSIZE(str));
 				if (ImGui::Button("Create")) {
 					world.CreateNewWorld(str);
