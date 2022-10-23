@@ -3,7 +3,7 @@
 
 namespace wc {	
 	bool debug_menu = false;
-	GameInstance world;
+	GameInstance gameInstance;
 
 	class Application {
 	private:
@@ -48,7 +48,7 @@ namespace wc {
 
 			bool hasFocus = window.hasFocus();
 			if (hasFocus) {
-				if (mode == MenuMode::GAME) world.OnInput(deltaTime);
+				if (mode == MenuMode::GAME) gameInstance.OnInput(deltaTime);
 				if (Keyboard::getKey(Keyboard::Key::F8)) debug_menu = !debug_menu;
 				if (mode == MenuMode::GAME && Keyboard::getKey(Keyboard::Key::Escape)) mode = MenuMode::ESCMENU;
 				else if (mode == MenuMode::ESCMENU && Keyboard::getKey(Keyboard::Key::Escape)) {
@@ -82,8 +82,8 @@ namespace wc {
 				glm::ivec2 size = {width, height};
 				RendererContext::RecreateSwapchain(window);
 				render_interface.windowSize = size;
-				world.DestroyScreen();
-				world.CreateScreen();
+				gameInstance.DestroyScreen();
+				gameInstance.CreateScreen();
 				});
 
 
@@ -145,9 +145,9 @@ namespace wc {
 
 			if (!std::filesystem::exists("worlds")) std::filesystem::create_directory("worlds");
 
-			world.CreateScreen();
+			gameInstance.CreateScreen();
 
-			world.Create(size);
+			gameInstance.Create(size);
 
 			//[TO DO]: shorten the lenght
 			background.Load("resourcepacks/default/textures/misc/screenshot.png");
@@ -180,16 +180,16 @@ namespace wc {
 
 			//loading crosshair and console
 			if (mode == MenuMode::GAME) {
-				world.RenderImGuiCrosshair();
-				world.RenderImGuiConsole();
+				gameInstance.RenderImGuiCrosshair();
+				gameInstance.RenderImGuiConsole();
 
 				if (debug_menu)
-					world.RenderImGuiDebugMenu(deltaTime);
+					gameInstance.RenderImGuiDebugMenu(deltaTime);
 			}
 
 			//loading escape menu
 			if (mode == MenuMode::ESCMENU) {
-				world.RenderImGuiEscapeMenu();
+				gameInstance.RenderImGuiEscapeMenu();
 			}
 
 			//loading the main menu
@@ -292,8 +292,8 @@ namespace wc {
 						if (std::filesystem::exists(p.path() / "world.properties")) {
 							if (ImGui::Button(p.path().stem().string().c_str())) {
 								mode = MenuMode::GAME;
-								world.worldName = p.path().stem().string();
-								world.Join(joinIp, playerName);
+								gameInstance.worldName = p.path().stem().string();
+								gameInstance.LoadWorld();
 							}
 						}
 					}
@@ -317,9 +317,9 @@ namespace wc {
 				if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
 					ImGui::SetKeyboardFocusHere(0);
 				ImGui::InputText("World Name", newWorldName, IM_ARRAYSIZE(newWorldName));
-				if (ImGui::Button("Create")) {
-					world.CreateNewWorld(newWorldName);
-					world.Join(joinIp, playerName);
+				if (ImGui::Button("Create") || Keyboard::getKey(Keyboard::Key::Enter)) {
+					gameInstance.CreateNewWorld(newWorldName);
+					gameInstance.LoadWorld();
 					mode = MenuMode::GAME;
 
 				}
@@ -331,14 +331,14 @@ namespace wc {
 
 
 			if (mode == MenuMode::GAME)
-				world.Update(deltaTime);
+				gameInstance.Update(deltaTime);
 
 			// GUI
 			cmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 			RendererContext::Begin(swapchainImageIndex, window);
 
 			if (mode == MenuMode::GAME)
-				world.RenderGUI();
+				gameInstance.RenderGUI();
 
 			render_interface.Flush();
 
@@ -370,8 +370,8 @@ namespace wc {
 			imguiPool.Destroy();
 			wc::ImGuiDeletionQueue.flush();
 			ImGui_ImplVulkan_Shutdown();
-			world.Destroy();
-			world.DestroyScreen();
+			gameInstance.Destroy();
+			gameInstance.DestroyScreen();
 
 
 			wc::render_interface.Destroy();

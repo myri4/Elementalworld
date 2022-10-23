@@ -156,8 +156,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Elementalworld Server\Elementalworld Server.vcxproj" />
-    <None Include="src\shaders\vkTriangle.vert" />
-    <None Include="src\shaders\vkTriangle.frag" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.h">
