@@ -3,6 +3,19 @@
 #include <wc/vk/Buffer.h>
 #include <wc/vk/Pipeline.h>
 
+#define WC_MAKE_VERSION(variant, major, minor, patch) ((((uint32_t)(variant)) << 29) | (((uint32_t)(major)) << 22) | (((uint32_t)(minor)) << 12) | ((uint32_t)(patch)))
+
+enum class EVersion {
+	myri4,
+	Icak,
+	Geshev,
+	Irena,
+	masterBranch,
+	Release
+};
+
+uint32_t APP_VERSION = WC_MAKE_VERSION(0, 0, 1, EVersion::masterBranch);
+
 //@Todo try with size_t 
 const uint16_t chunkSize = 16;
 const uint32_t chunkVolume = chunkSize * chunkSize * chunkSize;
@@ -31,7 +44,7 @@ const uint8_t WC_CULL_BIT = 0x2;
 std::string resourceName = "default";
 
 //@TODO: REMOVE
-enum MenuMode { GAME, INVENTORY, MAINMENU, SETTINGS, MULTIPLAYER, ESCMENU };
+enum MenuMode { GAME, INVENTORY, MAINMENU, SETTINGS, MULTIPLAYER, ESCMENU, WORLD_SELECTION, WORLD_CREATION };
 uint32_t mode = MenuMode::MAINMENU;
 
 uint32_t convertColor(const glm::vec4& color) {

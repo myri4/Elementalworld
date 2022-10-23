@@ -295,9 +295,8 @@ public:
         glfwSetWindowSizeLimits(window, minSize.x, minSize.y, maxSize.x, maxSize.y);
     }
 
-    void ShowMouse(const bool& show) {
-        if (show) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        else      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    void SetCursorMode(const int& value) {
+        glfwSetInputMode(window, GLFW_CURSOR, value);
     }
 
     int getKey(const int& key) {

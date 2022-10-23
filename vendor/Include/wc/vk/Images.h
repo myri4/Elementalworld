@@ -4,6 +4,7 @@
 #include "Buffer.h"
 #include <stb_image/stb_image.h>
 #include <imgui/imgui_impl_vulkan.h>
+#include <wc/Utils/DeletionQueue.h>
 
 namespace wc {
 
@@ -563,43 +564,57 @@ namespace wc {
         const VkImageView& GetImageView() const { return depthImageView; }
     };
 
+    DeletionQueue ImGuiDeletionQueue;
+
     class ImGuiTexture {
     private:
         Texture texture;
         VkDescriptorSet imageID;// = ImGui_ImplVulkan_AddTexture(sampler, );
+        Sampler sampler;
     public:
         void Load(const std::string& filepath) {
             int32_t width = 0, height = 0, fnrComponents;
             auto data = stbi_load(filepath.c_str(), &width, &height, &fnrComponents, 0);
 
             if (data) {
-                VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-                VkFilter filter = VK_FILTER_LINEAR;
-                if (width <= 128 || height <= 128) filter = VK_FILTER_NEAREST;
-                sampler.magFilter = filter;
-                sampler.minFilter = filter;
-                sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                VkSamplerCreateInfo samplerInfo = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+                samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.minLod = 0.f;
+                samplerInfo.maxLod = 1.f;
+                if (width <= 128 || height <= 128) {
+                    samplerInfo.magFilter = VK_FILTER_NEAREST;
+                    samplerInfo.minFilter = VK_FILTER_NEAREST;
+                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+                }
+                else {
+                    samplerInfo.magFilter = VK_FILTER_LINEAR;
+                    samplerInfo.minFilter = VK_FILTER_LINEAR;
+                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                }
 
 
-                texture.Create(glm::ivec2(width,  height));
+                texture.Create(glm::ivec2(width,  height), VK_FORMAT_R8G8B8A8_UNORM);
+                sampler.Create(samplerInfo);
                 texture.SetData(glm::ivec2(width, height), data);
-                texture.SetSamplerInfo(sampler);
-                imageID = ImGui_ImplVulkan_AddTexture(texture.GetSampler(), texture.GetImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                imageID = ImGui_ImplVulkan_AddTexture(sampler, texture.GetImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
             }
             else
                 WC_ERROR("Could not find file at location {0}", filepath.c_str());
 
             delete data;
+            ImGuiDeletionQueue.push_function([=]() {
+                texture.Destroy(); 
+                sampler.Destroy();
+            });
         }
+
+        glm::ivec2 GetSize() { return { texture.GetImage().width, texture.GetImage().height }; }
 
         operator ImTextureID () { return (ImTextureID)imageID; }
-
-        void Destroy() {
-            texture.Destroy();
-        }
     };
+
 
     VkDescriptorImageInfo GetDescriptorData(const VkSampler& sampler, const VkImageView& view, const Image& image) {
         VkDescriptorImageInfo imageInfo;

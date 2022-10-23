@@ -55,6 +55,8 @@ namespace wc {
 		// Graphics
 		LineBatcher lineBatcher;
 
+		ImGuiTexture crosshair;
+
 		float rotateSpeed = 1.f * 0.6f; // one cycle is one unit (in minutes)
 		float angle = 0.f;
 		wc::Shader skyShader;
@@ -97,7 +99,7 @@ namespace wc {
 		std::unordered_map<uint32_t, PlayerDescription> players;
 
 		// Data managing
-
+		bool worldLoaded = false;
 		// Multiplayer
 		bool bWaitingForConnection = true;
 		net::client_interface<GameMsg> clientInstance;
@@ -266,6 +268,7 @@ namespace wc {
 			indices.Destroy();
 
 			//model.Create("resourcepacks/default/models/player_model.obj", screen.renderPass, windowSize);
+			crosshair.Load("resourcepacks/default/textures/misc/cursor.png");
 			//animation.Create("resourcepacks/default/models/dancing_vampire.dae", model);
 			
 			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 0.891f, 0.796f, 0.f)));
@@ -343,7 +346,7 @@ namespace wc {
 
 		void Destroy() {
 			if (multiPlayer) clientInstance.Disconnect();
-			else SaveWorld();
+			else if (worldLoaded) SaveWorld();
 			delQueue.flush();
 			Renderer3D::Destroy();
 			lineBatcher.Destroy();
@@ -745,6 +748,68 @@ namespace wc {
 			render_interface.DrawQuad({ 0,0 }, window.GetSize(), 99);
 		}
 
+		void RenderImGuiDebugMenu(const float& deltaTime) {
+			ImGui::SetNextWindowSize(ImVec2(100, 50));
+			ImGui::SetNextWindowPos(ImVec2(0, 0));
+			ImGui::Begin("Debug Menu", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
+			ImGui::Text(std::format("FPS: {0}", (int)(1.f / deltaTime)).c_str());
+			ImGui::End();
+		}
+
+		void RenderImGuiCrosshair() {
+			ImGui::SetNextWindowPos(ImVec2(0, 0));
+			ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
+			ImGui::Begin("crosshair", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
+			ImGui::SetCursorPos(ImVec2((window.GetSize().x - 20) / 2, (window.GetSize().y - 20) / 2));
+			ImGui::Image(crosshair, ImVec2(20, 20));
+			ImGui::End();
+		}
+		std::vector<std::string> consoleHistory;
+		char consoleBuffer[256];
+		void RenderImGuiConsole() {
+			if (console) {
+				//input
+				ImGui::SetNextWindowPos(ImVec2(0, 0));
+				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, 55));
+				ImGui::Begin("Console Log", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+				if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+					ImGui::SetKeyboardFocusHere(0);
+				ImGui::InputText("Log", consoleBuffer, IM_ARRAYSIZE(consoleBuffer));
+				ImGui::End();
+
+				// @TODO: Icak tuka ima stranen bug
+				/*
+				//history log
+				ImGui::SetNextWindowPos(ImVec2(0, 55));
+				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y - 55));
+				ImGui::Begin("History Log", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+				if (consoleHistory.size() > 0) { 
+					for (int i = consoleHistory.size() - 1; i >= 0; i--) {
+						if (ImGui::Button(consoleHistory[i].c_str())) memcpy(consoleBuffer, consoleHistory[i].c_str(), sizeof(consoleBuffer));
+
+					}
+				}
+				ImGui::End();
+				*/
+			}
+		}
+
+		void RenderImGuiEscapeMenu() {
+			ImGui::SetNextWindowSize(ImVec2(400, 400));
+			ImGui::SetNextWindowPos(ImVec2((window.GetSize().x - 400) / 2, (window.GetSize().y - 400) / 2));
+			ImGui::Begin("Elemental World", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+			ImGui::Text("Escape Menu");
+			if (ImGui::Button("Resume")) {
+				mode = MenuMode::GAME;
+				window.setCursorPos(glm::vec2(window.GetSize().x / 2, window.GetSize().y / 2));
+			}
+			if (ImGui::Button("Save and exit to main menu")) { SaveWorld(); mode = MenuMode::MAINMENU; }
+			if (ImGui::Button("Open Settings")) mode = MenuMode::SETTINGS;
+			if (ImGui::Button("Save and exit to desktop")) { SaveWorld(); window.close(); }
+
+			ImGui::End();
+		}
+
 		void ParseCommand(std::string& command) {
 			// Command parsing
 			std::string args;
@@ -767,10 +832,12 @@ namespace wc {
 			command = "";
 		}
 
+		bool console = false;
+
 		void OnInput(const float& deltaTime) {
 			// MENU MANAGMENT
 
-			//if (/*!textbox.isSelected*/true)
+			if (!console)
 			{
 				// GAMEPLAY
 				float yaw = glm::radians(p.rotation.x);
@@ -867,6 +934,15 @@ namespace wc {
 				//delete[] data;
 				WC_INFO("TODO: Implement screenshots back");
 			}
+			if (Keyboard::getKey(Keyboard::Key::Enter) && console) {
+				if (consoleBuffer[0] == '/') { 
+					std::string command = consoleBuffer;
+					ParseCommand(command); 
+					consoleHistory.push_back(command);
+				}
+				memset(consoleBuffer, 0, sizeof(consoleBuffer));
+			}
+			if (Keyboard::getKey(Keyboard::Key::Enter)) console = !console;
 
 			// PLAYER RELATED
 			p.velocity += p.acceleration;
@@ -971,9 +1047,7 @@ namespace wc {
 				}
 				vMapLastCheck = vMapCheck;
 			}
-		}		
-
-	private:
+		}
 
 		std::string getChunkPath(const glm::ivec3& pos) {
 			return "worlds/" + worldName + "/Chunk data/Island 0/r." + std::to_string(pos.x) + "." + std::to_string(pos.y) + "." + std::to_string(pos.z) + ".ewr";
@@ -1002,6 +1076,7 @@ namespace wc {
 				YAML::Node config = YAML::LoadFile("worlds/" + worldName + "/world.properties");
 				if (config["time"]) angle = config["time"].as<float>();
 				if (config["seed"]) worldNoise.SetSeed(config["seed"].as<int>());
+				worldLoaded = true;
 			}
 		}
 
@@ -1014,8 +1089,10 @@ namespace wc {
 			YAMLUtils::saveFile("worlds/" + worldName + "/world.properties", config);
 
 			SavePlayerState(p);
+			worldLoaded = false;
 		}
 
+	private:
 		void TryToLoadChunk(const ChunkID& chunkID) {
 			if (multiPlayer && clientInstance.IsConnected()) {
 				net::message<GameMsg> msg;
