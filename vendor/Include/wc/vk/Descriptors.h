@@ -102,6 +102,8 @@ namespace wc {
 				p.Destroy();
 		}
 
+		DescriptorPool GetCurrentPool() { return currentPool; }
+
 	private:
 		DescriptorPool grab_pool() {
 			if (freePools.size() > 0)
