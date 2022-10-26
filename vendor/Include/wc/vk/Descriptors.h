@@ -115,24 +115,23 @@ namespace wc {
 			else {
 				uint32_t count = 1000;
 
-				std::array<std::pair<VkDescriptorType, float>, 11> dSizes;
+				std::pair<VkDescriptorType, float> dSizes[] = {				
+					{ VK_DESCRIPTOR_TYPE_SAMPLER, 0.5f },
+					{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4.f },
+					{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4.f },
+					{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1.f },
+					//{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1.f },
+					//{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1.f },
+					{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2.f },
+					{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2.f },
+					//{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1.f },
+					//{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1.f },
+					//{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 0.5f },
+				};
 
-				
-				dSizes[0]  = { VK_DESCRIPTOR_TYPE_SAMPLER, 0.5f };
-				dSizes[1]  = { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4.f };
-				dSizes[2]  = { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4.f };
-				dSizes[3]  = { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1.f };
-				dSizes[4]  = { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1.f };
-				dSizes[5]  = { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1.f };
-				dSizes[6]  = { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2.f };
-				dSizes[7]  = { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2.f };
-				dSizes[8]  = { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1.f };
-				dSizes[9]  = { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1.f };
-				dSizes[10] = { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 0.5f };
 
-
-				std::array<VkDescriptorPoolSize, 11> sizes;
-				for (int i = 0; i < dSizes.size(); i++)
+				std::array<VkDescriptorPoolSize, std::size(dSizes)> sizes;
+				for (int i = 0; i < std::size(dSizes); i++)
 					sizes[i] = { dSizes[i].first, uint32_t(dSizes[i].second * count)};
 
 				VkDescriptorPoolCreateInfo pool_info = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };

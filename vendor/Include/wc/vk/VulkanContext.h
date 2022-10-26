@@ -14,7 +14,7 @@ enum class Vendor : uint32_t {
 	INTEL = 0x8086
 };
 
-const bool enableValidationLayers = true;
+#define WC_ENABLE_GRAPHICS_DEBUGGER
 
 namespace VulkanContext {
 	namespace {
@@ -88,60 +88,74 @@ namespace VulkanContext {
 
 	void BeginLabel(const VkCommandBuffer& command_buffer, const char* label_name, const glm::vec4& color = glm::vec4(1.f))
 	{
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		VkDebugUtilsLabelEXT label = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
 		label.pLabelName = label_name;
 		label.color[0] = color[0];
 		label.color[1] = color[1];
 		label.color[2] = color[2];
 		label.color[3] = color[3];
-		if (enableValidationLayers) vkCmdBeginDebugUtilsLabel(command_buffer, &label);
+		vkCmdBeginDebugUtilsLabel(command_buffer, &label);
+#endif
 	}
 
 	void InsertLabel(const VkCommandBuffer& command_buffer, const char* label_name, const glm::vec4& color = glm::vec4(1.f))
 	{
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		VkDebugUtilsLabelEXT label = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
 		label.pLabelName = label_name;
 		label.color[0] = color[0];
 		label.color[1] = color[1];
 		label.color[2] = color[2];
 		label.color[3] = color[3];
-		if (enableValidationLayers) vkCmdInsertDebugUtilsLabel(command_buffer, &label);
+		vkCmdInsertDebugUtilsLabel(command_buffer, &label);
+#endif
 	}
 
-	void EndLabel(VkCommandBuffer command_buffer) { if (enableValidationLayers) vkCmdEndDebugUtilsLabel(command_buffer); }
+	void EndLabel(VkCommandBuffer command_buffer) { 
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+		vkCmdEndDebugUtilsLabel(command_buffer); 
+#endif // WC_ENABLE_GRAPHICS_DEBUGGER
+	}
 
 
 	void BeginLabel(const VkQueue& queue, const char* label_name, const glm::vec4& color = glm::vec4(1.f))
 	{
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		VkDebugUtilsLabelEXT label = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
 		label.pLabelName = label_name;
 		label.color[0] = color[0];
 		label.color[1] = color[1];
 		label.color[2] = color[2];
 		label.color[3] = color[3];
-		if (enableValidationLayers) vkQueueBeginDebugUtilsLabel(queue, &label);
+		vkQueueBeginDebugUtilsLabel(queue, &label);
+#endif // WC_ENABLE_GRAPHICS_DEBUGGER
 	}
 
 	void InsertLabel(const VkQueue& queue, const char* label_name, const glm::vec4& color = glm::vec4(1.f))
 	{
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		VkDebugUtilsLabelEXT label = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
 		label.pLabelName = label_name;
 		label.color[0] = color[0];
 		label.color[1] = color[1];
 		label.color[2] = color[2];
 		label.color[3] = color[3];
-		if (enableValidationLayers) vkQueueInsertDebugUtilsLabel(queue, &label);
+		vkQueueInsertDebugUtilsLabel(queue, &label);
+#endif // WC_ENABLE_GRAPHICS_DEBUGGER
 	}
 
 	void EndLabel(const VkQueue& queue) { vkQueueEndDebugUtilsLabel(queue); }
 
 	void SetObjectName(const VkObjectType& object_type, const uint64_t& object_handle, const char* object_name)
 	{
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		VkDebugUtilsObjectNameInfoEXT name_info = { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
 		name_info.objectType = object_type;
 		name_info.objectHandle = object_handle;
 		name_info.pObjectName = object_name;
-		if (enableValidationLayers) vkSetDebugUtilsObjectName(device, &name_info);
+		vkSetDebugUtilsObjectName(device, &name_info);
+#endif // WC_ENABLE_GRAPHICS_DEBUGGER
 	}
 
 
@@ -150,20 +164,20 @@ namespace VulkanContext {
 	const std::vector<const char*> deviceExtensions = {	VK_KHR_SWAPCHAIN_EXTENSION_NAME	};
 
 
-	struct SwapChainSupportDetails {
-		VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
-	};
+	
 
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily;
-		std::optional<uint32_t> presentFamily;
+		//std::optional<uint32_t> presentFamily;
 		std::optional<uint32_t> computeFamily;
 		std::optional<uint32_t> transferFamily;
 
 		bool isComplete() {
-			return graphicsFamily.has_value() && presentFamily.has_value();
+			return 
+				graphicsFamily.has_value() && 
+				//presentFamily.has_value() &&
+				computeFamily.has_value() &&
+				transferFamily.has_value();
 		}
 	};
 
@@ -174,8 +188,9 @@ namespace VulkanContext {
 
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-		if (enableValidationLayers) 
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);		
+#endif // WC_ENABLE_GRAPHICS_DEBUGGER
 
 		return extensions;
 	}
@@ -193,16 +208,6 @@ namespace VulkanContext {
 			return vkCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pDebugMessenger);		
 		else 
 			return VK_ERROR_EXTENSION_NOT_PRESENT;		
-	}
-
-	void setupDebugMessenger() {
-		if (!enableValidationLayers) return;
-
-		VkDebugUtilsMessengerCreateInfoEXT createInfo;
-		populateDebugMessengerCreateInfo(createInfo);
-
-		if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debug_messenger) != VK_SUCCESS) 
-			WC_ERROR("Failed to set up debug messenger!");		
 	}
 
 	bool checkValidationLayerSupport() {
@@ -223,8 +228,10 @@ namespace VulkanContext {
 	void createInstance() {
 		// @TODO: add mac support
 
-		if (enableValidationLayers && !checkValidationLayerSupport()) 
-			WC_ERROR("Validation layers requested, but not available!");		
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+		if (!checkValidationLayerSupport()) 
+			WC_ERROR("Validation layers requested, but not available!");
+#endif
 
 		VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
 		appInfo.pApplicationName = "WC Application";
@@ -241,13 +248,13 @@ namespace VulkanContext {
 		createInfo.ppEnabledExtensionNames = extensions.data();
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-		if (enableValidationLayers) {
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 			createInfo.ppEnabledLayerNames = validationLayers.data();
 
 			populateDebugMessengerCreateInfo(debugCreateInfo);
 			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-		}
+#endif
 
 		if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) 
 			WC_ERROR("Failed to create instance!");		
@@ -268,48 +275,11 @@ namespace VulkanContext {
 		return requiredExtensions.empty();
 	}
 
-	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
-		for (const auto& availableFormat : availableFormats) 
-			if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-				return availableFormat;		
+	
 
-		return availableFormats[0];
-	}
+	
 
-	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
-		for (const auto& availablePresentMode : availablePresentModes) 
-			if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) 
-				return availablePresentMode;		
-
-		return VK_PRESENT_MODE_FIFO_KHR;
-	}
-
-	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
-		SwapChainSupportDetails details;
-
-		auto& surface = wc::window.surface;
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
-
-		uint32_t formatCount;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
-
-		if (formatCount != 0) {
-			details.formats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
-		}
-
-		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-
-		if (presentModeCount != 0) {
-			details.presentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
-		}
-
-		return details;
-	}
-
-	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device/*, VkSurfaceKHR surface*/) {
 		QueueFamilyIndices indices;
 
 		uint32_t queueFamilyCount = 0;
@@ -324,14 +294,14 @@ namespace VulkanContext {
 			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) 	indices.computeFamily = i;
 			if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) indices.transferFamily = i;			
 
-			VkBool32 presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, wc::window.surface, &presentSupport);
-
-			if (presentSupport) 
-				indices.presentFamily = i;			
+			//VkBool32 presentSupport = false;
+			//vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+			//
+			//if (presentSupport) 
+			//	indices.presentFamily = i;			
 
 			if (indices.isComplete()) 
-				break;			
+				return indices;
 
 			i++;
 		}
@@ -339,21 +309,21 @@ namespace VulkanContext {
 		return indices;
 	}
 
-	bool isDeviceSuitable(VkPhysicalDevice device) {
-		QueueFamilyIndices indices = findQueueFamilies(device);
+	bool isDeviceSuitable(VkPhysicalDevice device/*, VkSurfaceKHR surface*/) {
+		QueueFamilyIndices indices = findQueueFamilies(device/*, surface*/);
 
 		bool extensionsSupported = checkDeviceExtensionSupport(device);
 
-		bool swapChainAdequate = false;
-		if (extensionsSupported) {
-			SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-		}
+		//bool swapChainAdequate = false;
+		//if (extensionsSupported) {
+		//	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device, surface);
+		//	swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+		//}
 
-		return indices.isComplete() && extensionsSupported && swapChainAdequate;
+		return indices.isComplete() && extensionsSupported /*&& swapChainAdequate*/;
 	}
 
-	void pickPhysicalDevice() {
+	void pickPhysicalDevice(/*VkSurfaceKHR surface*/) {
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -365,7 +335,7 @@ namespace VulkanContext {
 		vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
 		for (const auto& device : devices) {
-			if (isDeviceSuitable(device)) {
+			if (isDeviceSuitable(device/*, surface*/)) {
 				physicalDevice = device;
 				return;
 			}
@@ -394,15 +364,20 @@ namespace VulkanContext {
 	};
 
 	Queue graphicsQueue;
-	Queue presentQueue;
+	//Queue presentQueue;
 	Queue computeQueue;
 	Queue transferQueue;
 
-	void createDevice() {
-		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+	void createDevice(/*VkSurfaceKHR surface*/) {
+		QueueFamilyIndices indices = findQueueFamilies(physicalDevice/*, surface*/);
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::unordered_set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+		std::unordered_set<uint32_t> uniqueQueueFamilies = { 
+			indices.graphicsFamily.value(), 
+			//indices.presentFamily.value(),
+			indices.computeFamily.value(),
+			indices.transferFamily.value(),
+		};
 
 		float queuePriority = 1.0f;
 		for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -425,132 +400,33 @@ namespace VulkanContext {
 
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+		createInfo.enabledLayerCount = 0;		
 
-		if (enableValidationLayers) {
-			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-			createInfo.ppEnabledLayerNames = validationLayers.data();
-		}
-		else 
-			createInfo.enabledLayerCount = 0;		
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+		createInfo.ppEnabledLayerNames = validationLayers.data();
+#endif
 
 		if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) 
 			WC_INFO("failed to create logical device!");		
 
 		graphicsQueue.GetDeviceQueue(indices.graphicsFamily.value());
-		presentQueue.GetDeviceQueue(indices.presentFamily.value());
+		//presentQueue.GetDeviceQueue(indices.presentFamily.value());
 		computeQueue.GetDeviceQueue(indices.computeFamily.value());
 		transferQueue.GetDeviceQueue(indices.transferFamily.value());
 	}
 
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
-		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) 
-			return capabilities.currentExtent;		
-		else {
-			int width, height;
-			glfwGetFramebufferSize(wc::window, &width, &height);
-
-			VkExtent2D actualExtent = {
-				static_cast<uint32_t>(width),
-				static_cast<uint32_t>(height)
-			};
-
-			actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-			actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-
-			return actualExtent;
-		}
-	}
-
-	void createSwapChain(wc::Window& window) {
-		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
-
-		VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-		VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-		VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
-
-		uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-		if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) 
-			imageCount = swapChainSupport.capabilities.maxImageCount;		
-
-		VkSwapchainCreateInfoKHR createInfo = { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
-		createInfo.surface = wc::window.surface;
-
-		createInfo.minImageCount = imageCount;
-		createInfo.imageFormat = surfaceFormat.format;
-		createInfo.imageColorSpace = surfaceFormat.colorSpace;
-		createInfo.imageExtent = extent;
-		createInfo.imageArrayLayers = 1;
-		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
-
-		if (indices.graphicsFamily != indices.presentFamily) {
-			createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-			createInfo.queueFamilyIndexCount = 2;
-			createInfo.pQueueFamilyIndices = queueFamilyIndices;
-		}
-		else 
-			createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		
-
-		createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-		createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-		createInfo.presentMode = presentMode;
-		createInfo.clipped = VK_TRUE;
-
-		createInfo.oldSwapchain = VK_NULL_HANDLE;
-
-		if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &window.swapchain) != VK_SUCCESS) 
-			WC_ERROR("failed to create swap chain!");		
-
-		vkGetSwapchainImagesKHR(device, window.swapchain, &imageCount, nullptr);
-		window.swapchainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(device, window.swapchain, &imageCount, window.swapchainImages.data());
-
-		window.swapchainImageFormat = surfaceFormat.format;
-
-		window.swapchainImageViews.resize(window.swapchainImages.size());
-
-		for (size_t i = 0; i < window.swapchainImages.size(); i++) {
-			VkImageViewCreateInfo createInfo{};
-			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			createInfo.image = window.swapchainImages[i];
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			createInfo.format = window.swapchainImageFormat;
-			createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			createInfo.subresourceRange.baseMipLevel = 0;
-			createInfo.subresourceRange.levelCount = 1;
-			createInfo.subresourceRange.baseArrayLayer = 0;
-			createInfo.subresourceRange.layerCount = 1;
-
-			if (vkCreateImageView(device, &createInfo, nullptr, &window.swapchainImageViews[i]) != VK_SUCCESS)
-				WC_ERROR("Failed to create image views!");
-		}
-	}
-
-	void Create(wc::Window& window) {
+	inline void Create(wc::Window& window) {
 		createInstance();
-		setupDebugMessenger();
+		
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+			VkDebugUtilsMessengerCreateInfoEXT createInfo;
+			populateDebugMessengerCreateInfo(createInfo);
 
-		if (glfwCreateWindowSurface(instance, window, nullptr, &wc::window.surface) != VK_SUCCESS) WC_ERROR("failed to create window surface!");
+			if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debug_messenger) != VK_SUCCESS)
+				WC_ERROR("Failed to set up debug messenger!");
 
-		pickPhysicalDevice();
-		createDevice();
 
-		createSwapChain(window);
-
-		VmaAllocatorCreateInfo allocatorInfo = {};
-		allocatorInfo.physicalDevice = physicalDevice;
-		allocatorInfo.device = device;
-		allocatorInfo.instance = instance;
-		vmaCreateAllocator(&allocatorInfo, &allocator);
-
-		if (enableValidationLayers) {
 			vkCmdBeginDebugUtilsLabel = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT");
 			vkCmdInsertDebugUtilsLabel = (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdInsertDebugUtilsLabelEXT");
 			vkCmdEndDebugUtilsLabel = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT");
@@ -560,12 +436,21 @@ namespace VulkanContext {
 			vkQueueEndDebugUtilsLabel = (PFN_vkQueueEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueEndDebugUtilsLabelEXT");
 
 			vkSetDebugUtilsObjectName = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
-		}
+#endif // WC_ENABLE_GRAPHICS_DEBUGGER
+
+		pickPhysicalDevice(/*window.surface*/);
+		createDevice(/*window.surface*/);
+
+		VmaAllocatorCreateInfo allocatorInfo = {};
+		allocatorInfo.physicalDevice = physicalDevice;
+		allocatorInfo.device = device;
+		allocatorInfo.instance = instance;
+		vmaCreateAllocator(&allocatorInfo, &allocator);		
+
+		window.CreateSwapchain(VulkanContext::GetPhysicalDevice(), VulkanContext::GetDevice(), VulkanContext::GetInstance());
 	}
 
 	void Destroy() {
-		vkDestroySurfaceKHR(instance, wc::window.surface, nullptr);
-
 		vmaDestroyAllocator(allocator);
 		vkDestroyDevice(device, nullptr);
 

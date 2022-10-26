@@ -354,7 +354,7 @@ namespace wc {
 			descriptorAllocator.Destroy();
 
 			RendererContext::Destroy(window);
-			window.Destroy();
+			window.Destroy(VulkanContext::GetInstance());
 
 			VulkanContext::Destroy();
 		}

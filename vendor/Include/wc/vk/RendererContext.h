@@ -241,6 +241,6 @@ namespace RendererContext {
 
 	const wc::Queue GetGraphicsQueue() { return VulkanContext::graphicsQueue; }
 	const wc::Queue GetComputeQueue() { return VulkanContext::computeQueue; }
-	const wc::Queue GetPresentQueue() { return VulkanContext::presentQueue; }
+	const wc::Queue GetPresentQueue() { return /*VulkanContext::presentQueue*/VulkanContext::graphicsQueue; }
 
 }
