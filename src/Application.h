@@ -161,9 +161,8 @@ namespace wc {
 			}
 
 			//loading escape menu
-			if (mode == MenuMode::ESCMENU) {
-				gameInstance.RenderImGuiEscapeMenu();
-			}
+			if (mode == MenuMode::ESCMENU) 
+				gameInstance.RenderImGuiEscapeMenu();			
 
 			//loading the main menu
 			if (mode == MenuMode::MAINMENU) {

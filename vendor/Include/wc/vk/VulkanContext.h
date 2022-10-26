@@ -14,7 +14,7 @@ enum class Vendor : uint32_t {
 	INTEL = 0x8086
 };
 
-#define WC_ENABLE_GRAPHICS_DEBUGGER
+//#define WC_ENABLE_GRAPHICS_DEBUGGER
 
 namespace VulkanContext {
 	namespace {
@@ -57,7 +57,7 @@ namespace VulkanContext {
 
 			return true;
 		}
-
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabel = nullptr;
 		PFN_vkCmdInsertDebugUtilsLabelEXT vkCmdInsertDebugUtilsLabel = nullptr;
 		PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabel = nullptr;
@@ -67,6 +67,7 @@ namespace VulkanContext {
 		PFN_vkQueueEndDebugUtilsLabelEXT vkQueueEndDebugUtilsLabel = nullptr;
 
 		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectName = nullptr;
+#endif
 	}
 
 	VkInstance GetInstance() { return instance; }
@@ -145,7 +146,11 @@ namespace VulkanContext {
 #endif // WC_ENABLE_GRAPHICS_DEBUGGER
 	}
 
-	void EndLabel(const VkQueue& queue) { vkQueueEndDebugUtilsLabel(queue); }
+	void EndLabel(const VkQueue& queue) { 
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+		vkQueueEndDebugUtilsLabel(queue); 
+#endif // WC_ENABLE_GRAPHICS_DEBUGGER
+	}
 
 	void SetObjectName(const VkObjectType& object_type, const uint64_t& object_handle, const char* object_name)
 	{
