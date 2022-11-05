@@ -1,14 +1,20 @@
 #pragma once
 #include <pch.h>
-
+#include "AssetManager.h"
 
 namespace wc {
 
-	static const uint32_t MaxLineVertexCount = 100 * 2;
+	static const uint32_t MaxLineVertexCount = 10000 * 2;
 
 	struct LineVertex {
-		glm::vec4 pos;
-		glm::vec4 color;
+		glm::vec4 pos = glm::vec4(0.f);
+		glm::vec4 color = glm::vec4(0.f);
+
+		LineVertex() = default;
+		LineVertex(const glm::vec3& position, const glm::vec4& Color) {
+			pos = glm::vec4(position, 0.f);
+			color = Color;
+		}
 	};
 
 	class LineBatcher {
@@ -16,23 +22,27 @@ namespace wc {
 		uint32_t byteOffset = 0;
 
 		wc::Buffer lineBuffer;
+
+		LineVertex vertices[MaxLineVertexCount];
 		wc::Shader shader;
 	public:
-		void Create(const wc::RenderPass& renderPass, const VkDescriptorBufferInfo& ubo) {
+		void Create() {
+			lineBuffer.Create(sizeof(vertices), wc::STORAGE_BUFFER);
+		}
+
+		void CreatePipeline(const wc::RenderPass& renderPass, const VkDescriptorBufferInfo& ubo) {
 			wc::ShaderCreateInfo createInfo;
-			createInfo.vertexShader = "resourcepacks/default/shaders/Line3D.vert";
-			createInfo.fragmentShader = "resourcepacks/default/shaders/Line3D.frag";
+			createInfo.vertexShader =   GetAssetPath() + "/shaders/Line3D.vert";
+			createInfo.fragmentShader = GetAssetPath() + "/shaders/Line3D.frag";
 			createInfo.windowSize = window.GetSize();
 			createInfo.renderPass = renderPass;
-			wc::VertexInputDescription desc;
-			createInfo.vertexDescription = desc;
 			createInfo.blending = false;
 			createInfo.depthTest = true;
 			createInfo.invertY = true;
 			createInfo.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+			createInfo.cachePath = GetCachedAssetPath() + "/shaders/LineShader.bin";
 			shader.Create(createInfo);
 
-			lineBuffer.Create(MaxLineVertexCount * sizeof(LineVertex), wc::STORAGE_BUFFER);
 
 			wc::DescriptorWriter writer;
 
@@ -40,25 +50,24 @@ namespace wc {
 			writer.write_buffer(0, ubo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 			writer.write_buffer(1, lineBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
-			wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+			wc::UpdateDescriptorSets((uint32_t)writer.writes.size(), writer.writes.data());
+		}
+
+		void DestroyPipeline() {
+			shader.Destroy();
 		}
 
 		void Destroy() {
 			lineBuffer.Destroy();
-			shader.Destroy();
+			DestroyPipeline();
 		}
 
 		void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color = glm::vec4(1.f)) {
 			if (IndexCount >= MaxLineVertexCount) Flush();
 
-			float vertices[] = {
-				// positions
-				start.x, start.y, start.z, 0.f, color.r, color.g, color.b, color.a,
-				end.x,   end.y,   end.z  , 0.f, color.r, color.g, color.b, color.a
-			};
+			vertices[IndexCount + 0] = LineVertex(start, color);
+			vertices[IndexCount + 1] = LineVertex(end, color);
 
-			lineBuffer.SetData(vertices, sizeof(vertices), byteOffset);
-			byteOffset += sizeof(vertices);
 			IndexCount += 2;
 		}
 
@@ -86,7 +95,9 @@ namespace wc {
 
 		void Flush(const bool render = true) {
 			if (!IndexCount) return;
+
 			if (render) {
+				lineBuffer.SetData(vertices, sizeof(LineVertex) * IndexCount);
 				wc::CommandBuffer& cmd = RendererContext::mainCommandBuffer;
 				shader.Bind(cmd);
 				cmd.Draw(IndexCount);
@@ -94,7 +105,5 @@ namespace wc {
 			byteOffset = 0;
 			IndexCount = 0;
 		}
-
-		LineBatcher() {	}
 	};
 }

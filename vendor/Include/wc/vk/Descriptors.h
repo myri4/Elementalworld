@@ -59,6 +59,11 @@ namespace wc {
 	class DescriptorAllocator {
 	public:
 
+		void Create() {
+			currentPool = grab_pool();
+			usedPools.push_back(currentPool);
+		}
+
 		void reset_pools() {
 			for (auto& p : usedPools)
 				p.Reset();
@@ -233,7 +238,7 @@ namespace wc {
 
 	class DescriptorWriter {
 	public:
-		wc::DescriptorSet dstSet;
+		wc::DescriptorSet dstSet = VK_NULL_HANDLE;
 		DescriptorWriter& write_buffer(const uint32_t& binding, const VkDescriptorBufferInfo& bufferInfo, const VkDescriptorType& type) {
 
 			VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
@@ -264,7 +269,7 @@ namespace wc {
 		DescriptorWriter& write_images(const uint32_t& binding, const std::vector<VkDescriptorImageInfo>& imageInfo, const VkDescriptorType& type) {
 			VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 
-			newWrite.descriptorCount = imageInfo.size();
+			newWrite.descriptorCount = (uint32_t)imageInfo.size();
 			newWrite.descriptorType = type;
 			newWrite.pImageInfo = imageInfo.data();
 			newWrite.dstBinding = binding;

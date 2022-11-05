@@ -63,7 +63,7 @@ namespace wc
 				std::memcpy(msg.body.data() + i, &data, sizeof(DataType));
 
 				// Recalculate the message size
-				msg.header.size = msg.size();
+				msg.header.size = (uint32_t)msg.size();
 
 				// Return the target message so it can be "chained"
 				return msg;
@@ -86,7 +86,7 @@ namespace wc
 				msg.body.resize(i);
 
 				// Recalculate the message size
-				msg.header.size = msg.size();
+				msg.header.size = (uint32_t)msg.size();
 
 				// Return the target message so it can be "chained"
 				return msg;

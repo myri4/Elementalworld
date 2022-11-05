@@ -30,7 +30,7 @@ public:
 		//SetupBones
 
 		auto& offsetMatMap = model.m_OffsetMatMap;
-		uint32_t boneCount = model.m_OffsetMatMap.size();
+		uint32_t boneCount = (uint32_t)model.m_OffsetMatMap.size();
 		m_Bones.reserve(animation->mNumChannels);
 		for (uint32_t i = 0; i < animation->mNumChannels; i++) {
 			auto aiChannel = animation->mChannels[i];

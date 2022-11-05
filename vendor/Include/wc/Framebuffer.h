@@ -10,9 +10,9 @@ namespace wc {
 	{
 		wc::Image image;
 		wc::ImageView view;
-		VkFormat format;
-		VkImageSubresourceRange subresourceRange;
-		VkAttachmentDescription description;
+		VkFormat format = VK_FORMAT_UNDEFINED;
+		VkImageSubresourceRange subresourceRange = {};
+		VkAttachmentDescription description = {};
 
 		/**
 		* @brief Returns true if the attachment has a depth component
@@ -166,7 +166,7 @@ namespace wc {
 			if (attachment.hasDepth() || attachment.hasStencil())			
 				attachment.description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;			
 			else			
-				attachment.description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				attachment.description.finalLayout = VK_IMAGE_LAYOUT_GENERAL; // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 			
 
 			attachments.push_back(attachment);
@@ -259,7 +259,7 @@ namespace wc {
 
 			// Find. max number of layers across attachments
 			uint32_t maxLayers = 0;
-			for (auto attachment : attachments)			
+			for (auto& attachment : attachments)			
 				if (attachment.subresourceRange.layerCount > maxLayers)				
 					maxLayers = attachment.subresourceRange.layerCount;		
 			

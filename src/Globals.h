@@ -2,8 +2,11 @@
 #include <glm/glm.hpp>
 #include <wc/vk/Buffer.h>
 #include <wc/vk/Pipeline.h>
+#include <wc/Utils/Window.h>
 
 #define WC_MAKE_VERSION(variant, major, minor, patch) ((((uint32_t)(variant)) << 29) | (((uint32_t)(major)) << 22) | (((uint32_t)(minor)) << 12) | ((uint32_t)(patch)))
+
+static wc::Window window; // @TODO: [myri4] Move this to window manager
 
 enum class EVersion {
 	myri4,
@@ -41,17 +44,33 @@ enum class BlockTexture : uint8_t { RIGHT, TOP, FRONT, LEFT, BOTTOM, BACK };
 const uint8_t WC_MODEL_BIT = 0x1;
 const uint8_t WC_CULL_BIT = 0x2;
 
-std::string resourceName = "default";
-
 //@TODO: REMOVE
-enum MenuMode { GAME, INVENTORY, MAINMENU, SETTINGS, MULTIPLAYER, ESCMENU, WORLD_SELECTION, WORLD_CREATION };
-uint32_t mode = MenuMode::MAINMENU;
+enum MenuMode : uint32_t { GAME, INVENTORY, MAINMENU, SETTINGS, MULTIPLAYER, ESCMENU, WORLD_SELECTION, WORLD_CREATION };
+MenuMode mode = MenuMode::MAINMENU;
+MenuMode previousMode = mode;
+
+#undef ChangeMenu
+void ChangeMenu(const MenuMode& newMode) {
+	previousMode = mode;
+	mode = newMode;
+
+	if (mode == GAME) {
+		window.setCursorPos(window.GetSize() / 2);
+		//window.SetCursorMode(GLFW_CURSOR_DISABLED);
+	}
+	//else 
+	//	window.SetCursorMode(GLFW_CURSOR_DISABLED);
+}
+
+void ChangeBack() {
+	ChangeMenu(previousMode);
+}
 
 uint32_t convertColor(const glm::vec4& color) {
-	int32_t r = color.r * 255.f;
-	int32_t g = color.g * 255.f;
-	int32_t b = color.b * 255.f;
-	int32_t a = color.a * 255.f;
+	int32_t r = int32_t(color.r * 255.f);
+	int32_t g = int32_t(color.g * 255.f);
+	int32_t b = int32_t(color.b * 255.f);
+	int32_t a = int32_t(color.a * 255.f);
 	return a << 24 | b << 16 | g << 8 | r;
 }
 

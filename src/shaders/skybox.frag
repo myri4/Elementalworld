@@ -174,5 +174,5 @@ void main()
 	vec3 nightSky = color + color2 + color3 + color4 + color5 + color6 + colorStars;
 	color = mix(daySky, nightSky, mixer);
 
-    FragColor = vec4(color, 1.f);
+    FragColor = vec4(color, 0.f);
 }

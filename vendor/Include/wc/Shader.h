@@ -84,7 +84,7 @@ namespace wc {
 			if (resources.push_constant_buffers.size() > 0) {
 
 				const auto& bufferType = compiler.get_type(resources.push_constant_buffers[0].base_type_id);
-				range.size = compiler.get_declared_struct_size(bufferType);
+				range.size = (uint32_t)compiler.get_declared_struct_size(bufferType);
 			}
 
 			return range;
@@ -96,7 +96,8 @@ namespace wc {
 	struct ShaderCreateInfo {
 		std::string vertexShader;
 		std::string fragmentShader;
-		glm::vec2 windowSize;
+		std::string cachePath;
+		glm::vec2 windowSize = glm::vec2(0.f);
 		wc::RenderPass renderPass;
 		wc::VertexInputDescription vertexDescription;
 		bool blending = false;
@@ -109,11 +110,13 @@ namespace wc {
 		wc::Pipeline pipeline;
 		wc::PipelineLayout pipelineLayout;
 		wc::DescriptorSetLayout descriptorLayout;
+		wc::PipelineCache cache;
 	public:
 		const wc::Pipeline& getPipeline() const { return pipeline; }
 		const wc::PipelineLayout& getPipelineLayout() const { return pipelineLayout; }
 		const wc::DescriptorSetLayout& getDescriptorLayout() const { return descriptorLayout; }
-		wc::DescriptorSet descriptorSet;
+		const wc::PipelineCache& GetCache() const { return cache; }
+		wc::DescriptorSet descriptorSet = VK_NULL_HANDLE;
 
 		void Create(const ShaderCreateInfo& createInfo) {
 			wc::PipelineBuilder pipelineBuilder;
@@ -133,7 +136,7 @@ namespace wc {
 
 					for (auto& resource : resources.push_constant_buffers) {
 						auto& baseType = compiler.get_type(resource.base_type_id);
-						auto bufferSize = compiler.get_declared_struct_size(baseType);
+						uint32_t bufferSize = (uint32_t)compiler.get_declared_struct_size(baseType);
 
 						uint32_t offset = 0;
 						if (ranges.size())
@@ -256,10 +259,9 @@ namespace wc {
 				info.setLayoutCount = 1;
 				info.pSetLayouts = descriptorLayout.GetPointer();
 				info.pPushConstantRanges = ranges.data();
-				info.pushConstantRangeCount = ranges.size();
+				info.pushConstantRangeCount = (uint32_t)ranges.size();
 
 				pipelineLayout.Create(info);
-				
 			}
 
 			pipelineBuilder.vertexInputInfo = wc::vertex_input_state_create_info(createInfo.vertexDescription);
@@ -302,8 +304,14 @@ namespace wc {
 			pipelineBuilder.depthStencil.minDepthBounds = 0.0f; // Optional
 			pipelineBuilder.depthStencil.maxDepthBounds = 1.0f; // Optional
 			pipelineBuilder.depthStencil.stencilTestEnable = false;
-
 			pipelineBuilder.topology = createInfo.topology;
+			
+
+			VkPipelineCacheCreateInfo cacheCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO };
+			cache.Create(cacheCreateInfo);
+			if (createInfo.cachePath.size() > 0) cache.SaveToFile(createInfo.cachePath);
+			
+			pipelineBuilder.cache = cache;
 			//finally build the pipeline
 			pipeline = pipelineBuilder.build_pipeline(createInfo.renderPass, pipelineLayout);
 
@@ -318,6 +326,7 @@ namespace wc {
 		void Destroy() {
 			pipeline.Destroy();
 			pipelineLayout.Destroy();
+			cache.Destroy();
 		}
 	};
 
@@ -329,7 +338,7 @@ namespace wc {
 		const wc::ComputePipeline& getPipeline() const { return pipeline; }
 		const wc::PipelineLayout& getPipelineLayout() const { return pipelineLayout; }
 		const wc::DescriptorSetLayout& getDescriptorLayout() const { return descriptorLayout; }
-		wc::DescriptorSet descriptorSet;
+		wc::DescriptorSet descriptorSet = VK_NULL_HANDLE;
 
 		void Create(const std::string& shaderPath) {
 			ShaderModuleWC shaderModule;
@@ -453,9 +462,7 @@ namespace wc {
 				range.stageFlags = shaderStage;
 				if (resources.push_constant_buffers.size() > 0) {
 					auto& baseType = compiler.get_type(resources.push_constant_buffers[0].base_type_id);
-					uint32_t bufferSize = compiler.get_declared_struct_size(baseType);
-
-					range.size = compiler.get_declared_struct_size(baseType);
+					range.size = (uint32_t)compiler.get_declared_struct_size(baseType);
 
 					info.pPushConstantRanges = &range;
 					info.pushConstantRangeCount = 1;

@@ -1,0 +1,10 @@
+RenderDistance: 0
+MouseSensitivity: 5
+InvertMouse: false
+Bloom: true
+BloomThreshold: 1
+BloomKnee: 0.200000003
+ColorBlindMode: false
+FPSCap: 0
+WindowMode: 0
+WindowResolution: 2

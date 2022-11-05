@@ -2,7 +2,7 @@
 #include "world/World.h"
 
 namespace wc {	
-	bool debug_menu = false;
+	bool debug_menu = true;
 	GameInstance gameInstance;
 
 	class Application {
@@ -10,21 +10,21 @@ namespace wc {
 		char newWorldName[256];
 		std::string playerName = "321"; // @TODO: place this in a better place
 		std::string joinIp = "some ip idk";
-		ImGuiTexture background;
-		ImGuiTexture TitleSBox;
-		ImGuiTexture Box;
-		ImGuiTexture LogoLong;
-		ImGuiTexture LogoBox;
-		ImGuiTexture TitleBox;
-		ImGuiTexture Chain1;
-		ImGuiTexture Chain2;
-		ImGuiTexture Chain3;
-		ImGuiTexture LBox;
-		ImGuiTexture MidBox;
-		ImGuiTexture MidBox2;
-		ImGuiTexture SBox;
-		ImGuiTexture XSBox;
-		ImGuiTexture XSBox2;
+		Texture background;
+		Texture TitleSBox;
+		Texture Box;
+		Texture LogoLong;
+		Texture LogoBox;
+		Texture TitleBox;
+		Texture Chain1;
+		Texture Chain2;
+		Texture Chain3;
+		Texture LBox;
+		Texture MidBox;
+		Texture MidBox2;
+		Texture SBox;
+		Texture XSBox;
+		Texture XSBox2;		
 
 		Clock deltaTimer;
 		float deltaTime = 0.f;
@@ -48,40 +48,46 @@ namespace wc {
 			if (hasFocus) {
 				if (mode == MenuMode::GAME) gameInstance.OnInput(deltaTime);
 				if (Keyboard::getKey(Keyboard::Key::F8)) debug_menu = !debug_menu;
-				if (mode == MenuMode::GAME && Keyboard::getKey(Keyboard::Key::Escape)) mode = MenuMode::ESCMENU;
-				else if (mode == MenuMode::ESCMENU && Keyboard::getKey(Keyboard::Key::Escape)) {
-					mode = MenuMode::GAME;
-					window.setCursorPos(glm::vec2(window.GetSize().x / 2, window.GetSize().y / 2));
+				if (Keyboard::getKey(Keyboard::Key::F9)) {
+					gameInstance.DestroyDynamicPipelines();
+					gameInstance.CreateDynamicPipelines();
 				}
-
+				if (mode == MenuMode::GAME && Keyboard::getKey(Keyboard::Key::Escape)) mode = MenuMode::ESCMENU;
+				else if (mode == MenuMode::ESCMENU && Keyboard::getKey(Keyboard::Key::Escape)) 
+					ChangeMenu(MenuMode::GAME);
 			}
 
-			window.SetCursorMode(mode == MenuMode::GAME ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+
+			window.SetCursorMode(mode == MenuMode::GAME && !gameInstance.console ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() {
+			VulkanContext::Create();
 			WindowCreateInfo windowInfo;
 			windowInfo.width = 1280;
 			windowInfo.height = 720;
 			windowInfo.appName = "Elementalworld";
+			//windowInfo.startFullscreen = true;
 			window.Create(windowInfo);
-			VulkanContext::Create(window);
-			RendererContext::CreateSwapchain(window);
+			
+			RendererContext::CreateDefaultRenderPass(window);
 
 			UploadContext::Init();
 			RendererContext::CreateCommands();
 
 			auto size = window.GetSize();
-			render_interface.windowSize = size;
 
-			render_interface.Create(RendererContext::GetRenderPass());
+			wc::descriptorAllocator.Create();
 
-			window.SetFramebufferSizeCallback([](GLFWwindow* windowHnadle, int width, int height) {
-				glm::ivec2 size = {width, height};
-				RendererContext::RecreateSwapchain(window);
-				render_interface.windowSize = size;
+			window.SetFramebufferSizeCallback([](GLFWwindow* windowHandle, int width, int height) {
+				RendererContext::RecreateDefaultRenderPass(window);
+
 				gameInstance.DestroyScreen();
+				gameInstance.DestroyDynamicPipelines();
+
+
 				gameInstance.CreateScreen();
+				gameInstance.CreateDynamicPipelines();
 				});
 			
 			ImGui::CreateContext();
@@ -117,34 +123,57 @@ namespace wc {
 			ImGui_ImplVulkan_DestroyFontUploadObjects();
 
 			if (!std::filesystem::exists("worlds")) std::filesystem::create_directory("worlds");
+			if (!std::filesystem::exists("cache")) std::filesystem::create_directory("cache");
+			if (!std::filesystem::exists("settings.yaml")) Settings::Save();
 
+			Settings::Load();
+
+			
 			gameInstance.CreateScreen();
 
 			gameInstance.Create(size);
 
 			//[TO DO]: shorten the lenght
-			background.Load("resourcepacks/default/textures/misc/screenshot.png");
-			TitleSBox.Load("resourcepacks/default/textures/misc/TitleSBox.png");
-			Box.Load("resourcepacks/default/textures/misc/Box.png");
-			LogoLong.Load("resourcepacks/default/textures/misc/LongLogo.png");
-			LogoBox.Load("resourcepacks/default/textures/misc/LogoBox.png");
-			TitleBox.Load("resourcepacks/default/textures/misc/TitleBox.png");
-			Chain1.Load("resourcepacks/default/textures/misc/Chain1.png");
-			Chain2.Load("resourcepacks/default/textures/misc/Chain2.png");
-			Chain3.Load("resourcepacks/default/textures/misc/Chain3.png");
-			LBox.Load("resourcepacks/default/textures/misc/LBox.png");
-			MidBox.Load("resourcepacks/default/textures/misc/MidBox.png");
-			MidBox2.Load("resourcepacks/default/textures/misc/MidBox.png");
-			SBox.Load("resourcepacks/default/textures/misc/SBox.png");
-			XSBox.Load("resourcepacks/default/textures/misc/XSBox.png");
-			XSBox2.Load("resourcepacks/default/textures/misc/XSBox.png");
+			background.Load(GetAssetPath() + "/textures/misc/screenshot.png");
+			TitleSBox.Load( GetAssetPath() + "/textures/misc/TitleSBox.png");
+			Box.Load(       GetAssetPath() + "/textures/misc/Box.png");
+			LogoLong.Load(  GetAssetPath() + "/textures/misc/LongLogo.png");
+			LogoBox.Load(   GetAssetPath() + "/textures/misc/LogoBox.png");
+			TitleBox.Load(  GetAssetPath() + "/textures/misc/TitleBox.png");
+			Chain1.Load(    GetAssetPath() + "/textures/misc/Chain1.png");
+			Chain2.Load(    GetAssetPath() + "/textures/misc/Chain2.png");
+			Chain3.Load(    GetAssetPath() + "/textures/misc/Chain3.png");
+			LBox.Load(      GetAssetPath() + "/textures/misc/LBox.png");
+			MidBox.Load(    GetAssetPath() + "/textures/misc/MidBox.png");
+			MidBox2.Load(   GetAssetPath() + "/textures/misc/MidBox.png");
+			SBox.Load(      GetAssetPath() + "/textures/misc/SBox.png");
+			XSBox.Load(     GetAssetPath() + "/textures/misc/XSBox.png");
+			XSBox2.Load(    GetAssetPath() + "/textures/misc/XSBox.png");
 		}
 		//----------------------------------------------------------------------------------------------------------------------
+		static void HelpMarker(const char* desc)
+		{
+			ImGui::TextDisabled("(?)");
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
+			{
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted(desc);
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
+		}
 		void OnUpdate() {
 			deltaTime = deltaTimer.restart();
 			CommandBuffer& cmd = RendererContext::mainCommandBuffer;
 
-			uint32_t swapchainImageIndex = RendererContext::AcquireNextImageKHR(window);
+			uint32_t swapchainImageIndex = 0;
+
+			VkResult result = RendererContext::AcquireNextImageKHR(window, swapchainImageIndex);
+
+			if (result == VK_ERROR_OUT_OF_DATE_KHR)
+				RendererContext::RecreateDefaultRenderPass(window);
+			
 			
 			//imgui commands
 			ImGui_ImplVulkan_NewFrame();
@@ -232,18 +261,18 @@ namespace wc {
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 0.f, 0.f, 1.f));
 				//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
 				ImGui::SetCursorPos(scaleRes(ImVec2(581, 359.5)));
-				if (ImGui::ImageButton(MidBox, scaleRes(ImVec2(759, 77)))) mode = MenuMode::WORLD_SELECTION;
+				if (ImGui::ImageButton(MidBox, scaleRes(ImVec2(759, 77)))) ChangeMenu(MenuMode::WORLD_SELECTION);
 				
 				//-Multiplayer
 				ImGui::SetCursorPos(scaleRes(ImVec2(581, 600.5)));
-				if (ImGui::ImageButton(MidBox2, scaleRes(ImVec2(759, 77)))) mode = MenuMode::MULTIPLAYER;
+				if (ImGui::ImageButton(MidBox2, scaleRes(ImVec2(759, 77)))) ChangeMenu(MenuMode::MULTIPLAYER);
 				
 				//-Settings
 				ImGui::SetCursorPos(scaleRes(ImVec2(581, 842.5)));
-				if (ImGui::ImageButton(XSBox, scaleRes(ImVec2(279, 77)))) mode = MenuMode::SETTINGS;
+				if (ImGui::ImageButton(XSBox, scaleRes(ImVec2(279, 77)))) ChangeMenu(MenuMode::SETTINGS);
 				
 				//-Quit Game
-				ImGui::SetCursorPos(scaleRes(ImVec2(1052, 842.5)));
+				ImGui::SetCursorPos(scaleRes(ImVec2(1052, 842.5f)));
 				if (ImGui::ImageButton(XSBox2, scaleRes(ImVec2(279, 77)))) window.close();
 				
 				ImGui::PopStyleColor(2);
@@ -263,7 +292,7 @@ namespace wc {
 					if (p.is_directory()) {
 						if (std::filesystem::exists(p.path() / "world.properties")) {
 							if (ImGui::Button(p.path().stem().string().c_str())) {
-								mode = MenuMode::GAME;
+								ChangeMenu(MenuMode::GAME);
 								gameInstance.worldName = p.path().stem().string();
 								gameInstance.LoadWorld();
 							}
@@ -273,7 +302,7 @@ namespace wc {
 
 				//create world
 				ImGui::SetCursorPos(ImVec2(0, window.GetSize().y - 25));
-				if (ImGui::Button("Create World")) mode = MenuMode::WORLD_CREATION;
+				if (ImGui::Button("Create World")) ChangeMenu(MenuMode::WORLD_CREATION);
 				
 
 				//background 
@@ -292,9 +321,147 @@ namespace wc {
 				if (ImGui::Button("Create") || Keyboard::getKey(Keyboard::Key::Enter)) {
 					gameInstance.CreateNewWorld(newWorldName);
 					gameInstance.LoadWorld();
-					mode = MenuMode::GAME;
+					ChangeMenu(MenuMode::GAME);
 
 				}
+				//background 
+				ImGui::GetBackgroundDrawList()->AddImage(background, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
+				ImGui::End();
+			}
+
+			//loading settings menu
+			if (mode == MenuMode::SETTINGS) {
+				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
+				ImGui::SetNextWindowPos(ImVec2(0, 0));
+				ImGui::Begin("Settings", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
+				ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+				if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags)) {
+					if (ImGui::BeginTabItem("Gameplay")) {
+
+						ImGui::SliderInt("Render Distance - (in chunks)", &Settings::i1, 1, 60); ImGui::SameLine(); HelpMarker("[Ctrl + Click] to input value");
+
+						ImGui::InputFloat("Mouse Speed", &Settings::MouseSensitivity, 0.1);
+						ImGui::InputFloat("Mouse Zoom Speed", &Settings::ZoomMouseSensitivity, 0.1);
+
+
+						ImGui::Checkbox("Inverted Mouse", &Settings::InvertMouse);					
+
+
+						ImGui::EndTabItem();
+					}
+
+					if (ImGui::BeginTabItem("Graphics")) {
+						if (ImGui::TreeNode("Bloom")) {
+							ImGui::Checkbox("Bloom Toggle", &Settings::bloomEnable);
+							ImGui::SliderFloat("BloomThreshold", &Settings::BloomThreshold, 0.f, 100.f, "%.3f");
+							ImGui::SliderFloat("BloomKnee", &Settings::BloomKnee, 0.f, 100.f, "%.3f");
+
+							ImGui::Separator();
+							ImGui::TreePop();
+						}
+						ImGui::Checkbox("Colour Blind Mode", &Settings::ColorBlindMode);
+
+
+						const char* FPSItems[] = { "unlimited", "30", "45", "60", "120", "240", "300" };
+						//item_current_idx          0         1     2     3     4      5      6
+						if (ImGui::BeginCombo("FPS Cap", FPSItems[Settings::item_current_idx]))
+						{
+							for (int i = 0; i < std::size(FPSItems); i++)
+							{
+								const bool is_selected = (Settings::item_current_idx == i);
+								if (ImGui::Selectable(FPSItems[i], is_selected))
+									Settings::item_current_idx = i;
+
+
+								// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+								if (is_selected)
+									ImGui::SetItemDefaultFocus();
+							}
+							ImGui::EndCombo();
+						}
+
+						ImGui::EndTabItem();
+					}
+
+					if (ImGui::BeginTabItem("Screen")) {
+						const char* items[] = { "Windowed", "Fullscreen" };
+						//item_current_idx2         0             1
+						if (ImGui::BeginCombo("Window Mode", items[Settings::WindowMode]))
+						{
+							for (int i = 0; i < std::size(items); i++)
+							{
+								const bool is_selected = (Settings::WindowMode == i);
+								if (ImGui::Selectable(items[i], is_selected))
+									Settings::WindowMode = i;
+
+								// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+								if (is_selected)
+									ImGui::SetItemDefaultFocus();
+							}
+							ImGui::EndCombo();
+						}
+						ImGui::SameLine();
+						HelpMarker("Requires restart");
+
+						//ImGui::SetCursorPos(ImVec2(0, 75));
+						const char* ResolutionItems[] = { "640 x 360", "960 x 540", "1920 x 1080", "2560 x 1440", "3840 x 2160", };
+						//item_current_idx3           0            1             2              3              4 
+						const char* combo_preview_value2 = ResolutionItems[Settings::ResolutionIndex];  // Pass in the preview value visible before opening the combo (it could be anything)
+						if (ImGui::BeginCombo("Window Resolution", combo_preview_value2))
+						{
+							for (int i = 0; i < std::size(ResolutionItems); i++)
+							{
+								bool is_selected2 = (Settings::ResolutionIndex == i);
+								if (ImGui::Selectable(ResolutionItems[i], is_selected2))
+									Settings::ResolutionIndex = i;
+
+
+								// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+								if (is_selected2)
+									ImGui::SetItemDefaultFocus();
+							}
+							ImGui::EndCombo();
+						}
+						ImGui::SameLine();
+						HelpMarker("Requires restart");
+						ImGui::EndTabItem();
+					}
+
+					if (ImGui::BeginTabItem("Volume")) {
+						ImGui::SliderInt("Master Volume", &Settings::v1, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp);
+						ImGui::SliderInt("Weather Volume", &Settings::v2, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp);
+						ImGui::SliderInt("Music Volume", &Settings::v3, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp);
+						ImGui::SliderInt("Mob Volume", &Settings::v4, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp);
+						ImGui::EndTabItem();
+					}
+					ImGui::EndTabBar();
+				}
+
+				//buttons
+				static bool respopup = false;
+				ImGui::SetCursorPos(ImVec2(window.GetSize().x - 245, 7));
+				if (ImGui::Button("Reset to Defaults")) respopup = true;
+				
+
+				if (respopup) {
+					ImGui::SetNextWindowSize(ImVec2(105, 50));
+					ImGui::SetNextWindowPos(ImVec2(window.GetSize().x - 185, 30));
+					ImGui::Begin("Picker", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+					ImGui::Text("Are you sure?");
+					if (ImGui::Button(" Yes ")) {
+						Settings::Reset();
+						respopup = false;
+					}
+					ImGui::SameLine(60);
+					if (ImGui::Button(" No ")) 
+						respopup = false;
+					
+					ImGui::End();
+				}
+				ImGui::SetCursorPos(ImVec2(window.GetSize().x - 110, 7));
+				if (ImGui::Button("Back"))
+					ChangeBack();
+
 				//background 
 				ImGui::GetBackgroundDrawList()->AddImage(background, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
 				ImGui::End();
@@ -312,8 +479,6 @@ namespace wc {
 			if (mode == MenuMode::GAME)
 				gameInstance.RenderGUI();
 
-			render_interface.Flush();
-
 			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
 			RendererContext::defaultRenderPass.End(cmd);
@@ -328,7 +493,12 @@ namespace wc {
 				ImGui::RenderPlatformWindowsDefault();
 			}
 
-			window.Present(swapchainImageIndex, RendererContext::GetRenderSemaphore(), RendererContext::GetPresentQueue());
+			VkResult presentationResult = window.Present(swapchainImageIndex, RendererContext::GetRenderSemaphore(), RendererContext::GetPresentQueue());
+
+			if (presentationResult == VK_ERROR_OUT_OF_DATE_KHR || presentationResult == VK_SUBOPTIMAL_KHR) 
+				RendererContext::RecreateDefaultRenderPass(window);
+			
+
 
 			RendererContext::renderFence.Wait();
 			RendererContext::renderFence.Reset();
@@ -339,13 +509,10 @@ namespace wc {
 		void OnDelete() {
 			vkDeviceWaitIdle(VulkanContext::GetDevice());
 
-			ImGuiDeletionQueue.flush();
+			TextureDeletionQueue.flush();
 			ImGui_ImplVulkan_Shutdown();
 			gameInstance.Destroy();
 			gameInstance.DestroyScreen();
-
-
-			render_interface.Destroy();
 
 			UploadContext::Destroy();
 
@@ -353,9 +520,11 @@ namespace wc {
 			descriptorAllocator.Destroy();
 
 			RendererContext::Destroy(window);
-			window.Destroy(VulkanContext::GetInstance());
+			window.Destroy();
 
 			VulkanContext::Destroy();
+
+			Settings::Save();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 	public:

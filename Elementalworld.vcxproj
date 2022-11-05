@@ -345,6 +345,7 @@
     <ClInclude Include="src\Rendering\Model\Model.h" />
     <ClInclude Include="src\Rendering\Renderer3D.h" />
     <ClInclude Include="src\Globals.h" />
+    <ClInclude Include="src\Settings.h" />
     <ClInclude Include="src\world\Biome.h" />
     <ClInclude Include="src\world\Block.h" />
     <ClInclude Include="src\world\Chunk.h" />
@@ -380,6 +381,7 @@
     <ClInclude Include="vendor\Include\wc\vk\RendererContext.h" />
     <ClInclude Include="vendor\Include\wc\vk\RendererObject.h" />
     <ClInclude Include="vendor\Include\wc\vk\Renderpass.h" />
+    <ClInclude Include="vendor\Include\wc\vk\Swapchain.h" />
     <ClInclude Include="vendor\Include\wc\vk\Synchronization.h" />
     <ClInclude Include="vendor\Include\wc\vk\VulkanContext.h" />
   </ItemGroup>

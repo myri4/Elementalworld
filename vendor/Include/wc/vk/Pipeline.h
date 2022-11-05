@@ -25,6 +25,11 @@ namespace wc {
 		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)m_RendererID, name.c_str()); }
 	};
 
+	struct PipelineCacheData {
+		void* data = nullptr;
+		size_t size = 0;
+	};
+
 	struct PipelineCache : public RendererObject<VkPipelineCache> {
 
 		VkResult Create(const VkPipelineCacheCreateInfo& createInfo) {
@@ -39,10 +44,23 @@ namespace wc {
 			return vkMergePipelineCaches(VulkanContext::GetDevice(), m_RendererID, count, caches);
 		}
 
-		void* GetData() {
-			void* data = nullptr;
-			vkGetPipelineCacheData(VulkanContext::GetDevice(), m_RendererID, nullptr, data); // @TODO: 4th arg is probably incorrect
+		PipelineCacheData GetData() const {
+			PipelineCacheData data;
+			vkGetPipelineCacheData(VulkanContext::GetDevice(), m_RendererID, &data.size, nullptr);
+			void* dataPtr = malloc(data.size);
+			vkGetPipelineCacheData(VulkanContext::GetDevice(), m_RendererID, &data.size, dataPtr);
+			data.data = dataPtr;
 			return data;
+		}
+
+		void SaveToFile(const std::string& filepath) const {
+			PipelineCacheData data = GetData();
+			std::fstream file;
+			file.open(filepath, std::ios::out | std::ios::binary);
+			file.write((char*)data.data, data.size);
+			file.flush();
+			file.close();
+			free(data.data);
 		}
 
 		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE_CACHE, (uint64_t)m_RendererID, name); }
@@ -52,19 +70,20 @@ namespace wc {
 
 	struct ComputePipeline : public Pipeline {
 
-		VkResult Create(const VkComputePipelineCreateInfo& pipelineInfo) {
-			return vkCreateComputePipelines(VulkanContext::GetDevice(), nullptr, 1, &pipelineInfo, nullptr, &m_RendererID);
+		VkResult Create(const VkComputePipelineCreateInfo& pipelineInfo, VkPipelineCache cache = VK_NULL_HANDLE) {
+			return vkCreateComputePipelines(VulkanContext::GetDevice(), cache, 1, &pipelineInfo, nullptr, &m_RendererID);
 		}
 	};
 
 	struct PipelineBuilder {
 		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
-		VkPipelineVertexInputStateCreateInfo vertexInputInfo;
-		VkViewport viewport;
-		VkRect2D scissor;
-		VkPipelineColorBlendAttachmentState colorBlendAttachment;
-		VkPipelineDepthStencilStateCreateInfo depthStencil;
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
+		VkViewport viewport = { 0.f };
+		VkRect2D scissor = {};
+		VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+		VkPipelineDepthStencilStateCreateInfo depthStencil = {};
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		VkPipelineCache cache = VK_NULL_HANDLE;
 
 		VkPipeline build_pipeline(const VkRenderPass& pass, const VkPipelineLayout& pipelineLayout) {
 			//make viewport state from our stored viewport and scissor.
@@ -87,7 +106,7 @@ namespace wc {
 			//we now use all of the info structs we have been writing into into this one to create the pipeline
 			VkGraphicsPipelineCreateInfo pipelineInfo = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
 
-			pipelineInfo.stageCount = shaderStages.size();
+			pipelineInfo.stageCount = (uint32_t)shaderStages.size();
 			pipelineInfo.pStages = shaderStages.data();
 			pipelineInfo.pVertexInputState = &vertexInputInfo;
 
@@ -135,15 +154,15 @@ namespace wc {
 			pipelineInfo.layout = pipelineLayout;
 			pipelineInfo.renderPass = pass;
 			pipelineInfo.subpass = 0;
-			pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+			pipelineInfo.basePipelineHandle = nullptr;
 
 			pipelineInfo.pDepthStencilState = &depthStencil;
 
 			//its easy to error out on create graphics pipeline, so we handle it a bit better than the common VK_CHECK case
 			VkPipeline newPipeline;
-			if (vkCreateGraphicsPipelines(VulkanContext::GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS) {
+			if (vkCreateGraphicsPipelines(VulkanContext::GetDevice(), cache, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS) {
 				WC_ERROR("Failed to create pipline");
-				return VK_NULL_HANDLE; // failed to create graphics pipeline
+				return nullptr; // failed to create graphics pipeline
 			}
 			else			
 				return newPipeline;			
@@ -154,10 +173,10 @@ namespace wc {
 		VkPipelineVertexInputStateCreateInfo info = { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
 
 		info.pVertexAttributeDescriptions = desc.attributes.data();
-		info.vertexAttributeDescriptionCount = desc.attributes.size();
+		info.vertexAttributeDescriptionCount = (uint32_t)desc.attributes.size();
 
 		info.pVertexBindingDescriptions = desc.bindings.data();
-		info.vertexBindingDescriptionCount = desc.bindings.size();
+		info.vertexBindingDescriptionCount = (uint32_t)desc.bindings.size();
 		return info;
 	}
 

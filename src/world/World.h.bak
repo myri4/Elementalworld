@@ -858,7 +858,6 @@ namespace wc {
 		}
 
 		void ParseCommand(std::string& command) {
-			consoleHistory.push_back(command);
 			// Command parsing
 			std::string args;
 			CommandType commandType = getCommandType(command, args);
@@ -989,13 +988,15 @@ namespace wc {
 			if (Keyboard::getKey(Keyboard::Key::Enter) && console) {
 				if (consoleBuffer[0] == '/') { 
 					std::string command = consoleBuffer;
-					ParseCommand(command);
+					ParseCommand(command); 
+					consoleHistory.push_back(command);
 				}
 				memset(consoleBuffer, 0, sizeof(consoleBuffer));
 			}
-			if (Keyboard::getKey(Keyboard::Key::Enter)) 
+			if (Keyboard::getKey(Keyboard::Key::Enter)) { 
 				console = !console;
-			
+				if (console) window.SetCursorMode(GLFW_CURSOR_NORMAL);
+			}
 
 			// PLAYER RELATED
 			p.velocity += p.acceleration;

@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <wc/Maths/AssimpGLMHelpers.h>
 #include <wc/Shader.h>
+#include "../AssetManager.h"
 
 namespace wc {
 
@@ -24,9 +25,8 @@ namespace wc {
 		void Create(const std::string& path, const wc::RenderPass& renderPass, const glm::vec2& windowSize) {
 			// read file via ASSIMP
 			wc::ShaderCreateInfo createInfo;
-			std::string resourceName = "default"; // @TODO: Remove
-			createInfo.vertexShader = "resourcepacks/" + resourceName + "/shaders/modelShader.vert";
-			createInfo.fragmentShader = "resourcepacks/" + resourceName + "/shaders/modelShader.frag";
+			createInfo.vertexShader =   GetAssetPath() + "/shaders/modelShader.vert";
+			createInfo.fragmentShader = GetAssetPath() + "/shaders/modelShader.frag";
 			createInfo.windowSize = windowSize;
 			createInfo.renderPass = renderPass;
 			createInfo.vertexDescription = MeshVertex::get_vertex_description();
@@ -45,7 +45,7 @@ namespace wc {
 				return;
 			}
 
-			std::string file = "resourcepacks/default/models/playermodel_tex.png";
+			std::string file = GetAssetPath() + "/models/playermodel_tex.png";
 
 			VkSamplerCreateInfo sampler = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 
@@ -56,14 +56,14 @@ namespace wc {
 			sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
 			//wc::loadTexture(file, diffuseTexture);
-			diffuseTexture.SetSamplerInfo(sampler);
+			//diffuseTexture.SetSamplerInfo(sampler);
 
 			{
-				wc::DescriptorWriter writer;
-				writer.dstSet = shader.descriptorSet;
-				writer.write_image(0, diffuseTexture.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-
-				wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
+				//wc::DescriptorWriter writer;
+				//writer.dstSet = shader.descriptorSet;
+				//writer.write_image(0, diffuseTexture.GetDescriptorData(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+				//
+				//wc::UpdateDescriptorSets(writer.writes.size(), writer.writes.data());
 			}
 
 			uint32_t totalIndices = 0, totalVertices = 0;
@@ -95,7 +95,7 @@ namespace wc {
 		void Draw(const wc::CommandBuffer& cmd)
 		{
 			shader.Bind(cmd);
-			cmd.DrawIndexedIndirect(m_IndirectBuffer, cmds.size());
+			cmd.DrawIndexedIndirect(m_IndirectBuffer, (uint32_t)cmds.size());
 		}
 
 		std::unordered_map<std::string, BoneInfo> m_OffsetMatMap;
@@ -104,7 +104,7 @@ namespace wc {
 		wc::Buffer m_IndexBuffer;
 		wc::Buffer m_VertexBuffer;
 
-		wc::Texture diffuseTexture;
+		//wc::Texture diffuseTexture;
 
 		wc::Buffer m_IndirectBuffer;
 		std::vector<VkDrawIndexedIndirectCommand> cmds;
@@ -149,7 +149,7 @@ namespace wc {
 					std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
 					if (m_OffsetMatMap.find(boneName) == m_OffsetMatMap.end())
 					{
-						boneID = m_OffsetMatMap.size();
+						boneID = (int32_t)m_OffsetMatMap.size();
 						m_OffsetMatMap[boneName] = { boneID , wc::AssimpGLMHelpers::ConvertMatrixToGLMFormat(mesh->mBones[boneIndex]->mOffsetMatrix) };
 					}
 					else

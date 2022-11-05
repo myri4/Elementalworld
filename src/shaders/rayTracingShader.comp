@@ -1,0 +1,41 @@
+#pragma shader_stage(compute)
+
+layout(local_size_x = 4, local_size_y = 4) in;
+layout(binding = 1, rgba32f) restrict writeonly uniform image2D o_Image;
+
+#include "include/sceneData.glsl"
+#include "include/Geometry.glsl"
+
+vec3 rayTrace(inout vec3 refRayOrigin, inout vec3 refRayDirection) {
+	vec3 color = vec3(0.f);	
+
+    float t = 0.f;
+    for (int i = 0; i < bvhCounter; i++)
+        if (BoxIntersect(refRayOrigin, 1.f / refRayDirection, chunkBvh[i].start.xyz, chunkBvh[i].end.xyz, t)){
+            vec3 p = refRayOrigin + t * refRayDirection;
+            vec3 center = chunkBvh[i].end.xyz - 0.5f;
+
+            vec3 dir = (p - center); // if the size is different from 1 this should be normalized
+            vec2 uv = GetCubeUVFromDir(GetCubeFaceIndex(dir), dir);
+            color = vec3(uv, 0.f) * 2.f;
+        }
+	
+    return color;
+}
+
+vec3 Render(const in vec3 rayDirection){
+	vec3 refRayOrigin = cameraPos;
+	vec3 refRayDirection = rayDirection;
+	vec3 color = rayTrace(refRayOrigin, refRayDirection);
+
+	return color;
+}
+
+void main()
+{
+    ivec2 invocID = ivec2(gl_GlobalInvocationID.xy);
+    vec2 uv = (invocID / vec2(imageSize(o_Image)));
+	  vec3 result = Render(normalize(lower_left_corner + uv.x * horizontal + uv.y * vertical - cameraPos));
+
+    if (result != vec3(0.f)) imageStore(o_Image, invocID, vec4(result, 1.f));
+}

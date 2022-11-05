@@ -25,8 +25,10 @@ void main() {
     
     vec4 materialData = vec4(0.f, 1.f, 1.f, 0.f);
 
-    if (emmision > 0.f)
+    if (emmision > 0.f){
         FragColor = albedo * vec4(vec3(emmision), 1.f) + albedo;
+        FragColor.a = 1.f;
+    }
     else 
-        FragColor = albedo * vec4(rayTrace(N, materialData, albedo.rgb), albedo.a);
+        FragColor = albedo * vec4(rayTrace(N, materialData, albedo.rgb), 1.f);
 }

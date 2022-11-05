@@ -25,7 +25,7 @@ namespace wc {
 
 	class StagingBuffer : public RendererObject<VkBuffer> {
 	private:
-		VmaAllocation allocation;
+		VmaAllocation allocation = VK_NULL_HANDLE;
 	public:
 		VkResult Create(const VkDeviceSize& bufferSize, const VkBufferUsageFlagBits& usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT) {
 			VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
@@ -69,7 +69,7 @@ namespace wc {
 
     class Buffer : public RendererObject<VkBuffer> {
     private:
-        VmaAllocation allocation;
+        VmaAllocation allocation = VK_NULL_HANDLE;
     public:
         VkResult Create(const VkDeviceSize& bufferSize, const uint32_t& usage) {
 			VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
@@ -127,11 +127,11 @@ namespace wc {
 		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)m_RendererID, name.c_str()); }
     };
 
-	template<class T>
-	struct CPUBuffer {
-	private:
+	template<typename T>
+	class CPUBuffer {
+	protected:
 		StagingBuffer buffer;
-		T* data;
+		T* data = nullptr;
 	public:
 		void Create(const VkDeviceSize& bufferSize) {
 			buffer.Create(bufferSize);
@@ -155,5 +155,23 @@ namespace wc {
 
 		inline operator T* () { return data; }
 		inline operator T* () const { return data; }
+	};
+
+	template<typename T>
+	class CPUBufferManager : public CPUBuffer<T> {
+	private:
+		uint32_t counter = 0;
+	public:
+		void Add(const T& object) {
+			this->data[counter] = object;
+			counter++;
+		}
+
+		void Remove(const uint32_t& id) {
+			counter--;
+			this->data[id] = this->data[counter];
+		}
+
+		uint32_t GetCounter() { return counter; }
 	};
 }

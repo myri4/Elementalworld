@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../Utils/Window.h"
+#include <vulkan/vulkan.h>
+#include <GLFW/glfw3.h>
 #include "RendererObject.h"
 #include <vma/vk_mem_alloc.h>
 #include <unordered_set>
@@ -14,7 +15,7 @@ enum class Vendor : uint32_t {
 	INTEL = 0x8086
 };
 
-//#define WC_ENABLE_GRAPHICS_DEBUGGER
+#define WC_ENABLE_GRAPHICS_DEBUGGER
 
 namespace VulkanContext {
 	namespace {
@@ -22,10 +23,14 @@ namespace VulkanContext {
 		VkPhysicalDevice physicalDevice; //@TOOD: make an abstraction
 		VkDevice device; //@TOOD: make an abstraction
 
-		VmaAllocator allocator; // @TODO: remove
+		VmaAllocator vmaAllocator; // @TODO: remove
 
 		//@TOOD: make an abstraction
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		VkDebugUtilsMessengerEXT debug_messenger; // Vulkan debug output handle	
+		const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
+#endif
+		const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 		VkPhysicalDeviceProperties properties;
 
@@ -70,13 +75,14 @@ namespace VulkanContext {
 #endif
 	}
 
-	VkInstance GetInstance() { return instance; }
-	VkPhysicalDevice GetPhysicalDevice() { return physicalDevice; }
-	VkDevice GetDevice() { return device; }
-	VmaAllocator GetMemoryAllocator() { return allocator; }
+	VkInstance& GetInstance() { return instance; }
+	VkPhysicalDevice& GetPhysicalDevice() { return physicalDevice; }
+	VkDevice& GetDevice() { return device; }
+	VmaAllocator& GetMemoryAllocator() { return vmaAllocator; }
+	VkAllocationCallbacks* GetAllocator() { return nullptr; } // @TODO: add this to all the vk classes
 	VkPhysicalDeviceProperties GetProperties() { return properties; }
 
-	size_t pad_uniform_buffer_size(size_t originalSize)
+	size_t pad_uniform_buffer_size(const size_t& originalSize)
 	{
 		// Calculate required alignment based on minimum device offset alignment
 		size_t minUboAlignment = properties.limits.minUniformBufferOffsetAlignment;
@@ -116,7 +122,7 @@ namespace VulkanContext {
 	void EndLabel(VkCommandBuffer command_buffer) { 
 #ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		vkCmdEndDebugUtilsLabel(command_buffer); 
-#endif // WC_ENABLE_GRAPHICS_DEBUGGER
+#endif
 	}
 
 
@@ -130,7 +136,7 @@ namespace VulkanContext {
 		label.color[2] = color[2];
 		label.color[3] = color[3];
 		vkQueueBeginDebugUtilsLabel(queue, &label);
-#endif // WC_ENABLE_GRAPHICS_DEBUGGER
+#endif
 	}
 
 	void InsertLabel(const VkQueue& queue, const char* label_name, const glm::vec4& color = glm::vec4(1.f))
@@ -143,13 +149,13 @@ namespace VulkanContext {
 		label.color[2] = color[2];
 		label.color[3] = color[3];
 		vkQueueInsertDebugUtilsLabel(queue, &label);
-#endif // WC_ENABLE_GRAPHICS_DEBUGGER
+#endif
 	}
 
 	void EndLabel(const VkQueue& queue) { 
 #ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		vkQueueEndDebugUtilsLabel(queue); 
-#endif // WC_ENABLE_GRAPHICS_DEBUGGER
+#endif
 	}
 
 	void SetObjectName(const VkObjectType& object_type, const uint64_t& object_handle, const char* object_name)
@@ -160,13 +166,8 @@ namespace VulkanContext {
 		name_info.objectHandle = object_handle;
 		name_info.pObjectName = object_name;
 		vkSetDebugUtilsObjectName(device, &name_info);
-#endif // WC_ENABLE_GRAPHICS_DEBUGGER
+#endif
 	}
-
-
-
-	const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-	const std::vector<const char*> deviceExtensions = {	VK_KHR_SWAPCHAIN_EXTENSION_NAME	};
 
 
 	
@@ -195,7 +196,7 @@ namespace VulkanContext {
 
 #ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);		
-#endif // WC_ENABLE_GRAPHICS_DEBUGGER
+#endif
 
 		return extensions;
 	}
@@ -207,7 +208,7 @@ namespace VulkanContext {
 		createInfo.pfnUserCallback = DebugCallback;
 	}
 
-	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+	VkResult CreateDebugUtilsMessengerEXT(const VkInstance& instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
 		auto vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 		if (vkCreateDebugUtilsMessengerEXT != nullptr) 
 			return vkCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pDebugMessenger);		
@@ -215,6 +216,7 @@ namespace VulkanContext {
 			return VK_ERROR_EXTENSION_NOT_PRESENT;		
 	}
 
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 	bool checkValidationLayerSupport() {
 		uint32_t layerCount;
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -229,6 +231,7 @@ namespace VulkanContext {
 
 		return false;
 	}
+#endif
 
 	void createInstance() {
 		// @TODO: add mac support
@@ -240,10 +243,10 @@ namespace VulkanContext {
 
 		VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
 		appInfo.pApplicationName = "WC Application";
-		appInfo.applicationVersion = VK_MAKE_VERSION(1, 1, 0);
+		appInfo.applicationVersion = VK_MAKE_VERSION(1, 2, 0);
 		appInfo.pEngineName = "WC Engine";
-		appInfo.engineVersion = VK_MAKE_VERSION(1, 1, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_1;
+		appInfo.engineVersion = VK_MAKE_VERSION(1, 2, 0);
+		appInfo.apiVersion = VK_API_VERSION_1_2;
 
 		VkInstanceCreateInfo createInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
 		createInfo.pApplicationInfo = &appInfo;
@@ -265,7 +268,7 @@ namespace VulkanContext {
 			WC_ERROR("Failed to create instance!");		
 	}
 
-	bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
+	bool checkDeviceExtensionSupport(const VkPhysicalDevice& device) {
 		uint32_t extensionCount;
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
@@ -284,7 +287,7 @@ namespace VulkanContext {
 
 	
 
-	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device/*, VkSurfaceKHR surface*/) {
+	QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& device/*, VkSurfaceKHR surface*/) {
 		QueueFamilyIndices indices;
 
 		uint32_t queueFamilyCount = 0;
@@ -314,7 +317,7 @@ namespace VulkanContext {
 		return indices;
 	}
 
-	bool isDeviceSuitable(VkPhysicalDevice device/*, VkSurfaceKHR surface*/) {
+	bool isDeviceSuitable(const VkPhysicalDevice& device/*, VkSurfaceKHR surface*/) {
 		QueueFamilyIndices indices = findQueueFamilies(device/*, surface*/);
 
 		bool extensionsSupported = checkDeviceExtensionSupport(device);
@@ -351,7 +354,7 @@ namespace VulkanContext {
 	}	
 
 	class Queue : public RendererObject<VkQueue> {
-		uint32_t queueFamily; //family of that queue
+		uint32_t queueFamily = 0; //family of that queue
 	public:
 
 		void GetDeviceQueue(const uint32_t& family) {
@@ -384,24 +387,28 @@ namespace VulkanContext {
 			indices.transferFamily.value(),
 		};
 
-		float queuePriority = 1.0f;
+		float queuePriorities[] = { 1.0f };
 		for (uint32_t queueFamily : uniqueQueueFamilies) {
 			VkDeviceQueueCreateInfo queueCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
 			queueCreateInfo.queueFamilyIndex = queueFamily;
-			queueCreateInfo.queueCount = 1;
-			queueCreateInfo.pQueuePriorities = &queuePriority;
+			queueCreateInfo.queueCount = (uint32_t)std::size(queuePriorities);
+			queueCreateInfo.pQueuePriorities = queuePriorities;
+
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
 		VkPhysicalDeviceFeatures deviceFeatures{};
 		deviceFeatures.multiDrawIndirect = true; // optional
 
+		
+
+
 		VkDeviceCreateInfo createInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
 
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 		createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
-		createInfo.pEnabledFeatures = &deviceFeatures;
+		createInfo.pEnabledFeatures = &deviceFeatures;		
 
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
@@ -413,7 +420,7 @@ namespace VulkanContext {
 #endif
 
 		if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) 
-			WC_INFO("failed to create logical device!");		
+			WC_ERROR("failed to create logical device!");		
 
 		graphicsQueue.GetDeviceQueue(indices.graphicsFamily.value());
 		//presentQueue.GetDeviceQueue(indices.presentFamily.value());
@@ -421,7 +428,7 @@ namespace VulkanContext {
 		transferQueue.GetDeviceQueue(indices.transferFamily.value());
 	}
 
-	inline void Create(wc::Window& window) {
+	inline void Create() {
 		createInstance();
 		
 #ifdef WC_ENABLE_GRAPHICS_DEBUGGER
@@ -441,7 +448,7 @@ namespace VulkanContext {
 			vkQueueEndDebugUtilsLabel = (PFN_vkQueueEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueEndDebugUtilsLabelEXT");
 
 			vkSetDebugUtilsObjectName = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
-#endif // WC_ENABLE_GRAPHICS_DEBUGGER
+#endif
 
 		pickPhysicalDevice(/*window.surface*/);
 		createDevice(/*window.surface*/);
@@ -450,18 +457,18 @@ namespace VulkanContext {
 		allocatorInfo.physicalDevice = physicalDevice;
 		allocatorInfo.device = device;
 		allocatorInfo.instance = instance;
-		vmaCreateAllocator(&allocatorInfo, &allocator);		
-
-		window.CreateSwapchain(VulkanContext::GetPhysicalDevice(), VulkanContext::GetDevice(), VulkanContext::GetInstance());
+		vmaCreateAllocator(&allocatorInfo, &vmaAllocator);
 	}
 
 	void Destroy() {
-		vmaDestroyAllocator(allocator);
+		vmaDestroyAllocator(vmaAllocator);
 		vkDestroyDevice(device, nullptr);
 
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		auto vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 		if (vkDestroyDebugUtilsMessengerEXT != nullptr)
 			vkDestroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr);
+#endif
 
 		vkDestroyInstance(instance, nullptr);
 	}
