@@ -38,7 +38,7 @@ namespace wc {
 			createInfo.renderPass = renderPass;
 			createInfo.blending = false;
 			createInfo.depthTest = true;
-			createInfo.invertY = true;
+			createInfo.invertY = false;
 			createInfo.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 			createInfo.cachePath = GetCachedAssetPath() + "/shaders/LineShader.bin";
 			shader.Create(createInfo);

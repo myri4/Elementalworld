@@ -20,7 +20,7 @@ void main() {
     vec4 albedo = texture(u_Albedo, vec3(v_TexCoords, albedoID)) * color;
     
 	vec3 N = v_Normal;
-	if (gl_FrontFacing) N = -N;
+	if (!gl_FrontFacing) N = -N;
     float emmision = texture(u_MaterialData, vec3(v_TexCoords, materialID)).r; // remove and change
     
     vec4 materialData = vec4(0.f, 1.f, 1.f, 0.f);

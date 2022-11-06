@@ -598,7 +598,7 @@ namespace wc {
         Image image;
         ImageView view;
         Sampler sampler;
-        VkDescriptorSet imageID = VK_NULL_HANDLE;// = ImGui_ImplVulkan_AddTexture(sampler, );
+        VkDescriptorSet imageID = VK_NULL_HANDLE;
     public:
         void Load(const std::string& filepath) {
             int32_t width = 0, height = 0, fnrComponents;
@@ -695,6 +695,13 @@ namespace wc {
                 view.Destroy();
                 sampler.Destroy();
             });
+        }
+
+        void Create(const Image& Image, const Sampler& Sampler, const ImageView& imageView) {
+            image = Image;
+            sampler = Sampler;
+            view = imageView;
+            imageID = ImGui_ImplVulkan_AddTexture(sampler, view, image.layout);
         }
 
         glm::ivec2 GetSize() { return { image.width, image.height }; }

@@ -15,7 +15,6 @@
 #include <wc/Framebuffer.h>
 #include <wc/Utils/DeletionQueue.h>
 
-#include "../Rendering/Renderer2D.h"
 #include "../Rendering/Renderer3D.h"
 #include <stb_image/stb_write.h>
 #include "../Settings.h"
@@ -42,6 +41,7 @@ namespace wc {
 	};
 
 	class GameInstance {
+		Texture renderTexture;
 		DeletionQueue delQueue;
 		// Player related
 		Camera camera;
@@ -349,7 +349,7 @@ namespace wc {
 				createInfo.vertexDescription = Vertex::get_vertex_description();
 				createInfo.blending = true;
 				createInfo.depthTest = true;
-				createInfo.invertY = true;
+				createInfo.invertY = false;
 				Renderer3D::shader.Create(createInfo);
 
 				wc::DescriptorWriter writer;
@@ -371,7 +371,7 @@ namespace wc {
 				createInfo.renderPass = framebuffer.renderPass;
 				createInfo.blending = false;
 				createInfo.depthTest = false;
-				createInfo.invertY = true;
+				createInfo.invertY = false;
 				skyShader.Create(createInfo);
 
 				wc::DescriptorWriter writer;
@@ -490,13 +490,14 @@ namespace wc {
 
 			screenSampler.Create(sampler);
 			bloomImageSampler.Create(sampler);
-			render_interface.Create(RendererContext::GetRenderPass(), GetDescriptorData(screenSampler, screenImageView, finalImage), window.GetSize());
 
 
 			for (int i = 0; i < 3; i++) {
 				bloomBuffers[i].Create(bloomTexSize.x, bloomTexSize.y, mips);
 				bloomBuffers[i].image.SetName("bloomBuffers[" + std::to_string(i) + "]");
 			}			
+
+			renderTexture.Create(finalImage, screenSampler, screenImageView);
 		}
 
 		void DestroyScreen() {
@@ -507,7 +508,6 @@ namespace wc {
 			screenSampler.Destroy();
 
 			finalImage.Destroy();
-			render_interface.Destroy();
 		}
 
 		void Update(const float& deltaTime) {
@@ -792,7 +792,9 @@ namespace wc {
 		}
 
 		void RenderGUI() {
-			render_interface.Flush();
+			ImGui::Begin("Screen Render", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
+			ImGui::GetBackgroundDrawList()->AddImage(renderTexture, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
+			ImGui::End();
 		}
 
 		void RenderImGuiDebugMenu(const float& deltaTime) {

@@ -466,6 +466,8 @@ namespace wc {
 				ImGui::GetBackgroundDrawList()->AddImage(background, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
 				ImGui::End();
 			}
+			if (mode == MenuMode::GAME)
+				gameInstance.RenderGUI();
 			ImGui::Render();
 
 
@@ -476,8 +478,6 @@ namespace wc {
 			cmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 			RendererContext::Begin(swapchainImageIndex, window);
 
-			if (mode == MenuMode::GAME)
-				gameInstance.RenderGUI();
 
 			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 

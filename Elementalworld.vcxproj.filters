@@ -304,9 +304,6 @@
     <ClInclude Include="src\Rendering\AssetManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Renderer2D.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Rendering\Renderer3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>

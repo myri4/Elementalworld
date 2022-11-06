@@ -63,7 +63,8 @@ void ChangeMenu(const MenuMode& newMode) {
 }
 
 void ChangeBack() {
-	ChangeMenu(previousMode);
+	//ChangeMenu(previousMode);
+	mode = previousMode;
 }
 
 uint32_t convertColor(const glm::vec4& color) {
