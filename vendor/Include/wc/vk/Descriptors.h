@@ -5,19 +5,25 @@
 
 namespace wc {
 
-	using DescriptorSet = VkDescriptorSet;
+	using DescriptorSet = VkDescriptorSet;	
 
-	void UpdateDescriptorSets(const uint32_t& descriptorWriteCount,	const VkWriteDescriptorSet* pDescriptorWrites, const uint32_t& descriptorCopyCount = 0,	const VkCopyDescriptorSet* pDescriptorCopies = nullptr) {
+	void UpdateDescriptorSets(const uint32_t& descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites, const uint32_t& descriptorCopyCount = 0, const VkCopyDescriptorSet* pDescriptorCopies = nullptr) {
 		vkUpdateDescriptorSets(VulkanContext::GetDevice(), descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
 	}
 
 	struct DescriptorSetLayout : public RendererObject<VkDescriptorSetLayout> {
 
+		DescriptorSetLayout() = default;
+		DescriptorSetLayout(const VkDescriptorSetLayout& layout) { m_RendererID = layout; }
+
 		VkResult Create(const VkDescriptorSetLayoutCreateInfo& setinfo) {
-			return vkCreateDescriptorSetLayout(VulkanContext::GetDevice(), &setinfo, nullptr, &m_RendererID);
+			return vkCreateDescriptorSetLayout(VulkanContext::GetDevice(), &setinfo, VulkanContext::GetAllocator(), &m_RendererID);
 		}
 
-		void Destroy() { vkDestroyDescriptorSetLayout(VulkanContext::GetDevice(), m_RendererID, nullptr); }
+		void Destroy() { 
+			vkDestroyDescriptorSetLayout(VulkanContext::GetDevice(), m_RendererID, VulkanContext::GetAllocator());
+			m_RendererID = VK_NULL_HANDLE;
+		}
 
 		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)m_RendererID, name); }
 		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)m_RendererID, name.c_str()); }
@@ -28,17 +34,15 @@ namespace wc {
 		DescriptorPool() = default;
 		DescriptorPool(const VkDescriptorPool& handle) { m_RendererID = handle; }
 
-		VkResult Create(const VkDescriptorPoolCreateInfo& pool_info) { return vkCreateDescriptorPool(VulkanContext::GetDevice(), &pool_info, nullptr, &m_RendererID); }
+		VkResult Create(const VkDescriptorPoolCreateInfo& pool_info) { return vkCreateDescriptorPool(VulkanContext::GetDevice(), &pool_info, VulkanContext::GetAllocator(), &m_RendererID); }
 
-		void Destroy() { vkDestroyDescriptorPool(VulkanContext::GetDevice(), m_RendererID, nullptr); }
+		void Destroy() { vkDestroyDescriptorPool(VulkanContext::GetDevice(), m_RendererID, VulkanContext::GetAllocator()); }
 
 		VkResult Reset(const VkDescriptorPoolResetFlags& flags = 0) { return vkResetDescriptorPool(VulkanContext::GetDevice(), m_RendererID, flags); }
 
 		VkResult Allocate(const DescriptorSetLayout& layout, DescriptorSet& set) {
 			//allocate one descriptor set for each frame
-			VkDescriptorSetAllocateInfo allocInfo = {};
-			allocInfo.pNext = nullptr;
-			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+			VkDescriptorSetAllocateInfo allocInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
 			//using the pool we just set
 			allocInfo.descriptorPool = m_RendererID;
 			//only 1 descriptor
@@ -155,86 +159,7 @@ namespace wc {
 		DescriptorPool currentPool;
 		std::vector<DescriptorPool> usedPools;
 		std::vector<DescriptorPool> freePools;
-	};
-
-	class DescriptorLayoutCache {
-	public:
-		void Destroy() {
-			for (auto& pair : layoutCache) pair.second.Destroy();
-		}
-
-		DescriptorSetLayout create_descriptor_layout(const VkDescriptorSetLayoutCreateInfo& info) {
-			DescriptorLayoutInfo layoutinfo;
-			layoutinfo.bindings.reserve(info.bindingCount);
-			bool isSorted = true;
-			int32_t lastBinding = -1;
-			for (uint32_t i = 0; i < info.bindingCount; i++) {
-				layoutinfo.bindings.emplace_back(info.pBindings[i]);
-
-				//check that the bindings are in strict increasing order
-				//if (static_cast<int32_t>(info.pBindings[i].binding) > lastBinding)	lastBinding = info.pBindings[i].binding;				
-				//else isSorted = false;
-			}
-			//if (!isSorted)			
-			//	std::sort(layoutinfo.bindings.begin(), layoutinfo.bindings.end(), [](VkDescriptorSetLayoutBinding& a, VkDescriptorSetLayoutBinding& b) { return a.binding < b.binding; });			
-
-			auto it = layoutCache.find(layoutinfo);
-			if (it != layoutCache.end()) return (*it).second;			
-			else {
-				DescriptorSetLayout layout;
-				layout.Create(info);
-
-				layoutCache[layoutinfo] = layout;
-				return layout;
-			}
-		}
-
-	private:
-		struct DescriptorLayoutInfo {
-			//good idea to turn this into a inlined array
-			std::vector<VkDescriptorSetLayoutBinding> bindings;
-
-			bool operator==(const DescriptorLayoutInfo& other) const {
-				if (other.bindings.size() != bindings.size())				
-					return false;				
-				else {
-					//compare each of the bindings is the same. Bindings are sorted so they will match
-					for (int i = 0; i < bindings.size(); i++) {
-						if (other.bindings[i].binding != bindings[i].binding) return false;						
-						if (other.bindings[i].descriptorType != bindings[i].descriptorType)	return false;						
-						if (other.bindings[i].descriptorCount != bindings[i].descriptorCount) return false;						
-						if (other.bindings[i].stageFlags != bindings[i].stageFlags)	return false;						
-					}
-					return true;
-				}
-			}
-
-			size_t hash() const {
-				using std::size_t;
-				using std::hash;
-
-				size_t result = hash<size_t>()(bindings.size());
-
-				for (const VkDescriptorSetLayoutBinding& b : bindings)
-				{
-					//pack the binding data into a single int64. Not fully correct but its ok
-					size_t binding_hash = b.binding | b.descriptorType << 8 | b.descriptorCount << 16 | b.stageFlags << 24;
-
-					//shuffle the packed binding data and xor it with the main hash
-					result ^= hash<size_t>()(binding_hash);
-				}
-
-				return result;
-			}
-		};
-
-		struct DescriptorLayoutHash { std::size_t operator()(const DescriptorLayoutInfo& k) const { return k.hash(); } };
-
-		std::unordered_map<DescriptorLayoutInfo, DescriptorSetLayout, DescriptorLayoutHash> layoutCache;
-	};
-
-	DescriptorLayoutCache descriptorLayoutCache;
-	DescriptorAllocator descriptorAllocator;
+	}descriptorAllocator;
 
 	class DescriptorWriter {
 	public:
@@ -279,7 +204,10 @@ namespace wc {
 			return *this;
 		}
 
+		void Update() {
+			vkUpdateDescriptorSets(VulkanContext::GetDevice(), writes.size(), writes.data(), 0, nullptr);
+		}
+
 		std::vector<VkWriteDescriptorSet> writes;
-	private:
 	};
 }

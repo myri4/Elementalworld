@@ -184,9 +184,6 @@
     <ClInclude Include="src\Game Mechanics\Item.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\LineBatcher.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\entities\Entity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -307,11 +304,11 @@
     <ClInclude Include="src\Rendering\Renderer3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\vk\Swapchain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Settings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\shaders\bloomShader.comp" />
   </ItemGroup>
 </Project>

@@ -9,8 +9,14 @@
 
 namespace wc {
 
-	namespace {
-		std::vector<uint32_t> readFile(const std::string& filename) {
+	class ShaderModuleWC : public RendererObject<VkShaderModule> {
+	private:
+		std::vector<uint32_t> shaderData;
+
+	public:		
+		spirv_cross::EntryPoint entryPoint;
+
+		VkResult Create(const std::string& filename) {			
 			std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
 			if (!file.is_open())
@@ -21,30 +27,17 @@ namespace wc {
 			size_t fileSize = (size_t)file.tellg();
 
 			//spirv expects the buffer to be on uint32, so make sure to reserve a int vector big enough for the entire file
-			std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
+			shaderData.resize(fileSize / sizeof(uint32_t));
 
 			//put file cursor at beggining
 			file.seekg(0);
 
 			//load the entire file into the buffer
-			file.read((char*)buffer.data(), fileSize);
+			file.read((char*)shaderData.data(), fileSize);
 
 			//now that the file is loaded into the buffer, we can close it
 			file.close();
-
-			return buffer;
-		}
-	}
-
-	class ShaderModuleWC : public RendererObject<VkShaderModule> {
-	private:
-		std::vector<uint32_t> shaderData;
-
-	public:		
-		spirv_cross::EntryPoint entryPoint;
-
-		VkResult Create(const std::string& filename) {
-			shaderData = readFile(filename);
+			
 			VkShaderModuleCreateInfo createInfo = { VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
 
 			//codeSize has to be in bytes, so multply the ints in the buffer by size of int to know the real size of the buffer
@@ -96,13 +89,11 @@ namespace wc {
 	struct ShaderCreateInfo {
 		std::string vertexShader;
 		std::string fragmentShader;
-		std::string cachePath;
 		glm::vec2 windowSize = glm::vec2(0.f);
 		wc::RenderPass renderPass;
 		wc::VertexInputDescription vertexDescription;
 		bool blending = false;
 		bool depthTest = true;
-		bool invertY = false;
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	};
 
@@ -249,9 +240,9 @@ namespace wc {
 				layoutInfo.pBindings = layoutBindings.data();
 				layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
 
-				descriptorLayout = wc::descriptorLayoutCache.create_descriptor_layout(layoutInfo);
+				descriptorLayout.Create(layoutInfo);
 
-				wc::descriptorAllocator.allocate(descriptorSet, descriptorLayout);
+				if (descriptorSet == VK_NULL_HANDLE) wc::descriptorAllocator.allocate(descriptorSet, descriptorLayout);
 
 				VkPipelineLayoutCreateInfo info = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 
@@ -274,10 +265,10 @@ namespace wc {
 			pipelineBuilder.viewport.minDepth = 0.0f;
 			pipelineBuilder.viewport.maxDepth = 1.0f;
 
-			if (createInfo.invertY) {
-				pipelineBuilder.viewport.y = 0.f;
-				pipelineBuilder.viewport.height = createInfo.windowSize.y;
-			}
+			//if (createInfo.invertY) {
+			//	pipelineBuilder.viewport.y = 0.f;
+			//	pipelineBuilder.viewport.height = createInfo.windowSize.y;
+			//}
 
 			pipelineBuilder.scissor.offset = { 0, 0 };
 			pipelineBuilder.scissor.extent = { (uint32_t)createInfo.windowSize.x, (uint32_t)createInfo.windowSize.y};
@@ -309,7 +300,6 @@ namespace wc {
 
 			VkPipelineCacheCreateInfo cacheCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO };
 			cache.Create(cacheCreateInfo);
-			if (createInfo.cachePath.size() > 0) cache.SaveToFile(createInfo.cachePath);
 			
 			pipelineBuilder.cache = cache;
 			//finally build the pipeline
@@ -322,11 +312,16 @@ namespace wc {
 			cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, 0, pipelineLayout, descriptorSet);
 			cmd.BindPipeline(pipeline);
 		}
+
+		void SaveCache(const std::string& cachePath) {
+			cache.SaveToFile(cachePath);
+		}
 		
 		void Destroy() {
 			pipeline.Destroy();
 			pipelineLayout.Destroy();
 			cache.Destroy();
+			descriptorLayout.Destroy();
 		}
 	};
 
@@ -447,7 +442,7 @@ namespace wc {
 				layoutInfo.pBindings = layoutBindings.data();
 				layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
 
-				descriptorLayout = wc::descriptorLayoutCache.create_descriptor_layout(layoutInfo);
+				descriptorLayout.Create(layoutInfo);
 
 				wc::descriptorAllocator.allocate(descriptorSet, descriptorLayout);
 
@@ -486,48 +481,10 @@ namespace wc {
 			cmd.BindPipeline(pipeline);
 		}
 
-		void Dispatch(const glm::ivec3& dispatchSize, const VkSemaphore* semaphore = nullptr) {
-			wc::CommandBuffer& cmd = RendererContext::computeCommandBuffer;
-			cmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-			Bind(cmd);
-			cmd.Dispatch(dispatchSize);
-			
-			cmd.End();
-
-
-			VkSubmitInfo submit = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
-
-			submit.commandBufferCount = 1;
-			submit.pCommandBuffers = cmd.GetPointer();
-
-			VkPipelineStageFlags computeWaitStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-
-			submit.pWaitDstStageMask = &computeWaitStage;
-
-			if (semaphore) {
-				submit.waitSemaphoreCount = 1;
-				submit.pWaitSemaphores = semaphore;
-			}
-
-			submit.signalSemaphoreCount = 0;
-			submit.pSignalSemaphores = nullptr;
-
-			VulkanContext::computeQueue.Submit(submit, RendererContext::computeFence);
-			RendererContext::computeFence.Wait();
-			RendererContext::computeFence.Reset();
-		}
-
-		void Dispatch(const glm::ivec2& groupCount, const VkSemaphore* semaphore = nullptr) {
-			Dispatch(glm::ivec3(groupCount, 1), semaphore);
-		}
-
-		void Dispatch(const glm::vec2& groupCount, const VkSemaphore* semaphore = nullptr) {
-			Dispatch(glm::ivec2(groupCount), semaphore);
-		}
-
 		void Destroy() {
 			pipeline.Destroy();
 			pipelineLayout.Destroy();
+			descriptorLayout.Destroy();
 		}
 	};
 

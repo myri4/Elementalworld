@@ -48,8 +48,13 @@ namespace wc {
 			}
 			});
 		glfwInit();
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		app.Start();
+		if (glfwVulkanSupported()) {
+
+			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+			app.Start();
+		}
+		else 
+			WC_ERROR("Vulkan driver is not supported!");
 		glfwTerminate();
 
 		return 0;

@@ -3,7 +3,15 @@
 
 namespace wc {
 	namespace Settings {
+		enum class GraphicsLevel {
+			Low,
+			Performance,
+			Medium,
+			High,
+			Extreme
+		};
 		bool InvertMouse = false;
+		bool sky = true; // temporary
 		int i1 = 0;
 		float MouseSensitivity = 5.f;
 		float ZoomMouseSensitivity = 18.f;
@@ -33,6 +41,7 @@ namespace wc {
 			settings["FPSCap"] = item_current_idx;
 			settings["WindowMode"] = WindowMode;
 			settings["WindowResolution"] = ResolutionIndex;
+			settings["sky"] = sky;
 			YAMLUtils::saveFile("settings.yaml", settings);
 		}
 
@@ -48,6 +57,7 @@ namespace wc {
 			if (settings["FPSCap"])           item_current_idx = settings["FPSCap"].as<int>();
 			if (settings["WindowMode"])       WindowMode = settings["WindowMode"].as<int>();
 			if (settings["WindowResolution"]) ResolutionIndex = settings["WindowResolution"].as<int>();
+			if (settings["sky"]) sky = settings["sky"].as<bool>();
 		}
 
 		void Reset() {
@@ -67,6 +77,7 @@ namespace wc {
 			v4 = 20;
 			BloomThreshold = 1.f;
 			BloomKnee = 0.1f;
+			sky = true;
 		}
 	}
 }

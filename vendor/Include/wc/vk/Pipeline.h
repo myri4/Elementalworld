@@ -19,7 +19,10 @@ namespace wc {
 		Pipeline() = default;
 		Pipeline(const VkPipeline& handle) { m_RendererID = handle; }
 
-		void Destroy() { vkDestroyPipeline(VulkanContext::GetDevice(), m_RendererID, nullptr); }
+		void Destroy() { 
+			vkDestroyPipeline(VulkanContext::GetDevice(), m_RendererID, VulkanContext::GetAllocator());
+			m_RendererID = VK_NULL_HANDLE;
+		}
 
 		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)m_RendererID, name); }
 		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)m_RendererID, name.c_str()); }
@@ -33,11 +36,12 @@ namespace wc {
 	struct PipelineCache : public RendererObject<VkPipelineCache> {
 
 		VkResult Create(const VkPipelineCacheCreateInfo& createInfo) {
-			return vkCreatePipelineCache(VulkanContext::GetDevice(), &createInfo, nullptr, &m_RendererID);
+			return vkCreatePipelineCache(VulkanContext::GetDevice(), &createInfo, VulkanContext::GetAllocator(), &m_RendererID);
 		}
 
 		void Destroy() {
-			vkDestroyPipelineCache(VulkanContext::GetDevice(), m_RendererID, nullptr);
+			vkDestroyPipelineCache(VulkanContext::GetDevice(), m_RendererID, VulkanContext::GetAllocator());
+			m_RendererID = VK_NULL_HANDLE;
 		}
 
 		VkResult MergePipelineCaches(const uint32_t& count, const VkPipelineCache* caches) {
@@ -46,7 +50,7 @@ namespace wc {
 
 		PipelineCacheData GetData() const {
 			PipelineCacheData data;
-			vkGetPipelineCacheData(VulkanContext::GetDevice(), m_RendererID, &data.size, nullptr);
+			vkGetPipelineCacheData(VulkanContext::GetDevice(), m_RendererID, &data.size, VulkanContext::GetAllocator());
 			void* dataPtr = malloc(data.size);
 			vkGetPipelineCacheData(VulkanContext::GetDevice(), m_RendererID, &data.size, dataPtr);
 			data.data = dataPtr;
@@ -71,7 +75,7 @@ namespace wc {
 	struct ComputePipeline : public Pipeline {
 
 		VkResult Create(const VkComputePipelineCreateInfo& pipelineInfo, VkPipelineCache cache = VK_NULL_HANDLE) {
-			return vkCreateComputePipelines(VulkanContext::GetDevice(), cache, 1, &pipelineInfo, nullptr, &m_RendererID);
+			return vkCreateComputePipelines(VulkanContext::GetDevice(), cache, 1, &pipelineInfo, VulkanContext::GetAllocator(), &m_RendererID);
 		}
 	};
 
@@ -160,9 +164,9 @@ namespace wc {
 
 			//its easy to error out on create graphics pipeline, so we handle it a bit better than the common VK_CHECK case
 			VkPipeline newPipeline;
-			if (vkCreateGraphicsPipelines(VulkanContext::GetDevice(), cache, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS) {
+			if (vkCreateGraphicsPipelines(VulkanContext::GetDevice(), cache, 1, &pipelineInfo, VulkanContext::GetAllocator(), &newPipeline) != VK_SUCCESS) {
 				WC_ERROR("Failed to create pipline");
-				return nullptr; // failed to create graphics pipeline
+				return VK_NULL_HANDLE; // failed to create graphics pipeline
 			}
 			else			
 				return newPipeline;			
@@ -194,10 +198,13 @@ namespace wc {
 	struct PipelineLayout : public RendererObject<VkPipelineLayout> {
 
 		VkResult Create(const VkPipelineLayoutCreateInfo& info) {
-			return vkCreatePipelineLayout(VulkanContext::GetDevice(), &info, nullptr, &m_RendererID);
+			return vkCreatePipelineLayout(VulkanContext::GetDevice(), &info, VulkanContext::GetAllocator(), &m_RendererID);
 		}
 
-		void Destroy() { vkDestroyPipelineLayout(VulkanContext::GetDevice(), m_RendererID, nullptr); }
+		void Destroy() { 
+			vkDestroyPipelineLayout(VulkanContext::GetDevice(), m_RendererID, VulkanContext::GetAllocator());
+			m_RendererID = VK_NULL_HANDLE;
+		}
 
 		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)m_RendererID, name); }
 		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)m_RendererID, name.c_str()); }

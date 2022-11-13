@@ -101,7 +101,7 @@ namespace wc {
 
 	class CommandPool : public RendererObject<VkCommandPool> {
 	public:
-		VkResult Create(const VkCommandPoolCreateInfo& createInfo) { return vkCreateCommandPool(VulkanContext::GetDevice(), &createInfo, nullptr, &m_RendererID); }
+		VkResult Create(const VkCommandPoolCreateInfo& createInfo) { return vkCreateCommandPool(VulkanContext::GetDevice(), &createInfo, VulkanContext::GetAllocator(), &m_RendererID); }
 
 		VkResult Create(const uint32_t& queueFamilyIndex, const VkCommandPoolCreateFlags& createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) {
 			//create a command pool for commands submitted to the graphics queue.
@@ -133,7 +133,10 @@ namespace wc {
 
 		void Free(const CommandBuffer& cmd) { vkFreeCommandBuffers(VulkanContext::GetDevice(), m_RendererID, 1, cmd.GetPointer()); }
 
-		void Destroy() { vkDestroyCommandPool(VulkanContext::GetDevice(), m_RendererID, nullptr); }
+		void Destroy() { 
+			vkDestroyCommandPool(VulkanContext::GetDevice(), m_RendererID, VulkanContext::GetAllocator());
+			m_RendererID = VK_NULL_HANDLE;
+		}
 
 
 		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)m_RendererID, name); }

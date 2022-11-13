@@ -13,7 +13,7 @@ layout(binding = 2) uniform sampler2D u_BloomTexture;
 #define MODE_UPSAMPLE_FIRST 2
 #define MODE_UPSAMPLE       3
 
-layout (std140, binding = 3) uniform IndexData
+layout (push_constant) uniform IndexData
 {
     vec4 Params; // (x) threshold, (y) threshold - knee, (z) knee * 2, (w) 0.25 / knee
     float LOD;

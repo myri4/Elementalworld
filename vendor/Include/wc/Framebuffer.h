@@ -65,11 +65,9 @@ namespace wc {
 	*/
 	struct AttachmentCreateInfo
 	{
-		uint32_t width, height;
-		uint32_t layerCount;
-		VkFormat format;
-		VkImageUsageFlags usage;
-		VkSampleCountFlagBits imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
+		uint32_t width = 0, height = 0;
+		VkFormat format = VK_FORMAT_UNDEFINED;
+		VkImageUsageFlags usage = 0;
 	};
 
 	/**
@@ -87,6 +85,7 @@ namespace wc {
 		void DestroyAttachments() {
 			for (auto& attachment : attachments)
 				attachment.Destroy();
+			attachments.clear();
 		}
 
 		/**
@@ -96,7 +95,7 @@ namespace wc {
 		*
 		* @return Index of the new attachment
 		*/
-		uint32_t addAttachment(AttachmentCreateInfo createinfo)
+		uint32_t addAttachment(const AttachmentCreateInfo& createinfo)
 		{
 			FramebufferAttachment attachment;
 
@@ -117,31 +116,30 @@ namespace wc {
 					aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 				
 				if (attachment.hasStencil())				
-					aspectMask = aspectMask | VK_IMAGE_ASPECT_STENCIL_BIT;
-				
+					aspectMask = aspectMask | VK_IMAGE_ASPECT_STENCIL_BIT;				
 			}
 
 			assert(aspectMask > 0);
 
-			VkImageCreateInfo image = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
-			image.imageType = VK_IMAGE_TYPE_2D;
-			image.format = createinfo.format;
-			image.extent.width = createinfo.width;
-			image.extent.height = createinfo.height;
-			image.extent.depth = 1;
-			image.mipLevels = 1;
-			image.arrayLayers = createinfo.layerCount;
-			image.samples = createinfo.imageSampleCount;
-			image.tiling = VK_IMAGE_TILING_OPTIMAL;
-			image.usage = createinfo.usage;
+			VkImageCreateInfo imageInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+			imageInfo.imageType = VK_IMAGE_TYPE_2D;
+			imageInfo.format = createinfo.format;
+			imageInfo.extent.width = createinfo.width;
+			imageInfo.extent.height = createinfo.height;
+			imageInfo.extent.depth = 1;
+			imageInfo.mipLevels = 1;
+			imageInfo.arrayLayers = 1;
+			imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+			imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+			imageInfo.usage = createinfo.usage;
 
 			// Create image for this attachment
-			attachment.image.Create(image);
+			attachment.image.Create(imageInfo);
 
 			attachment.subresourceRange = {};
 			attachment.subresourceRange.aspectMask = aspectMask;
 			attachment.subresourceRange.levelCount = 1;
-			attachment.subresourceRange.layerCount = createinfo.layerCount;
+			attachment.subresourceRange.layerCount = 1;
 
 			VkImageViewCreateInfo imageView = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
 			imageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -154,7 +152,7 @@ namespace wc {
 
 			// Fill attachment description
 			attachment.description = {};
-			attachment.description.samples = createinfo.imageSampleCount;
+			attachment.description.samples = VK_SAMPLE_COUNT_1_BIT;
 			attachment.description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 			attachment.description.storeOp = (createinfo.usage & VK_IMAGE_USAGE_SAMPLED_BIT) ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE;
 			attachment.description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -261,7 +259,7 @@ namespace wc {
 			uint32_t maxLayers = 0;
 			for (auto& attachment : attachments)			
 				if (attachment.subresourceRange.layerCount > maxLayers)				
-					maxLayers = attachment.subresourceRange.layerCount;		
+					maxLayers = attachment.subresourceRange.layerCount;
 			
 
 			VkFramebufferCreateInfo framebufferInfo = { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };

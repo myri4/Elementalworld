@@ -8,3 +8,4 @@ ColorBlindMode: false
 FPSCap: 0
 WindowMode: 0
 WindowResolution: 2
+sky: true

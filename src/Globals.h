@@ -56,10 +56,10 @@ void ChangeMenu(const MenuMode& newMode) {
 
 	if (mode == GAME) {
 		window.setCursorPos(window.GetSize() / 2);
-		//window.SetCursorMode(GLFW_CURSOR_DISABLED);
+		window.SetCursorMode(GLFW_CURSOR_DISABLED);
 	}
-	//else 
-	//	window.SetCursorMode(GLFW_CURSOR_DISABLED);
+	else 
+		window.SetCursorMode(GLFW_CURSOR_NORMAL);
 }
 
 void ChangeBack() {

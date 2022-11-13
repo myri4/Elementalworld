@@ -32,7 +32,6 @@ namespace wc {
 			createInfo.vertexDescription = MeshVertex::get_vertex_description();
 			createInfo.blending = false;
 			createInfo.depthTest = true;
-			createInfo.invertY = true;
 			shader.Create(createInfo);
 			
 

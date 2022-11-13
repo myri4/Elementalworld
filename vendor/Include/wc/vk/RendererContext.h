@@ -23,7 +23,7 @@ namespace RendererContext {
 	wc::CommandPool computeCommandPool;
 
 	void CreateDefaultRenderPass(const wc::Window& window) {
-		VkAttachmentDescription color_attachment;
+		VkAttachmentDescription color_attachment = {};
 		color_attachment.format = window.swapchainImageFormat;
 		color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -45,7 +45,7 @@ namespace RendererContext {
 		subpass.pDepthStencilAttachment = nullptr;
 
 		//1 dependency, which is from "outside" into the subpass. And we can read or write color
-		VkSubpassDependency dependency;
+		VkSubpassDependency dependency = {};
 		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 		dependency.dstSubpass = 0;
 		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;

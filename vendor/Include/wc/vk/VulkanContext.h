@@ -15,24 +15,23 @@ enum class Vendor : uint32_t {
 	INTEL = 0x8086
 };
 
-#define WC_ENABLE_GRAPHICS_DEBUGGER
+//#define WC_ENABLE_GRAPHICS_DEBUGGER
 
 namespace VulkanContext {
 	namespace {
-		VkInstance instance; //@TOOD: make an abstraction
-		VkPhysicalDevice physicalDevice; //@TOOD: make an abstraction
-		VkDevice device; //@TOOD: make an abstraction
+		VkInstance instance;
+		VkPhysicalDevice physicalDevice;
+		VkDevice device;
 
-		VmaAllocator vmaAllocator; // @TODO: remove
+		VmaAllocator vmaAllocator;
+		const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME }; // @TODO: remove
 
-		//@TOOD: make an abstraction
+		VkPhysicalDeviceProperties properties;
+		VkPhysicalDeviceFeatures supportedFeatures;
+
 #ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		VkDebugUtilsMessengerEXT debug_messenger; // Vulkan debug output handle	
 		const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-#endif
-		const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-
-		VkPhysicalDeviceProperties properties;
 
 		VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
 			VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -44,6 +43,7 @@ namespace VulkanContext {
 			{
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 				WC_ERROR("{0}", pCallbackData->pMessage);
+				__debugbreak();
 				//OutputDebugString(pCallbackData->pMessage);
 				break;
 
@@ -60,9 +60,20 @@ namespace VulkanContext {
 				break;
 			}
 
+			switch (messageType)
+			{
+			case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:
+				WC_WARN("Performance: {0}", pCallbackData->pMessage);
+				//OutputDebugString(pCallbackData->pMessage);
+				break;
+
+			case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
+				//WC_TRACE("General: {0}", pCallbackData->pMessage);
+				break;
+			}
+
 			return true;
 		}
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabel = nullptr;
 		PFN_vkCmdInsertDebugUtilsLabelEXT vkCmdInsertDebugUtilsLabel = nullptr;
 		PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabel = nullptr;
@@ -72,6 +83,16 @@ namespace VulkanContext {
 		PFN_vkQueueEndDebugUtilsLabelEXT vkQueueEndDebugUtilsLabel = nullptr;
 
 		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectName = nullptr;
+
+		PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
+		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
+
+		void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
+			createInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+			createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+			createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+			createInfo.pfnUserCallback = DebugCallback;
+		}
 #endif
 	}
 
@@ -81,7 +102,7 @@ namespace VulkanContext {
 	VmaAllocator& GetMemoryAllocator() { return vmaAllocator; }
 	VkAllocationCallbacks* GetAllocator() { return nullptr; } // @TODO: add this to all the vk classes
 	VkPhysicalDeviceProperties GetProperties() { return properties; }
-
+	VkPhysicalDeviceFeatures GetSupportedFeatures() { return supportedFeatures; }
 	size_t pad_uniform_buffer_size(const size_t& originalSize)
 	{
 		// Calculate required alignment based on minimum device offset alignment
@@ -200,91 +221,6 @@ namespace VulkanContext {
 
 		return extensions;
 	}
-
-	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
-		createInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
-		createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-		createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-		createInfo.pfnUserCallback = DebugCallback;
-	}
-
-	VkResult CreateDebugUtilsMessengerEXT(const VkInstance& instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
-		auto vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-		if (vkCreateDebugUtilsMessengerEXT != nullptr) 
-			return vkCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pDebugMessenger);		
-		else 
-			return VK_ERROR_EXTENSION_NOT_PRESENT;		
-	}
-
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
-	bool checkValidationLayerSupport() {
-		uint32_t layerCount;
-		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-		std::vector<VkLayerProperties> availableLayers(layerCount);
-		vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-		for (const char* layerName : validationLayers) 
-			for (const auto& layerProperties : availableLayers) 
-				if (strcmp(layerName, layerProperties.layerName) == 0) 
-					return true;	
-
-		return false;
-	}
-#endif
-
-	void createInstance() {
-		// @TODO: add mac support
-
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
-		if (!checkValidationLayerSupport()) 
-			WC_ERROR("Validation layers requested, but not available!");
-#endif
-
-		VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
-		appInfo.pApplicationName = "WC Application";
-		appInfo.applicationVersion = VK_MAKE_VERSION(1, 2, 0);
-		appInfo.pEngineName = "WC Engine";
-		appInfo.engineVersion = VK_MAKE_VERSION(1, 2, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_2;
-
-		VkInstanceCreateInfo createInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
-		createInfo.pApplicationInfo = &appInfo;
-
-		auto extensions = getRequiredExtensions();
-		createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-		createInfo.ppEnabledExtensionNames = extensions.data();
-
-		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
-			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-			createInfo.ppEnabledLayerNames = validationLayers.data();
-
-			populateDebugMessengerCreateInfo(debugCreateInfo);
-			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-#endif
-
-		if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) 
-			WC_ERROR("Failed to create instance!");		
-	}
-
-	bool checkDeviceExtensionSupport(const VkPhysicalDevice& device) {
-		uint32_t extensionCount;
-		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-
-		std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-
-		std::unordered_set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-
-		for (const auto& extension : availableExtensions) 
-			requiredExtensions.erase(extension.extensionName);		
-
-		return requiredExtensions.empty();
-	}
-
-	
-
 	
 
 	QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& device/*, VkSurfaceKHR surface*/) {
@@ -320,7 +256,18 @@ namespace VulkanContext {
 	bool isDeviceSuitable(const VkPhysicalDevice& device/*, VkSurfaceKHR surface*/) {
 		QueueFamilyIndices indices = findQueueFamilies(device/*, surface*/);
 
-		bool extensionsSupported = checkDeviceExtensionSupport(device);
+		uint32_t extensionCount;
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+		std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+		std::unordered_set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+
+		for (const auto& extension : availableExtensions)
+			requiredExtensions.erase(extension.extensionName);
+
+		bool extensionsSupported = requiredExtensions.empty();
 
 		//bool swapChainAdequate = false;
 		//if (extensionsSupported) {
@@ -330,28 +277,6 @@ namespace VulkanContext {
 
 		return indices.isComplete() && extensionsSupported /*&& swapChainAdequate*/;
 	}
-
-	void pickPhysicalDevice(/*VkSurfaceKHR surface*/) {
-		uint32_t deviceCount = 0;
-		vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-
-		if (deviceCount == 0) 
-			WC_ERROR("failed to find GPUs with Vulkan support!");
-		
-
-		std::vector<VkPhysicalDevice> devices(deviceCount);
-		vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
-		for (const auto& device : devices) {
-			if (isDeviceSuitable(device/*, surface*/)) {
-				physicalDevice = device;
-				return;
-			}
-		}
-
-		if (physicalDevice == VK_NULL_HANDLE) 
-			WC_ERROR("failed to find a suitable GPU!");		
-	}	
 
 	class Queue : public RendererObject<VkQueue> {
 		uint32_t queueFamily = 0; //family of that queue
@@ -376,68 +301,60 @@ namespace VulkanContext {
 	Queue computeQueue;
 	Queue transferQueue;
 
-	void createDevice(/*VkSurfaceKHR surface*/) {
-		QueueFamilyIndices indices = findQueueFamilies(physicalDevice/*, surface*/);
-
-		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::unordered_set<uint32_t> uniqueQueueFamilies = { 
-			indices.graphicsFamily.value(), 
-			//indices.presentFamily.value(),
-			indices.computeFamily.value(),
-			indices.transferFamily.value(),
-		};
-
-		float queuePriorities[] = { 1.0f };
-		for (uint32_t queueFamily : uniqueQueueFamilies) {
-			VkDeviceQueueCreateInfo queueCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
-			queueCreateInfo.queueFamilyIndex = queueFamily;
-			queueCreateInfo.queueCount = (uint32_t)std::size(queuePriorities);
-			queueCreateInfo.pQueuePriorities = queuePriorities;
-
-			queueCreateInfos.push_back(queueCreateInfo);
-		}
-
-		VkPhysicalDeviceFeatures deviceFeatures{};
-		deviceFeatures.multiDrawIndirect = true; // optional
-
-		
-
-
-		VkDeviceCreateInfo createInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
-
-		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-		createInfo.pQueueCreateInfos = queueCreateInfos.data();
-
-		createInfo.pEnabledFeatures = &deviceFeatures;		
-
-		createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-		createInfo.enabledLayerCount = 0;		
+	inline void Create() {
+		{// Create Instance
+			// @TODO: add mac support
 
 #ifdef WC_ENABLE_GRAPHICS_DEBUGGER
-		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-		createInfo.ppEnabledLayerNames = validationLayers.data();
+			uint32_t layerCount = 0;
+			vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+			std::vector<VkLayerProperties> availableLayers(layerCount);
+			vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+			bool bValidationLayers = false;
+			for (const char* layerName : validationLayers)
+				for (const auto& layerProperties : availableLayers)
+					if (strcmp(layerName, layerProperties.layerName) == 0)
+					{
+						bValidationLayers = true;
+						break;
+					}
+
+			if (!bValidationLayers)
+				WC_ERROR("Validation layers requested, but not available!");
 #endif
 
-		if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) 
-			WC_ERROR("failed to create logical device!");		
+			VkApplicationInfo appInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
+			appInfo.pApplicationName = "WC Application";
+			appInfo.applicationVersion = VK_MAKE_VERSION(1, 2, 0);
+			appInfo.pEngineName = "WC Engine";
+			appInfo.engineVersion = VK_MAKE_VERSION(1, 2, 0);
+			appInfo.apiVersion = VK_API_VERSION_1_2;
 
-		graphicsQueue.GetDeviceQueue(indices.graphicsFamily.value());
-		//presentQueue.GetDeviceQueue(indices.presentFamily.value());
-		computeQueue.GetDeviceQueue(indices.computeFamily.value());
-		transferQueue.GetDeviceQueue(indices.transferFamily.value());
-	}
+			VkInstanceCreateInfo createInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
+			createInfo.pApplicationInfo = &appInfo;
 
-	inline void Create() {
-		createInstance();
+			auto extensions = getRequiredExtensions();
+			createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+			createInfo.ppEnabledExtensionNames = extensions.data();
+
+			VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+			createInfo.ppEnabledLayerNames = validationLayers.data();
+
+			populateDebugMessengerCreateInfo(debugCreateInfo);
+			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+#endif
+
+			if (vkCreateInstance(&createInfo, VulkanContext::GetAllocator(), &instance) != VK_SUCCESS)
+				WC_ERROR("Failed to create instance!");
+		}
 		
 #ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 			VkDebugUtilsMessengerCreateInfoEXT createInfo;
 			populateDebugMessengerCreateInfo(createInfo);
-
-			if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debug_messenger) != VK_SUCCESS)
-				WC_ERROR("Failed to set up debug messenger!");
-
 
 			vkCmdBeginDebugUtilsLabel = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT");
 			vkCmdInsertDebugUtilsLabel = (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdInsertDebugUtilsLabelEXT");
@@ -448,10 +365,89 @@ namespace VulkanContext {
 			vkQueueEndDebugUtilsLabel = (PFN_vkQueueEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueEndDebugUtilsLabelEXT");
 
 			vkSetDebugUtilsObjectName = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
+
+			vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+			vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+
+			if (vkCreateDebugUtilsMessengerEXT(instance, &createInfo, VulkanContext::GetAllocator(), &debug_messenger) != VK_SUCCESS)
+				WC_ERROR("Failed to set up debug messenger!");
 #endif
 
-		pickPhysicalDevice(/*window.surface*/);
-		createDevice(/*window.surface*/);
+		{ // Pick physical device 
+			uint32_t deviceCount = 0;
+			vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+
+			if (deviceCount == 0)
+				WC_ERROR("failed to find GPUs with Vulkan support!");
+
+
+			std::vector<VkPhysicalDevice> devices(deviceCount);
+			vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+			for (const auto& device : devices) {
+				if (isDeviceSuitable(device/*, surface*/)) {
+					physicalDevice = device;
+					break;
+				}
+			}
+
+			if (physicalDevice == VK_NULL_HANDLE)
+				WC_ERROR("failed to find a suitable GPU!");
+			vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
+			vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+		}
+		{ // Create Logical Device
+			QueueFamilyIndices indices = findQueueFamilies(physicalDevice/*, surface*/);
+
+			std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+			std::unordered_set<uint32_t> uniqueQueueFamilies = {
+				indices.graphicsFamily.value(),
+				//indices.presentFamily.value(),
+				indices.computeFamily.value(),
+				indices.transferFamily.value(),
+			};
+
+			float queuePriorities[] = { 1.0f };
+			for (uint32_t queueFamily : uniqueQueueFamilies) {
+				VkDeviceQueueCreateInfo queueCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
+				queueCreateInfo.queueFamilyIndex = queueFamily;
+				queueCreateInfo.queueCount = (uint32_t)std::size(queuePriorities);
+				queueCreateInfo.pQueuePriorities = queuePriorities;
+
+				queueCreateInfos.push_back(queueCreateInfo);
+			}
+
+			VkPhysicalDeviceFeatures deviceFeatures{};
+			deviceFeatures.multiDrawIndirect = true; // optional
+			if (supportedFeatures.samplerAnisotropy) deviceFeatures.samplerAnisotropy = true;
+
+
+
+
+			VkDeviceCreateInfo createInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+
+			createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+			createInfo.pQueueCreateInfos = queueCreateInfos.data();
+
+			createInfo.pEnabledFeatures = &deviceFeatures;
+
+			createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+			createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+			createInfo.enabledLayerCount = 0;
+
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+			createInfo.ppEnabledLayerNames = validationLayers.data();
+#endif
+
+			if (vkCreateDevice(physicalDevice, &createInfo, VulkanContext::GetAllocator(), &device) != VK_SUCCESS)
+				WC_ERROR("failed to create logical device!");
+
+			graphicsQueue.GetDeviceQueue(indices.graphicsFamily.value());
+			//presentQueue.GetDeviceQueue(indices.presentFamily.value());
+			computeQueue.GetDeviceQueue(indices.computeFamily.value());
+			transferQueue.GetDeviceQueue(indices.transferFamily.value());
+		}
 
 		VmaAllocatorCreateInfo allocatorInfo = {};
 		allocatorInfo.physicalDevice = physicalDevice;
@@ -462,15 +458,13 @@ namespace VulkanContext {
 
 	void Destroy() {
 		vmaDestroyAllocator(vmaAllocator);
-		vkDestroyDevice(device, nullptr);
+		vkDestroyDevice(device, VulkanContext::GetAllocator());
 
 #ifdef WC_ENABLE_GRAPHICS_DEBUGGER
-		auto vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-		if (vkDestroyDebugUtilsMessengerEXT != nullptr)
-			vkDestroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr);
+		vkDestroyDebugUtilsMessengerEXT(instance, debug_messenger, VulkanContext::GetAllocator());
 #endif
 
-		vkDestroyInstance(instance, nullptr);
+		vkDestroyInstance(instance, VulkanContext::GetAllocator());
 	}
 }
 

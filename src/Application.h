@@ -2,7 +2,6 @@
 #include "world/World.h"
 
 namespace wc {	
-	bool debug_menu = true;
 	GameInstance gameInstance;
 
 	class Application {
@@ -44,25 +43,32 @@ namespace wc {
 		void OnInput() {
 			window.poolEvents();
 
-			bool hasFocus = window.hasFocus();
-			if (hasFocus) {
+			if (window.hasFocus()) {
 				if (mode == MenuMode::GAME) gameInstance.OnInput(deltaTime);
-				if (Keyboard::getKey(Keyboard::Key::F8)) debug_menu = !debug_menu;
+
 				if (Keyboard::getKey(Keyboard::Key::F9)) {
+					gameInstance.DestroyScreen();
+					gameInstance.CreateScreen();
+
+
 					gameInstance.DestroyDynamicPipelines();
 					gameInstance.CreateDynamicPipelines();
 				}
-				if (mode == MenuMode::GAME && Keyboard::getKey(Keyboard::Key::Escape)) mode = MenuMode::ESCMENU;
-				else if (mode == MenuMode::ESCMENU && Keyboard::getKey(Keyboard::Key::Escape)) 
+				
+				if (mode == MenuMode::ESCMENU && Keyboard::getKey(Keyboard::Key::Escape)) 
 					ChangeMenu(MenuMode::GAME);
+
+
+				if (Keyboard::getKey(Keyboard::Key::Escape)) ChangeMenu(MenuMode::ESCMENU);
 			}
-
-
-			window.SetCursorMode(mode == MenuMode::GAME && !gameInstance.console ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() {
 			VulkanContext::Create();
+			glfwSetMonitorCallback([](GLFWmonitor* monitor, int Event) {
+				ImGui_ImplGlfw_MonitorCallback(monitor, Event);
+			});
+
 			WindowCreateInfo windowInfo;
 			windowInfo.width = 1280;
 			windowInfo.height = 720;
@@ -75,20 +81,7 @@ namespace wc {
 			UploadContext::Init();
 			RendererContext::CreateCommands();
 
-			auto size = window.GetSize();
-
 			wc::descriptorAllocator.Create();
-
-			window.SetFramebufferSizeCallback([](GLFWwindow* windowHandle, int width, int height) {
-				RendererContext::RecreateDefaultRenderPass(window);
-
-				gameInstance.DestroyScreen();
-				gameInstance.DestroyDynamicPipelines();
-
-
-				gameInstance.CreateScreen();
-				gameInstance.CreateDynamicPipelines();
-				});
 			
 			ImGui::CreateContext();
 
@@ -99,7 +92,6 @@ namespace wc {
 			//io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
 			//this initializes the core structures of imgui
 
-			//this initializes imgui for SDL
 			ImGui_ImplGlfw_InitForVulkan(window, false);
 
 			//this initializes imgui for Vulkan
@@ -109,29 +101,20 @@ namespace wc {
 			init_info.Device = VulkanContext::GetDevice();
 			init_info.Queue = RendererContext::GetGraphicsQueue();
 			init_info.DescriptorPool = descriptorAllocator.GetCurrentPool();
-			init_info.MinImageCount = 3;
-			init_info.ImageCount = 3;
+			init_info.MinImageCount = 2;
+			init_info.ImageCount = 2;
 			init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
-			ImGui_ImplVulkan_Init(&init_info, RendererContext::GetRenderPass()); 
+			ImGui_ImplVulkan_Init(&init_info, RendererContext::GetRenderPass());
 
 			UploadContext::immediate_submit([&](VkCommandBuffer cmd) {
 				ImGui_ImplVulkan_CreateFontsTexture(cmd);
 				});
 
 			//clear font textures from cpu data
-			ImGui_ImplVulkan_DestroyFontUploadObjects();
+			ImGui_ImplVulkan_DestroyFontUploadObjects();					
 
-			if (!std::filesystem::exists("worlds")) std::filesystem::create_directory("worlds");
-			if (!std::filesystem::exists("cache")) std::filesystem::create_directory("cache");
-			if (!std::filesystem::exists("settings.yaml")) Settings::Save();
-
-			Settings::Load();
-
-			
-			gameInstance.CreateScreen();
-
-			gameInstance.Create(size);
+			gameInstance.Create(window.GetSize());
 
 			//[TO DO]: shorten the lenght
 			background.Load(GetAssetPath() + "/textures/misc/screenshot.png");
@@ -176,22 +159,15 @@ namespace wc {
 			
 			
 			//imgui commands
-			ImGui_ImplVulkan_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
 
 			//loading crosshair and console
-			if (mode == MenuMode::GAME) {
-				gameInstance.RenderImGuiCrosshair();
-				gameInstance.RenderImGuiConsole();
-
-				if (debug_menu)
-					gameInstance.RenderImGuiDebugMenu(deltaTime);
-			}
+			if (mode == MenuMode::GAME) 
+				gameInstance.RenderGUI(deltaTime);			
 
 			//loading escape menu
-			if (mode == MenuMode::ESCMENU) 
-				gameInstance.RenderImGuiEscapeMenu();			
+			if (mode == MenuMode::ESCMENU) gameInstance.RenderImGuiEscapeMenu();
 
 			//loading the main menu
 			if (mode == MenuMode::MAINMENU) {
@@ -360,6 +336,7 @@ namespace wc {
 							ImGui::TreePop();
 						}
 						ImGui::Checkbox("Colour Blind Mode", &Settings::ColorBlindMode);
+						ImGui::Checkbox("Sky", &Settings::sky);
 
 
 						const char* FPSItems[] = { "unlimited", "30", "45", "60", "120", "240", "300" };
@@ -379,6 +356,8 @@ namespace wc {
 							}
 							ImGui::EndCombo();
 						}
+
+
 
 						ImGui::EndTabItem();
 					}
@@ -466,8 +445,6 @@ namespace wc {
 				ImGui::GetBackgroundDrawList()->AddImage(background, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
 				ImGui::End();
 			}
-			if (mode == MenuMode::GAME)
-				gameInstance.RenderGUI();
 			ImGui::Render();
 
 
@@ -485,13 +462,6 @@ namespace wc {
 			cmd.End();
 
 			RendererContext::ExecuteGraphicsCommands();
-
-			ImGuiIO& io = ImGui::GetIO();
-			if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-			{
-				ImGui::UpdatePlatformWindows();
-				ImGui::RenderPlatformWindowsDefault();
-			}
 
 			VkResult presentationResult = window.Present(swapchainImageIndex, RendererContext::GetRenderSemaphore(), RendererContext::GetPresentQueue());
 
@@ -512,19 +482,15 @@ namespace wc {
 			TextureDeletionQueue.flush();
 			ImGui_ImplVulkan_Shutdown();
 			gameInstance.Destroy();
-			gameInstance.DestroyScreen();
 
 			UploadContext::Destroy();
 
-			descriptorLayoutCache.Destroy();
 			descriptorAllocator.Destroy();
 
 			RendererContext::Destroy(window);
 			window.Destroy();
 
 			VulkanContext::Destroy();
-
-			Settings::Save();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 	public:

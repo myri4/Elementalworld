@@ -61,7 +61,10 @@ namespace wc {
 			return result;
 		}
 
-		void Destroy() { vmaDestroyBuffer(VulkanContext::GetMemoryAllocator(), m_RendererID, allocation); }
+		void Destroy() { 
+			vmaDestroyBuffer(VulkanContext::GetMemoryAllocator(), m_RendererID, allocation);
+			m_RendererID = VK_NULL_HANDLE;
+		}
 
 		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)m_RendererID, name); }
 		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)m_RendererID, name.c_str()); }

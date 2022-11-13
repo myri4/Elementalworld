@@ -153,6 +153,8 @@ public:
 
     float GetMultiplier() { return mMultiplier; }
 
+    NoiseType GetNoiseType() { return mNoiseType; }
+
     /// <summary>
     /// Sets frequency for all noise types
     /// </summary>

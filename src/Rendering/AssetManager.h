@@ -47,6 +47,7 @@ namespace wc {
 				const uint32_t width = 128;
 				const uint32_t height = 128;
 				texArr.Create({ width, height , textureCounter });
+				texArr.image.SetName("texArr");
 				textureMaterialArr.Create({ width, height , materialCounter });
 	
 				uint32_t* data = new uint32_t[width * height];
@@ -58,7 +59,7 @@ namespace wc {
 				delete[] data;
 			}
 	
-			VkSamplerCreateInfo samplerInfo = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+			SamplerCreateInfo samplerInfo;
 	
 			samplerInfo.magFilter = VK_FILTER_NEAREST;
 			samplerInfo.minFilter = VK_FILTER_NEAREST;
@@ -66,7 +67,12 @@ namespace wc {
 			samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 			samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 			samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	
+			samplerInfo.maxLod = (float)texArr.image.mipLevels;
+			if (VulkanContext::GetSupportedFeatures().samplerAnisotropy) {
+				samplerInfo.anisotropyEnable = true;
+				samplerInfo.maxAnisotropy = VulkanContext::GetProperties().limits.maxSamplerAnisotropy;
+				WC_INFO(samplerInfo.maxAnisotropy);
+			}
 			sampler.Create(samplerInfo);
 	
 			for (auto& [file, id] : m_DiffuseCache) {
