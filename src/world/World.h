@@ -314,6 +314,7 @@ namespace wc {
 				createInfo.vertexDescription = Vertex::get_vertex_description();
 				createInfo.blending = true;
 				createInfo.depthTest = true;
+				createInfo.cachePath = wc::GetCachedAssetPath() + "/shaders/Renderer3D.bin";
 				Renderer3D::shader.Create(createInfo);
 
 				wc::DescriptorWriter writer;
@@ -335,6 +336,7 @@ namespace wc {
 				createInfo.renderPass = m_Framebuffer.renderPass;
 				createInfo.blending = false;
 				createInfo.depthTest = false;
+				createInfo.cachePath = GetCachedAssetPath() + "/shaders/skyShader.bin";
 				skyShader.Create(createInfo);
 
 				wc::DescriptorWriter writer;
@@ -409,7 +411,7 @@ namespace wc {
 			else if (m_WorldLoaded) SaveWorld();
 			delQueue.flush();
 			Renderer3D::Destroy();
-			skyShader.SaveCache(GetCachedAssetPath() + "/shaders/skyShader.bin");
+			skyShader.SaveCache();
 			skyShader.Destroy();
 			rayTracingShader.Destroy();
 			compositeShader.Destroy();
@@ -494,12 +496,12 @@ namespace wc {
 			
 			SamplerCreateInfo sampler;
 			
-			sampler.magFilter = VK_FILTER_LINEAR;
-			sampler.minFilter = VK_FILTER_LINEAR;
-			sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-			sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			sampler.magFilter = Filter::LINEAR;
+			sampler.minFilter = Filter::LINEAR;
+			sampler.mipmapMode = SamplerMipmapMode::LINEAR;
+			sampler.addressModeU = SamplerAddressMode::CLAMP_TO_EDGE;
+			sampler.addressModeV = SamplerAddressMode::CLAMP_TO_EDGE;
+			sampler.addressModeW = SamplerAddressMode::CLAMP_TO_EDGE;
 			sampler.minLod = 0.f;
 			sampler.maxLod = float(m_BloomMipLevels);
 
@@ -781,15 +783,18 @@ namespace wc {
 			submit.commandBufferCount = 1;
 			submit.pCommandBuffers = cmd.GetPointer();
 
+			submit.pSignalSemaphores = RendererContext::computeSemaphore.GetPointer();
+			submit.signalSemaphoreCount = 1;
+
 			VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
 			submit.pWaitDstStageMask = &waitStage;
 
 			//@TODO: prerecord command buffers and remove fences everywhere possible
-			VulkanContext::graphicsQueue.Submit(submit, RendererContext::renderFence);
+			VulkanContext::graphicsQueue.Submit(submit, VK_NULL_HANDLE);
 
-			RendererContext::renderFence.Wait();
-			RendererContext::renderFence.Reset();
+			//RendererContext::renderFence.Wait();
+			//RendererContext::renderFence.Reset();
 			
 			//cmd.Reset();
 			}
@@ -866,6 +871,9 @@ namespace wc {
 
 				submit.commandBufferCount = 1;
 				submit.pCommandBuffers = cmd.GetPointer();
+
+				submit.pWaitSemaphores = RendererContext::computeSemaphore.GetPointer();
+				submit.waitSemaphoreCount = 1;
 
 				VkPipelineStageFlags computeWaitStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 

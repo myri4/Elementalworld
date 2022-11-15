@@ -336,18 +336,35 @@ namespace wc {
         void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_RendererID, name.c_str()); }
     };
 
+    enum class Filter {
+        NEAREST = 0,
+        LINEAR = 1,
+    };
+
+    enum class SamplerMipmapMode {
+        NEAREST = 0,
+        LINEAR = 1,
+    };
+
+    enum SamplerAddressMode {
+        REPEAT = 0,
+        MIRRORED_REPEAT = 1,
+        CLAMP_TO_EDGE = 2,
+        CLAMP_TO_BORDER = 3
+    };
+
     struct SamplerCreateInfo {
-        VkFilter                magFilter = VK_FILTER_NEAREST;
-        VkFilter                minFilter = VK_FILTER_NEAREST;
-        VkSamplerMipmapMode     mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-        VkSamplerAddressMode    addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        VkSamplerAddressMode    addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        VkSamplerAddressMode    addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        float                   mipLodBias = 0.f;
-        bool                    anisotropyEnable = false;
-        float                   maxAnisotropy = 1.f;
-        float                   minLod = 0.f;
-        float                   maxLod = 1.f;
+        Filter                magFilter = Filter::NEAREST;
+        Filter                minFilter = Filter::NEAREST;
+        SamplerMipmapMode     mipmapMode = SamplerMipmapMode::NEAREST;
+        SamplerAddressMode    addressModeU = SamplerAddressMode::REPEAT;
+        SamplerAddressMode    addressModeV = SamplerAddressMode::REPEAT;
+        SamplerAddressMode    addressModeW = SamplerAddressMode::REPEAT;
+        float                 mipLodBias = 0.f;
+        bool                  anisotropyEnable = false;
+        float                 maxAnisotropy = 1.f;
+        float                 minLod = 0.f;
+        float                 maxLod = 1.f;
     };
 
     struct Sampler : public RendererObject<VkSampler> {
@@ -359,12 +376,12 @@ namespace wc {
         VkResult Create(const SamplerCreateInfo& info) {
             VkSamplerCreateInfo createInfo = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 
-            createInfo.magFilter = info.magFilter;
-            createInfo.minFilter = info.minFilter;
-            createInfo.mipmapMode = info.mipmapMode;
-            createInfo.addressModeU = info.addressModeU;
-            createInfo.addressModeV = info.addressModeV;
-            createInfo.addressModeW = info.addressModeW;
+            createInfo.magFilter = (VkFilter)info.magFilter;
+            createInfo.minFilter = (VkFilter)info.minFilter;
+            createInfo.mipmapMode = (VkSamplerMipmapMode)info.mipmapMode;
+            createInfo.addressModeU = (VkSamplerAddressMode)info.addressModeU;
+            createInfo.addressModeV = (VkSamplerAddressMode)info.addressModeV;
+            createInfo.addressModeW = (VkSamplerAddressMode)info.addressModeW;
             createInfo.mipLodBias = info.mipLodBias;
             createInfo.anisotropyEnable = info.anisotropyEnable;
             createInfo.maxAnisotropy = info.maxAnisotropy;
@@ -675,21 +692,20 @@ namespace wc {
 
             if (data) {
                 SamplerCreateInfo samplerInfo;
-                samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                samplerInfo.addressModeU = SamplerAddressMode::CLAMP_TO_EDGE;
+                samplerInfo.addressModeV = SamplerAddressMode::CLAMP_TO_EDGE;
+                samplerInfo.addressModeW = SamplerAddressMode::CLAMP_TO_EDGE;
                 samplerInfo.maxLod = (float)image.mipLevels;
 
                 if (width <= 128 || height <= 128) {
-                    samplerInfo.magFilter = VK_FILTER_NEAREST;
-                    samplerInfo.minFilter = VK_FILTER_NEAREST;
-                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+                    samplerInfo.magFilter = Filter::NEAREST;
+                    samplerInfo.minFilter = Filter::NEAREST;
+                    samplerInfo.mipmapMode = SamplerMipmapMode::NEAREST;
                 }
                 else {
-                    samplerInfo.magFilter = VK_FILTER_LINEAR;
-                    samplerInfo.minFilter = VK_FILTER_LINEAR;
-                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                    samplerInfo.magFilter = Filter::LINEAR;
+                    samplerInfo.minFilter = Filter::LINEAR;
+                    samplerInfo.mipmapMode = SamplerMipmapMode::LINEAR;
                 }
 
                 sampler.Create(samplerInfo);

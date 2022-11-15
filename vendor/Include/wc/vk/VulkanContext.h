@@ -6,28 +6,99 @@
 #include <vma/vk_mem_alloc.h>
 #include <unordered_set>
 
-enum class Vendor : uint32_t {
-	AMD = 0x1002,
-	ImgTec = 0x1010,
-	NVIDIA = 0x10DE,
-	ARM = 0x13B5,
-	Qualcomm = 0x5143,
-	INTEL = 0x8086
-};
-
 //#define WC_ENABLE_GRAPHICS_DEBUGGER
+
+namespace wc {
+	enum class Vendor : uint32_t {
+		AMD = 0x1002,
+		ImgTec = 0x1010,
+		NVIDIA = 0x10DE,
+		ARM = 0x13B5,
+		Qualcomm = 0x5143,
+		INTEL = 0x8086
+	};
+
+	class Instance : public RendererObject<VkInstance> {
+	public:
+		VkResult Create(const VkInstanceCreateInfo& createInfo) {
+			return vkCreateInstance(&createInfo, nullptr, &m_RendererID);
+		}
+
+		PFN_vkVoidFunction GetProcAddress(const char* pName) {
+			return vkGetInstanceProcAddr(m_RendererID, pName);
+		}
+
+		void Destroy() {
+			vkDestroyInstance(m_RendererID, nullptr);
+		}
+	};
+
+	class PhysicalDevice : public RendererObject<VkPhysicalDevice> {
+		VkPhysicalDeviceFeatures features;
+		VkPhysicalDeviceProperties properties;
+		VkPhysicalDeviceMemoryProperties memoryProperties;
+	public:
+	 
+		PhysicalDevice() = default;
+		PhysicalDevice(const VkPhysicalDevice& device) { SetDevice(device);	}
+
+		void SetDevice(const VkPhysicalDevice& physicalDevice) {
+			m_RendererID = physicalDevice;
+			vkGetPhysicalDeviceFeatures(m_RendererID, &features);
+			vkGetPhysicalDeviceProperties(m_RendererID, &properties);
+			vkGetPhysicalDeviceMemoryProperties(m_RendererID, &memoryProperties);
+		}
+
+		VkResult GetImageFormatProperties(const VkFormat& format, const VkImageType& type, const VkImageTiling& tiling, const VkImageUsageFlags& usage, const VkImageCreateFlags& flags, VkImageFormatProperties* pImageFormatProperties) {
+			return vkGetPhysicalDeviceImageFormatProperties(m_RendererID, format, type, tiling, usage, flags, pImageFormatProperties);
+		}
+
+		void GetQueueFamilyProperties(uint32_t* pQueueFamilyPropertyCount, VkQueueFamilyProperties* pQueueFamilyProperties) {
+			vkGetPhysicalDeviceQueueFamilyProperties(m_RendererID, pQueueFamilyPropertyCount, pQueueFamilyProperties);
+		}
+
+		VkFormatProperties GetFormatProperties(const VkFormat& format) {
+			VkFormatProperties formatProperties;
+			vkGetPhysicalDeviceFormatProperties(m_RendererID, format, &formatProperties);
+			return formatProperties;
+		}
+
+		VkPhysicalDeviceFeatures GetFeatures() const { return features; }
+
+		VkPhysicalDeviceProperties GetProperties() const { return properties; }
+
+		VkPhysicalDeviceMemoryProperties GetMemoryProperties() const { return memoryProperties; }
+	};
+	
+
+	class Device : public RendererObject<VkDevice> {
+	public:
+		VkResult Create(const VkPhysicalDevice& physicalDevice, const VkDeviceCreateInfo& createInfo) {
+			return vkCreateDevice(physicalDevice, &createInfo, nullptr, &m_RendererID);
+		}
+
+		PFN_vkVoidFunction GetProcAddress(const char* pName) {
+			return vkGetDeviceProcAddr(m_RendererID, pName);
+		}
+
+		void WaitIdle() {
+			vkDeviceWaitIdle(m_RendererID);
+		}
+
+		void Destroy() {
+			vkDestroyDevice(m_RendererID, nullptr);
+		}
+	};	
+}
 
 namespace VulkanContext {
 	namespace {
-		VkInstance instance;
-		VkPhysicalDevice physicalDevice;
-		VkDevice device;
+		wc::Instance instance;
+		wc::PhysicalDevice physicalDevice;
+		wc::Device device;
 
 		VmaAllocator vmaAllocator;
 		const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME }; // @TODO: remove
-
-		VkPhysicalDeviceProperties properties;
-		VkPhysicalDeviceFeatures supportedFeatures;
 
 #ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		VkDebugUtilsMessengerEXT debug_messenger; // Vulkan debug output handle	
@@ -42,21 +113,21 @@ namespace VulkanContext {
 			switch (messageSeverity)
 			{
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-				WC_ERROR("{0}", pCallbackData->pMessage);
-				__debugbreak();
+				WC_ERROR(pCallbackData->pMessage);
+				//__debugbreak();
 				//OutputDebugString(pCallbackData->pMessage);
 				break;
 
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-				WC_WARN("{0}", pCallbackData->pMessage);
+				WC_WARN(pCallbackData->pMessage);
 				break;
 
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-				WC_INFO("{0}", pCallbackData->pMessage);
+				WC_INFO(pCallbackData->pMessage);
 				break;
 
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-				// WC_TRACE("[{0} {1} TRACE] {2}", src, typeStr, message);
+				//WC_TRACE(pCallbackData->pMessage);
 				break;
 			}
 
@@ -96,17 +167,19 @@ namespace VulkanContext {
 #endif
 	}
 
-	VkInstance& GetInstance() { return instance; }
-	VkPhysicalDevice& GetPhysicalDevice() { return physicalDevice; }
-	VkDevice& GetDevice() { return device; }
+	
+
+	wc::Instance& GetInstance() { return instance; }
+	wc::PhysicalDevice& GetPhysicalDevice() { return physicalDevice; }
+	wc::Device& GetDevice() { return device; }
 	VmaAllocator& GetMemoryAllocator() { return vmaAllocator; }
 	VkAllocationCallbacks* GetAllocator() { return nullptr; } // @TODO: add this to all the vk classes
-	VkPhysicalDeviceProperties GetProperties() { return properties; }
-	VkPhysicalDeviceFeatures GetSupportedFeatures() { return supportedFeatures; }
+	VkPhysicalDeviceProperties GetProperties() { return physicalDevice.GetProperties(); }
+	VkPhysicalDeviceFeatures GetSupportedFeatures() { return physicalDevice.GetFeatures(); }
 	size_t pad_uniform_buffer_size(const size_t& originalSize)
 	{
 		// Calculate required alignment based on minimum device offset alignment
-		size_t minUboAlignment = properties.limits.minUniformBufferOffsetAlignment;
+		size_t minUboAlignment = GetProperties().limits.minUniformBufferOffsetAlignment;
 		size_t alignedSize = originalSize;
 		if (minUboAlignment > 0) 
 			alignedSize = (alignedSize + minUboAlignment - 1) & ~(minUboAlignment - 1);
@@ -348,7 +421,7 @@ namespace VulkanContext {
 			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 #endif
 
-			if (vkCreateInstance(&createInfo, VulkanContext::GetAllocator(), &instance) != VK_SUCCESS)
+			if (instance.Create(createInfo) != VK_SUCCESS)
 				WC_ERROR("Failed to create instance!");
 		}
 		
@@ -356,18 +429,18 @@ namespace VulkanContext {
 			VkDebugUtilsMessengerCreateInfoEXT createInfo;
 			populateDebugMessengerCreateInfo(createInfo);
 
-			vkCmdBeginDebugUtilsLabel = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT");
-			vkCmdInsertDebugUtilsLabel = (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdInsertDebugUtilsLabelEXT");
-			vkCmdEndDebugUtilsLabel = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT");
+			vkCmdBeginDebugUtilsLabel = (PFN_vkCmdBeginDebugUtilsLabelEXT)instance.GetProcAddress("vkCmdBeginDebugUtilsLabelEXT");
+			vkCmdInsertDebugUtilsLabel = (PFN_vkCmdInsertDebugUtilsLabelEXT)instance.GetProcAddress("vkCmdInsertDebugUtilsLabelEXT");
+			vkCmdEndDebugUtilsLabel = (PFN_vkCmdEndDebugUtilsLabelEXT)instance.GetProcAddress("vkCmdEndDebugUtilsLabelEXT");
 
-			vkQueueBeginDebugUtilsLabel = (PFN_vkQueueBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueBeginDebugUtilsLabelEXT");
-			vkQueueInsertDebugUtilsLabel = (PFN_vkQueueInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueInsertDebugUtilsLabelEXT");
-			vkQueueEndDebugUtilsLabel = (PFN_vkQueueEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueEndDebugUtilsLabelEXT");
+			vkQueueBeginDebugUtilsLabel = (PFN_vkQueueBeginDebugUtilsLabelEXT)instance.GetProcAddress("vkQueueBeginDebugUtilsLabelEXT");
+			vkQueueInsertDebugUtilsLabel = (PFN_vkQueueInsertDebugUtilsLabelEXT)instance.GetProcAddress("vkQueueInsertDebugUtilsLabelEXT");
+			vkQueueEndDebugUtilsLabel = (PFN_vkQueueEndDebugUtilsLabelEXT)instance.GetProcAddress("vkQueueEndDebugUtilsLabelEXT");
 
-			vkSetDebugUtilsObjectName = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
+			vkSetDebugUtilsObjectName = (PFN_vkSetDebugUtilsObjectNameEXT)instance.GetProcAddress("vkSetDebugUtilsObjectNameEXT");
 
-			vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-			vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+			vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)instance.GetProcAddress("vkCreateDebugUtilsMessengerEXT");
+			vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)instance.GetProcAddress("vkDestroyDebugUtilsMessengerEXT");
 
 			if (vkCreateDebugUtilsMessengerEXT(instance, &createInfo, VulkanContext::GetAllocator(), &debug_messenger) != VK_SUCCESS)
 				WC_ERROR("Failed to set up debug messenger!");
@@ -393,8 +466,6 @@ namespace VulkanContext {
 
 			if (physicalDevice == VK_NULL_HANDLE)
 				WC_ERROR("failed to find a suitable GPU!");
-			vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
-			vkGetPhysicalDeviceProperties(physicalDevice, &properties);
 		}
 		{ // Create Logical Device
 			QueueFamilyIndices indices = findQueueFamilies(physicalDevice/*, surface*/);
@@ -419,7 +490,7 @@ namespace VulkanContext {
 
 			VkPhysicalDeviceFeatures deviceFeatures{};
 			deviceFeatures.multiDrawIndirect = true; // optional
-			if (supportedFeatures.samplerAnisotropy) deviceFeatures.samplerAnisotropy = true;
+			if (physicalDevice.GetFeatures().samplerAnisotropy) deviceFeatures.samplerAnisotropy = true;
 
 
 
@@ -433,15 +504,14 @@ namespace VulkanContext {
 
 			createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 			createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-			createInfo.enabledLayerCount = 0;
 
 #ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 			createInfo.ppEnabledLayerNames = validationLayers.data();
 #endif
 
-			if (vkCreateDevice(physicalDevice, &createInfo, VulkanContext::GetAllocator(), &device) != VK_SUCCESS)
-				WC_ERROR("failed to create logical device!");
+			if (device.Create(physicalDevice, createInfo) != VK_SUCCESS)
+				WC_ERROR("Failed to create logical device!");
 
 			graphicsQueue.GetDeviceQueue(indices.graphicsFamily.value());
 			//presentQueue.GetDeviceQueue(indices.presentFamily.value());
@@ -458,13 +528,12 @@ namespace VulkanContext {
 
 	void Destroy() {
 		vmaDestroyAllocator(vmaAllocator);
-		vkDestroyDevice(device, VulkanContext::GetAllocator());
+		device.Destroy();
 
 #ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 		vkDestroyDebugUtilsMessengerEXT(instance, debug_messenger, VulkanContext::GetAllocator());
 #endif
-
-		vkDestroyInstance(instance, VulkanContext::GetAllocator());
+		instance.Destroy();
 	}
 }
 

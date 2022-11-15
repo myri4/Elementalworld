@@ -67,6 +67,17 @@ namespace wc {
 			free(data.data);
 		}
 
+		bool Valid(const void* data) {
+			VkPipelineCacheHeaderVersionOne header;
+			memcpy(&header, data, sizeof(header));
+			if (header.headerSize <= 0) return false;
+			if (header.headerVersion != VK_PIPELINE_CACHE_HEADER_VERSION_ONE) return false;
+			if (header.vendorID != VulkanContext::GetProperties().vendorID)   return false;
+			if (header.deviceID != VulkanContext::GetProperties().deviceID)   return false;
+			if (memcmp(header.pipelineCacheUUID, VulkanContext::GetProperties().pipelineCacheUUID, sizeof(header.pipelineCacheUUID)) != 0) return false;
+			return true;
+		}
+
 		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE_CACHE, (uint64_t)m_RendererID, name); }
 		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE_CACHE, (uint64_t)m_RendererID, name.c_str()); }
 	};

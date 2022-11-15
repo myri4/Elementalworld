@@ -61,17 +61,16 @@ namespace wc {
 	
 			SamplerCreateInfo samplerInfo;
 	
-			samplerInfo.magFilter = VK_FILTER_NEAREST;
-			samplerInfo.minFilter = VK_FILTER_NEAREST;
-			samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-			samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-			samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-			samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+			samplerInfo.magFilter = Filter::NEAREST;
+			samplerInfo.minFilter = Filter::NEAREST;
+			samplerInfo.mipmapMode = SamplerMipmapMode::LINEAR;
+			samplerInfo.addressModeU = SamplerAddressMode::REPEAT;
+			samplerInfo.addressModeV = SamplerAddressMode::REPEAT;
+			samplerInfo.addressModeW = SamplerAddressMode::REPEAT;
 			samplerInfo.maxLod = (float)texArr.image.mipLevels;
 			if (VulkanContext::GetSupportedFeatures().samplerAnisotropy) {
 				samplerInfo.anisotropyEnable = true;
 				samplerInfo.maxAnisotropy = VulkanContext::GetProperties().limits.maxSamplerAnisotropy;
-				WC_INFO(samplerInfo.maxAnisotropy);
 			}
 			sampler.Create(samplerInfo);
 	
@@ -99,6 +98,19 @@ namespace wc {
 			m_MaterialCache.clear();
 			//texArr.GenerateMipmap();
 			//textureMaterialArr.GenerateMipmap();
+#ifdef WC_ENABLE_GRAPHICS_DEBUGGER // @TODO: remove this is a bug in the validation layers
+			UploadContext::immediate_submit([&](VkCommandBuffer cmd) {
+				VkImageSubresourceRange subresourceRange;
+				subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				subresourceRange.baseArrayLayer = 0;
+				subresourceRange.baseMipLevel = 0;
+				subresourceRange.levelCount = texArr.image.mipLevels;
+				subresourceRange.layerCount = texArr.image.layers;
+				texArr.image.setLayout(cmd, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
+				subresourceRange.layerCount = textureMaterialArr.image.layers;
+				textureMaterialArr.image.setLayout(cmd, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
+				});
+#endif
 		}
 	
 		void Destroy() {

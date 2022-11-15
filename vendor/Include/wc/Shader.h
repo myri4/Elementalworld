@@ -9,6 +9,31 @@
 
 namespace wc {
 
+	std::vector<uint32_t> ReadBinary(const std::string& filename) {
+		std::vector<uint32_t> buffer;
+		std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+		if (!file.is_open())
+			WC_ERROR("Cant open file at location {0}", filename.c_str());
+
+		//find what the size of the file is by looking up the location of the cursor
+		//because the cursor is at the end, it gives the size directly in bytes
+		size_t fileSize = (size_t)file.tellg();
+
+		//spirv expects the buffer to be on uint32, so make sure to reserve a int vector big enough for the entire file
+		buffer.resize(fileSize / sizeof(uint32_t));
+
+		//put file cursor at beggining
+		file.seekg(0);
+
+		//load the entire file into the buffer
+		file.read((char*)buffer.data(), fileSize);
+
+		//now that the file is loaded into the buffer, we can close it
+		file.close();
+		return buffer;
+	}
+
 	class ShaderModuleWC : public RendererObject<VkShaderModule> {
 	private:
 		std::vector<uint32_t> shaderData;
@@ -17,26 +42,7 @@ namespace wc {
 		spirv_cross::EntryPoint entryPoint;
 
 		VkResult Create(const std::string& filename) {			
-			std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-			if (!file.is_open())
-				WC_ERROR("Cant open file at location {0}", filename.c_str());
-
-			//find what the size of the file is by looking up the location of the cursor
-			//because the cursor is at the end, it gives the size directly in bytes
-			size_t fileSize = (size_t)file.tellg();
-
-			//spirv expects the buffer to be on uint32, so make sure to reserve a int vector big enough for the entire file
-			shaderData.resize(fileSize / sizeof(uint32_t));
-
-			//put file cursor at beggining
-			file.seekg(0);
-
-			//load the entire file into the buffer
-			file.read((char*)shaderData.data(), fileSize);
-
-			//now that the file is loaded into the buffer, we can close it
-			file.close();
+			LoadBinary(filename);
 			
 			VkShaderModuleCreateInfo createInfo = { VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
 
@@ -48,6 +54,10 @@ namespace wc {
 			entryPoint = compiler.get_entry_points_and_stages()[0];
 
 			return vkCreateShaderModule(VulkanContext::GetDevice(), &createInfo, nullptr, &m_RendererID);
+		}
+
+		void LoadBinary(const std::string& filename) {
+			shaderData = ReadBinary(filename);
 		}
 
 		void Destroy() {
@@ -89,6 +99,7 @@ namespace wc {
 	struct ShaderCreateInfo {
 		std::string vertexShader;
 		std::string fragmentShader;
+		std::string cachePath;
 		glm::vec2 windowSize = glm::vec2(0.f);
 		wc::RenderPass renderPass;
 		wc::VertexInputDescription vertexDescription;
@@ -102,6 +113,7 @@ namespace wc {
 		wc::PipelineLayout pipelineLayout;
 		wc::DescriptorSetLayout descriptorLayout;
 		wc::PipelineCache cache;
+		std::string cachePath;
 	public:
 		const wc::Pipeline& getPipeline() const { return pipeline; }
 		const wc::PipelineLayout& getPipelineLayout() const { return pipelineLayout; }
@@ -112,9 +124,25 @@ namespace wc {
 		void Create(const ShaderCreateInfo& createInfo) {
 			wc::PipelineBuilder pipelineBuilder;
 			std::array<ShaderModuleWC, 2> shaderModules;
+			cachePath = createInfo.cachePath;
+			bool cacheFound = std::filesystem::exists(cachePath);
+			VkPipelineCacheCreateInfo cacheCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO };
 
 			shaderModules[0].Create(createInfo.vertexShader);
 			shaderModules[1].Create(createInfo.fragmentShader);
+			if (cacheFound) {
+				auto cacheData = ReadBinary(cachePath);
+				cacheCreateInfo.pInitialData = cacheData.data();
+				cacheCreateInfo.initialDataSize = cacheData.size() * sizeof(uint32_t);				
+
+				if (!cache.Valid(cacheData.data())) {
+					WC_WARN("Invalid cache file for {}. Ignoring and creating a new one", createInfo.cachePath.c_str());
+					cacheCreateInfo.pInitialData = nullptr;
+					cacheCreateInfo.initialDataSize = 0;
+				}
+			}
+			else 
+				WC_INFO("Could not find cache file for {}", cachePath.c_str());			
 
 			{ // Reflection
 				std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
@@ -298,14 +326,14 @@ namespace wc {
 			pipelineBuilder.topology = createInfo.topology;
 			
 
-			VkPipelineCacheCreateInfo cacheCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO };
 			cache.Create(cacheCreateInfo);
 			
 			pipelineBuilder.cache = cache;
 			//finally build the pipeline
 			pipeline = pipelineBuilder.build_pipeline(createInfo.renderPass, pipelineLayout);
 
-			for (uint32_t i = 0; i < shaderModules.size(); i++) shaderModules[i].Destroy();
+			//if (!cacheFound) 
+				for (uint32_t i = 0; i < shaderModules.size(); i++) shaderModules[i].Destroy();
 		}
 
 		void Bind(const wc::CommandBuffer& cmd) {
@@ -313,7 +341,7 @@ namespace wc {
 			cmd.BindPipeline(pipeline);
 		}
 
-		void SaveCache(const std::string& cachePath) {
+		void SaveCache() {
 			cache.SaveToFile(cachePath);
 		}
 		

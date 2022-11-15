@@ -78,6 +78,7 @@ namespace Renderer3D {
 		wc::ShaderCreateInfo createInfo;
 		createInfo.vertexShader = wc::GetAssetPath() + "/shaders/Line3D.vert";
 		createInfo.fragmentShader = wc::GetAssetPath() + "/shaders/Line3D.frag";
+		createInfo.cachePath = wc::GetCachedAssetPath() + "/shaders/LineShader.bin";
 		createInfo.windowSize = window.GetSize();
 		createInfo.renderPass = renderPass;
 		createInfo.blending = false;
@@ -150,7 +151,7 @@ namespace Renderer3D {
 	}
 
 	void Destroy() {
-		shader.SaveCache(wc::GetCachedAssetPath() + "/shaders/Renderer3D.bin");
+		shader.SaveCache();
 		shader.Destroy();
 		vertexBuffer.Destroy();
 		indexBuffer.Destroy();
@@ -158,7 +159,7 @@ namespace Renderer3D {
 
 
 		lineBuffer.Destroy();
-		lineShader.SaveCache(wc::GetCachedAssetPath() + "/shaders/LineShader.bin");
+		lineShader.SaveCache();
 		DestroyLinePipeline();
 	}
 }

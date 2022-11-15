@@ -477,7 +477,7 @@ namespace wc {
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnDelete() {
-			vkDeviceWaitIdle(VulkanContext::GetDevice());
+			VulkanContext::GetDevice().WaitIdle();
 
 			TextureDeletionQueue.flush();
 			ImGui_ImplVulkan_Shutdown();
