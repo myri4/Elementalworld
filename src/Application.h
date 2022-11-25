@@ -65,9 +65,6 @@ namespace wc {
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() {
 			VulkanContext::Create();
-			glfwSetMonitorCallback([](GLFWmonitor* monitor, int Event) {
-				ImGui_ImplGlfw_MonitorCallback(monitor, Event);
-			});
 
 			WindowCreateInfo windowInfo;
 			windowInfo.width = 1280;

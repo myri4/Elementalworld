@@ -10,7 +10,6 @@
 #include <magic_enum.hpp>
 #include <wc/Utils/List.h>
 #include <wc/Utils/YAML.h>
-#include <sol/sol.hpp>
 #include "../Rendering/AssetManager.h"
 #include "../Rendering/Renderer3D.h"
 #include "../Globals.h"
@@ -51,9 +50,9 @@ namespace wc{
 			start = glm::vec4(vertices[vertexOffset].Position, 1.f);
 			end = glm::vec4(vertices[vertexOffset].Position, 1.f);
 			
-			for (uint32_t i = 1; i < totalVertices; i++) {
-				start = glm::max(start, glm::vec4(vertices[vertexOffset + i].Position, 1.f));
-				end = glm::min(end, glm::vec4(vertices[vertexOffset + i].Position, 1.f));
+			for (uint32_t i = vertexOffset + 1; i < vertices.size(); i++) {
+				start = glm::max(start, glm::vec4(vertices[i].Position, 1.f));
+				end = glm::min(end, glm::vec4(vertices[i].Position, 1.f));
 			}
 			importer.FreeScene();
 		}

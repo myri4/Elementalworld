@@ -88,9 +88,11 @@ glm::vec4 convertColor(const uint32_t& color) {
 
 struct Vertex {
 	glm::vec3 Position = { 0,0,0 };
-	glm::vec3 TexCoords = { 0,0,0 };
 	uint32_t materialID = 0;
+	glm::vec3 TexCoords = { 0,0,0 };
+	uint32_t _pad1 = 0;
 	glm::vec3 Normal = { 0,0,0 };
+	uint32_t _pad2 = 0;
 	Vertex() {}
 	Vertex(const glm::vec3& pos, const glm::vec3& texCoord, const glm::vec3& normal, const uint32_t& mat) : Position(pos), Normal(normal), materialID(mat), TexCoords(texCoord) { }
 

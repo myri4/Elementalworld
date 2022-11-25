@@ -2,11 +2,23 @@
 
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
-#include "RendererObject.h"
 #include <vma/vk_mem_alloc.h>
 #include <unordered_set>
 
 //#define WC_ENABLE_GRAPHICS_DEBUGGER
+
+template <class T>
+class RendererObject {
+protected:
+	T m_RendererID = VK_NULL_HANDLE;
+public:
+
+	operator T& () { return m_RendererID; }
+	operator const T& () const { return m_RendererID; }
+
+	T* GetPointer() { return &m_RendererID; }
+	const T* GetPointer() const { return &m_RendererID; }
+};
 
 namespace wc {
 	enum class Vendor : uint32_t {
@@ -34,9 +46,9 @@ namespace wc {
 	};
 
 	class PhysicalDevice : public RendererObject<VkPhysicalDevice> {
-		VkPhysicalDeviceFeatures features;
-		VkPhysicalDeviceProperties properties;
-		VkPhysicalDeviceMemoryProperties memoryProperties;
+		VkPhysicalDeviceFeatures features = {};
+		VkPhysicalDeviceProperties properties = {};
+		VkPhysicalDeviceMemoryProperties memoryProperties = {};
 	public:
 	 
 		PhysicalDevice() = default;
@@ -176,16 +188,6 @@ namespace VulkanContext {
 	VkAllocationCallbacks* GetAllocator() { return nullptr; } // @TODO: add this to all the vk classes
 	VkPhysicalDeviceProperties GetProperties() { return physicalDevice.GetProperties(); }
 	VkPhysicalDeviceFeatures GetSupportedFeatures() { return physicalDevice.GetFeatures(); }
-	size_t pad_uniform_buffer_size(const size_t& originalSize)
-	{
-		// Calculate required alignment based on minimum device offset alignment
-		size_t minUboAlignment = GetProperties().limits.minUniformBufferOffsetAlignment;
-		size_t alignedSize = originalSize;
-		if (minUboAlignment > 0) 
-			alignedSize = (alignedSize + minUboAlignment - 1) & ~(minUboAlignment - 1);
-		
-		return alignedSize;
-	}	
 
 	void BeginLabel(const VkCommandBuffer& command_buffer, const char* label_name, const glm::vec4& color = glm::vec4(1.f))
 	{

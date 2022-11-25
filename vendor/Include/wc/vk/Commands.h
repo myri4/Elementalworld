@@ -7,7 +7,6 @@
 
 namespace wc {
 
-
 	class CommandBuffer : public RendererObject<VkCommandBuffer> {
 	public:
 		
@@ -97,7 +96,6 @@ namespace wc {
 		void SetName(const char* name)        { VulkanContext::SetObjectName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)m_RendererID, name);	}
 		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)m_RendererID, name.c_str()); }
 	};
-
 
 	class CommandPool : public RendererObject<VkCommandPool> {
 	public:

@@ -3,7 +3,17 @@ struct AABB{
     vec4 end;
 };
 
+struct Vertex {
+	vec3 Position;
+	uint materialID;
+	vec3 TexCoords;
+	uint _pad1;
+	vec3 Normal;
+	uint _pad2;
+};
+
 layout (std430, binding = 2) readonly buffer ChunkBVHBuffer { AABB chunkBvh[]; };
+layout (std430, binding = 3) readonly buffer VertexBuffer { Vertex vertices[]; };
 
 int GetCubeFaceIndex(vec3 dir)
 {

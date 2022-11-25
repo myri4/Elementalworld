@@ -244,9 +244,6 @@
     <ClInclude Include="vendor\Include\wc\vk\Renderpass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\vk\RendererObject.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="vendor\Include\wc\vk\RendererContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -262,16 +259,10 @@
     <ClInclude Include="vendor\Include\wc\vk\Buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\Utils\Bits.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="vendor\Include\wc\Utils\DeletionQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\Include\wc\Utils\List.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\wc\Utils\Memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\Include\wc\Utils\Log.h">

@@ -9,7 +9,6 @@
 #include "../Rendering/Model/Animation.h"
 #include "../Game Mechanics/CommandParser.h"
 
-#include <wc/Utils/Memory.h>
 #include <wc/Shader.h>
 #include <wc/Framebuffer.h>
 #include <wc/Utils/DeletionQueue.h>
@@ -60,17 +59,12 @@ namespace wc {
 		float angle = 0.f;
 		wc::Shader skyShader;
 
-		Frustum viewFrustum;
 		bool m_UpdateModels = false;
-		bool m_SortModels = false;
 
 		wc::Buffer m_SceneDataBuffer;
 
 		wc::Buffer m_LightBuffer;
 		wc::Buffer m_MaterialsBuffer;
-		wc::Buffer m_BlockTransformBuffer;
-
-		wc::CPUBufferManager<glm::vec4> m_BlockTransforms;
 
 		struct SceneData {
 			glm::mat4 ViewProj = glm::mat4(1.f);
@@ -90,7 +84,7 @@ namespace wc {
 		FastNoiseLite treeNoise;
 
 		bool generateTerrain : 1;
-		int8_t water_level = 0;
+		int8_t water_level = 32;
 
 		uint32_t localPlayerID = 0;
 		std::unordered_map<uint32_t, PlayerDescription> players;
@@ -118,8 +112,9 @@ namespace wc {
 		wc::ComputeShader compositeShader;
 
 		wc::ComputeShader rayTracingShader;
-		wc::Buffer chunkBVHBuffer;
-		uint32_t m_BvhCounter = 0;
+		wc::Buffer m_BVHBuffer;
+
+		wc::CPUBufferManager<ChunkAABB> m_BVHTransforms;
 	public:
 		std::string worldName = "New world";
 		bool multiPlayer = false;
@@ -139,32 +134,27 @@ namespace wc {
 			m_SceneDataBuffer.Create(sizeof(SceneData), wc::UNIFORM_BUFFER);
 			m_LightBuffer.Create(maxLights * sizeof(Light), wc::UNIFORM_BUFFER);
 			m_MaterialsBuffer.Create(materialData.byte_size(), wc::STORAGE_BUFFER);
-			m_BlockTransformBuffer.Create(sizeof(glm::vec4) * chunks.size() * chunkVolume, wc::STORAGE_BUFFER);
-			chunkBVHBuffer.Create(sizeof(ChunkAABB) * chunks.size(), wc::STORAGE_BUFFER);		
-			
+			m_BVHBuffer.Create(sizeof(ChunkAABB) * chunks.size(), wc::STORAGE_BUFFER);			
 
 			delQueue.push_function([=] { m_SceneDataBuffer.Destroy(); });
 			delQueue.push_function([=] { m_LightBuffer.Destroy(); });
 			delQueue.push_function([=] { m_MaterialsBuffer.Destroy(); });
-			delQueue.push_function([=] { m_BlockTransformBuffer.Destroy(); });
-			delQueue.push_function([=] { chunkBVHBuffer.Destroy(); });
-						
-			sol::state worldGenState;
-			worldGenState.new_usertype<FastNoiseLite>("Noise", sol::constructors<void()>(),
-				"SetOctaves", &FastNoiseLite::SetFractalOctaves,
-				"SetLacunarity", &FastNoiseLite::SetFractalLacunarity,
-				"SetGain", &FastNoiseLite::SetFractalGain,
-				"SetSeed", &FastNoiseLite::SetSeed,
-				"SetFrequency", &FastNoiseLite::SetFrequency,
-				"SetNoiseType", &FastNoiseLite::SetNoiseType,
-				"SetFractalType", &FastNoiseLite::SetFractalType,
-				"SetMultiplier", &FastNoiseLite::SetMultiplier
-				);
-			worldGenState.script_file("scripts/worldGen.lua");
-			if (worldGenState["noise"].valid()) worldNoise = worldGenState["noise"];
-			if (worldGenState["TreeNoise"].valid()) treeNoise = worldGenState["TreeNoise"];
-			
-			if (worldGenState["water_level"].valid()) water_level = worldGenState["water_level"];
+			delQueue.push_function([=] { m_BVHBuffer.Destroy(); });
+
+			worldNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_OpenSimplex2);
+			worldNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_FBm);
+			worldNoise.SetFractalOctaves(9);
+			worldNoise.SetMultiplier(256.f);
+			worldNoise.SetFrequency(1.f / 2000.f);//scale
+			worldNoise.SetFractalLacunarity(2.f);
+			worldNoise.SetFractalGain(0.53f);//persistance, roughness
+
+			treeNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
+			treeNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
+			treeNoise.SetFractalOctaves(5);
+			treeNoise.SetFractalLacunarity(1.f);
+			treeNoise.SetFrequency(1.f / 3.f);
+			treeNoise.SetFractalGain(0.003f);
 			
 			wc::StagingBuffer matBuffer;
 			matBuffer.Create(materialData.byte_size());
@@ -233,6 +223,7 @@ namespace wc {
 					blockData.push_back(block);
 				}
 			}
+
 			assets.LoadAll();
 			matBuffer.Unmap();
 			m_MaterialsBuffer.SetData(matBuffer, materialData.byte_size());
@@ -251,10 +242,6 @@ namespace wc {
 			delQueue.push_function([=] { lights.Unmap(); lights.Destroy(); });
 			lights.Map();
 			
-			m_BlockTransforms.Create(sizeof(glm::vec4) * chunks.size() * chunkVolume);
-			delQueue.push_function([=] { m_BlockTransforms.Unmap(); m_BlockTransforms.Destroy(); });
-			m_BlockTransforms.Map();
-
 			uint32_t iOffset = 0;
 			wc::CPUBuffer <uint32_t> indices;
 			indices.Create(MaxIndexCount * sizeof(uint32_t));
@@ -295,11 +282,14 @@ namespace wc {
 
 			CreateDynamicPipelines();
 
+			m_BVHTransforms.Create(sizeof(ChunkAABB)* chunks.size());
+			delQueue.push_function([=] { m_BVHTransforms.Unmap(); m_BVHTransforms.Destroy(); });
+			m_BVHTransforms.Map();
+
 			ChunkAABB aabb;
 			aabb.start = glm::vec4(128.f);
 			aabb.end = glm::vec4(129.f);
-			chunkBVHBuffer.SetData(&aabb, sizeof(aabb), sizeof(ChunkAABB) * m_BvhCounter);
-			m_BvhCounter++;
+			m_BVHTransforms.Add(aabb);			
 		}
 
 		void CreateDynamicPipelines() {
@@ -307,8 +297,8 @@ namespace wc {
 			Renderer3D::CreateLinePipeline(m_Framebuffer.renderPass, m_SceneDataBuffer.GetDescriptorInfo());
 			{
 				wc::ShaderCreateInfo createInfo;
-				createInfo.vertexShader = GetAssetPath() + "/shaders/chunkShader.vert";
-				createInfo.fragmentShader = GetAssetPath() + "/shaders/chunkShader.frag";
+				createInfo.vertexShader = GetAssetPath() + "/shaders/Renderer3D.vert";
+				createInfo.fragmentShader = GetAssetPath() + "/shaders/Renderer3D.frag";
 				createInfo.windowSize = windowSize;
 				createInfo.renderPass = m_Framebuffer.renderPass;
 				createInfo.vertexDescription = Vertex::get_vertex_description();
@@ -322,7 +312,6 @@ namespace wc {
 				writer.write_buffer(0, m_SceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 					.write_buffer(1, m_LightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 					.write_buffer(2, m_MaterialsBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-					.write_buffer(3, m_BlockTransformBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
 					.write_image(4, assets.texArr.GetDescriptorData(assets.sampler), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 					.write_image(5, assets.textureMaterialArr.GetDescriptorData(assets.sampler), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
@@ -348,16 +337,13 @@ namespace wc {
 			}
 
 			// Compute pipelines
+			bloomShader.Create(GetAssetPath() + "/shaders/bloomShader.comp");
+			compositeShader.Create(GetAssetPath() + "/shaders/composite.comp");
+			rayTracingShader.Create(GetAssetPath() + "/shaders/rayTracingShader.comp");
 			{
-
-				bloomShader.Create(GetAssetPath() + "/shaders/bloomShader.comp");
-
-
 				GenerateBloomDescriptor(m_BloomBuffers[0].imageViews[0], screenImageView);
 
-				for (uint32_t currentMip = 1; currentMip < m_BloomMipLevels; currentMip++)
-				{
-
+				for (uint32_t currentMip = 1; currentMip < m_BloomMipLevels; currentMip++){
 					// Ping 
 					GenerateBloomDescriptor(m_BloomBuffers[1].imageViews[currentMip], m_BloomBuffers[0].imageViews[0]);
 
@@ -372,28 +358,22 @@ namespace wc {
 					GenerateBloomDescriptor(m_BloomBuffers[2].imageViews[currentMip], m_BloomBuffers[0].imageViews[0]);
 			}
 			{
-				compositeShader.Create(GetAssetPath() + "/shaders/composite.comp");
-
 				wc::DescriptorWriter writer;
 				writer.dstSet = compositeShader.descriptorSet;
-				writer
-					.write_image(0, GetDescriptorData(screenSampler, screenImageView, finalImage), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-					.write_image(1, GetDescriptorData(screenSampler, screenImageView, scrTexture), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-					.write_image(2, GetDescriptorData(bloomImageSampler, m_BloomBuffers[2].imageViews[0], VK_IMAGE_LAYOUT_GENERAL), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-
-				writer.Update();
+				writer.write_image(0, GetDescriptorData(screenSampler, screenImageView, finalImage), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+					  .write_image(1, GetDescriptorData(screenSampler, screenImageView, scrTexture), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+					  .write_image(2, GetDescriptorData(bloomImageSampler, m_BloomBuffers[2].imageViews[0], VK_IMAGE_LAYOUT_GENERAL), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+					  .Update();
 			}
-
 			{
-				rayTracingShader.Create(GetAssetPath() + "/shaders/rayTracingShader.comp");
 
 				wc::DescriptorWriter writer;
 				writer.dstSet = rayTracingShader.descriptorSet;
 				writer.write_buffer(0, m_SceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-					.write_image(1, GetDescriptorData(screenSampler, screenImageView, scrTexture), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-					.write_buffer(2, chunkBVHBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-
-				writer.Update();
+					  .write_image(1, GetDescriptorData(screenSampler, screenImageView, scrTexture), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+					  .write_buffer(2, m_BVHBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+					  //.write_buffer(3, Renderer3D::vertexBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+					  .Update();
 			}
 		}
 
@@ -481,7 +461,7 @@ namespace wc {
 				info.arrayLayers = 1;
 				info.samples = VK_SAMPLE_COUNT_1_BIT;
 				info.tiling = VK_IMAGE_TILING_OPTIMAL;
-				info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+				info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
 				finalImage.Create(info);
 
@@ -678,12 +658,10 @@ namespace wc {
 			sceneData.vertical = camera.vertical;
 			sceneData.horizontal = camera.horizontal;
 			sceneData.numLights = lights.GetCounter();
-			sceneData.bvhCounter = m_BvhCounter;
+			sceneData.bvhCounter = m_BVHTransforms.GetCounter();
 			m_SceneDataBuffer.SetData(&sceneData, sizeof(SceneData));
 
 			lights[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 0.f, 1.f)));
-
-			viewFrustum.update(sceneData.ViewProj);
 
 			angle += deltaTime * rotateSpeed;
 			angle = glm::mod(angle, 360.f);
@@ -733,19 +711,10 @@ namespace wc {
 			if (m_UpdateModels) {
 				m_UpdateModels = false;
 
-				if (m_SortModels) {
-					for (uint32_t i = 0; i < m_BlockTransforms.GetCounter(); i++)
-						for (uint32_t j = 0; j < m_BlockTransforms.GetCounter() - i - 1; j++) {
-							if (m_BlockTransforms[j].w > m_BlockTransforms[j + 1].w)
-								std::swap(m_BlockTransforms[j], m_BlockTransforms[j + 1]);
-						}
-					m_SortModels = false;
-				}
-
-				size = m_BlockTransforms.GetCounter() ? m_BlockTransforms.GetCounter() : 1;
-				m_BlockTransforms.Unmap();
-				m_BlockTransformBuffer.SetData(m_BlockTransforms.GetBuffer(), sizeof(glm::vec4) * size * chunkVolume);
-				m_BlockTransforms.Map();
+				size = m_BVHTransforms.GetCounter() ? m_BVHTransforms.GetCounter() : 1;
+				m_BVHTransforms.Unmap();
+				m_BVHBuffer.SetData(m_BVHTransforms.GetBuffer(), sizeof(ChunkAABB) * size);
+				m_BVHTransforms.Map();
 			}
 
 			// Draw sky
@@ -756,22 +725,7 @@ namespace wc {
 			
 			Renderer3D::Bind(cmd);
 
-			uint32_t defaultVal = 0;
-			cmd.PushConstants(Renderer3D::shader.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(uint32_t), &defaultVal);
-
-			cmd.DrawIndexedIndirect(m_IndirectBuffer, (uint32_t)chunks.size());
-			
-			uint32_t shaderTransformOffset = 0;
-			for (uint32_t i = 0; i < blockMeshes.size(); i++) {
-				BlockMesh& mesh = blockMeshes[i];
-				if (mesh.cmd.instanceCount > 0) {
-			
-					cmd.DrawIndexedIndirect(mesh.cmd);
-					shaderTransformOffset += mesh.cmd.instanceCount;
-					cmd.PushConstants(Renderer3D::shader.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(uint32_t), &shaderTransformOffset);
-				}
-			}
-			
+			cmd.DrawIndexedIndirect(m_IndirectBuffer, (uint32_t)chunks.size());			
 			Renderer3D::Flush(renderGUI);
 
 			m_Framebuffer.renderPass.End(cmd);
@@ -804,6 +758,9 @@ namespace wc {
 				wc::CommandBuffer& cmd = RendererContext::computeCommandBuffer;
 				cmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 				//rayTracingShader.Dispatch(glm::ceil((glm::vec2)window.GetSize() / glm::vec2(m_BloomComputeWorkGroupSize)));
+				rayTracingShader.Bind(cmd);
+				cmd.Dispatch(glm::ceil((glm::vec2)window.GetSize() / glm::vec2(m_BloomComputeWorkGroupSize)));
+
 				if (Settings::bloomEnable) {
 					cmd.BindPipeline(bloomShader.getPipeline());
 					uint32_t counter = 0;
@@ -1071,13 +1028,74 @@ namespace wc {
 
 			if (Keyboard::getKey(Keyboard::Key::F1)) renderGUI = !renderGUI;
 			if (Keyboard::getKey(Keyboard::Key::F2)) {
-				//glm::ivec2 size = window.GetSize();
-				//uint32_t byteSize = size.x * size.y * 4;
-				//uint8_t* data = new uint8_t[byteSize];
-				//finalImage.GetData(data);
-				//stbi_flip_vertically_on_write(true);
-				//stbi_write_png("screenshots/screenshot.png", size.x, size.y, 4, data, size.x * 4);
+				VulkanContext::GetDevice().WaitIdle();
+				VkImageCreateInfo createInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+				createInfo.imageType = VK_IMAGE_TYPE_2D;
+				createInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+				createInfo.extent.width = window.GetFramebufferExtent().width;
+				createInfo.extent.height = window.GetFramebufferExtent().height;
+				createInfo.extent.depth = 1;
+				createInfo.arrayLayers = 1;
+				createInfo.mipLevels = 1;
+				createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+				createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+				createInfo.tiling = VK_IMAGE_TILING_LINEAR;
+				createInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+				Image img; // @TODO: add constructor
+				img.Create(createInfo, VMA_MEMORY_USAGE_GPU_TO_CPU);
+
+				UploadContext::immediate_submit([&](VkCommandBuffer cmd) {
+					finalImage.setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+					img.insertImageMemoryBarrier(
+						cmd, 0,
+						VK_ACCESS_TRANSFER_WRITE_BIT,
+						VK_IMAGE_LAYOUT_UNDEFINED,
+						VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+						VK_PIPELINE_STAGE_TRANSFER_BIT,
+						VK_PIPELINE_STAGE_TRANSFER_BIT,
+						VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+						VkImageCopy imageCopyRegion{};
+						imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+						imageCopyRegion.srcSubresource.layerCount = 1;
+						imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+						imageCopyRegion.dstSubresource.layerCount = 1;
+						imageCopyRegion.extent.width = window.GetFramebufferExtent().width;
+						imageCopyRegion.extent.height = window.GetFramebufferExtent().height;
+						imageCopyRegion.extent.depth = 1;
+
+						vkCmdCopyImage(
+							cmd,
+							finalImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+							img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+							1,
+							&imageCopyRegion);
+
+						// Transition destination image to general layout, which is the required layout for mapping the image memory later on
+						img.insertImageMemoryBarrier(
+							cmd,
+							VK_ACCESS_TRANSFER_WRITE_BIT,
+							VK_ACCESS_MEMORY_READ_BIT,
+							VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+							VK_IMAGE_LAYOUT_GENERAL,
+							VK_PIPELINE_STAGE_TRANSFER_BIT,
+							VK_PIPELINE_STAGE_TRANSFER_BIT,
+							VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+						finalImage.setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+				});
+
+				uint8_t* data = (uint8_t*)img.Map();
+				data += img.SubresourceLayout().offset;
+
+				glm::ivec2 size = window.GetSize();
+				stbi_flip_vertically_on_write(true);
+				stbi_write_png("screenshots/screenshot.png", size.x, size.y, 4, data, size.x * 4);
 				//delete[] data;
+				img.Unmap();
+
+				img.Destroy();
+
 				WC_INFO("TODO: Implement screenshots back");
 			}
 			if (Keyboard::getKey(Keyboard::Key::F8)) debug_menu = !debug_menu;
@@ -1389,7 +1407,7 @@ namespace wc {
 		}
 
 		void removeLight(const glm::vec3& position) {
-			for (uint32_t i = 0; i < maxLights; i++)
+			for (uint32_t i = 0; i < lights.GetCounter(); i++)
 				if (lights[i].vector == position) {
 					lights.Remove(i);
 
@@ -1398,12 +1416,12 @@ namespace wc {
 		}
 
 		// WORLD/CHUNK MANAGING
-		void setBlockLocal(const glm::ivec3& pos, const BlockID& blockID, const ChunkID& chunkID, const bool& playerEdited, const bool& replyToServer) {
-			uint16_t x = pos.x;
-			uint16_t y = pos.y;
-			uint16_t z = pos.z;
+		void setBlockLocal(const glm::uvec3& pos, const BlockID& blockID, const ChunkID& chunkID, const bool& playerEdited, const bool& replyToServer) {
+			const uint32_t& x = pos.x;
+			const uint32_t& y = pos.y;
+			const uint32_t& z = pos.z;
 
-			m_UpdateModels = true;
+			
 			BlockID& chunkBlockID = chunks[chunkID].data[x][y][z];
 			if (chunkBlockID == blockID) return;
 			glm::vec3 globalPos = glm::vec3(chunks[chunkID].position) * glm::vec3(chunkSize) + glm::vec3(pos);
@@ -1415,13 +1433,16 @@ namespace wc {
 				if (blockData[chunkBlockID].connectionType == ConnectionType::CUSTOM_MODEL) {
 					BlockMesh& mesh = blockMeshes[blockData[chunkBlockID].meshID];
 
-					for (uint32_t i = 0; i < chunks.size(); i++)
-						if (glm::vec3(m_BlockTransforms[i]) == globalPos) {
-							m_BlockTransforms.Remove(i);
-							mesh.cmd.instanceCount--;
+					for (uint32_t i = 0; i < m_BVHTransforms.GetCounter(); i++) {
+						ChunkAABB aabb;
+						aabb.start = mesh.start + glm::vec4(globalPos, 0.f);
+						aabb.end = mesh.end + glm::vec4(globalPos, 0.f);
+
+						if (m_BVHTransforms[i].start == aabb.start && m_BVHTransforms[i].end == aabb.end) {
+							m_BVHTransforms.Remove(i);
 							break;
 						}
-					m_SortModels = true;
+					}
 				}
 			}
 			else {
@@ -1431,16 +1452,13 @@ namespace wc {
 				if (blockData[blockID].connectionType == ConnectionType::CUSTOM_MODEL) {
 					BlockMesh& mesh = blockMeshes[blockData[blockID].meshID];
 
-					m_BlockTransforms.Add(glm::vec4(globalPos, blockData[blockID].meshID));
-					mesh.cmd.instanceCount++;
-					m_SortModels = true;
-					
+					m_UpdateModels = true;
+
 					ChunkAABB aabb;
 					aabb.start = mesh.start + glm::vec4(globalPos, 0.f);
 					aabb.end = mesh.end + glm::vec4(globalPos, 0.f);
 
-					//chunkBVHBuffer.SetData(&aabb, sizeof(aabb), sizeof(ChunkAABB) * m_BvhCounter);
-					//m_BvhCounter++;
+					m_BVHTransforms.Add(aabb);
 				}
 			}			
 
@@ -1710,7 +1728,7 @@ namespace wc {
 			if (indexCount == 0) 
 				aabb.end = aabb.start = glm::vec4(0.f);	
 			else {
-				//chunkBVHBuffer.SetData(&aabb, sizeof(aabb), sizeof(ChunkAABB) * m_BvhCounter);
+				//m_BVHBuffer.SetData(&aabb, sizeof(aabb), sizeof(ChunkAABB) * m_BvhCounter);
 				//m_BvhCounter++;
 			}
 		}

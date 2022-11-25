@@ -13,16 +13,6 @@ namespace wc {
 		INDIRECT_BUFFER = 0x00000100,
 	};
 
-	struct BufferView : public RendererObject<VkBufferView> {
-		VkResult Create(const VkBufferViewCreateInfo& createInfo) {
-			return vkCreateBufferView(VulkanContext::GetDevice(), &createInfo, nullptr, &m_RendererID);
-		}
-
-		void Destroy() {
-			vkDestroyBufferView(VulkanContext::GetDevice(), m_RendererID, nullptr);
-		}
-	};
-
 	class StagingBuffer : public RendererObject<VkBuffer> {
 	private:
 		VmaAllocation allocation = VK_NULL_HANDLE;

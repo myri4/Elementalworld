@@ -18,8 +18,6 @@ layout(location = 4) out float materialID;
 layout(location = 5) out uint flags;
 layout(location = 6) out vec4 color;
 
-layout (binding = 3, std430) readonly buffer Transform { vec4 transforms[]; };
-
 vec4 decompress(const in uint num) {
     vec4 Output;
     const float c = 1.f / 255.f;
@@ -29,11 +27,6 @@ vec4 decompress(const in uint num) {
     Output.a = float((num & uint(0xff000000)) >> 24) * c;
     return Output;
 }
-
-layout(push_constant) uniform PushConstant
-{
-    uint transformOffset;
-};
 
 void main()
 {
@@ -48,7 +41,6 @@ void main()
     color = decompress(material.color);
 
 	v_TexCoords = a_TexCoord.xy;
-    if (bool(material.flags & WC_MODEL_BIT)) currentVertex += transforms[gl_InstanceIndex + transformOffset].xyz;
 
     p0 = currentVertex;
 	gl_Position = u_ViewProjection * vec4(currentVertex, 1.f);

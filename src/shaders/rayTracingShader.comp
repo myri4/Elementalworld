@@ -17,7 +17,7 @@ vec3 rayTrace(inout vec3 refRayOrigin, inout vec3 refRayDirection) {
 
             vec3 dir = (p - center); // if the size is different from 1 this should be normalized
             vec2 uv = GetCubeUVFromDir(GetCubeFaceIndex(dir), dir);
-            color = vec3(uv, 0.f) * 2.f;
+            color = vec3(uv, 0.f);
         }
 	
     return color;
@@ -35,7 +35,8 @@ void main()
 {
     ivec2 invocID = ivec2(gl_GlobalInvocationID.xy);
     vec2 uv = (invocID / vec2(imageSize(o_Image)));
-	  vec3 result = Render(normalize(lower_left_corner + uv.x * horizontal + uv.y * vertical - cameraPos));
+    uv.y = 1.f - uv.y;
+	vec3 result = Render(normalize(lower_left_corner + uv.x * horizontal + uv.y * vertical - cameraPos));
 
     if (result != vec3(0.f)) imageStore(o_Image, invocID, vec4(result, 1.f));
 }

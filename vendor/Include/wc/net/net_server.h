@@ -5,7 +5,7 @@
 #include "message.h"
 #include "net_connection.h"
 
-#include "../wc/Utils/Log.h"
+#include "../Utils/Log.h"
 
 namespace wc
 {

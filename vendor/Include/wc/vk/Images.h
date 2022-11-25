@@ -35,9 +35,9 @@ namespace wc {
         uint32_t layers = 1;
         VkFormat format = VK_FORMAT_UNDEFINED;
 
-        VkResult Create(const VkImageCreateInfo& dimg_info) {
+        VkResult Create(const VkImageCreateInfo& dimg_info, const VmaMemoryUsage& usage = VMA_MEMORY_USAGE_GPU_ONLY) {
             VmaAllocationCreateInfo dimg_allocinfo = {};
-            dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+            dimg_allocinfo.usage = usage;
             width = dimg_info.extent.width;
             height = dimg_info.extent.height;
             mipLevels = dimg_info.mipLevels;
@@ -243,6 +243,25 @@ namespace wc {
             subresourceRange.levelCount = mipLevels;
             subresourceRange.layerCount = layers;
             setLayout(cmdbuffer, oldImageLayout, newImageLayout, subresourceRange, srcStageMask, dstStageMask);
+        }
+
+        void* Map() {
+            void* data = nullptr;
+            vmaMapMemory(VulkanContext::GetMemoryAllocator(), allocation, &data);
+            return data;
+        }
+
+        void Unmap() {
+            vmaUnmapMemory(VulkanContext::GetMemoryAllocator(), allocation);
+        }
+
+        VkSubresourceLayout SubresourceLayout(const VkImageAspectFlagBits& aspectMask = VK_IMAGE_ASPECT_COLOR_BIT) {
+            VkImageSubresource subResource{};
+            subResource.aspectMask = aspectMask;
+            VkSubresourceLayout subResourceLayout;
+
+            vkGetImageSubresourceLayout(VulkanContext::GetDevice(), m_RendererID, &subResource, &subResourceLayout);
+            return subResourceLayout;
         }
 
         /**

@@ -15,7 +15,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 //Internet connection
-#include <net/wc_net.h>
+#include <wc/net/wc_net.h>
 
 //Util
 #include <wc/Utils/Log.h>
@@ -32,9 +32,6 @@
 #include <wc/vk/Synchronization.h>
 
 #include <wc/Maths/Camera.h>
-
-//Lua
-#include <sol/sol.hpp>
 
 // GUI
 #include <imgui/imgui.h>
