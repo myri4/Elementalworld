@@ -1218,8 +1218,12 @@ namespace wc {
 			}
 		}
 
-		std::string getChunkPath(const glm::ivec3& pos) {
+		std::string getChunkPath(const glm::ivec3& pos) const {
 			return "worlds/" + worldName + "/Chunk data/Island 0/r." + std::to_string(pos.x) + "." + std::to_string(pos.y) + "." + std::to_string(pos.z) + ".ewr";
+		}
+
+		std::string GetEntityPath() const {
+			return "worlds/" + worldName + "/Entity data/";
 		}
 
 		// SERIALIZATION/DESERIALIZATION
@@ -1228,12 +1232,13 @@ namespace wc {
 			std::filesystem::create_directories("worlds/" + worldName + "/Chunk data/Island 0");
 			std::filesystem::create_directories("worlds/" + worldName + "/Entity data");
 			SaveWorld();
-			SavePlayerState(p);
+			p.Serialize(GetEntityPath());
 		}
 
 		void LoadWorld() {
 			p.Position = { 0, (RenderDistance * RenderDistance * 0.5f), 0 };
-			LoadPlayerState(p, p.name);
+			p.Deserialize(GetEntityPath());
+
 			glm::ivec3 offset = getChunkPos(p.Position) - glm::ivec3(chunkSize / 2);
 			for (ChunkID chunkID = 0; chunkID < chunks.size(); chunkID++) {
 				chunks[chunkID].position = to3D(chunkID, glm::ivec3(RenderDistance)) + offset;
@@ -1257,7 +1262,7 @@ namespace wc {
 			config["time"] = angle;
 			YAMLUtils::saveFile("worlds/" + worldName + "/world.properties", config);
 
-			SavePlayerState(p);
+			p.Serialize(GetEntityPath());
 			m_WorldLoaded = false;
 		}
 
@@ -1311,40 +1316,6 @@ namespace wc {
 					file.close();
 					chunks[chunkID].used = false;
 				}
-			}
-		}
-
-		void SavePlayerState(const Player& player) {
-			YAML::Node config;
-			config["MovementSpeed"] = player.MovementSpeed;
-			config["rotation"] = player.rotation;
-			config["currentSlot"] = (uint32_t)player.currentSlot;
-			config["position"] = player.Position;
-			config["flying"] = (uint32_t)player.flying;
-			config["collision"] = (uint32_t)player.collision;
-			config["velocity"] = player.velocity;
-			config["acceleration"] = player.acceleration;
-			config["health"] = player.health;
-			YAMLUtils::saveFile("worlds/" + worldName + "/Entity data/" + player.name + ".ec", config);
-		}
-
-		void LoadPlayerState(Player& player, const std::string& playerName) {
-			if (!std::filesystem::exists("worlds/" + worldName + "/Entity data/" + playerName + ".ec")) {
-				Player pl;
-				SavePlayerState(pl);
-				player = pl;
-			}
-			else {
-				YAML::Node config = YAML::LoadFile("worlds/" + worldName + "/Entity data/" + playerName + ".ec");
-				if (config["MovementSpeed"]) player.MovementSpeed = config["MovementSpeed"].as<float>();
-				if (config["rotation"])      player.rotation = config["rotation"].as<glm::vec2>();
-				if (config["currentSlot"])   player.currentSlot = config["currentSlot"].as<uint32_t>();
-				if (config["position"])      player.Position = config["position"].as<glm::vec3>();
-				if (config["flying"])        player.flying = config["flying"].as<uint32_t>();
-				if (config["collision"])     player.collision = config["collision"].as<uint32_t>();
-				if (config["velocity"])      player.velocity = config["velocity"].as<glm::vec3>();
-				if (config["acceleration"])  player.acceleration = config["acceleration"].as<glm::vec3>();
-				if (config["health"])        player.health = config["health"].as<float>();
 			}
 		}
 

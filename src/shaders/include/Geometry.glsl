@@ -1,6 +1,8 @@
 struct AABB{
-    vec4 start;
-    vec4 end;
+    vec3 start;
+    uint meshStart;
+    vec3 end;
+    uint meshSize;
 };
 
 struct Vertex {

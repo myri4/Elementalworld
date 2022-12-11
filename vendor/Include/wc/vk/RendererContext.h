@@ -119,7 +119,7 @@ namespace RendererContext {
 			glfwWaitEvents();
 		}
 
-		vkDeviceWaitIdle(VulkanContext::GetDevice());
+		VulkanContext::GetDevice().WaitIdle();
 		DestroyDefaultRenderPass(window);
 		window.CreateSwapchain(VulkanContext::GetPhysicalDevice(), VulkanContext::GetDevice(), VulkanContext::GetInstance());
 		CreateDefaultRenderPass(window);
@@ -151,14 +151,6 @@ namespace RendererContext {
 		rpInfo.renderArea.offset.y = 0;
 		rpInfo.renderArea.extent = window.GetExtent();
 		rpInfo.framebuffer = framebuffers[swapchainImageIndex];
-
-		//connect clear values
-		VkClearValue clearValue;
-		clearValue.color = { { 0.0f, 0.0f, 0.f, 1.0f } };
-
-		rpInfo.clearValueCount = 1;
-		rpInfo.pClearValues = &clearValue;
-
 
 		defaultRenderPass.Begin(mainCommandBuffer, rpInfo);
 	}

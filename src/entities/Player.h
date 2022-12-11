@@ -23,8 +23,6 @@ namespace wc {
 		bool collision : 1;
 		glm::vec3 velocity = glm::vec3(0.f);
 		glm::vec3 acceleration = glm::vec3(0.f);
-		//InventoryMenu<inventorySizeX, inventorySizeY, inventorySizeX * inventorySizeY> inventory;
-		//Crafter<2> crafting;
 		float health = 10.f;
 
 		Player() {
@@ -32,6 +30,37 @@ namespace wc {
 			flying = true;
 			wasOnGround = false;
 			collision = false;
+		}
+
+		void Serialize(const std::string& location) const {
+			YAML::Node config;
+			config["MovementSpeed"] = MovementSpeed;
+			config["rotation"] = rotation;
+			config["currentSlot"] = (uint32_t)currentSlot;
+			config["position"] = Position;
+			config["flying"] = (uint32_t)flying;
+			config["collision"] = (uint32_t)collision;
+			config["velocity"] = velocity;
+			config["acceleration"] = acceleration;
+			config["health"] = health;
+			YAMLUtils::saveFile(location + name + ".ec", config);
+		}
+
+		void Deserialize(const std::string& location) {
+			std::string searchLoc = location + name + ".ec";
+			if (!std::filesystem::exists(searchLoc)) Serialize(location);
+			else {
+				YAML::Node config = YAML::LoadFile(searchLoc);
+				if (config["MovementSpeed"]) MovementSpeed = config["MovementSpeed"].as<float>();
+				if (config["rotation"])      rotation = config["rotation"].as<glm::vec2>();
+				if (config["currentSlot"])   currentSlot = config["currentSlot"].as<uint32_t>();
+				if (config["position"])      Position = config["position"].as<glm::vec3>();
+				if (config["flying"])        flying = config["flying"].as<uint32_t>();
+				if (config["collision"])     collision = config["collision"].as<uint32_t>();
+				if (config["velocity"])      velocity = config["velocity"].as<glm::vec3>();
+				if (config["acceleration"])  acceleration = config["acceleration"].as<glm::vec3>();
+				if (config["health"])        health = config["health"].as<float>();
+			}
 		}
 
 		bool isFalling() {

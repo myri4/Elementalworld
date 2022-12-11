@@ -15,6 +15,7 @@ public:
 
 	operator T& () { return m_RendererID; }
 	operator const T& () const { return m_RendererID; }
+	operator bool() const { return m_RendererID != VK_NULL_HANDLE; }
 
 	T* GetPointer() { return &m_RendererID; }
 	const T* GetPointer() const { return &m_RendererID; }
@@ -311,13 +312,7 @@ namespace VulkanContext {
 		for (const auto& queueFamily : queueFamilies) {
 			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) indices.graphicsFamily = i;
 			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) 	indices.computeFamily = i;
-			if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) indices.transferFamily = i;			
-
-			//VkBool32 presentSupport = false;
-			//vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-			//
-			//if (presentSupport) 
-			//	indices.presentFamily = i;			
+			if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) indices.transferFamily = i;	
 
 			if (indices.isComplete()) 
 				return indices;
@@ -460,7 +455,7 @@ namespace VulkanContext {
 			vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
 			for (const auto& device : devices) {
-				if (isDeviceSuitable(device/*, surface*/)) {
+				if (isDeviceSuitable(device)) {
 					physicalDevice = device;
 					break;
 				}
@@ -470,7 +465,7 @@ namespace VulkanContext {
 				WC_ERROR("failed to find a suitable GPU!");
 		}
 		{ // Create Logical Device
-			QueueFamilyIndices indices = findQueueFamilies(physicalDevice/*, surface*/);
+			QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
 			std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 			std::unordered_set<uint32_t> uniqueQueueFamilies = {
@@ -493,8 +488,6 @@ namespace VulkanContext {
 			VkPhysicalDeviceFeatures deviceFeatures{};
 			deviceFeatures.multiDrawIndirect = true; // optional
 			if (physicalDevice.GetFeatures().samplerAnisotropy) deviceFeatures.samplerAnisotropy = true;
-
-
 
 
 			VkDeviceCreateInfo createInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };

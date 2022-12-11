@@ -156,21 +156,22 @@ layout(location = 0) in vec2 uv;
 
 void main()
 {    
+    vec3 camPos = cameraPos;
     vec3 rayDir = normalize(lower_left_corner + uv.x * horizontal + uv.y * vertical - cameraPos);
 
-	vec3 color =clamp(getNebula(cameraPos, rayDir, 1.0, 0.5) * 1.5, 0.0, 1.0) * vec3(0.0, 0.0, 1.0);
-    vec3 color2=clamp(getNebula(cameraPos, rayDir, 2.0, 0.5) * 1.5, 0.0, 1.0) * vec3(0.0, 1.0, 1.0);
+	vec3 color =clamp(getNebula(camPos, rayDir, 1.0, 0.5) * 1.5, 0.0, 1.0) * vec3(0.0, 0.0, 1.0);
+    vec3 color2=clamp(getNebula(camPos, rayDir, 2.0, 0.5) * 1.5, 0.0, 1.0) * vec3(0.0, 1.0, 1.0);
 	
-    vec3 color3=clamp(getNebula(cameraPos, -rayDir, 2.0, 0.5) * 0.9, 0.0, 1.0) * vec3(1.0, 0.0, 0.0);
-    vec3 color4=clamp(getNebula(cameraPos, -rayDir, 3.0, 0.5) * 0.7, 0.0, 1.0) * vec3(1.0, 1.0, 0.0);
+    vec3 color3=clamp(getNebula(camPos, -rayDir, 2.0, 0.5) * 0.9, 0.0, 1.0) * vec3(1.0, 0.0, 0.0);
+    vec3 color4=clamp(getNebula(camPos, -rayDir, 3.0, 0.5) * 0.7, 0.0, 1.0) * vec3(1.0, 1.0, 0.0);
     
-    vec3 color5=clamp(getNebula(cameraPos, rayDir.yxz + rayDir.yzx, 1.5, 0.5) * 0.9, 0.0, 1.0) * vec3(0.0, 1.0, 0.0);
-    vec3 color6=clamp(getNebula(cameraPos, rayDir.yxz + rayDir.yzx, 2.5, 0.5) * 0.7, 0.0, 1.0) * vec3(0.333, 0.333, 0.333);
+    vec3 color5=clamp(getNebula(camPos, rayDir.yxz + rayDir.yzx, 1.5, 0.5) * 0.9, 0.0, 1.0) * vec3(0.0, 1.0, 0.0);
+    vec3 color6=clamp(getNebula(camPos, rayDir.yxz + rayDir.yzx, 2.5, 0.5) * 0.7, 0.0, 1.0) * vec3(0.333, 0.333, 0.333);
     
-    vec3 colorStars=clamp(getStars(cameraPos, rayDir, 0.9), 0.0, 1.0);
+    vec3 colorStars=clamp(getStars(camPos, rayDir, 0.9), 0.0, 1.0);
 	
 	float mixer = 0.f;
-	vec3 daySky = computeIncidentLight(vec3(cameraPos.x, earthRadius + 1.f, cameraPos.z), rayDir, mixer);
+	vec3 daySky = computeIncidentLight(vec3(cameraPos.x, earthRadius + cameraPos.y, cameraPos.z), rayDir, mixer);
 	vec3 nightSky = color + color2 + color3 + color4 + color5 + color6 + colorStars;
 	color = mix(daySky, nightSky, mixer);
 

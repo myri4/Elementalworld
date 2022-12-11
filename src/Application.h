@@ -23,7 +23,8 @@ namespace wc {
 		Texture MidBox2;
 		Texture SBox;
 		Texture XSBox;
-		Texture XSBox2;		
+		Texture XSBox2;
+		Sound sound;
 
 		Clock deltaTimer;
 		float deltaTime = 0.f;
@@ -65,6 +66,8 @@ namespace wc {
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnCreate() {
 			VulkanContext::Create();
+			CreateAudioEngine();
+
 
 			WindowCreateInfo windowInfo;
 			windowInfo.width = 1280;
@@ -129,6 +132,8 @@ namespace wc {
 			SBox.Load(      GetAssetPath() + "/textures/misc/SBox.png");
 			XSBox.Load(     GetAssetPath() + "/textures/misc/XSBox.png");
 			XSBox2.Load(    GetAssetPath() + "/textures/misc/XSBox.png");
+
+			sound.Create(GetAssetPath() + "/sounds/railgf1a.wav");
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		static void HelpMarker(const char* desc)
@@ -234,8 +239,10 @@ namespace wc {
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 0.f, 0.f, 1.f));
 				//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
 				ImGui::SetCursorPos(scaleRes(ImVec2(581, 359.5)));
-				if (ImGui::ImageButton(MidBox, scaleRes(ImVec2(759, 77)))) ChangeMenu(MenuMode::WORLD_SELECTION);
-				
+				if (ImGui::ImageButton(MidBox, scaleRes(ImVec2(759, 77)))) {
+					sound.Start();
+					ChangeMenu(MenuMode::WORLD_SELECTION);
+				}
 				//-Multiplayer
 				ImGui::SetCursorPos(scaleRes(ImVec2(581, 600.5)));
 				if (ImGui::ImageButton(MidBox2, scaleRes(ImVec2(759, 77)))) ChangeMenu(MenuMode::MULTIPLAYER);
@@ -487,6 +494,7 @@ namespace wc {
 			RendererContext::Destroy(window);
 			window.Destroy();
 
+			DestroyAudioEngine();
 			VulkanContext::Destroy();
 		}
 		//----------------------------------------------------------------------------------------------------------------------

@@ -11,13 +11,13 @@ vec3 rayTrace(inout vec3 refRayOrigin, inout vec3 refRayDirection) {
 
     float t = 0.f;
     for (int i = 0; i < bvhCounter; i++)
-        if (BoxIntersect(refRayOrigin, 1.f / refRayDirection, chunkBvh[i].start.xyz, chunkBvh[i].end.xyz, t)){
+        if (BoxIntersect(refRayOrigin, 1.f / refRayDirection, chunkBvh[i].start, chunkBvh[i].end, t)){
             vec3 p = refRayOrigin + t * refRayDirection;
-            vec3 center = chunkBvh[i].end.xyz - 0.5f;
+            vec3 center = chunkBvh[i].end - 0.5f;
 
-            vec3 dir = (p - center); // if the size is different from 1 this should be normalized
-            vec2 uv = GetCubeUVFromDir(GetCubeFaceIndex(dir), dir);
-            color = vec3(uv, 0.f);
+            //vec3 dir = (p - center); // if the size is different from 1 this should be normalized
+            //vec2 uv = GetCubeUVFromDir(GetCubeFaceIndex(dir), dir);
+            //color = vec3(uv, 0.f);
         }
 	
     return color;

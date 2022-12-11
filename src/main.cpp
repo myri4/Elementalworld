@@ -9,6 +9,8 @@
 #include <stb_image/stb_write.h>
 #define VMA_IMPLEMENTATION
 #include <vma/vk_mem_alloc.h>
+#define MINIAUDIO_IMPLEMENTATION
+#include <miniaudio.h>
 
 namespace wc {
 	Application app;

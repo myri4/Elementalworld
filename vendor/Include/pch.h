@@ -17,14 +17,14 @@
 //Internet connection
 #include <wc/net/wc_net.h>
 
-//Util
+// Utilities
 #include <wc/Utils/Log.h>
 #include <wc/Utils/Time.h>
 #include <wc/Utils/Random.h>
 #include <wc/Utils/Window.h>
 #include <wc/Utils/List.h>
 
-//Custom libraries
+// Graphics
 #include <wc/vk/Buffer.h>
 #include <wc/vk/Pipeline.h>
 #include <wc/vk/Images.h>
@@ -37,3 +37,6 @@
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_vulkan.h>
 #include <imgui/imgui_impl_glfw.h>
+
+// Audio
+#include <wc/Audio/AudioEngine.h>
