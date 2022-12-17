@@ -126,6 +126,10 @@ namespace wc {
 			if (!std::filesystem::exists("worlds")) std::filesystem::create_directory("worlds");
 			if (!std::filesystem::exists("cache")) std::filesystem::create_directory("cache");
 			if (!std::filesystem::exists("settings.yaml")) Settings::Save();
+			if (!std::filesystem::exists("servers.yaml")) {
+				YAML::Node servers;
+				YAMLUtils::saveFile("servers.yaml", servers);
+			}
 
 			Settings::Load();
 
@@ -339,7 +343,7 @@ namespace wc {
 			// Compute pipelines
 			bloomShader.Create(GetAssetPath() + "/shaders/bloomShader.comp");
 			compositeShader.Create(GetAssetPath() + "/shaders/composite.comp");
-			rayTracingShader.Create(GetAssetPath() + "/shaders/rayTracingShader.comp");
+			//rayTracingShader.Create(GetAssetPath() + "/shaders/rayTracingShader.comp");
 			{
 				GenerateBloomDescriptor(m_BloomBuffers[0].imageViews[0], screenImageView);
 
@@ -367,13 +371,13 @@ namespace wc {
 			}
 			{
 
-				wc::DescriptorWriter writer;
-				writer.dstSet = rayTracingShader.descriptorSet;
-				writer.write_buffer(0, m_SceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-					  .write_image(1, GetDescriptorData(screenSampler, screenImageView, scrTexture), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-					  .write_buffer(2, m_BVHBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-					  //.write_buffer(3, Renderer3D::vertexBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-					  .Update();
+				//wc::DescriptorWriter writer;
+				//writer.dstSet = rayTracingShader.descriptorSet;
+				//writer.write_buffer(0, m_SceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+				//	  .write_image(1, GetDescriptorData(screenSampler, screenImageView, scrTexture), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+				//	  .write_buffer(2, m_BVHBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+				//	  //.write_buffer(3, Renderer3D::vertexBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+				//	  .Update();
 			}
 		}
 
@@ -381,7 +385,7 @@ namespace wc {
 			Renderer3D::shader.Destroy();
 			Renderer3D::DestroyLinePipeline();
 			skyShader.Destroy();
-			rayTracingShader.Destroy();
+			//rayTracingShader.Destroy();
 			compositeShader.Destroy();
 			bloomShader.Destroy();
 		}
@@ -757,9 +761,9 @@ namespace wc {
 			{
 				wc::CommandBuffer& cmd = RendererContext::computeCommandBuffer;
 				cmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-				//rayTracingShader.Dispatch(glm::ceil((glm::vec2)window.GetSize() / glm::vec2(m_BloomComputeWorkGroupSize)));
-				rayTracingShader.Bind(cmd);
-				cmd.Dispatch(glm::ceil((glm::vec2)window.GetSize() / glm::vec2(m_BloomComputeWorkGroupSize)));
+
+				//rayTracingShader.Bind(cmd);
+				//cmd.Dispatch(glm::ceil((glm::vec2)window.GetSize() / glm::vec2(m_BloomComputeWorkGroupSize)));
 
 				if (Settings::bloomEnable) {
 					cmd.BindPipeline(bloomShader.getPipeline());

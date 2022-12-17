@@ -96,8 +96,6 @@ namespace wc {
 	
 			m_DiffuseCache.clear();
 			m_MaterialCache.clear();
-			//texArr.GenerateMipmap();
-			//textureMaterialArr.GenerateMipmap();
 #ifdef WC_ENABLE_GRAPHICS_DEBUGGER // @TODO: remove this is a bug in the validation layers
 			UploadContext::immediate_submit([&](VkCommandBuffer cmd) {
 				VkImageSubresourceRange subresourceRange;

@@ -4,20 +4,7 @@
 #include <wc/vk/Pipeline.h>
 #include <wc/Utils/Window.h>
 
-#define WC_MAKE_VERSION(variant, major, minor, patch) ((((uint32_t)(variant)) << 29) | (((uint32_t)(major)) << 22) | (((uint32_t)(minor)) << 12) | ((uint32_t)(patch)))
-
-static wc::Window window; // @TODO: [myri4] Move this to window manager
-
-enum class EVersion {
-	myri4,
-	Icak,
-	Geshev,
-	Irena,
-	masterBranch,
-	Release
-};
-
-uint32_t APP_VERSION = WC_MAKE_VERSION(0, 0, 1, EVersion::masterBranch);
+wc::Window window; // @TODO: [myri4] Move this to window manager
 
 //@Todo try with size_t 
 const uint16_t chunkSize = 16;
@@ -29,7 +16,7 @@ const uint32_t MaxIndexCount = MaxFaceCount * 6;
 
 static const uint32_t RenderDistance = 16;
 
-using ChunkID = uint16_t; // This represents the chunk id in the chunk array
+using ChunkID = uint16_t;
 using BlockID = uint8_t;
 using MaterialID = uint8_t;
 using MeshID = uint32_t;
@@ -44,7 +31,7 @@ enum class BlockTexture : uint8_t { RIGHT, TOP, FRONT, LEFT, BOTTOM, BACK };
 const uint8_t WC_MODEL_BIT = 0x1;
 const uint8_t WC_CULL_BIT = 0x2;
 
-//@TODO: REMOVE
+//@TODO: Convert to state machine
 enum MenuMode : uint32_t { GAME, INVENTORY, MAINMENU, SETTINGS, MULTIPLAYER, ESCMENU, WORLD_SELECTION, WORLD_CREATION };
 MenuMode mode = MenuMode::MAINMENU;
 MenuMode previousMode = mode;

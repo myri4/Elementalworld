@@ -5,7 +5,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <unordered_set>
 
-//#define WC_ENABLE_GRAPHICS_DEBUGGER
+#define WC_ENABLE_GRAPHICS_DEBUGGER
 
 template <class T>
 class RendererObject {
@@ -127,7 +127,7 @@ namespace VulkanContext {
 			{
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 				WC_ERROR(pCallbackData->pMessage);
-				//__debugbreak();
+				__debugbreak();
 				//OutputDebugString(pCallbackData->pMessage);
 				break;
 
@@ -499,6 +499,16 @@ namespace VulkanContext {
 
 			createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 			createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+
+
+			VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing_features = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
+
+			// Enable non-uniform indexing
+			descriptor_indexing_features.shaderSampledImageArrayNonUniformIndexing = true;
+			descriptor_indexing_features.runtimeDescriptorArray = true;
+			descriptor_indexing_features.descriptorBindingVariableDescriptorCount = true;
+			descriptor_indexing_features.descriptorBindingPartiallyBound = true;
+			//createInfo.pNext = &descriptor_indexing_features;
 
 #ifdef WC_ENABLE_GRAPHICS_DEBUGGER
 			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());

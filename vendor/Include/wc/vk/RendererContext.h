@@ -149,6 +149,12 @@ namespace RendererContext {
 		rpInfo.renderPass = defaultRenderPass;
 		rpInfo.renderArea.offset.x = 0;
 		rpInfo.renderArea.offset.y = 0;
+		// This section maybe useless (implemented to satisfy vk validation)
+		rpInfo.clearValueCount = 1;
+		VkClearValue clearValue;
+		clearValue.color = {0.f, 0.f, 0.f, 0.f};
+		rpInfo.pClearValues = &clearValue;
+
 		rpInfo.renderArea.extent = window.GetExtent();
 		rpInfo.framebuffer = framebuffers[swapchainImageIndex];
 

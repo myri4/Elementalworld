@@ -4,10 +4,13 @@
 namespace wc {	
 	GameInstance gameInstance;
 
+	char username[256] = "";
+	char password[256] = "";
+	char serverIP[128] = "";
+
 	class Application {
 	private:
 		char newWorldName[256];
-		std::string playerName = "321"; // @TODO: place this in a better place
 		std::string joinIp = "some ip idk";
 		Texture background;
 		Texture TitleSBox;
@@ -24,7 +27,6 @@ namespace wc {
 		Texture SBox;
 		Texture XSBox;
 		Texture XSBox2;
-		Sound sound;
 
 		Clock deltaTimer;
 		float deltaTime = 0.f;
@@ -132,8 +134,6 @@ namespace wc {
 			SBox.Load(      GetAssetPath() + "/textures/misc/SBox.png");
 			XSBox.Load(     GetAssetPath() + "/textures/misc/XSBox.png");
 			XSBox2.Load(    GetAssetPath() + "/textures/misc/XSBox.png");
-
-			sound.Create(GetAssetPath() + "/sounds/railgf1a.wav");
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		static void HelpMarker(const char* desc)
@@ -239,10 +239,7 @@ namespace wc {
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 0.f, 0.f, 1.f));
 				//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
 				ImGui::SetCursorPos(scaleRes(ImVec2(581, 359.5)));
-				if (ImGui::ImageButton(MidBox, scaleRes(ImVec2(759, 77)))) {
-					sound.Start();
-					ChangeMenu(MenuMode::WORLD_SELECTION);
-				}
+				if (ImGui::ImageButton(MidBox, scaleRes(ImVec2(759, 77)))) ChangeMenu(MenuMode::WORLD_SELECTION);				
 				//-Multiplayer
 				ImGui::SetCursorPos(scaleRes(ImVec2(581, 600.5)));
 				if (ImGui::ImageButton(MidBox2, scaleRes(ImVec2(759, 77)))) ChangeMenu(MenuMode::MULTIPLAYER);
@@ -444,6 +441,114 @@ namespace wc {
 				ImGui::SetCursorPos(ImVec2(window.GetSize().x - 110, 7));
 				if (ImGui::Button("Back"))
 					ChangeBack();
+
+				//background 
+				ImGui::GetBackgroundDrawList()->AddImage(background, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
+				ImGui::End();
+			}
+
+			static bool islogged = false;
+			static bool isplmenopen = false;
+			static bool showpas = false;
+			static bool require = false;
+			if (mode == MenuMode::MULTIPLAYER) {
+				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
+				ImGui::SetNextWindowPos(ImVec2(0, 0));
+				ImGui::Begin("Multiplayer", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
+
+				ImGui::SetCursorPos(ImVec2(window.GetSize().x - 150, 7));
+				if (ImGui::Button("[*]")) {
+					isplmenopen = !isplmenopen;
+				}
+
+				if (isplmenopen) {
+					ImGui::SetNextWindowSize(ImVec2(130, 130));
+					ImGui::SetNextWindowPos(ImVec2(window.GetSize().x - 185, 30));
+					ImGui::Begin("Player Menu", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+
+					if (username[0] != 0 && password[0] != 0) require = true;
+					else require = false;
+					ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+					if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags)) {
+						if (ImGui::BeginTabItem("Log-In")) {
+							ImGuiInputTextFlags input_flags = 0;
+							if (!showpas) input_flags = ImGuiInputTextFlags_Password;
+							ImGui::InputTextWithHint("  ", "<username>", username, IM_ARRAYSIZE(username));
+							if (showpas) {
+								ImGui::BeginDisabled();
+								ImGui::InputTextWithHint(" ", "<password>", password, IM_ARRAYSIZE(password), input_flags);
+								ImGui::EndDisabled();
+							}
+							else ImGui::InputTextWithHint(" ", "<password>", password, IM_ARRAYSIZE(password), input_flags);
+							ImGui::Checkbox("Show Password", &showpas);
+							if (!require) {
+								ImGui::BeginDisabled();
+								ImGui::Button("Done");
+								ImGui::EndDisabled();
+								ImGui::SameLine(); HelpMarker("Fill the fields!");
+							}
+							else if (ImGui::Button("Done")) {
+								//proverqva dali ima takuv account v data bazata
+								// ako ne - error i kazva da promeni "username or password"
+								// log in
+								//islogged = true;
+								isplmenopen = false;
+							}
+							ImGui::EndTabItem();
+						}
+						if (ImGui::BeginTabItem("Sign-Up")) {
+							ImGuiInputTextFlags input_flags;
+							if (!showpas) input_flags = ImGuiInputTextFlags_Password;
+							ImGui::InputTextWithHint("  ", "<username>", username, IM_ARRAYSIZE(username));
+							if (showpas) {
+								ImGui::BeginDisabled();
+								ImGui::InputTextWithHint(" ", "<password>", password, IM_ARRAYSIZE(password), input_flags);
+								ImGui::EndDisabled();
+							}
+							else ImGui::InputTextWithHint(" ", "<password>", password, IM_ARRAYSIZE(password), input_flags);
+							//ImGui::InputTextMultiline();
+							ImGui::Checkbox("Show Password", &showpas);
+							if (!require) {
+								ImGui::BeginDisabled();
+								ImGui::Button("Done");
+								ImGui::EndDisabled();
+								ImGui::SameLine(); HelpMarker("Fill the fields!");
+							}
+							else if (ImGui::Button("Done")) {
+								//suzdava account i save-va acc info
+								// log in the new acc
+								//islogged = true;
+								isplmenopen = false;
+							}
+							ImGui::EndTabItem();
+						}
+						ImGui::EndTabBar();
+					}
+
+					ImGui::End();
+				}
+
+				ImGui::SetCursorPos(ImVec2(window.GetSize().x - 110, 7));
+				if (ImGui::Button("Back")) {
+					ChangeBack();
+					isplmenopen = false;
+				}
+
+				ImGui::SetNextWindowSize(ImVec2(200, 50));
+				ImGui::SetNextWindowPos(ImVec2(0, window.GetSize().y - 50));
+				ImGui::Begin("IP inp", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
+				ImGui::InputTextWithHint("  ", "<server IP>", serverIP, IM_ARRAYSIZE(serverIP));
+				ImGui::SameLine();
+				if (ImGui::Button("Add")) {
+					//add server in displayables and in servers.yamal (file)
+					YAML::Node servers = YAML::LoadFile("servers.yaml");
+					std::string key = serverIP;
+					servers["server" + std::to_string(servers.size())] = key;
+					YAMLUtils::saveFile("servers.yaml", servers);
+
+					memset(serverIP, 0, sizeof(serverIP));
+				}
+				ImGui::End();
 
 				//background 
 				ImGui::GetBackgroundDrawList()->AddImage(background, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
