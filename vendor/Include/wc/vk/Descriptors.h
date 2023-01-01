@@ -40,15 +40,12 @@ namespace wc {
 
 		VkResult Reset(const VkDescriptorPoolResetFlags& flags = 0) { return vkResetDescriptorPool(VulkanContext::GetDevice(), m_RendererID, flags); }
 
-		VkResult Allocate(const DescriptorSetLayout& layout, DescriptorSet& set) {
-			//allocate one descriptor set for each frame
+		VkResult Allocate(const VkDescriptorSetLayout* layouts, DescriptorSet& set, const void* pNext = nullptr, const uint32_t& descriptorCount = 1) {
 			VkDescriptorSetAllocateInfo allocInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-			//using the pool we just set
 			allocInfo.descriptorPool = m_RendererID;
-			//only 1 descriptor
-			allocInfo.descriptorSetCount = 1;
-			//using the global data layout
-			allocInfo.pSetLayouts = layout.GetPointer();
+			allocInfo.descriptorSetCount = descriptorCount;
+			allocInfo.pSetLayouts = layouts;
+			allocInfo.pNext = pNext;
 
 
 			return vkAllocateDescriptorSets(VulkanContext::GetDevice(), &allocInfo, &set);
@@ -84,7 +81,7 @@ namespace wc {
 				usedPools.push_back(currentPool);
 			}	
 
-			VkResult allocResult = currentPool.Allocate(layout, set);
+			VkResult allocResult = currentPool.Allocate(layout.GetPointer(), set);
 			switch (allocResult) {
 				case VK_SUCCESS: return true;
 				case VK_ERROR_FRAGMENTED_POOL:
@@ -93,10 +90,35 @@ namespace wc {
 					currentPool = grab_pool();
 					usedPools.push_back(currentPool);
 
-					allocResult = currentPool.Allocate(layout, set);
+					allocResult = currentPool.Allocate(layout.GetPointer(), set);
 
 					//if it still fails then we have big issues
 					if (allocResult == VK_SUCCESS) return true;
+			}
+
+			return false;
+		}
+
+		bool allocate(DescriptorSet& set, const VkDescriptorSetLayout* layouts, const void* pNext, const uint32_t& descriptorCount) {
+			if (currentPool == VK_NULL_HANDLE)
+			{
+				currentPool = grab_pool();
+				usedPools.push_back(currentPool);
+			}
+
+			VkResult allocResult = currentPool.Allocate(layouts, set, pNext, descriptorCount);
+			switch (allocResult) {
+			case VK_SUCCESS: return true;
+			case VK_ERROR_FRAGMENTED_POOL:
+			case VK_ERROR_OUT_OF_POOL_MEMORY:
+				//allocate a new pool and retry
+				currentPool = grab_pool();
+				usedPools.push_back(currentPool);
+
+				allocResult = currentPool.Allocate(layouts, set, pNext, descriptorCount);
+
+				//if it still fails then we have big issues
+				if (allocResult == VK_SUCCESS) return true;
 			}
 
 			return false;

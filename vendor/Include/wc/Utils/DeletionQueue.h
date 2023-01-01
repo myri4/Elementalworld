@@ -13,9 +13,8 @@ struct DeletionQueue
 
 	void flush() {
 		// reverse iterate the deletion queue to execute all the functions
-		for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
-			(*it)(); //call the function
-		}
+		for (auto it = deletors.rbegin(); it != deletors.rend(); it++) 
+			(*it)(); //call the function		
 
 		deletors.clear();
 	}

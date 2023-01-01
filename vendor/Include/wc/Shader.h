@@ -6,6 +6,7 @@
 #include "vk/Renderpass.h"
 #include "vk/Descriptors.h"
 #include "vk/RendererContext.h"
+#include <magic_enum.hpp>
 
 namespace wc {
 
@@ -106,6 +107,9 @@ namespace wc {
 		bool blending = false;
 		bool depthTest = true;
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		VkDescriptorBindingFlags* bindingFlags = nullptr;
+		uint32_t bindingFlagCount = 0;
+		uint32_t dynamicDescriptorCount = 0;
 	};
 
 	class Shader {
@@ -119,7 +123,7 @@ namespace wc {
 		const wc::PipelineLayout& getPipelineLayout() const { return pipelineLayout; }
 		const wc::DescriptorSetLayout& getDescriptorLayout() const { return descriptorLayout; }
 		const wc::PipelineCache& GetCache() const { return cache; }
-		wc::DescriptorSet descriptorSet = VK_NULL_HANDLE;
+		//wc::DescriptorSet descriptorSet = VK_NULL_HANDLE;
 
 		void Create(const ShaderCreateInfo& createInfo) {
 			wc::PipelineBuilder pipelineBuilder;
@@ -249,8 +253,10 @@ namespace wc {
 							const auto& type = compiler.get_type(resource.type_id);
 
 							uint32_t descriptorCount = 1;
-							if (type.array[0] > 0) descriptorCount = type.array[0];
-
+							if (type.array[0] > 0)
+							{
+								descriptorCount = type.array[0];
+							}
 							layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 							layoutBinding.descriptorCount = descriptorCount;
 							layoutBinding.stageFlags = shaderStage;
@@ -263,14 +269,26 @@ namespace wc {
 					pipelineBuilder.shaderStages[i] = shaderModules[i].GetShaderStageCreateInfo((VkShaderStageFlagBits)shaderStage);
 				}
 
-				VkDescriptorSetLayoutCreateInfo layoutInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+				if (createInfo.dynamicDescriptorCount)
+					layoutBindings[layoutBindings.size() - 1].descriptorCount = createInfo.dynamicDescriptorCount;
+
+				VkDescriptorSetLayoutCreateInfo layoutInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };		
 
 				layoutInfo.pBindings = layoutBindings.data();
 				layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
 
+				VkDescriptorSetLayoutBindingFlagsCreateInfo binding_flags = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
+
+				if (createInfo.bindingFlagCount > 0) {
+					binding_flags.bindingCount = createInfo.bindingFlagCount;
+					binding_flags.pBindingFlags = createInfo.bindingFlags;
+
+					layoutInfo.pNext = &binding_flags;
+				}
+
 				descriptorLayout.Create(layoutInfo);
 
-				if (descriptorSet == VK_NULL_HANDLE) wc::descriptorAllocator.allocate(descriptorSet, descriptorLayout);
+				//if (descriptorSet == VK_NULL_HANDLE) wc::descriptorAllocator.allocate(descriptorSet, descriptorLayout);
 
 				VkPipelineLayoutCreateInfo info = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 
@@ -337,12 +355,14 @@ namespace wc {
 		}
 
 		void Bind(const wc::CommandBuffer& cmd) {
-			cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, 0, pipelineLayout, descriptorSet);
+			//cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, 0, pipelineLayout, descriptorSet);
 			cmd.BindPipeline(pipeline);
 		}
 
 		void SaveCache() {
+#if DISABLE_CACHING == 0 // @TODO(myri4): need to add it above
 			cache.SaveToFile(cachePath);
+#endif
 		}
 		
 		void Destroy() {

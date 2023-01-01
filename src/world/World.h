@@ -1,4 +1,5 @@
 #pragma once
+#define DISABLE_CACHING 1
 
 #include <pch.h>
 #include "../Rendering/AssetManager.h"
@@ -6,7 +7,6 @@
 #include "Biome.h"
 #include <FastNoise/FastNoiseLite.h>
 #include "../entities/Player.h"
-#include "../Rendering/Model/Animation.h"
 #include "../Game Mechanics/CommandParser.h"
 
 #include <wc/Shader.h>
@@ -58,6 +58,7 @@ namespace wc {
 		float rotateSpeed = 1.f * 0.6f; // one cycle is one unit (in minutes)
 		float angle = 0.f;
 		wc::Shader skyShader;
+		wc::DescriptorSet skySet;
 
 		bool m_UpdateModels = false;
 
@@ -121,7 +122,7 @@ namespace wc {
 		bool renderGUI = true;
 		Player p;
 
-		void Create(const glm::vec2& windowSize) {
+		void Create() {
 
 			if (!std::filesystem::exists("worlds")) std::filesystem::create_directory("worlds");
 			if (!std::filesystem::exists("cache")) std::filesystem::create_directory("cache");
@@ -140,10 +141,6 @@ namespace wc {
 			m_MaterialsBuffer.Create(materialData.byte_size(), wc::STORAGE_BUFFER);
 			m_BVHBuffer.Create(sizeof(ChunkAABB) * chunks.size(), wc::STORAGE_BUFFER);			
 
-			delQueue.push_function([=] { m_SceneDataBuffer.Destroy(); });
-			delQueue.push_function([=] { m_LightBuffer.Destroy(); });
-			delQueue.push_function([=] { m_MaterialsBuffer.Destroy(); });
-			delQueue.push_function([=] { m_BVHBuffer.Destroy(); });
 
 			worldNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_OpenSimplex2);
 			worldNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_FBm);
@@ -175,9 +172,9 @@ namespace wc {
 			//Loading blocks
 			std::vector<Vertex> modelVertices;
 			std::vector<uint32_t> modelIndices;
-			for (auto& p : std::filesystem::directory_iterator("scripts/blockScripts")) {
-				std::string filename = p.path().stem().string();
-				if (p.is_regular_file()) { //AddBlockScript
+			for (auto& path : std::filesystem::directory_iterator("scripts/blockScripts")) {
+				std::string filename = path.path().stem().string();
+				if (path.is_regular_file()) { //AddBlockScript
 					std::string script = "scripts/blockScripts/" + filename + ".yaml";
 					YAML::Node blockState = YAML::LoadFile(script);
 			
@@ -193,14 +190,14 @@ namespace wc {
 					if (blockState["cull"]) if (blockState["cull"].as<bool>()) material.flags |= WC_CULL_BIT;
 			
 					if (blockState["allTextures"]) {
-						material.albedo[0] = assets.LoadTexture(diffusePath + blockState["allTextures"].as<std::string>());
+						material.albedo[0] = AssetManager::LoadTexture(diffusePath + blockState["allTextures"].as<std::string>());
 						for (int i = 1; i < 6; i++) material.albedo[i] = material.albedo[0];
 					}
 					else {
 						for (uint32_t i = 0; i < magic_enum::enum_count<BlockTexture>(); i++) {
 							auto name = std::string(magic_enum::enum_name((BlockTexture)i));
 							if (blockState[name]) 
-								material.albedo[i] = assets.LoadTexture(diffusePath + blockState[name].as<std::string>());
+								material.albedo[i] = AssetManager::LoadTexture(diffusePath + blockState[name].as<std::string>());
 						}
 					}
 					if (blockState["emitLight"]) block.emitLight = blockState["emitLight"].as<bool>();
@@ -211,7 +208,7 @@ namespace wc {
 					}
 			
 					if (blockState["materialData"]) {
-						material.materialData[0] = assets.LoadTextureMaterial(materialPath + blockState["materialData"].as<std::string>());
+						material.materialData[0] = AssetManager::LoadTexture(materialPath + blockState["materialData"].as<std::string>());
 						for (int i = 1; i < 6; i++) material.materialData[i] = material.materialData[0];
 					}
 			
@@ -228,14 +225,12 @@ namespace wc {
 				}
 			}
 
-			assets.LoadAll();
 			matBuffer.Unmap();
 			m_MaterialsBuffer.SetData(matBuffer, materialData.byte_size());
 			matBuffer.Destroy();
 			
 
 			m_IndirectBuffer.Create(chunks.size() * sizeof(VkDrawIndexedIndirectCommand), wc::INDIRECT_BUFFER);
-			delQueue.push_function([=] { m_IndirectBuffer.Destroy(); });
 
 			Renderer3D::BuildBuffers(window.GetExtent());
 			Renderer3D::vertexBuffer.SetData(modelVertices.data(), sizeof(Vertex) * modelVertices.size(), sizeof(Vertex) * MaxVertexCount * chunks.size());
@@ -243,7 +238,6 @@ namespace wc {
 
 						
 			lights.Create(maxLights * sizeof(Light));
-			delQueue.push_function([=] { lights.Unmap(); lights.Destroy(); });
 			lights.Map();
 			
 			uint32_t iOffset = 0;
@@ -267,8 +261,6 @@ namespace wc {
 			indices.Destroy();
 
 			crosshair.Load(GetAssetPath() + "/textures/misc/cursor.png");
-			//model.Create("resourcepacks/default/models/player_model.obj", screen.renderPass, windowSize);
-			//animation.Create("resourcepacks/default/models/dancing_vampire.dae", model);
 			
 			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 0.891f, 0.796f, 0.f)));
 			
@@ -282,12 +274,11 @@ namespace wc {
 			dirt = getBlockID("dirt");
 			campfire = getBlockID("campfire");
 			murshroom = getBlockID("murshroom");
-			blockHolding = campfire;
+			blockHolding = getBlockID("iron_block");
 
 			CreateDynamicPipelines();
 
 			m_BVHTransforms.Create(sizeof(ChunkAABB)* chunks.size());
-			delQueue.push_function([=] { m_BVHTransforms.Unmap(); m_BVHTransforms.Destroy(); });
 			m_BVHTransforms.Map();
 
 			ChunkAABB aabb;
@@ -309,17 +300,55 @@ namespace wc {
 				createInfo.blending = true;
 				createInfo.depthTest = true;
 				createInfo.cachePath = wc::GetCachedAssetPath() + "/shaders/Renderer3D.bin";
+
+				VkDescriptorBindingFlags flags[4];
+				flags[0] = 0;
+				flags[1] = 0;
+				flags[2] = 0;
+				flags[3] = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+
+				uint32_t counts[1];
+				counts[0] = AssetManager::m_Textures.size(); // Set 0 has a variable count descriptor with a maximum of 32 elements
+
+				VkDescriptorSetVariableDescriptorCountAllocateInfo set_counts = {};
+				set_counts.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
+				set_counts.descriptorSetCount = 1;
+				set_counts.pDescriptorCounts = counts;
+				createInfo.bindingFlags = flags;
+				createInfo.bindingFlagCount = std::size(flags);
+				createInfo.dynamicDescriptorCount = counts[0];
+
 				Renderer3D::shader.Create(createInfo);
+				VkDescriptorSetLayout layouts[10];
+				for (int i = 0; i < std::size(layouts); i++) layouts[i] = Renderer3D::shader.getDescriptorLayout();
 
+				wc::descriptorAllocator.allocate(Renderer3D::descriptorSet, layouts, &set_counts, set_counts.descriptorSetCount);
+
+				{
+					wc::DescriptorWriter writer;
+					writer.dstSet = Renderer3D::descriptorSet;
+					writer.write_buffer(0, m_SceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+						.write_buffer(1, m_LightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+						.write_buffer(2, m_MaterialsBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+					writer.Update();
+				}
 				wc::DescriptorWriter writer;
-				writer.dstSet = Renderer3D::shader.descriptorSet;
-				writer.write_buffer(0, m_SceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-					.write_buffer(1, m_LightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-					.write_buffer(2, m_MaterialsBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-					.write_image(4, assets.texArr.GetDescriptorData(assets.sampler), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-					.write_image(5, assets.textureMaterialArr.GetDescriptorData(assets.sampler), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+				writer.dstSet = Renderer3D::descriptorSet;
 
+				std::vector<VkDescriptorImageInfo> infos;
+				for (auto& image : AssetManager::m_Textures) {
+					VkDescriptorImageInfo imageInfo;
+					imageInfo.sampler = image.GetSampler();
+					imageInfo.imageView = image.GetView();
+					imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+					infos.push_back(imageInfo);
+				}
+				
+				writer.write_images(3, infos, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 				writer.Update();
+					
+
 			}
 			{
 				wc::ShaderCreateInfo createInfo;
@@ -331,9 +360,10 @@ namespace wc {
 				createInfo.depthTest = false;
 				createInfo.cachePath = GetCachedAssetPath() + "/shaders/skyShader.bin";
 				skyShader.Create(createInfo);
+				wc::descriptorAllocator.allocate(skySet, skyShader.getDescriptorLayout());
 
 				wc::DescriptorWriter writer;
-				writer.dstSet = skyShader.descriptorSet;
+				writer.dstSet = skySet;
 				writer.write_buffer(0, m_SceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 					.write_buffer(1, m_LightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
@@ -392,15 +422,23 @@ namespace wc {
 
 		void Destroy() {
 			if (multiPlayer) m_ClientInstance.Disconnect();
-			else if (m_WorldLoaded) SaveWorld();
-			delQueue.flush();
+			else if (m_WorldLoaded) SaveWorld();			
+
+			m_SceneDataBuffer.Destroy();
+			m_LightBuffer.Destroy();
+			m_MaterialsBuffer.Destroy();
+			m_BVHBuffer.Destroy();
+			m_BVHTransforms.Unmap(); m_BVHTransforms.Destroy();
+			lights.Unmap(); lights.Destroy();
+			m_IndirectBuffer.Destroy();
+
 			Renderer3D::Destroy();
 			skyShader.SaveCache();
 			skyShader.Destroy();
 			rayTracingShader.Destroy();
 			compositeShader.Destroy();
 			bloomShader.Destroy();
-			assets.Destroy();
+			AssetManager::Destroy();
 
 			DestroyScreen();
 
@@ -549,11 +587,11 @@ namespace wc {
 						{
 						case(GameMsg::Client_Accepted):
 						{
-							net::message<GameMsg> msg;
-							msg.header.id = GameMsg::Client_RegisterWithServer;
+							net::message<GameMsg> server_msg;
+							server_msg.header.id = GameMsg::Client_RegisterWithServer;
 							PlayerDescription descPlayer;
-							msg << descPlayer;
-							m_ClientInstance.Send(msg);
+							server_msg << descPlayer;
+							m_ClientInstance.Send(server_msg);
 							break;
 						}
 
@@ -723,6 +761,7 @@ namespace wc {
 
 			// Draw sky
 			if (Settings::sky) {
+				cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, 0, skyShader.getPipelineLayout(), skySet);
 				skyShader.Bind(cmd);
 				cmd.Draw(3);
 			}
@@ -1490,15 +1529,6 @@ namespace wc {
 			glm::ivec3 q = glm::ivec3(0);
 			glm::ivec3 du = glm::ivec3(0);
 			glm::ivec3 dv = glm::ivec3(0);
-			// ChunkLogic
-			for (uint32_t x = 0; x < chunkSize; x++)
-				for (uint32_t y = 0; y < chunkSize; y++)
-					for (uint32_t z = 0; z < chunkSize; z++) {
-						if (y + 1 < chunkSize && chunk.data[x][y][z] == 0) {
-							if (chunk.data[x][y + 1][z] == 14 || chunk.data[x][y + 1][z] == 10
-								|| chunk.data[x][y + 1][z] == 15 || chunk.data[x][y + 1][z] == 13) chunk.data[x][y + 1][z] = 0;
-						}
-					}
 			// Sweep over each axis (X, Y and Z)
 			for (d = 0; d < 3; d++)
 			{
@@ -1612,7 +1642,7 @@ namespace wc {
 								dv[v] = h;
 								dv[d] = 0;
 								dv[u] = 0;
-								float h1 = h, w1 = w;
+								float h1 = (float)h, w1 = (float)w;
 								// Create a quad for this face. Colour, normal or textures are not stored in this block vertex format.
 								glm::vec3 corner[4] = {};
 
@@ -1637,7 +1667,7 @@ namespace wc {
 								}
 								glm::vec3 normal = glm::normalize(glm::cross(corner[2] - corner[0], corner[1] - corner[0]));
 								if (indexCount < MaxIndexCount) {
-									BlockID blockID = mask[n] - 1;
+									BlockID maskID = mask[n] - 1;
 									glm::vec2 TexCoords[] = {
 										glm::vec2(0.f, 0.f),
 										glm::vec2(0.f, w1),
@@ -1653,9 +1683,9 @@ namespace wc {
 									if (normal == glm::vec3(0.f, 0.f,  1.f)) texID = (uint32_t)BlockTexture::FRONT;
 									if (normal == glm::vec3(0.f, 0.f, -1.f)) texID = (uint32_t)BlockTexture::BACK;
 
-									for (uint32_t i = 0; i < std::size(corner); i++) {
-										Vertex vertex = Vertex(corner[i] + (glm::vec3)chunkPos, { TexCoords[i], texID }, normal, blockData[blockID].materialID);
-										vertices[i + offset] = vertex;
+									for (uint32_t c = 0; c < std::size(corner); c++) {
+										Vertex vertex = Vertex(corner[c] + (glm::vec3)chunkPos, { TexCoords[c], texID }, normal, blockData[maskID].materialID);
+										vertices[c + offset] = vertex;
 										if (vertex.Position.x < aabb.end.x) aabb.end.x = vertex.Position.x;
 										if (vertex.Position.y < aabb.end.y) aabb.end.y = vertex.Position.y;
 										if (vertex.Position.z < aabb.end.z) aabb.end.z = vertex.Position.z;

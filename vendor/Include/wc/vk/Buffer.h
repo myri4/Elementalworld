@@ -33,7 +33,7 @@ namespace wc {
 
 		void* Map(VkResult& result) {
 			void* data;
-			vmaMapMemory(VulkanContext::GetMemoryAllocator(), allocation, &data);
+			result = vmaMapMemory(VulkanContext::GetMemoryAllocator(), allocation, &data);
 			return data;
 		}
 

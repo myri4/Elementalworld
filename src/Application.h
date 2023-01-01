@@ -47,7 +47,7 @@ namespace wc {
 			window.poolEvents();
 
 			if (window.hasFocus()) {
-				if (mode == MenuMode::GAME) gameInstance.OnInput(deltaTime);
+				if (menuMode == MenuMode::GAME) gameInstance.OnInput(deltaTime);
 
 				if (Keyboard::getKey(Keyboard::Key::F9)) {
 					gameInstance.DestroyScreen();
@@ -58,7 +58,7 @@ namespace wc {
 					gameInstance.CreateDynamicPipelines();
 				}
 				
-				if (mode == MenuMode::ESCMENU && Keyboard::getKey(Keyboard::Key::Escape)) 
+				if (menuMode == MenuMode::ESCMENU && Keyboard::getKey(Keyboard::Key::Escape))
 					ChangeMenu(MenuMode::GAME);
 
 
@@ -116,7 +116,7 @@ namespace wc {
 			//clear font textures from cpu data
 			ImGui_ImplVulkan_DestroyFontUploadObjects();					
 
-			gameInstance.Create(window.GetSize());
+			gameInstance.Create();
 
 			//[TO DO]: shorten the lenght
 			background.Load(GetAssetPath() + "/textures/misc/screenshot.png");
@@ -165,14 +165,14 @@ namespace wc {
 			ImGui::NewFrame();
 
 			//loading crosshair and console
-			if (mode == MenuMode::GAME) 
+			if (menuMode == MenuMode::GAME)
 				gameInstance.RenderGUI(deltaTime);			
 
 			//loading escape menu
-			if (mode == MenuMode::ESCMENU) gameInstance.RenderImGuiEscapeMenu();
+			if (menuMode == MenuMode::ESCMENU) gameInstance.RenderImGuiEscapeMenu();
 
 			//loading the main menu
-			if (mode == MenuMode::MAINMENU) {
+			if (menuMode == MenuMode::MAINMENU) {
 
 				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -260,7 +260,7 @@ namespace wc {
 			}
 
 			//loading world selection
-			if (mode == MenuMode::WORLD_SELECTION) {
+			if (menuMode == MenuMode::WORLD_SELECTION) {
 				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::Begin("Elemental World", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
@@ -288,7 +288,7 @@ namespace wc {
 			}
 
 			//loading world creation
-			if (mode == MenuMode::WORLD_CREATION) {
+			if (menuMode == MenuMode::WORLD_CREATION) {
 				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::Begin("World Creation", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
@@ -307,7 +307,7 @@ namespace wc {
 			}
 
 			//loading settings menu
-			if (mode == MenuMode::SETTINGS) {
+			if (menuMode == MenuMode::SETTINGS) {
 				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::Begin("Settings", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
@@ -451,7 +451,7 @@ namespace wc {
 			static bool isplmenopen = false;
 			static bool showpas = false;
 			static bool require = false;
-			if (mode == MenuMode::MULTIPLAYER) {
+			if (menuMode == MenuMode::MULTIPLAYER) {
 				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::Begin("Multiplayer", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
@@ -497,7 +497,7 @@ namespace wc {
 							ImGui::EndTabItem();
 						}
 						if (ImGui::BeginTabItem("Sign-Up")) {
-							ImGuiInputTextFlags input_flags;
+							ImGuiInputTextFlags input_flags = 0;
 							if (!showpas) input_flags = ImGuiInputTextFlags_Password;
 							ImGui::InputTextWithHint("  ", "<username>", username, IM_ARRAYSIZE(username));
 							if (showpas) {
@@ -557,7 +557,7 @@ namespace wc {
 			ImGui::Render();
 
 
-			if (mode == MenuMode::GAME)
+			if (menuMode == MenuMode::GAME)
 				gameInstance.Update(deltaTime);
 
 			// GUI

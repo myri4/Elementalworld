@@ -5,7 +5,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <unordered_set>
 
-#define WC_ENABLE_GRAPHICS_DEBUGGER
+#define WC_GRAPHICS_DEBUGGER 1
 
 template <class T>
 class RendererObject {
@@ -113,7 +113,7 @@ namespace VulkanContext {
 		VmaAllocator vmaAllocator;
 		const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME }; // @TODO: remove
 
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 		VkDebugUtilsMessengerEXT debug_messenger; // Vulkan debug output handle	
 		const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 
@@ -127,7 +127,7 @@ namespace VulkanContext {
 			{
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 				WC_ERROR(pCallbackData->pMessage);
-				__debugbreak();
+				//__debugbreak();
 				//OutputDebugString(pCallbackData->pMessage);
 				break;
 
@@ -192,7 +192,7 @@ namespace VulkanContext {
 
 	void BeginLabel(const VkCommandBuffer& command_buffer, const char* label_name, const glm::vec4& color = glm::vec4(1.f))
 	{
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 		VkDebugUtilsLabelEXT label = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
 		label.pLabelName = label_name;
 		label.color[0] = color[0];
@@ -205,7 +205,7 @@ namespace VulkanContext {
 
 	void InsertLabel(const VkCommandBuffer& command_buffer, const char* label_name, const glm::vec4& color = glm::vec4(1.f))
 	{
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 		VkDebugUtilsLabelEXT label = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
 		label.pLabelName = label_name;
 		label.color[0] = color[0];
@@ -217,7 +217,7 @@ namespace VulkanContext {
 	}
 
 	void EndLabel(VkCommandBuffer command_buffer) { 
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 		vkCmdEndDebugUtilsLabel(command_buffer); 
 #endif
 	}
@@ -225,7 +225,7 @@ namespace VulkanContext {
 
 	void BeginLabel(const VkQueue& queue, const char* label_name, const glm::vec4& color = glm::vec4(1.f))
 	{
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 		VkDebugUtilsLabelEXT label = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
 		label.pLabelName = label_name;
 		label.color[0] = color[0];
@@ -238,7 +238,7 @@ namespace VulkanContext {
 
 	void InsertLabel(const VkQueue& queue, const char* label_name, const glm::vec4& color = glm::vec4(1.f))
 	{
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 		VkDebugUtilsLabelEXT label = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
 		label.pLabelName = label_name;
 		label.color[0] = color[0];
@@ -250,14 +250,14 @@ namespace VulkanContext {
 	}
 
 	void EndLabel(const VkQueue& queue) { 
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 		vkQueueEndDebugUtilsLabel(queue); 
 #endif
 	}
 
 	void SetObjectName(const VkObjectType& object_type, const uint64_t& object_handle, const char* object_name)
 	{
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 		VkDebugUtilsObjectNameInfoEXT name_info = { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
 		name_info.objectType = object_type;
 		name_info.objectHandle = object_handle;
@@ -291,7 +291,7 @@ namespace VulkanContext {
 
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);		
 #endif
 
@@ -375,7 +375,7 @@ namespace VulkanContext {
 		{// Create Instance
 			// @TODO: add mac support
 
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 			uint32_t layerCount = 0;
 			vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
@@ -410,7 +410,7 @@ namespace VulkanContext {
 			createInfo.ppEnabledExtensionNames = extensions.data();
 
 			VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 			createInfo.ppEnabledLayerNames = validationLayers.data();
 
@@ -422,7 +422,7 @@ namespace VulkanContext {
 				WC_ERROR("Failed to create instance!");
 		}
 		
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 			VkDebugUtilsMessengerCreateInfoEXT createInfo;
 			populateDebugMessengerCreateInfo(createInfo);
 
@@ -508,9 +508,9 @@ namespace VulkanContext {
 			descriptor_indexing_features.runtimeDescriptorArray = true;
 			descriptor_indexing_features.descriptorBindingVariableDescriptorCount = true;
 			descriptor_indexing_features.descriptorBindingPartiallyBound = true;
-			//createInfo.pNext = &descriptor_indexing_features;
+			createInfo.pNext = &descriptor_indexing_features;
 
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 			createInfo.ppEnabledLayerNames = validationLayers.data();
 #endif
@@ -535,7 +535,7 @@ namespace VulkanContext {
 		vmaDestroyAllocator(vmaAllocator);
 		device.Destroy();
 
-#ifdef WC_ENABLE_GRAPHICS_DEBUGGER
+#if WC_GRAPHICS_DEBUGGER == 1
 		vkDestroyDebugUtilsMessengerEXT(instance, debug_messenger, VulkanContext::GetAllocator());
 #endif
 		instance.Destroy();

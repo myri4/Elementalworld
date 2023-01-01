@@ -13,8 +13,8 @@ layout(location = 0) out vec2 v_TexCoords;
 layout(location = 1) out vec3 v_Normal;
 layout(location = 2) out vec3 p0;
 
-layout(location = 3) out float albedoID;
-layout(location = 4) out float materialID;
+layout(location = 3) out flat uint albedoID;
+layout(location = 4) out flat uint materialID;
 layout(location = 5) out uint flags;
 layout(location = 6) out vec4 color;
 

@@ -39,13 +39,11 @@ vec3 fresnelSchlickRoughness(const in float cosTheta, const in vec3 F0, const in
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-vec3 rayTrace(const in vec3 N, const vec4 materialData, const in vec3 albedo) {
+vec3 rayTrace(const in vec3 N, const vec2 materialData, const in vec3 albedo) {
 	vec3 color;
 
-	float metallic = materialData[0];
-	float roughness = materialData[1];
-	float ao = materialData[2];
-	float emmision = materialData[3];
+	float roughness = materialData[0];
+	float metallic = materialData[1];
 
 	vec3 V = normalize(cameraPos - p0);
 
@@ -94,7 +92,7 @@ vec3 rayTrace(const in vec3 N, const vec4 materialData, const in vec3 albedo) {
 	// ambient lighting (note that the next IBL tutorial will replace
 	// this ambient lighting with environment lighting).
 
-	vec3 ambient = ambientColor * ao * albedo;
+	vec3 ambient = ambientColor * albedo;
 
 	color = ambient + Lo;
 	

@@ -1,4 +1,4 @@
-layout (std140, binding = 0) uniform SceneData
+layout (std140, binding = 0, set = 0) uniform SceneData
 {
     mat4 u_ViewProjection;
 
