@@ -177,11 +177,14 @@ namespace wc {
 				if (path.is_regular_file()) { //AddBlockScript
 					std::string script = "scripts/blockScripts/" + filename + ".yaml";
 					YAML::Node blockState = YAML::LoadFile(script);
+					YAML::Node itemState;
 			
 					Block block;
 					Material material;
+					Item item;
 			
-					if (blockState["name"]) block.name = blockState["name"].as<std::string>();
+					if (blockState["name"]) block.name = blockState["name"].as<std::string>(); 
+					
 					else WC_WARN("No block name is specified in '{0}'. Block name 'air' assumed.", script);
 			
 					if (blockState["isCollidable"]) block.isCollidable = blockState["isCollidable"].as<bool>();
@@ -192,12 +195,15 @@ namespace wc {
 					if (blockState["allTextures"]) {
 						material.albedo[0] = AssetManager::LoadTexture(diffusePath + blockState["allTextures"].as<std::string>());
 						for (int i = 1; i < 6; i++) material.albedo[i] = material.albedo[0];
+						itemState["textureLocation"] = blockState["allTextures"].as<std::string>();
 					}
 					else {
 						for (uint32_t i = 0; i < magic_enum::enum_count<BlockTexture>(); i++) {
 							auto name = std::string(magic_enum::enum_name((BlockTexture)i));
 							if (blockState[name]) 
 								material.albedo[i] = AssetManager::LoadTexture(diffusePath + blockState[name].as<std::string>());
+
+							itemState["textureLocation"] = blockState["TOP"].as<std::string>();
 						}
 					}
 					if (blockState["emitLight"]) block.emitLight = blockState["emitLight"].as<bool>();
@@ -211,7 +217,7 @@ namespace wc {
 						material.materialData[0] = AssetManager::LoadTexture(materialPath + blockState["materialData"].as<std::string>());
 						for (int i = 1; i < 6; i++) material.materialData[i] = material.materialData[0];
 					}
-			
+					item.textureID = material.albedo[0];
 					block.materialID = materialData.push_back(material);
 					if (blockState["modelPath"]) {
 						std::string path = blockState["modelPath"].as<std::string>();
@@ -222,6 +228,17 @@ namespace wc {
 					}
 			
 					blockData.push_back(block);
+					itemData.push_back(item);
+					itemState["model"] = "modelPathHere";
+					itemState["maxStackSize"] = 100;
+					itemState["block"] = block.name;
+					itemState["type"] = "Block";
+					itemState["flags"] = 0;
+					itemState["name"] = filename;
+					itemState["DisplayName"] = filename;
+
+					YAMLUtils::saveFile("scripts/itemScripts/" + filename + ".yaml", itemState);
+					
 				}
 			}
 
@@ -909,7 +926,7 @@ namespace wc {
 				ImGui::Begin("Console Log", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
 				if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
 					ImGui::SetKeyboardFocusHere(0);
-				ImGui::InputText("Log", consoleBuffer, IM_ARRAYSIZE(consoleBuffer));
+				ImGui::InputText("Log", consoleBuffer, std::size(consoleBuffer));
 				ImGui::End();
 
 				//history log
@@ -932,6 +949,86 @@ namespace wc {
 				ImGui::Begin("crosshair", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
 				ImGui::SetCursorPos(ImVec2((window.GetSize().x - 20) / 2, (window.GetSize().y - 20) / 2));
 				ImGui::Image(crosshair, ImVec2(20, 20));
+				ImGui::End();
+
+				//hotbar
+				ImGui::SetNextWindowSize(ImVec2(1000, 100));
+				ImGui::SetNextWindowPos(ImVec2(window.GetSize().x / 2 - 500, window.GetSize().y - 125));
+				ImGui::Begin("HotBar", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
+				
+				for (int n = 0; n < 9; n++)
+				{
+					ImGui::PushID(n);
+					//	if ((n % 10) != 0)
+						ImGui::SameLine();
+					if (p.inventory.data[n].itemID != 0)
+						ImGui::ImageButton(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(90, 90));
+					else
+						ImGui::Button("", ImVec2(90, 90));
+
+					// Our buttons are both drag sources and drag targets here!
+					if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip))
+					{
+						// Set payload to carry the index of our item (could be anything)
+						ImGui::SetDragDropPayload("DND_DEMO_CELL", &n, sizeof(int));
+						ImGui::EndDragDropSource();
+					}
+					if (ImGui::BeginDragDropTarget())
+					{
+						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_DEMO_CELL"))
+						{
+							IM_ASSERT(payload->DataSize == sizeof(int));
+							int payload_n = *(const int*)payload->Data;
+
+							auto tmp = p.inventory.data[n];
+							p.inventory.data[n] = p.inventory.data[payload_n];
+							p.inventory.data[payload_n] = tmp;
+
+						}
+						ImGui::EndDragDropTarget();
+					}
+					ImGui::PopID();
+				}
+				ImGui::End();
+			}
+
+			if (inventory) {
+				ImGui::SetNextWindowSize(ImVec2(1000, 500));
+				ImGui::SetNextWindowPos(ImVec2((window.GetSize().x - 1000) / 2, (window.GetSize().y - 600) / 2));
+				ImGui::Begin("Inventory", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar);
+
+				for (int n = 0; n < std::size(p.inventory.data); n++)
+				{
+					ImGui::PushID(n);
+					if ((n % 10) != 0)
+						ImGui::SameLine();
+					//ImGui::Button(names[n], ImVec2(90, 90));
+					ImGui::ImageButton(AssetManager::m_Textures[itemData[coal].textureID], ImVec2(80, 80));
+					// Our buttons are both drag sources and drag targets here!
+					if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip))
+					{
+						// Set payload to carry the index of our item (could be anything)
+						ImGui::SetDragDropPayload("Item", &n, sizeof(int));
+						ImGui::EndDragDropSource();
+					}
+					if (ImGui::BeginDragDropTarget())
+					{
+						const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Item");
+						if (payload)
+						{
+							int payload_n = *(const int*)payload->Data;
+
+							ItemSlot tmp = p.inventory.data[n];
+							p.inventory.data[n] = p.inventory.data[payload_n];
+							p.inventory.data[payload_n] = tmp;
+
+						}
+						ImGui::EndDragDropTarget();
+					}
+					ImGui::PopID();
+				}
+
+
 				ImGui::End();
 			}
 		}
@@ -970,16 +1067,21 @@ namespace wc {
 			else if (commandType == CommandType::setSpeed) p.MovementSpeed = getArgument(args, 0);
 			else if (commandType == CommandType::setTime) angle = getArgument(args, 0);
 			else if (commandType == CommandType::getBlockID) WC_INFO(getBlock({ getArgument(args, 0) , getArgument(args, 1) , getArgument(args, 2) }));
+			else if (commandType == CommandType::give) { 
+				std::string itemName = getStringArgument(args, 0);
+				WC_INFO(itemName.c_str()); 
+			}
 			else if (commandType == CommandType::UNKNOWN) WC_ERROR("Unknow command!");
-			command = "";
+			command.clear();
 		}
 
 		bool console = false;
+		bool inventory = false;
 
 		void OnInput(const float& deltaTime) {
 			// MENU MANAGMENT
 
-			if (!console)
+			if (!console && !inventory)
 			{
 				// GAMEPLAY
 				float yaw = glm::radians(p.rotation.x);
@@ -1067,6 +1169,14 @@ namespace wc {
 				else if (p.rotation.x < 0.f) p.rotation.x = 360.f;
 
 				window.setCursorPos(t);
+			}
+
+			if (Keyboard::getKey(Keyboard::Key::E) && !console) {
+				inventory = !inventory;
+				if (inventory)
+					window.SetCursorMode(GLFW_CURSOR_NORMAL);
+				else 
+					window.SetCursorMode(GLFW_CURSOR_DISABLED);
 			}
 
 			if (Keyboard::getKey(Keyboard::Key::F1)) renderGUI = !renderGUI;
@@ -1249,6 +1359,7 @@ namespace wc {
 					}
 					Renderer3D::DrawOutlineCube(vMapCheck, glm::vec3(1.f), color);
 					if (m_BlockBreakTimer.getElapsedTime() >= breakTime && startBreaking) {
+						p.inventory.PushItem({getBlock(vMapCheck), 1});
 						setBlock(vMapCheck, 0, true, true);
 						startBreaking = false;
 					}

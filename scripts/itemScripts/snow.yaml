@@ -1,0 +1,8 @@
+textureLocation: snow.png
+model: modelPathHere
+maxStackSize: 100
+block: snow
+type: Block
+flags: 0
+name: snow
+DisplayName: snow

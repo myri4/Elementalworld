@@ -24,6 +24,7 @@ namespace wc {
 		glm::vec3 velocity = glm::vec3(0.f);
 		glm::vec3 acceleration = glm::vec3(0.f);
 		float health = 10.f;
+		Inventory inventory;
 
 		Player() {
 			m_isOnGround = false;

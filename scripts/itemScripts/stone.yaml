@@ -1,0 +1,8 @@
+textureLocation: stone.png
+model: modelPathHere
+maxStackSize: 100
+block: stone_block
+type: Block
+flags: 0
+name: stone
+DisplayName: stone

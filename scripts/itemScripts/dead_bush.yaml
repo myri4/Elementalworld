@@ -1,0 +1,8 @@
+textureLocation: dead_bush.png
+model: modelPathHere
+maxStackSize: 100
+block: dead_bush
+type: Block
+flags: 0
+name: dead_bush
+DisplayName: dead_bush

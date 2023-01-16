@@ -1,0 +1,8 @@
+textureLocation: wooden_planks.png
+model: modelPathHere
+maxStackSize: 100
+block: wooden_planks
+type: Block
+flags: 0
+name: wooden_planks
+DisplayName: wooden_planks

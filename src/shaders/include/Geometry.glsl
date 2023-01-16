@@ -1,3 +1,6 @@
+#ifndef GEOMETRY_GLSL
+#define GEOMETRY_GLSL
+
 struct AABB{
     vec3 start;
     uint meshStart;
@@ -75,3 +78,4 @@ bool BoxIntersect(vec3 rayOrigin, vec3 invRayDir, vec3 boxMin, vec3 boxMax, out 
     else t = tFar;
     return tNear <= tFar && tFar > 0.f;
 }
+#endif

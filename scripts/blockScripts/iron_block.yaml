@@ -5,3 +5,4 @@ allTextures: "rustediron2_basecolor.png"
 materialData: "iron_block.png"
 
 name: "iron_block"
+itemName: "Iron Block"

@@ -20,11 +20,10 @@ layout(location = 6) out vec4 color;
 
 vec4 decompress(const in uint num) {
     vec4 Output;
-    const float c = 1.f / 255.f;
-    Output.r = float((num & uint(0x000000ff))) * c;
-    Output.g = float((num & uint(0x0000ff00)) >> 8) * c;
-    Output.b = float((num & uint(0x00ff0000)) >> 16) * c;
-    Output.a = float((num & uint(0xff000000)) >> 24) * c;
+    Output.r = float((num & uint(0x000000ff))) / 255.f;
+    Output.g = float((num & uint(0x0000ff00)) >> 8) / 255.f;
+    Output.b = float((num & uint(0x00ff0000)) >> 16) / 255.f;
+    Output.a = float((num & uint(0xff000000)) >> 24) / 255.f;
     return Output;
 }
 

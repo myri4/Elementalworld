@@ -1,0 +1,8 @@
+textureLocation: sand.png
+model: modelPathHere
+maxStackSize: 100
+block: sand
+type: Block
+flags: 0
+name: sand
+DisplayName: sand

@@ -1,0 +1,8 @@
+textureLocation: crafting_table_top.png
+model: modelPathHere
+maxStackSize: 100
+block: crafting_table
+type: Block
+flags: 0
+name: crafting_table
+DisplayName: crafting_table

@@ -1,0 +1,8 @@
+textureLocation: leaves.png
+model: modelPathHere
+maxStackSize: 100
+block: leaves
+type: Block
+flags: 0
+name: leaves
+DisplayName: leaves

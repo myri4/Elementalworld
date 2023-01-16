@@ -1,0 +1,8 @@
+textureLocation: red_coral.png
+model: modelPathHere
+maxStackSize: 100
+block: red_coral
+type: Block
+flags: 0
+name: red_coral
+DisplayName: red_coral

@@ -11,6 +11,7 @@ layout(location = 5) in flat uint flags;
 layout(location = 6) in vec4 color;
 
 #include "include/pbrUtil.glsl"
+#include "include/sky.glsl"
 
 layout(location = 0) out vec4 FragColor;
 
@@ -26,10 +27,11 @@ void main() {
     //    FragColor = albedo * vec4(vec3(emmision), 1.f) + albedo;
     //    FragColor.a = 1.f;
     //}
-    //else 
+    //else
 
     vec2 materialInfo = vec2(1.f, 0.f);
     if (materialID != 0) materialInfo = texture(u_Textures[int(materialID)], v_TexCoords).rg;
     
     FragColor = albedo * vec4(rayTrace(N, materialInfo, albedo.rgb), 1.f);
+    FragColor = mix(vec4(ComputeSky(p0 + N * 0.001f, reflect(-normalize(cameraPos - p0), N)), 1.f), FragColor, materialInfo.r);
 }

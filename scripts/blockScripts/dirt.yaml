@@ -1,6 +1,6 @@
 isCollidable: true
-ConnectionType: "CONNECT_DEFAULT"
+ConnectionType: CONNECT_DEFAULT
 
-allTextures: "dirt.png"
+allTextures: dirt.png
 
-name: "dirt"
+name: dirt

@@ -1,3 +1,5 @@
+#ifndef SCENE_DATA_GLSL
+#define SCENE_DATA_GLSL
 layout (std140, binding = 0, set = 0) uniform SceneData
 {
     mat4 u_ViewProjection;
@@ -10,3 +12,4 @@ layout (std140, binding = 0, set = 0) uniform SceneData
 	uint u_numLights;
     uint bvhCounter;
 };
+#endif

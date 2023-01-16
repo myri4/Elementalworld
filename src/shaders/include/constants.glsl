@@ -1,3 +1,6 @@
+#ifndef CONSTANTS_GLSL
+#define CONSTANTS_GLSL
+
 const float Epsilon = 1.0e-4;
 const float PI = 3.14159265358979323846264338327950288f;
 
@@ -18,3 +21,4 @@ const float kInfinity = 3.402823466e+38F;
 
 const int WC_MODEL_BIT = 1;
 const int WC_CULL_BIT = 2;
+#endif
