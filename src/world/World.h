@@ -1048,27 +1048,32 @@ namespace wc {
 			ImGui::End();
 		}
 
-		void ParseCommand(std::string& command) {
+		void ParseCommand(std::string& command) { // @TODO: Maybe switch to switch statement?
 			consoleHistory.push_back(command);
 			// Command parsing
-			std::string args;
-			CommandType commandType = getCommandType(command, args);
-			args += ' ';
+			CommandParser cmdParser;
+			CommandType commandType = cmdParser.getCommandType(command);
+			
 			if (commandType == CommandType::textMessage) WC_INFO(command);
 			else if (commandType == CommandType::fly) {
-				p.flying = getArgument(args);
+				p.flying = cmdParser.getArgument();
 				p.wasOnGround = false;
 				p.m_isOnGround = false;
 				p.wasFalling = false;
 			}
-			else if (commandType == CommandType::collide) p.collision = getArgument(args);
-			else if (commandType == CommandType::setBlock) setBlock({ getArgument(args, 1) , getArgument(args, 2) , getArgument(args, 3) }, getArgument(args), true, true);
-			//else if (commandType == CommandType::give) p.inventory.AddItem(getArgument(args, 0), 0, getArgument(args, 1));
-			else if (commandType == CommandType::setSpeed) p.MovementSpeed = getArgument(args, 0);
-			else if (commandType == CommandType::setTime) angle = getArgument(args, 0);
-			else if (commandType == CommandType::getBlockID) WC_INFO(getBlock({ getArgument(args, 0) , getArgument(args, 1) , getArgument(args, 2) }));
+			else if (commandType == CommandType::collide) p.collision = cmdParser.getArgument();
+			else if (commandType == CommandType::setBlock) setBlock({ cmdParser.getArgument(1) , cmdParser.getArgument(2) , cmdParser.getArgument(3) }, cmdParser.getArgument(), true, true);
+			else if (commandType == CommandType::set) {
+				std::string type = cmdParser.getStringArgument();
+				if (type == "speed") p.MovementSpeed = cmdParser.getArgument(1);
+				else if (type == "time") angle = cmdParser.getArgument(1);
+				else {
+					WC_ERROR("Indentifier '{0}' is not recognized", type.c_str());
+				}
+			}
+			else if (commandType == CommandType::getBlockID) WC_INFO(getBlock({ cmdParser.getArgument(0) , cmdParser.getArgument(1) , cmdParser.getArgument(2) }));
 			else if (commandType == CommandType::give) { 
-				std::string itemName = getStringArgument(args, 0);
+				std::string itemName = cmdParser.getStringArgument(0);
 				WC_INFO(itemName.c_str()); 
 			}
 			else if (commandType == CommandType::UNKNOWN) WC_ERROR("Unknow command!");
