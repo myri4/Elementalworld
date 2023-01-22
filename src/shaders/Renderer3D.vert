@@ -16,16 +16,6 @@ layout(location = 2) out vec3 p0;
 layout(location = 3) out flat uint albedoID;
 layout(location = 4) out flat uint materialID;
 layout(location = 5) out uint flags;
-layout(location = 6) out vec4 color;
-
-vec4 decompress(const in uint num) {
-    vec4 Output;
-    Output.r = float((num & uint(0x000000ff))) / 255.f;
-    Output.g = float((num & uint(0x0000ff00)) >> 8) / 255.f;
-    Output.b = float((num & uint(0x00ff0000)) >> 16) / 255.f;
-    Output.a = float((num & uint(0xff000000)) >> 24) / 255.f;
-    return Output;
-}
 
 void main()
 {
@@ -37,7 +27,6 @@ void main()
     albedoID = material.albedo[int(a_TexCoord.z)];
     materialID = material.materialData[int(a_TexCoord.z)];
     flags = material.flags;
-    color = decompress(material.color);
 
 	v_TexCoords = a_TexCoord.xy;
 

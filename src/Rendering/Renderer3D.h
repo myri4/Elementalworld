@@ -21,7 +21,7 @@ namespace wc {
 		}
 	};
 
-	struct Mesh {
+	struct DrawCommand {
 		uint32_t vertexOffset = 0;
 		uint32_t indexOffset = 0;
 	};
@@ -57,15 +57,15 @@ namespace wc {
 		wc::DepthBuffer depthBuffer;
 
 
-		Mesh CreateMesh(const uint32_t& vertexCount, const uint32_t& indexCount) {
-			Mesh mesh;
-			mesh.vertexOffset = vertexSize;
-			mesh.indexOffset = indexSize;
+		DrawCommand AllocateMesh(const uint32_t& vertexCount, const uint32_t& indexCount) {
+			DrawCommand cmd;
+			cmd.vertexOffset = vertexSize;
+			cmd.indexOffset = indexSize;
 			vertexSize += vertexCount;
 			indexSize += indexCount;
 
 
-			return mesh;
+			return cmd;
 		}
 
 		void BuildBuffers(const VkExtent2D& depthExtent) {

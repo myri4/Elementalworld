@@ -8,7 +8,6 @@ layout(location = 2) in vec3 p0;
 layout(location = 3) in flat uint albedoID;
 layout(location = 4) in flat uint materialID;
 layout(location = 5) in flat uint flags;
-layout(location = 6) in vec4 color;
 
 #include "include/pbrUtil.glsl"
 #include "include/sky.glsl"
@@ -18,7 +17,7 @@ layout(location = 0) out vec4 FragColor;
 layout(binding = 3, set = 0) uniform sampler2D u_Textures[];
 
 void main() {
-    vec4 albedo = texture(u_Textures[int(albedoID)], v_TexCoords) * color;
+    vec4 albedo = texture(u_Textures[int(albedoID)], v_TexCoords);
 	vec3 N = v_Normal;
 	if (!gl_FrontFacing) N = -N;
     //float emmision = texture(u_MaterialData, vec3(v_TexCoords, materialID)).r; // remove and change

@@ -3,6 +3,5 @@ model: modelPathHere
 maxStackSize: 100
 block: iron_ore
 type: Block
-flags: 0
 name: iron_ore
-DisplayName: iron_ore
+displayName: iron_ore

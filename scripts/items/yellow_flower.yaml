@@ -3,6 +3,5 @@ model: modelPathHere
 maxStackSize: 100
 block: yellow_flower
 type: Block
-flags: 0
 name: yellow_flower
-DisplayName: yellow_flower
+displayName: yellow_flower

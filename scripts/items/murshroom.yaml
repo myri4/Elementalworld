@@ -3,6 +3,5 @@ model: modelPathHere
 maxStackSize: 100
 block: murshroom
 type: Block
-flags: 0
 name: murshroom
-DisplayName: murshroom
+displayName: murshroom

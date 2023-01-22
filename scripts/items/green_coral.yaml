@@ -3,6 +3,5 @@ model: modelPathHere
 maxStackSize: 100
 block: green_coral
 type: Block
-flags: 0
 name: green_coral
-DisplayName: green_coral
+displayName: green_coral

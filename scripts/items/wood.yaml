@@ -3,6 +3,5 @@ model: modelPathHere
 maxStackSize: 100
 block: wood
 type: Block
-flags: 0
 name: wood
-DisplayName: wood
+displayName: wood

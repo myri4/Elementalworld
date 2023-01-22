@@ -3,6 +3,5 @@ model: modelPathHere
 maxStackSize: 100
 block: dirt
 type: Block
-flags: 0
 name: dirt
-DisplayName: dirt
+displayName: dirt

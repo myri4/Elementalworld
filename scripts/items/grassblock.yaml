@@ -3,6 +3,5 @@ model: modelPathHere
 maxStackSize: 100
 block: grass_block
 type: Block
-flags: 0
 name: grassblock
-DisplayName: grassblock
+displayName: grassblock

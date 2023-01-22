@@ -3,6 +3,5 @@ model: modelPathHere
 maxStackSize: 100
 block: campfire
 type: Block
-flags: 0
 name: campfire
-DisplayName: campfire
+displayName: campfire

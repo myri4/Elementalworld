@@ -3,6 +3,5 @@ model: modelPathHere
 maxStackSize: 100
 block: water
 type: Block
-flags: 0
 name: water
-DisplayName: water
+displayName: water

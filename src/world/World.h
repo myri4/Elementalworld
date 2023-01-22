@@ -168,20 +168,18 @@ namespace wc {
 			std::string diffusePath = GetAssetPath() + "/textures/block/diffuse/";
 			std::string materialPath = GetAssetPath() + "/textures/block/materials/";
 			
-			Renderer3D::CreateMesh(MaxVertexCount * (uint32_t)chunks.size(), MaxIndexCount * (uint32_t)chunks.size());
+			Renderer3D::AllocateMesh(MaxVertexCount * (uint32_t)chunks.size(), MaxIndexCount * (uint32_t)chunks.size());
 			//Loading blocks
 			std::vector<Vertex> modelVertices;
 			std::vector<uint32_t> modelIndices;
-			for (auto& path : std::filesystem::directory_iterator("scripts/blockScripts")) {
+			for (auto& path : std::filesystem::directory_iterator("scripts/blocks")) {
 				std::string filename = path.path().stem().string();
 				if (path.is_regular_file()) { //AddBlockScript
-					std::string script = "scripts/blockScripts/" + filename + ".yaml";
+					std::string script = "scripts/blocks/" + filename + ".yaml";
 					YAML::Node blockState = YAML::LoadFile(script);
-					YAML::Node itemState;
 			
 					Block block;
 					Material material;
-					Item item;
 			
 					if (blockState["name"]) block.name = blockState["name"].as<std::string>(); 
 					
@@ -189,21 +187,18 @@ namespace wc {
 			
 					if (blockState["isCollidable"]) block.isCollidable = blockState["isCollidable"].as<bool>();
 					if (blockState["ConnectionType"]) block.connectionType = magic_enum::enum_cast<ConnectionType>(blockState["ConnectionType"].as<std::string>()).value();
-					if (blockState["color"]) material.color = blockState["color"].as<uint32_t>();
+
 					if (blockState["cull"]) if (blockState["cull"].as<bool>()) material.flags |= WC_CULL_BIT;
-			
+
 					if (blockState["allTextures"]) {
 						material.albedo[0] = AssetManager::LoadTexture(diffusePath + blockState["allTextures"].as<std::string>());
 						for (int i = 1; i < 6; i++) material.albedo[i] = material.albedo[0];
-						itemState["textureLocation"] = blockState["allTextures"].as<std::string>();
 					}
 					else {
 						for (uint32_t i = 0; i < magic_enum::enum_count<BlockTexture>(); i++) {
 							auto name = std::string(magic_enum::enum_name((BlockTexture)i));
 							if (blockState[name]) 
 								material.albedo[i] = AssetManager::LoadTexture(diffusePath + blockState[name].as<std::string>());
-
-							itemState["textureLocation"] = blockState["TOP"].as<std::string>();
 						}
 					}
 					if (blockState["emitLight"]) block.emitLight = blockState["emitLight"].as<bool>();
@@ -217,7 +212,6 @@ namespace wc {
 						material.materialData[0] = AssetManager::LoadTexture(materialPath + blockState["materialData"].as<std::string>());
 						for (int i = 1; i < 6; i++) material.materialData[i] = material.materialData[0];
 					}
-					item.textureID = material.albedo[0];
 					block.materialID = materialData.push_back(material);
 					if (blockState["modelPath"]) {
 						std::string path = blockState["modelPath"].as<std::string>();
@@ -227,18 +221,34 @@ namespace wc {
 						blockMeshes.counter++;
 					}
 			
-					blockData.push_back(block);
-					itemData.push_back(item);
-					itemState["model"] = "modelPathHere";
-					itemState["maxStackSize"] = 100;
-					itemState["block"] = block.name;
-					itemState["type"] = "Block";
-					itemState["flags"] = 0;
-					itemState["name"] = filename;
-					itemState["DisplayName"] = filename;
+					blockData.push_back(block);					
+				}
+			}
 
-					YAMLUtils::saveFile("scripts/itemScripts/" + filename + ".yaml", itemState);
-					
+			for (auto& path : std::filesystem::directory_iterator("scripts/items")) {
+				std::string filename = path.path().stem().string();
+				if (path.is_regular_file()) { //AddItemScript
+					std::string script = "scripts/items/" + filename + ".yaml";
+					YAML::Node itemState = YAML::LoadFile(script);
+					Item item;
+					if (itemState["displayName"]) item.displayName = itemState["displayName"].as<std::string>();
+					else item.displayName = "No name is set";
+
+					if (itemState["name"]) item.name = itemState["name"].as<std::string>();
+					else item.name = "unnamed_item";
+
+					if (itemState["maxStackSize"]) item.maxStackSize = itemState["maxStackSize"].as<uint32_t>();
+					if (itemState["maxDurability"]) item.maxDurability = itemState["maxDurability"].as<uint32_t>(); // automatically flag that this item should have durability
+
+					if (itemState["block"]) { item.block = getBlockID(itemState["block"].as<std::string>()); }
+
+					if (itemState["type"]) { }
+
+					if (itemState["model"]) {}
+
+					if (itemState["textureLocation"]) item.textureID = AssetManager::LoadTexture(diffusePath + itemState["textureLocation"].as<std::string>());
+
+					itemData.push_back(item);					
 				}
 			}
 
@@ -909,7 +919,7 @@ namespace wc {
 			ImGui::GetBackgroundDrawList()->AddImage(m_RenderTexture, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
 			ImGui::End();
 
-			if (debug_menu) {
+			if (debug_menu && renderGUI) {
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::Begin("Debug Menu", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
 				ImGui::Text(std::format("FPS: {0} FrameTime: {1}", (int)(1.f / deltaTime), deltaTime).c_str());
@@ -1561,7 +1571,7 @@ namespace wc {
 					removeLight(globalPos + glm::vec3(0.5f));
 
 				if (blockData[chunkBlockID].connectionType == ConnectionType::CUSTOM_MODEL) {
-					BlockMesh& mesh = blockMeshes[blockData[chunkBlockID].meshID];
+					Mesh& mesh = blockMeshes[blockData[chunkBlockID].meshID];
 
 					for (uint32_t i = 0; i < m_BVHTransforms.GetCounter(); i++) {
 						ChunkAABB aabb;
@@ -1580,7 +1590,7 @@ namespace wc {
 					addLight(globalPos + glm::vec3(0.5f), convertColor(glm::vec4(1.f)));
 
 				if (blockData[blockID].connectionType == ConnectionType::CUSTOM_MODEL) {
-					BlockMesh& mesh = blockMeshes[blockData[blockID].meshID];
+					Mesh& mesh = blockMeshes[blockData[blockID].meshID];
 
 					m_UpdateModels = true;
 

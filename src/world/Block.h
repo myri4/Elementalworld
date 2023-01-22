@@ -16,12 +16,12 @@
 
 namespace wc{
 
-	struct BlockMesh {
+	struct Mesh {
 		VkDrawIndexedIndirectCommand cmd = {};
 		glm::vec4 start;
 		glm::vec4 end;
 
-		BlockMesh() = default;
+		Mesh() = default;
 
 		void Load(const std::string& path, const uint32_t& materialID, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices) {
 			Assimp::Importer importer;
@@ -41,9 +41,9 @@ namespace wc{
 
 			uint32_t vertexOffset = Renderer3D::vertexSize;
 
-			Mesh mesh = Renderer3D::CreateMesh(totalVertices, cmd.indexCount);
-			cmd.vertexOffset = mesh.vertexOffset;
-			cmd.firstIndex = mesh.indexOffset;
+			DrawCommand command = Renderer3D::AllocateMesh(totalVertices, cmd.indexCount);
+			cmd.vertexOffset = command.vertexOffset;
+			cmd.firstIndex = command.indexOffset;
 
 			vertexOffset = cmd.vertexOffset - vertexOffset;
 
@@ -112,7 +112,6 @@ namespace wc{
 		uint32_t albedo[6] = { 0 };
 		uint32_t materialData[6] = { 0 };
 		uint32_t flags = 0;
-		uint32_t color = 0xFFFFFFFF;
 	};
 
 	struct Block {
@@ -134,6 +133,6 @@ namespace wc{
 	};
 
 	List<Block, 40> blockData;
-	List<BlockMesh, 10> blockMeshes;
+	List<Mesh, 10> blockMeshes;
 	PointerList<Material, 40> materialData;
 }
