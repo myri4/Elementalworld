@@ -9,7 +9,7 @@ namespace wc {
 	enum class ItemType : uint32_t {
 		Block,
 		Tool,
-		Storage, // etc...
+		Storage, // etc.
 	};
 
 	struct Item {

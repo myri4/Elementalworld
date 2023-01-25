@@ -48,15 +48,6 @@ namespace wc {
 
 			if (window.hasFocus()) {
 				if (menuMode == MenuMode::GAME) gameInstance.OnInput(deltaTime);
-
-				if (Keyboard::getKey(Keyboard::Key::F9)) {
-					gameInstance.DestroyScreen();
-					gameInstance.CreateScreen();
-
-
-					gameInstance.DestroyDynamicPipelines();
-					gameInstance.CreateDynamicPipelines();
-				}
 				
 				if (menuMode == MenuMode::ESCMENU && Keyboard::getKey(Keyboard::Key::Escape))
 					ChangeMenu(MenuMode::GAME);
@@ -118,7 +109,7 @@ namespace wc {
 
 			gameInstance.Create();
 
-			//[TO DO]: shorten the lenght
+			//@TODO: shorten the lenght
 			background.Load(GetAssetPath() + "/textures/misc/screenshot.png");
 			TitleSBox.Load( GetAssetPath() + "/textures/misc/TitleSBox.png");
 			Box.Load(       GetAssetPath() + "/textures/misc/Box.png");
