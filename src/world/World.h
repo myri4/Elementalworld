@@ -83,6 +83,9 @@ namespace wc {
 
 		FastNoiseLite worldNoise;
 		FastNoiseLite treeNoise;
+		FastNoiseLite TempNoise;
+		FastNoiseLite MoistNoise;
+
 
 		bool generateTerrain : 1;
 		int8_t water_level = 32;
@@ -156,6 +159,21 @@ namespace wc {
 			treeNoise.SetFractalLacunarity(1.f);
 			treeNoise.SetFrequency(1.f / 3.f);
 			treeNoise.SetFractalGain(0.003f);
+
+			TempNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
+			TempNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
+			TempNoise.SetFractalOctaves(4);
+			TempNoise.SetFractalLacunarity(1.7f);
+			TempNoise.SetFrequency(0.0025f);
+			TempNoise.SetFractalGain(0.35f);
+
+			MoistNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
+			MoistNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
+			MoistNoise.SetFractalOctaves(4);
+			MoistNoise.SetFractalLacunarity(1.f);
+			MoistNoise.SetFrequency(0.0025f);
+			MoistNoise.SetFractalGain(0.55f);
+
 			
 			wc::StagingBuffer matBuffer;
 			matBuffer.Create(materialData.byte_size());
@@ -291,7 +309,11 @@ namespace wc {
 			
 			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 0.891f, 0.796f, 0.f)));
 			
-			grass = getBlockID("grass_block");
+			grasslands_grass = getBlockID("grass_block");
+			taiga_grass = getBlockID("taiga_grass_block");
+			savanna_grass = getBlockID("savanna_grass_block");
+			tropical_rainforest_grass = getBlockID("tropical_rainforest_grass_block");
+			swamp_grass = getBlockID("swamp_grass_block");
 			stone = getBlockID("stone_block");
 			water = getBlockID("water");
 			sand = getBlockID("sand");
@@ -301,7 +323,7 @@ namespace wc {
 			dirt = getBlockID("dirt");
 			campfire = getBlockID("campfire");
 			murshroom = getBlockID("murshroom");
-			blockHolding = getBlockID("iron_block");
+			blockHolding = getBlockID("swamp_grass_block");
 
 			CreateDynamicPipelines();
 
@@ -473,7 +495,11 @@ namespace wc {
 		}
 
 		// Common blocks
-		BlockID grass = 0;
+		BlockID grasslands_grass = 0;
+		BlockID taiga_grass = 0;
+		BlockID savanna_grass = 0;
+		BlockID tropical_rainforest_grass = 0;
+		BlockID swamp_grass = 0;
 		BlockID stone = 0;
 		BlockID water = 0;
 		BlockID sand = 0;
@@ -919,12 +945,31 @@ namespace wc {
 			ImGui::GetBackgroundDrawList()->AddImage(m_RenderTexture, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
 			ImGui::End();
 
+			float baseTemperature = TempNoise.GetNoise((float)p.Position.x, (float)p.Position.z) * 0.5f + 0.5f;
+			float moisture = MoistNoise.GetNoise((float)p.Position.x, (float)p.Position.z) * 0.5f + 0.5f;
+			uint32_t biome = getBiome(baseTemperature, moisture);
+			std::string name;
+			if (biome == 0)	 name = "No Biome!";
+			if (biome == 1)  name = "Taiga";
+			if (biome == 2)  name = "Plains";
+			if (biome == 3)  name = "Desert";
+			if (biome == 4)  name = "Tundra";
+			if (biome == 5)  name = "Shrubland";
+			if (biome == 6)  name = "Savanna";
+			if (biome == 7)  name = "Forest";
+			if (biome == 8)  name = "Seasonal Forest";
+			if (biome == 9)  name = "Swamp";
+			if (biome == 10) name = "Rain Forest";
+		
 			if (debug_menu && renderGUI) {
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
+				ImGui::SetNextWindowSize(ImVec2(400, 100));
 				ImGui::Begin("Debug Menu", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
 				ImGui::Text(std::format("FPS: {0} FrameTime: {1}", (int)(1.f / deltaTime), deltaTime).c_str());
 				ImGui::Text(std::format("Position: X:{0} Y:{1} Z:{2}", p.Position.x, p.Position.y, p.Position.z).c_str());
 				ImGui::Text(std::format("Camera position: X:{0} Y:{1} Z:{2}", camera.Position.x, camera.Position.y, camera.Position.z).c_str());
+				ImGui::Text(std::format("Biome: {0}", name).c_str());
+				ImGui::Text(std::format("Temperature: {0}  ;  Moisture: {1}", baseTemperature, moisture).c_str());
 				ImGui::End();
 			}
 
@@ -1489,7 +1534,22 @@ namespace wc {
 		}
 
 		// WORLD GENERATION
+		uint32_t getBiome(float temperature, float moisture) {
+			uint32_t biome = 0;
+			if (temperature > 0 && temperature <= 0.25f && moisture > 0)biome = 1;//Taiga
+			else if (temperature > 0.25f && temperature <= 0.625f && moisture > 0 && moisture <= 0.25f)biome = 2;//Plains
+			else if (temperature > 0.625f && temperature <= 1 && moisture > 0 && moisture <= 0.25f)biome = 3;//Desert
+			else if (temperature > 0.25f && temperature <= 0.5f && moisture > 0.25f)biome = 4;//Tundra
+			else if (temperature > 0.5f && temperature <= 0.75f && moisture > 0.25f && moisture <= 0.5f)biome = 5;//Shrubland
+			else if (temperature > 0.75f && temperature <= 1.f && moisture > 0.25f && moisture <= 0.5f)biome = 6;//Savanna
+			else if (temperature > 0.5f && temperature <= 0.75f && moisture > 0.5f && moisture <= 0.75f)biome = 7;//Forest
+			else if (temperature > 0.75f && temperature <= 1.f && moisture > 0.5f && moisture <= 0.75f)biome = 8;//Seasonal Forest
+			else if (temperature > 0.5f && temperature <= 0.75f && moisture > 0.75f && moisture <= 1.f)biome = 9;//Swamp
+			else if (temperature > 0.75f && temperature <= 1.f && moisture > 0.75f && moisture <= 1.f)biome = 10;//Rain Forest
 
+			return biome;
+		}
+		
 		void GenerateChunkTerrain(const ChunkID& chunk) {
 			memset(&chunks[chunk].data, 0, sizeof(chunks[chunk].data));
 			auto setBlockTerrain = [&](const glm::ivec3& pos, const BlockID& blockID) {
@@ -1501,20 +1561,31 @@ namespace wc {
 					glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
 					int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
 					float floraGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
-					//float baseTemperature = temperatureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
-					//float moisture = moistureNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+
+					float baseTemperature = TempNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+					float moisture = MoistNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 					int dirtDepth = (int)(floraGen * 3.f) + 2;
 
 					for (uint8_t y = 0; y < chunkSize; y++) {
 						glm::ivec3 pos = chunks[chunk].position * glm::ivec3(chunkSize) + glm::ivec3(x, y, z);
 						//float temperature = baseTemperature * (1.f - pos.y / (worldNoise.GetMultiplier() - water_level));
-						//uint32_t biome = getBiome(temperature, moisture);
+						uint32_t biome = getBiome(baseTemperature, moisture); // fix temperature => height based and change baseTemp with ~> Temp
 						bool onSand = (pos.y <= water_level + (int)(floraGen * 3.f) && pos.y == heightMap);
 						if (pos.y == heightMap) {
 							if (onSand)
 								setBlockTerrain(glm::ivec3(x, y, z), sand);
 							else
-								setBlockTerrain(glm::ivec3(x, y, z), grass);
+								if (biome == 1)setBlockTerrain(glm::ivec3(x, y, z), taiga_grass);
+								else if (biome == 2)setBlockTerrain(glm::ivec3(x, y, z), grasslands_grass);
+								else if (biome == 3)setBlockTerrain(glm::ivec3(x, y, z), sand);
+								else if (biome == 6)setBlockTerrain(glm::ivec3(x, y, z), savanna_grass);
+								else if (biome == 9)setBlockTerrain(glm::ivec3(x, y, z), swamp_grass);
+								else if (biome == 10)setBlockTerrain(glm::ivec3(x, y, z), tropical_rainforest_grass);
+
+							
+
+
+							//TODO - remove else when all biomes are done	
 						}
 
 						if (pos.y < heightMap && pos.y >= heightMap - dirtDepth) setBlockTerrain(glm::ivec3(x, y, z), dirt);
@@ -1536,6 +1607,7 @@ namespace wc {
 			{ int16_t Pos = chunks[chunk].neighborPos[1]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
 			{ int16_t Pos = chunks[chunk].neighborPos[2]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
 		}
+
 
 		// LIGHT MANAGING (deprecated)
 		uint32_t addLight(const glm::vec3& position, const uint32_t& color) {

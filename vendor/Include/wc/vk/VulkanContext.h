@@ -5,7 +5,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <unordered_set>
 
-#define WC_GRAPHICS_DEBUGGER 1
+#define WC_GRAPHICS_DEBUGGER 0
 
 template <class T>
 class RendererObject {

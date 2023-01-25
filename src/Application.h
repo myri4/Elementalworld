@@ -49,8 +49,7 @@ namespace wc {
 			if (window.hasFocus()) {
 				if (menuMode == MenuMode::GAME) gameInstance.OnInput(deltaTime);
 				
-				if (menuMode == MenuMode::ESCMENU && Keyboard::getKey(Keyboard::Key::Escape))
-					ChangeMenu(MenuMode::GAME);
+				if (menuMode == MenuMode::ESCMENU && Keyboard::getKey(Keyboard::Key::Escape)) ChangeMenu(MenuMode::GAME);
 
 
 				if (Keyboard::getKey(Keyboard::Key::Escape)) ChangeMenu(MenuMode::ESCMENU);
