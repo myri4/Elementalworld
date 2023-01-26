@@ -85,6 +85,7 @@ namespace wc {
 		FastNoiseLite treeNoise;
 		FastNoiseLite TempNoise;
 		FastNoiseLite MoistNoise;
+		FastNoiseLite TreeGenNoise;
 
 
 		bool generateTerrain : 1;
@@ -174,7 +175,14 @@ namespace wc {
 			MoistNoise.SetFrequency(0.0025f);
 			MoistNoise.SetFractalGain(0.55f);
 
-			
+			TreeGenNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Value);
+			TreeGenNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_FBm);
+			TreeGenNoise.SetFractalOctaves(3);
+			TreeGenNoise.SetFractalLacunarity(1.f);
+			TreeGenNoise.SetFrequency(0.01f);
+			TreeGenNoise.SetFractalGain(30.f);
+			//TODO - fix TreeGenNoise
+
 			wc::StagingBuffer matBuffer;
 			matBuffer.Create(materialData.byte_size());
 			
@@ -323,7 +331,7 @@ namespace wc {
 			dirt = getBlockID("dirt");
 			campfire = getBlockID("campfire");
 			murshroom = getBlockID("murshroom");
-			//blockHolding = getBlockID("swamp_grass_block");
+			//blockHolding = getBlockID("iron_block");
 
 			CreateDynamicPipelines();
 
@@ -946,31 +954,38 @@ namespace wc {
 			ImGui::End();
 
 			float baseTemperature = TempNoise.GetNoise((float)p.Position.x, (float)p.Position.z) * 0.5f + 0.5f;
-			float moisture = MoistNoise.GetNoise((float)p.Position.x, (float)p.Position.z) * 0.5f + 0.5f;
-			uint32_t biome = getBiome(baseTemperature, moisture);
+			float baseMoisture = MoistNoise.GetNoise((float)p.Position.x, (float)p.Position.z) * 0.5f + 0.5f;
+			float temperature = baseTemperature - p.Position.y * 0.0027f;
+			float moisture = baseMoisture - p.Position.y * 0.0015f;
+			float treePoints = TreeGenNoise.GetNoise((float)p.Position.x, (float)p.Position.y) * 0.5f + 0.5f;
+			uint32_t biome = getBiome(temperature, moisture);
 			std::string name;
 			if (biome == 0)	 name = "No Biome!";
-			if (biome == 1)  name = "Taiga";
+			if (biome == 1)  name = "Tundra";
 			if (biome == 2)  name = "Plains";
 			if (biome == 3)  name = "Desert";
-			if (biome == 4)  name = "Tundra";
+			if (biome == 4)  name = "Taiga";
 			if (biome == 5)  name = "Shrubland";
 			if (biome == 6)  name = "Savanna";
 			if (biome == 7)  name = "Forest";
 			if (biome == 8)  name = "Seasonal Forest";
-			if (biome == 9)  name = "Swamp";
-			if (biome == 10) name = "Rain Forest";
+			if (biome == 9)  name = "Rain Forest";
+			if (biome == 10) name = "Swamp";
+			//if (biome == 11) name = "Aquatic";
+
 		
 			if (debug_menu && renderGUI) {
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
-				ImGui::SetNextWindowSize(ImVec2(400, 200));
+				ImGui::SetNextWindowSize(ImVec2(500, 200));
 				ImGui::Begin("Debug Menu", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
 				ImGui::Text(std::format("FPS: {0} FrameTime: {1}", (int)(1.f / deltaTime), deltaTime).c_str());
 				ImGui::Text(std::format("Position: X:{0} Y:{1} Z:{2}", p.Position.x, p.Position.y, p.Position.z).c_str());
 				ImGui::Text(std::format("Camera position: X:{0} Y:{1} Z:{2}", camera.Position.x, camera.Position.y, camera.Position.z).c_str());
 				ImGui::Text(std::format("Biome: {0}", name).c_str());
-				ImGui::Text(std::format("Temperature: {0}  ;  Moisture: {1}", baseTemperature, moisture).c_str());
-				ImGui::Text(std::format("Block Holding: {0}", blockHolding).c_str());
+				ImGui::Text(std::format("Temperature: {0}  ;  Moisture: {1}", temperature, moisture).c_str());
+				ImGui::Text(std::format("unchanged Temperature: {0}  ;  unchanged Moisture: {1}", baseTemperature, baseMoisture).c_str());
+				ImGui::Text(std::format("Tree Point: {0}", treePoints).c_str());
+				ImGui::Text(std::format("Block Holding: {0}", blockData[blockHolding].name).c_str());
 				ImGui::End();
 			}
 
@@ -1002,7 +1017,7 @@ namespace wc {
 			if (renderGUI) {
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
-				ImGui::Begin("crosshair", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
+				ImGui::Begin("crosshair", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus);
 				ImGui::SetCursorPos(ImVec2((window.GetSize().x - 20) / 2, (window.GetSize().y - 20) / 2));
 				ImGui::Image(crosshair, ImVec2(20, 20));
 				// TODO - make it uninteractable so it doesnt count as a screen but just an image
@@ -1175,7 +1190,7 @@ namespace wc {
 				if (window.getKey(Keyboard::Key::W)) { // Front
 					float adder = 0.f;
 					if (window.getKey(Keyboard::Key::LControl)) { adder = 40.f; /*addFOV = 10.f;*/ }
-					else if (window.getKey(Keyboard::Key::LShift) && !p.flying) { adder = -2.f; }
+					else if (window.getKey(Keyboard::Key::LShift) && !p.flying) { adder = +2.f; }
 					p.acceleration.x += glm::cos(yaw) * (p.MovementSpeed + adder);
 					p.acceleration.z += glm::sin(yaw) * (p.MovementSpeed + adder);
 				}
@@ -1260,8 +1275,10 @@ namespace wc {
 				inventory = !inventory;
 				if (inventory)
 					window.SetCursorMode(GLFW_CURSOR_NORMAL);
-				else 
+				else {
 					window.SetCursorMode(GLFW_CURSOR_DISABLED);
+					window.setCursorPos(glm::ivec2(window.GetSize().x / 2, window.GetSize().y / 2));
+				}
 			}
 
 			if (Keyboard::getKey(Keyboard::Key::F1)) renderGUI = !renderGUI;
@@ -1347,7 +1364,10 @@ namespace wc {
 			if (Keyboard::getKey(Keyboard::Key::Enter)) { 
 				console = !console; 
 				if (console) window.SetCursorMode(GLFW_CURSOR_NORMAL);
-				else window.SetCursorMode(GLFW_CURSOR_DISABLED);
+				else {
+					window.SetCursorMode(GLFW_CURSOR_DISABLED);
+					window.setCursorPos(glm::ivec2(window.GetSize().x / 2, window.GetSize().y / 2));
+				} 
 			}
 			
 
@@ -1559,7 +1579,7 @@ namespace wc {
 		}
 
 		// WORLD GENERATION
-		uint32_t getBiome(float temperature, float moisture) {
+		uint32_t getBiome(float temperature, float moisture) { //, float height
 			uint32_t biome = 0;
 			if (temperature > 0 && temperature <= 0.25f && moisture > 0)biome = 1;//Taiga
 			else if (temperature > 0.25f && temperature <= 0.625f && moisture > 0 && moisture <= 0.25f)biome = 2;//Plains
@@ -1569,12 +1589,13 @@ namespace wc {
 			else if (temperature > 0.75f && temperature <= 1.f && moisture > 0.25f && moisture <= 0.5f)biome = 6;//Savanna
 			else if (temperature > 0.5f && temperature <= 0.75f && moisture > 0.5f && moisture <= 0.75f)biome = 7;//Forest
 			else if (temperature > 0.75f && temperature <= 1.f && moisture > 0.5f && moisture <= 0.75f)biome = 8;//Seasonal Forest
-			else if (temperature > 0.5f && temperature <= 0.75f && moisture > 0.75f && moisture <= 1.f)biome = 9;//Swamp
-			else if (temperature > 0.75f && temperature <= 1.f && moisture > 0.75f && moisture <= 1.f)biome = 10;//Rain Forest
-
+			else if (temperature > 0.5f && temperature <= 0.75f && moisture > 0.75f && moisture <= 1.f)biome = 9;//Rain Forest
+			else if (temperature > 0.75f && temperature <= 1.f && moisture > 0.75f && moisture <= 1.f)biome = 10;//Swamp
+			//else if (height <= 32)biome = 11;//Aquatic
 			return biome;
 		}
 		
+		//terrain
 		void GenerateChunkTerrain(const ChunkID& chunk) {
 			memset(&chunks[chunk].data, 0, sizeof(chunks[chunk].data));
 			auto setBlockTerrain = [&](const glm::ivec3& pos, const BlockID& blockID) {
@@ -1586,33 +1607,38 @@ namespace wc {
 					glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
 					int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
 					float floraGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
-
 					float baseTemperature = TempNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
-					float moisture = MoistNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+					float baseMoisture = MoistNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+					float treePoints = TreeGenNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 					int dirtDepth = (int)(floraGen * 3.f) + 2;
 
 					for (uint8_t y = 0; y < chunkSize; y++) {
 						glm::ivec3 pos = chunks[chunk].position * glm::ivec3(chunkSize) + glm::ivec3(x, y, z);
 						//float temperature = baseTemperature * (1.f - pos.y / (worldNoise.GetMultiplier() - water_level));
-						uint32_t biome = getBiome(baseTemperature, moisture); // fix temperature => height based and change baseTemp with ~> Temp
+						float temperature = baseTemperature - pos.y * 0.0027f;
+						float moisture = baseMoisture - pos.y * 0.0015f;
+						uint32_t biome = getBiome(temperature, moisture); // fix temperature => height based and change baseTemp with ~> Temp
 						bool onSand = (pos.y <= water_level + (int)(floraGen * 3.f) && pos.y == heightMap);
 						if (pos.y == heightMap) {
 							if (onSand)
 								setBlockTerrain(glm::ivec3(x, y, z), sand);
 							else
-								if (biome == 1)setBlockTerrain(glm::ivec3(x, y, z), taiga_grass);
+								if (biome == 1)setBlockTerrain(glm::ivec3(x, y, z), stone);
 								else if (biome == 2)setBlockTerrain(glm::ivec3(x, y, z), grasslands_grass);
 								else if (biome == 3)setBlockTerrain(glm::ivec3(x, y, z), sand);
+								else if (biome == 4)setBlockTerrain(glm::ivec3(x, y, z), taiga_grass);
 								else if (biome == 6)setBlockTerrain(glm::ivec3(x, y, z), savanna_grass);
-								else if (biome == 9)setBlockTerrain(glm::ivec3(x, y, z), swamp_grass);
-								else if (biome == 10)setBlockTerrain(glm::ivec3(x, y, z), tropical_rainforest_grass);
+								else if (biome == 9)setBlockTerrain(glm::ivec3(x, y, z), tropical_rainforest_grass);
+								else if (biome == 10)setBlockTerrain(glm::ivec3(x, y, z), swamp_grass);
+							if (treePoints > 0.98f) {
+									setBlockTerrain(glm::ivec3(x, y, z), oak);
 
-							
-
-
-							//TODO - remove else when all biomes are done	
+							}
+									
+	
 						}
-
+						
+						
 						if (pos.y < heightMap && pos.y >= heightMap - dirtDepth) setBlockTerrain(glm::ivec3(x, y, z), dirt);
 						if (pos.y < heightMap - dirtDepth) setBlockTerrain(glm::ivec3(x, y, z), stone);
 						if (pos.y > heightMap && pos.y < water_level) setBlockTerrain(glm::ivec3(x, y, z), water);
