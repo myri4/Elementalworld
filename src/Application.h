@@ -50,6 +50,7 @@ namespace wc {
 				if (menuMode == MenuMode::GAME) gameInstance.OnInput(deltaTime);
 				
 				if (menuMode == MenuMode::ESCMENU && Keyboard::getKey(Keyboard::Key::Escape)) ChangeMenu(MenuMode::GAME);
+					//TODO - doesnt work, doesnt want to change back if in esc menu
 
 
 				if (Keyboard::getKey(Keyboard::Key::Escape)) ChangeMenu(MenuMode::ESCMENU);

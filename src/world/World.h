@@ -309,7 +309,7 @@ namespace wc {
 			
 			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 0.891f, 0.796f, 0.f)));
 			
-			grasslands_grass = getBlockID("grass_block");
+			grasslands_grass = getBlockID("grasslands_grass_block");
 			taiga_grass = getBlockID("taiga_grass_block");
 			savanna_grass = getBlockID("savanna_grass_block");
 			tropical_rainforest_grass = getBlockID("tropical_rainforest_grass_block");
@@ -323,7 +323,7 @@ namespace wc {
 			dirt = getBlockID("dirt");
 			campfire = getBlockID("campfire");
 			murshroom = getBlockID("murshroom");
-			blockHolding = getBlockID("swamp_grass_block");
+			//blockHolding = getBlockID("swamp_grass_block");
 
 			CreateDynamicPipelines();
 
@@ -963,13 +963,14 @@ namespace wc {
 		
 			if (debug_menu && renderGUI) {
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
-				ImGui::SetNextWindowSize(ImVec2(400, 100));
+				ImGui::SetNextWindowSize(ImVec2(400, 200));
 				ImGui::Begin("Debug Menu", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
 				ImGui::Text(std::format("FPS: {0} FrameTime: {1}", (int)(1.f / deltaTime), deltaTime).c_str());
 				ImGui::Text(std::format("Position: X:{0} Y:{1} Z:{2}", p.Position.x, p.Position.y, p.Position.z).c_str());
 				ImGui::Text(std::format("Camera position: X:{0} Y:{1} Z:{2}", camera.Position.x, camera.Position.y, camera.Position.z).c_str());
 				ImGui::Text(std::format("Biome: {0}", name).c_str());
 				ImGui::Text(std::format("Temperature: {0}  ;  Moisture: {1}", baseTemperature, moisture).c_str());
+				ImGui::Text(std::format("Block Holding: {0}", blockHolding).c_str());
 				ImGui::End();
 			}
 
@@ -1004,62 +1005,86 @@ namespace wc {
 				ImGui::Begin("crosshair", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
 				ImGui::SetCursorPos(ImVec2((window.GetSize().x - 20) / 2, (window.GetSize().y - 20) / 2));
 				ImGui::Image(crosshair, ImVec2(20, 20));
+				// TODO - make it uninteractable so it doesnt count as a screen but just an image
 				ImGui::End();
 
+				int blh = 0;
 				//hotbar
-				ImGui::SetNextWindowSize(ImVec2(1000, 100));
-				ImGui::SetNextWindowPos(ImVec2(window.GetSize().x / 2 - 500, window.GetSize().y - 125));
-				ImGui::Begin("HotBar", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
-				
-				for (int n = 0; n < 9; n++)
-				{
-					ImGui::PushID(n);
-					//	if ((n % 10) != 0)
+				if (!inventory) {
+					ImGui::SetNextWindowSize(ImVec2(900, 110));
+					ImGui::SetNextWindowPos(ImVec2(window.GetSize().x / 2 - 450, window.GetSize().y - 125));
+					ImGui::Begin("HotBar", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
+
+					for (int n = 0; n < 9; n++)
+					{
+						ImGui::PushID(n);
 						ImGui::SameLine();
-					if (p.inventory.data[n].itemID != 0)
-						ImGui::ImageButton(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(90, 90));
-					else
-						ImGui::Button("", ImVec2(90, 90));
+						if (p.inventory.data[n].itemID != 0)
+							ImGui::ImageButton(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(85, 85));
+						else
+							ImGui::Button("", ImVec2(90, 90));
 
-					// Our buttons are both drag sources and drag targets here!
-					if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip))
-					{
-						// Set payload to carry the index of our item (could be anything)
-						ImGui::SetDragDropPayload("DND_DEMO_CELL", &n, sizeof(int));
-						ImGui::EndDragDropSource();
-					}
-					if (ImGui::BeginDragDropTarget())
-					{
-						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_DEMO_CELL"))
+						// Our buttons are both drag sources and drag targets here!
+						if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip))
 						{
-							IM_ASSERT(payload->DataSize == sizeof(int));
-							int payload_n = *(const int*)payload->Data;
-
-							auto tmp = p.inventory.data[n];
-							p.inventory.data[n] = p.inventory.data[payload_n];
-							p.inventory.data[payload_n] = tmp;
-
+							// Set payload to carry the index of our item (could be anything)
+							ImGui::SetDragDropPayload("DND_DEMO_CELL", &n, sizeof(int));
+							ImGui::EndDragDropSource();
 						}
-						ImGui::EndDragDropTarget();
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_DEMO_CELL"))
+							{
+								IM_ASSERT(payload->DataSize == sizeof(int));
+								int payload_n = *(const int*)payload->Data;
+
+								auto tmp = p.inventory.data[n];
+								p.inventory.data[n] = p.inventory.data[payload_n];
+								p.inventory.data[payload_n] = tmp;
+
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::PopID();
 					}
-					ImGui::PopID();
+
+					if (Keyboard::getKey(Keyboard::Key::Num1))blh = 1;
+					if (Keyboard::getKey(Keyboard::Key::Num2))blh = 2;
+					if (Keyboard::getKey(Keyboard::Key::Num3))blh = 3;
+					if (Keyboard::getKey(Keyboard::Key::Num4))blh = 4;
+					if (Keyboard::getKey(Keyboard::Key::Num5))blh = 5;
+					if (Keyboard::getKey(Keyboard::Key::Num6))blh = 6;
+					if (Keyboard::getKey(Keyboard::Key::Num7))blh = 7;
+					if (Keyboard::getKey(Keyboard::Key::Num8))blh = 8;
+					if (Keyboard::getKey(Keyboard::Key::Num9))blh = 9;
+
+					if (blh == 1)blockHolding = itemData[p.inventory.data[0].itemID].block;
+					if (blh == 2)blockHolding = itemData[p.inventory.data[1].itemID].block;
+					if (blh == 3)blockHolding = itemData[p.inventory.data[2].itemID].block;
+					if (blh == 4)blockHolding = itemData[p.inventory.data[3].itemID].block;
+					if (blh == 5)blockHolding = itemData[p.inventory.data[4].itemID].block;
+					if (blh == 6)blockHolding = itemData[p.inventory.data[5].itemID].block;
+					if (blh == 7)blockHolding = itemData[p.inventory.data[6].itemID].block;
+					if (blh == 8)blockHolding = itemData[p.inventory.data[7].itemID].block;
+					if (blh == 9)blockHolding = itemData[p.inventory.data[8].itemID].block;
+
+
+					ImGui::End();
 				}
-				ImGui::End();
 			}
 
 			if (inventory) {
-				ImGui::SetNextWindowSize(ImVec2(1000, 500));
-				ImGui::SetNextWindowPos(ImVec2((window.GetSize().x - 1000) / 2, (window.GetSize().y - 600) / 2));
+				ImGui::SetNextWindowSize(ImVec2(915, 390));
+				ImGui::SetNextWindowPos(ImVec2((window.GetSize().x - 915) / 2, (window.GetSize().y - 390) / 2));
 				ImGui::Begin("Inventory", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar);
 
 				for (int n = 0; n < std::size(p.inventory.data); n++)
 				{
 					ImGui::PushID(n);
-					if ((n % 10) != 0)
+					if ((n % 9) != 0)
 						ImGui::SameLine();
-					//ImGui::Button(names[n], ImVec2(90, 90));
-					ImGui::ImageButton(AssetManager::m_Textures[itemData[coal].textureID], ImVec2(80, 80));
-					// Our buttons are both drag sources and drag targets here!
+					if (itemData[p.inventory.data[n].itemID].textureID == 0) ImGui::Button("", ImVec2(85, 85));
+					else ImGui::ImageButton(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(85, 85));
 					if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip))
 					{
 						// Set payload to carry the index of our item (could be anything)
@@ -1360,8 +1385,8 @@ namespace wc {
 			bool bBreak = Mouse::getMouse(Mouse::Button::LEFT);
 			bool bPlace = Mouse::getMouse(Mouse::Button::RIGHT);
 
-			if (window.getKey(Keyboard::Key::Num1)) blockHolding = campfire;
-			if (window.getKey(Keyboard::Key::Num2)) blockHolding = murshroom;
+			//if (window.getKey(Keyboard::Key::Num1)) blockHolding = campfire;
+			//if (window.getKey(Keyboard::Key::Num2)) blockHolding = murshroom;
 
 			float breakTime = 1.f / 12.f;
 			if (bBreak && !startBreaking) {
