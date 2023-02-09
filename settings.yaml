@@ -6,6 +6,6 @@ BloomThreshold: 1
 BloomKnee: 0.200000003
 ColorBlindMode: false
 FPSCap: 0
-WindowMode: 0
+WindowMode: 1
 WindowResolution: 2
 sky: true

@@ -63,10 +63,10 @@ namespace wc {
 
 
 			WindowCreateInfo windowInfo;
-			windowInfo.width = 1920;
+			windowInfo.width = 1920;//1280 x 720 && 1920 x 1080
 			windowInfo.height = 1080;
 			windowInfo.appName = "Elementalworld";
-			//windowInfo.startFullscreen = true;
+			windowInfo.startFullscreen = true;
 			window.Create(windowInfo);
 			
 			RendererContext::CreateDefaultRenderPass(window);
@@ -292,6 +292,11 @@ namespace wc {
 					ChangeMenu(MenuMode::GAME);
 
 				}
+
+				ImGui::SetCursorPos(ImVec2(window.GetSize().x - 110, 7));
+				if (ImGui::Button("Back"))
+					ChangeBack();
+
 				//background 
 				ImGui::GetBackgroundDrawList()->AddImage(background, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
 				ImGui::End();

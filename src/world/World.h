@@ -1614,7 +1614,7 @@ namespace wc {
 		
 		//terrain
 		glm::vec2 lastTreePos;
-		float density = 20.f;
+		float density = 5.f;
 		void GenerateChunkTerrain(const ChunkID& chunk) {
 			memset(&chunks[chunk].data, 0, sizeof(chunks[chunk].data));
 			auto setBlockTerrain = [&](const glm::ivec3& pos, const BlockID& blockID) {
