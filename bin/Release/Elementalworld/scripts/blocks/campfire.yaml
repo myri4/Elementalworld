@@ -1,0 +1,7 @@
+isCollidable: false
+allTextures: "campfire.png"
+materialData: "campfire.png"
+modelPath: "campfire.obj"
+name: "campfire"
+
+emitLight: true

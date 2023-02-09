@@ -1,0 +1,7 @@
+textureLocation: murshroom.png
+model: modelPathHere
+maxStackSize: 100
+block: murshroom
+type: Block
+name: murshroom
+displayName: murshroom

@@ -177,11 +177,10 @@ namespace wc {
 
 			TreeGenNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Value);
 			TreeGenNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_FBm);
-			TreeGenNoise.SetFractalOctaves(3);
-			TreeGenNoise.SetFractalLacunarity(1.f);
-			TreeGenNoise.SetFrequency(0.01f);
-			TreeGenNoise.SetFractalGain(30.f);
-			//TODO - fix TreeGenNoise
+			TreeGenNoise.SetFractalOctaves(1);
+			TreeGenNoise.SetFrequency(0.95f);
+			TreeGenNoise.SetFractalLacunarity(1.0f);
+			TreeGenNoise.SetFractalGain(0.5f);
 
 			wc::StagingBuffer matBuffer;
 			matBuffer.Create(materialData.byte_size());
@@ -957,7 +956,7 @@ namespace wc {
 			float baseMoisture = MoistNoise.GetNoise((float)p.Position.x, (float)p.Position.z) * 0.5f + 0.5f;
 			float temperature = baseTemperature - p.Position.y * 0.0027f;
 			float moisture = baseMoisture - p.Position.y * 0.0015f;
-			float treePoints = TreeGenNoise.GetNoise((float)p.Position.x, (float)p.Position.y) * 0.5f + 0.5f;
+			float treePoints = TreeGenNoise.GetNoise((float)p.Position.x, (float)p.Position.z) * 0.5f + 0.5f;
 			uint32_t biome = getBiome(temperature, moisture);
 			std::string name;
 			if (biome == 0)	 name = "No Biome!";
@@ -1577,6 +1576,24 @@ namespace wc {
 				}
 			}
 		}
+		//Tree Generation
+		/*if (treePoints > 0.95f) {
+							if (lastTreePos == glm::vec2(0)) {
+								if (pos.y == heightMap + 1)setBlockTerrain(glm::ivec3(x, y, z), oak);
+								if (pos.y == heightMap + 2)setBlockTerrain(glm::ivec3(x, y, z), oak);
+								//setBlockTerrain(glm::ivec3(x, y + 2, z), oak);
+								lastTreePos = glm::vec2(pos.x, pos.z);
+
+							}
+							else if (glm::distance(glm::vec2(pos.x, pos.z), lastTreePos) > density) {
+								if (pos.y == heightMap + 1)setBlockTerrain(glm::ivec3(x, y, z), oak);
+								if (pos.y == heightMap + 2)setBlockTerrain(glm::ivec3(x, y, z), oak);
+								//setBlockTerrain(glm::ivec3(x, y + 2, z), oak);
+								lastTreePos = glm::vec2(pos.x, pos.z);
+							}
+
+
+						}*/
 
 		// WORLD GENERATION
 		uint32_t getBiome(float temperature, float moisture) { //, float height
@@ -1596,6 +1613,8 @@ namespace wc {
 		}
 		
 		//terrain
+		glm::vec2 lastTreePos;
+		float density = 20.f;
 		void GenerateChunkTerrain(const ChunkID& chunk) {
 			memset(&chunks[chunk].data, 0, sizeof(chunks[chunk].data));
 			auto setBlockTerrain = [&](const glm::ivec3& pos, const BlockID& blockID) {
@@ -1610,6 +1629,7 @@ namespace wc {
 					float baseTemperature = TempNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 					float baseMoisture = MoistNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 					float treePoints = TreeGenNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+					
 					int dirtDepth = (int)(floraGen * 3.f) + 2;
 
 					for (uint8_t y = 0; y < chunkSize; y++) {
@@ -1620,6 +1640,7 @@ namespace wc {
 						uint32_t biome = getBiome(temperature, moisture); // fix temperature => height based and change baseTemp with ~> Temp
 						bool onSand = (pos.y <= water_level + (int)(floraGen * 3.f) && pos.y == heightMap);
 						if (pos.y == heightMap) {
+							
 							if (onSand)
 								setBlockTerrain(glm::ivec3(x, y, z), sand);
 							else
@@ -1630,19 +1651,24 @@ namespace wc {
 								else if (biome == 6)setBlockTerrain(glm::ivec3(x, y, z), savanna_grass);
 								else if (biome == 9)setBlockTerrain(glm::ivec3(x, y, z), tropical_rainforest_grass);
 								else if (biome == 10)setBlockTerrain(glm::ivec3(x, y, z), swamp_grass);
-							if (treePoints > 0.98f) {
+							if (treePoints > 0.95f) {
+								if (lastTreePos == glm::vec2(0)) {
 									setBlockTerrain(glm::ivec3(x, y, z), oak);
+									lastTreePos = glm::vec2(pos.x, pos.z);
+									}
+								else if (glm::distance(glm::vec2(pos.x, pos.z), lastTreePos) > density) {
+									setBlockTerrain(glm::ivec3(x, y, z), oak);
+									lastTreePos = glm::vec2(pos.x, pos.z);
+								}
 
 							}
-									
-	
+
 						}
 						
 						
 						if (pos.y < heightMap && pos.y >= heightMap - dirtDepth) setBlockTerrain(glm::ivec3(x, y, z), dirt);
 						if (pos.y < heightMap - dirtDepth) setBlockTerrain(glm::ivec3(x, y, z), stone);
 						if (pos.y > heightMap && pos.y < water_level) setBlockTerrain(glm::ivec3(x, y, z), water);
-						//if (pos.y == 125) setBlockTerrain(glm::ivec3(x, y, z), grass, chunk, false, false);
 					}
 				}
 			}

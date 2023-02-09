@@ -1,0 +1,7 @@
+textureLocation: hay_bale_top.png
+model: modelPathHere
+maxStackSize: 100
+block: hay_bale
+type: Block
+name: haybale
+displayName: haybale

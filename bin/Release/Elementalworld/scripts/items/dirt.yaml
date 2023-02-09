@@ -1,0 +1,7 @@
+textureLocation: dirt.png
+model: modelPathHere
+maxStackSize: 100
+block: dirt
+type: Block
+name: dirt
+displayName: dirt

@@ -63,8 +63,8 @@ namespace wc {
 
 
 			WindowCreateInfo windowInfo;
-			windowInfo.width = 1280;
-			windowInfo.height = 720;
+			windowInfo.width = 1920;
+			windowInfo.height = 1080;
 			windowInfo.appName = "Elementalworld";
 			//windowInfo.startFullscreen = true;
 			window.Create(windowInfo);

@@ -1,0 +1,7 @@
+textureLocation: red_flower.png
+model: modelPathHere
+maxStackSize: 100
+block: red_flower
+type: Block
+name: red_flower
+displayName: red_flower

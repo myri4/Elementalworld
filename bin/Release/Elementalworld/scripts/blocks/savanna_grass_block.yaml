@@ -1,0 +1,11 @@
+isCollidable: true
+ConnectionType: "CONNECT_DEFAULT"
+
+TOP:    "savanna_grass_block_top.png"
+BOTTOM: "dirt.png"
+FRONT:  "savanna_grass_block_side.png"
+BACK:   "savanna_grass_block_side.png"
+LEFT:   "savanna_grass_block_side.png"
+RIGHT:  "savanna_grass_block_side.png"
+
+name: "savanna_grass_block"
