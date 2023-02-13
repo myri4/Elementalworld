@@ -301,6 +301,9 @@
     <ClInclude Include="vendor\Include\wc\Audio\AudioEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="vendor\Include\CSplines\spline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\shaders\bloomShader.comp" />

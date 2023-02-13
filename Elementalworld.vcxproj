@@ -403,6 +403,7 @@
     <ClInclude Include="src\world\Chunk.h" />
     <ClInclude Include="src\world\GameSerializer.h" />
     <ClInclude Include="src\world\World.h" />
+    <ClInclude Include="vendor\Include\CSplines\spline.h" />
     <ClInclude Include="vendor\Include\miniaudio.h" />
     <ClInclude Include="vendor\Include\wc\Audio\AudioEngine.h" />
     <ClInclude Include="vendor\Include\wc\Filesystem\Filesystem.h" />

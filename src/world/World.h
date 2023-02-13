@@ -6,6 +6,7 @@
 #include "Chunk.h"
 #include "Biome.h"
 #include <FastNoise/FastNoiseLite.h>
+#include "CSplines/spline.h"
 #include "../entities/Player.h"
 #include "../Game Mechanics/CommandParser.h"
 
@@ -86,6 +87,10 @@ namespace wc {
 		FastNoiseLite TempNoise;
 		FastNoiseLite MoistNoise;
 		FastNoiseLite TreeGenNoise;
+		FastNoiseLite ContNoise;
+		FastNoiseLite ErosNoise;
+		FastNoiseLite PVNoise;
+
 
 
 		bool generateTerrain : 1;
@@ -181,6 +186,27 @@ namespace wc {
 			TreeGenNoise.SetFrequency(0.95f);
 			TreeGenNoise.SetFractalLacunarity(1.0f);
 			TreeGenNoise.SetFractalGain(0.5f);
+
+			ContNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
+			ContNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
+			ContNoise.SetFractalOctaves(4);
+			ContNoise.SetFractalLacunarity(2.f);
+			ContNoise.SetFrequency(0.003f);
+			ContNoise.SetFractalGain(0.25f);
+
+			ErosNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
+			ErosNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
+			ErosNoise.SetFractalOctaves(3);
+			ErosNoise.SetFractalLacunarity(1.5f);
+			ErosNoise.SetFrequency(0.0025f);
+			ErosNoise.SetFractalGain(0.35f);
+
+			PVNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
+			PVNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
+			PVNoise.SetFractalOctaves(2);
+			PVNoise.SetFractalLacunarity(1.2f);
+			PVNoise.SetFrequency(0.01f);
+			PVNoise.SetFractalGain(2.f);
 
 			wc::StagingBuffer matBuffer;
 			matBuffer.Create(materialData.byte_size());
@@ -972,7 +998,7 @@ namespace wc {
 			if (biome == 10) name = "Swamp";
 			//if (biome == 11) name = "Aquatic";
 
-		
+			
 			if (debug_menu && renderGUI) {
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::SetNextWindowSize(ImVec2(500, 200));
@@ -985,6 +1011,8 @@ namespace wc {
 				ImGui::Text(std::format("unchanged Temperature: {0}  ;  unchanged Moisture: {1}", baseTemperature, baseMoisture).c_str());
 				ImGui::Text(std::format("Tree Point: {0}", treePoints).c_str());
 				ImGui::Text(std::format("Block Holding: {0}", blockData[blockHolding].name).c_str());
+				
+
 				ImGui::End();
 			}
 
@@ -1013,6 +1041,7 @@ namespace wc {
 
 			}
 
+			int itemSlotHW = window.GetSize().y / 12;
 			if (renderGUI) {
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
@@ -1025,23 +1054,31 @@ namespace wc {
 				int blh = 0;
 				//hotbar
 				if (!inventory) {
-					ImGui::SetNextWindowSize(ImVec2(900, 110));
-					ImGui::SetNextWindowPos(ImVec2(window.GetSize().x / 2 - 450, window.GetSize().y - 125));
-					ImGui::Begin("HotBar", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
-
+					ImGui::SetNextWindowSize(ImVec2(15 * 2 + 7 * 8 + itemSlotHW * 9, 8 * 2 + itemSlotHW));
+					ImGui::SetNextWindowPos(ImVec2((window.GetSize().x - (15 * 2 + 7 * 8 + itemSlotHW * 9)) / 2, window.GetSize().y - (8 * 2 + itemSlotHW + 19)));
+					ImGui::Begin("HotBar", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
 					for (int n = 0; n < 9; n++)
 					{
 						ImGui::PushID(n);
 						ImGui::SameLine();
-						if (p.inventory.data[n].itemID != 0)
-							ImGui::ImageButton(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(85, 85));
-						else
-							ImGui::Button("", ImVec2(90, 90));
+						if (p.inventory.data[n].itemID != 0) {
+							ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+							ImGui::ImageButton(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(itemSlotHW, itemSlotHW), ImVec2(0.f, 0.f), ImVec2(1.f, 1.f));
+							ImGui::PopStyleVar();
 
-						// Our buttons are both drag sources and drag targets here!
+							int adder = 0;
+							if (p.inventory.data[n].amount >= 10) adder = 7;
+							float txtX = (window.GetSize().x - (15 * 2 + 7 * 8 + itemSlotHW * 9)) / 2 + (itemSlotHW + 7) + 8 * (int)(n % 9) + itemSlotHW * (int)(n % 9) - adder;
+							float txtY = window.GetSize().y - (8 * 2 + itemSlotHW + 19) + (itemSlotHW - 5) + 4 * (int)(n / 9);
+							ImGui::GetWindowDrawList()->AddText(ImVec2(txtX, txtY), 0xFFFFFFFF, std::format("{0}", p.inventory.data[n].amount).c_str());
+						}
+							
+						else {
+							ImGui::Button("", ImVec2(itemSlotHW, itemSlotHW));
+						}
+
 						if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip))
 						{
-							// Set payload to carry the index of our item (could be anything)
 							ImGui::SetDragDropPayload("DND_DEMO_CELL", &n, sizeof(int));
 							ImGui::EndDragDropSource();
 						}
@@ -1088,8 +1125,8 @@ namespace wc {
 			}
 
 			if (inventory) {
-				ImGui::SetNextWindowSize(ImVec2(915, 390));
-				ImGui::SetNextWindowPos(ImVec2((window.GetSize().x - 915) / 2, (window.GetSize().y - 390) / 2));
+				ImGui::SetNextWindowSize(ImVec2(9 * itemSlotHW + 10 * 8, 4 * itemSlotHW + 3 * 4 + 2 * 8 ));
+				ImGui::SetNextWindowPos(ImVec2((window.GetSize().x - (9 * itemSlotHW + 10 * 8)) / 2, (window.GetSize().y - (4 * itemSlotHW + 3 * 4 + 2 * 8)) / 2));
 				ImGui::Begin("Inventory", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar);
 
 				for (int n = 0; n < std::size(p.inventory.data); n++)
@@ -1097,14 +1134,29 @@ namespace wc {
 					ImGui::PushID(n);
 					if ((n % 9) != 0)
 						ImGui::SameLine();
-					if (itemData[p.inventory.data[n].itemID].textureID == 0) ImGui::Button("", ImVec2(85, 85));
-					else ImGui::ImageButton(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(85, 85));
+					if (p.inventory.data[n].itemID != 0) {
+						ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+						ImGui::ImageButton(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(itemSlotHW, itemSlotHW), ImVec2(0.f, 0.f), ImVec2(1.f, 1.f));
+						ImGui::PopStyleVar();
+						
+						int adder = 0;
+						if (p.inventory.data[n].amount >= 10) adder = 7;
+						float txtX = (window.GetSize().x - (9 * itemSlotHW + 10 * 8)) / 2 + itemSlotHW + 8 * (int)(n % 9) + itemSlotHW * (int)(n % 9) - adder;
+						float txtY = (window.GetSize().y - (4 * itemSlotHW + 3 * 4 + 2 * 8)) / 2 + (itemSlotHW - 4) + 4 * (int)(n / 9) + itemSlotHW * (int)(n / 9);
+						ImGui::GetWindowDrawList()->AddText(ImVec2(txtX, txtY), 0xFFFFFFFF, std::format("{0}", p.inventory.data[n].amount).c_str());
+						
+					}
+
+					else {
+						ImGui::Button("", ImVec2(itemSlotHW, itemSlotHW));
+					}
+
 					if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip))
 					{
-						// Set payload to carry the index of our item (could be anything)
 						ImGui::SetDragDropPayload("Item", &n, sizeof(int));
 						ImGui::EndDragDropSource();
 					}
+
 					if (ImGui::BeginDragDropTarget())
 					{
 						const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Item");
@@ -1598,7 +1650,8 @@ namespace wc {
 		// WORLD GENERATION
 		uint32_t getBiome(float temperature, float moisture) { //, float height
 			uint32_t biome = 0;
-			if (temperature > 0 && temperature <= 0.25f && moisture > 0)biome = 1;//Taiga
+			//if (height <= 32)biome = 11;//Aquatic
+			/*else*/if (temperature > 0 && temperature <= 0.25f && moisture > 0)biome = 1;//Taiga
 			else if (temperature > 0.25f && temperature <= 0.625f && moisture > 0 && moisture <= 0.25f)biome = 2;//Plains
 			else if (temperature > 0.625f && temperature <= 1 && moisture > 0 && moisture <= 0.25f)biome = 3;//Desert
 			else if (temperature > 0.25f && temperature <= 0.5f && moisture > 0.25f)biome = 4;//Tundra
@@ -1608,10 +1661,15 @@ namespace wc {
 			else if (temperature > 0.75f && temperature <= 1.f && moisture > 0.5f && moisture <= 0.75f)biome = 8;//Seasonal Forest
 			else if (temperature > 0.5f && temperature <= 0.75f && moisture > 0.75f && moisture <= 1.f)biome = 9;//Rain Forest
 			else if (temperature > 0.75f && temperature <= 1.f && moisture > 0.75f && moisture <= 1.f)biome = 10;//Swamp
-			//else if (height <= 32)biome = 11;//Aquatic
 			return biome;
 		}
 		
+		int WorldGen(float Cont, float Eros, float PV ) {
+			int worldHeight = 0;
+			
+
+			return worldHeight;
+		}
 		//terrain
 		glm::vec2 lastTreePos;
 		float density = 5.f;
@@ -1629,7 +1687,7 @@ namespace wc {
 					float baseTemperature = TempNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 					float baseMoisture = MoistNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 					float treePoints = TreeGenNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
-					
+					// int heightMap = WorldGen
 					int dirtDepth = (int)(floraGen * 3.f) + 2;
 
 					for (uint8_t y = 0; y < chunkSize; y++) {

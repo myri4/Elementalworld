@@ -63,10 +63,10 @@ namespace wc {
 
 
 			WindowCreateInfo windowInfo;
-			windowInfo.width = 1920;//1280 x 720 && 1920 x 1080
-			windowInfo.height = 1080;
+			windowInfo.width = 1280;//1280 x 720 && 1920 x 1080
+			windowInfo.height = 720;
 			windowInfo.appName = "Elementalworld";
-			windowInfo.startFullscreen = true;
+			//windowInfo.startFullscreen = true;
 			window.Create(windowInfo);
 			
 			RendererContext::CreateDefaultRenderPass(window);
