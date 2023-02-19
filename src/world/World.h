@@ -6,6 +6,7 @@
 #include "Chunk.h"
 #include "Biome.h"
 #include <FastNoise/FastNoiseLite.h>
+#include <vector>
 #include "CSplines/spline.h"
 #include "../entities/Player.h"
 #include "../Game Mechanics/CommandParser.h"
@@ -91,11 +92,11 @@ namespace wc {
 		FastNoiseLite ErosNoise;
 		FastNoiseLite PVNoise;
 
-
+//
 
 		bool generateTerrain : 1;
 		int8_t water_level = 32;
-
+		
 		uint32_t localPlayerID = 0;
 		std::unordered_map<uint32_t, PlayerDescription> players;
 
@@ -207,6 +208,9 @@ namespace wc {
 			PVNoise.SetFractalLacunarity(1.2f);
 			PVNoise.SetFrequency(0.01f);
 			PVNoise.SetFractalGain(2.f);
+
+			
+			
 
 			wc::StagingBuffer matBuffer;
 			matBuffer.Create(materialData.byte_size());
@@ -1048,7 +1052,6 @@ namespace wc {
 				ImGui::Begin("crosshair", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus);
 				ImGui::SetCursorPos(ImVec2((window.GetSize().x - 20) / 2, (window.GetSize().y - 20) / 2));
 				ImGui::Image(crosshair, ImVec2(20, 20));
-				// TODO - make it uninteractable so it doesnt count as a screen but just an image
 				ImGui::End();
 
 				int blh = 0;
@@ -1143,8 +1146,7 @@ namespace wc {
 						if (p.inventory.data[n].amount >= 10) adder = 7;
 						float txtX = (window.GetSize().x - (9 * itemSlotHW + 10 * 8)) / 2 + itemSlotHW + 8 * (int)(n % 9) + itemSlotHW * (int)(n % 9) - adder;
 						float txtY = (window.GetSize().y - (4 * itemSlotHW + 3 * 4 + 2 * 8)) / 2 + (itemSlotHW - 4) + 4 * (int)(n / 9) + itemSlotHW * (int)(n / 9);
-						ImGui::GetWindowDrawList()->AddText(ImVec2(txtX, txtY), 0xFFFFFFFF, std::format("{0}", p.inventory.data[n].amount).c_str());
-						
+						ImGui::GetWindowDrawList()->AddText(ImVec2(txtX, txtY), 0xFFFFFFFF, std::format("{0}", p.inventory.data[n].amount).c_str());					
 					}
 
 					else {
@@ -1628,24 +1630,7 @@ namespace wc {
 				}
 			}
 		}
-		//Tree Generation
-		/*if (treePoints > 0.95f) {
-							if (lastTreePos == glm::vec2(0)) {
-								if (pos.y == heightMap + 1)setBlockTerrain(glm::ivec3(x, y, z), oak);
-								if (pos.y == heightMap + 2)setBlockTerrain(glm::ivec3(x, y, z), oak);
-								//setBlockTerrain(glm::ivec3(x, y + 2, z), oak);
-								lastTreePos = glm::vec2(pos.x, pos.z);
 
-							}
-							else if (glm::distance(glm::vec2(pos.x, pos.z), lastTreePos) > density) {
-								if (pos.y == heightMap + 1)setBlockTerrain(glm::ivec3(x, y, z), oak);
-								if (pos.y == heightMap + 2)setBlockTerrain(glm::ivec3(x, y, z), oak);
-								//setBlockTerrain(glm::ivec3(x, y + 2, z), oak);
-								lastTreePos = glm::vec2(pos.x, pos.z);
-							}
-
-
-						}*/
 
 		// WORLD GENERATION
 		uint32_t getBiome(float temperature, float moisture) { //, float height
@@ -1665,11 +1650,32 @@ namespace wc {
 		}
 		
 		int WorldGen(float Cont, float Eros, float PV ) {
-			int worldHeight = 0;
-			
+			//Peakes & Valleys
+			std::vector<double> x1 = { 0.05f, 0.1f, 0.325f, 0.5f,  0.65f, 0.9f,  1.f };
+			std::vector<double> y1 = { 0.f,   0.1f, 0.2f,   0.21f, 0.55f, 0.61f, 0.65f };
 
-			return worldHeight;
+			//Erosion
+			std::vector<double> x2 = { 0.f, 0.15f, 0.3f,  0.32f, 0.45f, 0.6f,  0.7f,  0.72f, 0.78f, 0.79f, 0.85f, 1.f };
+			std::vector<double> y2 = { 1.f, 0.55f, 0.41f, 0.45f, 0.f,   0.11f, 0.11f, 0.28f, 0.28f, 0.11f, 0.05f, 0.05f };
+
+			//Continetalness
+			std::vector<double> x3 = { 0.f, 0.09f,  0.345f, 0.385f, 0.515f, 0.525f, 0.55f,  0.72f, 1.f };
+			std::vector<double> y3 = { 1.f, 0.025f, 0.025f, 0.435f, 0.435f, 0.9f,   0.915f, 0.f,   0.98f };
+
+			tk::spline PVSpl;
+			tk::spline ErosSpl;
+			tk::spline ContSpl;
+
+			PVSpl.set_points(x1, y1, tk::spline::cspline);
+			ErosSpl.set_points(x2, y2, tk::spline::cspline);
+			ContSpl.set_points(x3, y3, tk::spline::cspline);
+
+			y2[4] = PVSpl(PV);
+			y3[7] = ErosSpl(Eros);
+			
+			return ContSpl(Cont) * 100;
 		}
+
 		//terrain
 		glm::vec2 lastTreePos;
 		float density = 5.f;
@@ -1682,7 +1688,16 @@ namespace wc {
 			for (uint32_t z = 0; z < chunkSize; z++) {
 				for (uint32_t x = 0; x < chunkSize; x++) {
 					glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
-					int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+					//int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+					float PV = PVNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+					float Eros = ErosNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+					float Cont = ContNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+
+					int heightMap = WorldGen(Cont, Eros, PV);
+						
+						/*ContNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f,
+						 ErosNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f, 
+						 PVNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f);*/
 					float floraGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 					float baseTemperature = TempNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 					float baseMoisture = MoistNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
@@ -1709,7 +1724,7 @@ namespace wc {
 								else if (biome == 6)setBlockTerrain(glm::ivec3(x, y, z), savanna_grass);
 								else if (biome == 9)setBlockTerrain(glm::ivec3(x, y, z), tropical_rainforest_grass);
 								else if (biome == 10)setBlockTerrain(glm::ivec3(x, y, z), swamp_grass);
-							if (treePoints > 0.95f) {
+							if (treePoints > 0.95f && !onSand) {
 								if (lastTreePos == glm::vec2(0)) {
 									setBlockTerrain(glm::ivec3(x, y, z), oak);
 									lastTreePos = glm::vec2(pos.x, pos.z);
