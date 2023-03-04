@@ -5266,7 +5266,7 @@ void ImGui::EndFrame()
     if (g.DragDropActive && g.DragDropSourceFrameCount < g.FrameCount && !(g.DragDropSourceFlags & ImGuiDragDropFlags_SourceNoPreviewTooltip))
     {
         g.DragDropWithinSource = true;
-        SetTooltip("...");
+        SetTooltip("-");
         g.DragDropWithinSource = false;
     }
 
@@ -12048,7 +12048,8 @@ bool ImGui::BeginDragDropSource(ImGuiDragDropFlags flags)
         source_drag_active = true;
     }
 
-    if (g.IO.MouseClicked[mouse_button])
+    ImGuiPayload& payload = g.DragDropPayload;
+    if (g.IO.MouseClicked[mouse_button] && !g.DragDropActive)
     {
         if (!g.DragDropActive)
         {
@@ -12180,9 +12181,6 @@ bool ImGui::BeginDragDropTarget()
     if (!g.DragDropActive)
         return false;
 
-    ImGuiPayload& payload = g.DragDropPayload;
-    if (IsMouseClicked(g.DragDropMouseButton))payload.is_item_picked = !payload.is_item_picked;
-
     ImGuiWindow* window = g.CurrentWindow;
     if (!(g.LastItemData.StatusFlags & ImGuiItemStatusFlags_HoveredRect))
         return false;
@@ -12213,7 +12211,7 @@ bool ImGui::IsDragDropPayloadBeingAccepted()
     return g.DragDropActive && g.DragDropAcceptIdPrev != 0;
 }
 
-
+bool is_item_picked = false;
 const ImGuiPayload* ImGui::AcceptDragDropPayload(const char* type, ImGuiDragDropFlags flags)
 {
     ImGuiContext& g = *GImGui;
@@ -12228,6 +12226,7 @@ const ImGuiPayload* ImGui::AcceptDragDropPayload(const char* type, ImGuiDragDrop
     // NB: We currently accept NULL id as target. However, overlapping targets requires a unique ID to function!
     const bool was_accepted_previously = (g.DragDropAcceptIdPrev == g.DragDropTargetId);
     ImRect r = g.DragDropTargetRect;
+   // if (IsMouseClicked(ImGuiMouseButton_Left))is_item_picked = !is_item_picked;
     float r_surface = r.GetWidth() * r.GetHeight();
     if (r_surface <= g.DragDropAcceptIdCurrRectSurface)
     {
@@ -12244,7 +12243,8 @@ const ImGuiPayload* ImGui::AcceptDragDropPayload(const char* type, ImGuiDragDrop
         window->DrawList->AddRect(r.Min - ImVec2(3.5f,3.5f), r.Max + ImVec2(3.5f, 3.5f), GetColorU32(ImGuiCol_DragDropTarget), 0.0f, 0, 2.0f);
 
     g.DragDropAcceptFrameCount = g.FrameCount;
-    payload.Delivery = was_accepted_previously && IsMouseClicked(g.DragDropMouseButton); // For extern drag sources affecting os window focus, it's easier to just test !IsMouseDown() instead of IsMouseReleased()
+    // && is_item_picked 
+    payload.Delivery = was_accepted_previously && g.DragDropActive && IsMouseClicked(ImGuiMouseButton_Left); // For extern drag sources affecting os window focus, it's easier to just test !IsMouseDown() instead of IsMouseReleased()
     if (!payload.Delivery && !(flags & ImGuiDragDropFlags_AcceptBeforeDelivery))
         return NULL;
 

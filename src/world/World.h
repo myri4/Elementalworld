@@ -151,7 +151,7 @@ namespace wc {
 			m_MaterialsBuffer.Create(materialData.byte_size(), wc::STORAGE_BUFFER);
 			m_BVHBuffer.Create(sizeof(ChunkAABB) * chunks.size(), wc::STORAGE_BUFFER);			
 
-
+			//World Noises
 			worldNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_OpenSimplex2);
 			worldNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_FBm);
 			worldNoise.SetFractalOctaves(9);
@@ -162,55 +162,54 @@ namespace wc {
 
 			treeNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
 			treeNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
+			treeNoise.SetFrequency(1.f / 3.f);
 			treeNoise.SetFractalOctaves(5);
 			treeNoise.SetFractalLacunarity(1.f);
-			treeNoise.SetFrequency(1.f / 3.f);
 			treeNoise.SetFractalGain(0.003f);
 
 			TempNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
 			TempNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
+			TempNoise.SetFrequency(0.0025f);
 			TempNoise.SetFractalOctaves(4);
 			TempNoise.SetFractalLacunarity(1.7f);
-			TempNoise.SetFrequency(0.0025f);
 			TempNoise.SetFractalGain(0.35f);
 
 			MoistNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
 			MoistNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
-			MoistNoise.SetFractalOctaves(4);
-			MoistNoise.SetFractalLacunarity(1.f);
 			MoistNoise.SetFrequency(0.0025f);
+			MoistNoise.SetFractalLacunarity(1.f);
+			MoistNoise.SetFractalOctaves(4);
 			MoistNoise.SetFractalGain(0.55f);
 
 			TreeGenNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Value);
 			TreeGenNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_FBm);
-			TreeGenNoise.SetFractalOctaves(1);
 			TreeGenNoise.SetFrequency(0.95f);
+			TreeGenNoise.SetFractalOctaves(1);
 			TreeGenNoise.SetFractalLacunarity(1.0f);
 			TreeGenNoise.SetFractalGain(0.5f);
 
+
 			ContNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
 			ContNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
-			ContNoise.SetFractalOctaves(4);
+			ContNoise.SetFrequency(0.009f);
+			ContNoise.SetFractalOctaves(7);
 			ContNoise.SetFractalLacunarity(2.f);
-			ContNoise.SetFrequency(0.003f);
-			ContNoise.SetFractalGain(0.25f);
+			ContNoise.SetFractalGain(0.5f);
 
 			ErosNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
 			ErosNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
-			ErosNoise.SetFractalOctaves(3);
-			ErosNoise.SetFractalLacunarity(1.5f);
-			ErosNoise.SetFrequency(0.0025f);
-			ErosNoise.SetFractalGain(0.35f);
+			ErosNoise.SetFrequency(0.05f);
+			ErosNoise.SetFractalOctaves(6);
+			ErosNoise.SetFractalLacunarity(2.f);
+			ErosNoise.SetFractalGain(0.5f);
 
 			PVNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
 			PVNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
-			PVNoise.SetFractalOctaves(2);
-			PVNoise.SetFractalLacunarity(1.2f);
-			PVNoise.SetFrequency(0.01f);
-			PVNoise.SetFractalGain(2.f);
+			PVNoise.SetFrequency(0.025f);
+			PVNoise.SetFractalOctaves(5);
+			PVNoise.SetFractalLacunarity(2.f);
+			PVNoise.SetFractalGain(0.5f);
 
-			
-			
 
 			wc::StagingBuffer matBuffer;
 			matBuffer.Create(materialData.byte_size());
@@ -1132,6 +1131,7 @@ namespace wc {
 				ImGui::SetNextWindowPos(ImVec2((window.GetSize().x - (9 * itemSlotHW + 10 * 8)) / 2, (window.GetSize().y - (4 * itemSlotHW + 3 * 4 + 2 * 8)) / 2));
 				ImGui::Begin("Inventory", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar);
 
+				//TODO - replace drag and drop with click and click to drop
 				for (int n = 0; n < std::size(p.inventory.data); n++)
 				{
 					ImGui::PushID(n);
@@ -1153,7 +1153,7 @@ namespace wc {
 						ImGui::Button("", ImVec2(itemSlotHW, itemSlotHW));
 					}
 
-					if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip))
+					if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
 					{
 						ImGui::SetDragDropPayload("Item", &n, sizeof(int));
 						ImGui::EndDragDropSource();
@@ -1462,7 +1462,7 @@ namespace wc {
 			//if (window.getKey(Keyboard::Key::Num2)) blockHolding = murshroom;
 
 			float breakTime = 1.f / 12.f;
-			if (bBreak && !startBreaking) {
+			if (bBreak && !startBreaking && !inventory) {
 				startBreaking = true;
 				m_BlockBreakTimer.Start();
 			}
@@ -1649,32 +1649,44 @@ namespace wc {
 			return biome;
 		}
 		
-		int WorldGen(float Cont, float Eros, float PV ) {
-			//Peakes & Valleys
-			std::vector<double> x1 = { 0.05f, 0.1f, 0.325f, 0.5f,  0.65f, 0.9f,  1.f };
-			std::vector<double> y1 = { 0.f,   0.1f, 0.2f,   0.21f, 0.55f, 0.61f, 0.65f };
+		int WorldGen(float Cont, float Eros, float PV) {
+			static std::vector<double> x1 = { 0.05f, 0.1f, 0.325f, 0.5f,  0.65f, 0.9f,  1.f };
+			static std::vector<double> y1 = { 0.f,   0.1f, 0.2f,   0.21f, 0.55f, 0.61f, 0.65f };
+			static tk::spline PVSpl;
+			static bool isPVComputed = false;
 
-			//Erosion
-			std::vector<double> x2 = { 0.f, 0.15f, 0.3f,  0.32f, 0.45f, 0.6f,  0.7f,  0.72f, 0.78f, 0.79f, 0.85f, 1.f };
-			std::vector<double> y2 = { 1.f, 0.55f, 0.41f, 0.45f, 0.f,   0.11f, 0.11f, 0.28f, 0.28f, 0.11f, 0.05f, 0.05f };
+			static std::vector<double> x2 = { 0.f, 0.15f, 0.3f,  0.32f, 0.45f, 0.6f,  0.7f,  0.72f, 0.78f, 0.79f, 0.85f, 1.f };
+			static std::vector<double> y2 = { 1.f, 0.55f, 0.41f, 0.45f, 0.f,   0.11f, 0.11f, 0.28f, 0.28f, 0.11f, 0.05f, 0.05f };
+			static tk::spline ErosSpl;
+			static bool isErosComputed = false;
 
-			//Continetalness
-			std::vector<double> x3 = { 0.f, 0.09f,  0.345f, 0.385f, 0.515f, 0.525f, 0.55f,  0.72f, 1.f };
-			std::vector<double> y3 = { 1.f, 0.025f, 0.025f, 0.435f, 0.435f, 0.9f,   0.915f, 0.f,   0.98f };
+			static std::vector<double> x3 = { 0.f, 0.09f,  0.345f, 0.385f, 0.515f, 0.525f, 0.55f,  0.72f, 1.f };
+			static std::vector<double> y3 = { 1.f, 0.025f, 0.025f, 0.435f, 0.435f, 0.9f,   0.915f, 0.f,   0.98f };
+			static tk::spline ContSpl;
+			static bool isContComputed = false;
 
-			tk::spline PVSpl;
-			tk::spline ErosSpl;
-			tk::spline ContSpl;
+			// Precompute the splines if they haven't been computed yet
+			if (!isPVComputed) {
+				PVSpl.set_points(x1, y1, tk::spline::cspline);
+				isPVComputed = true;
+			}
+			if (!isErosComputed) {
+				ErosSpl.set_points(x2, y2, tk::spline::cspline);
+				isErosComputed = true;
+			}
+			if (!isContComputed) {
+				ContSpl.set_points(x3, y3, tk::spline::cspline);
+				isContComputed = true;
+			}
 
-			PVSpl.set_points(x1, y1, tk::spline::cspline);
-			ErosSpl.set_points(x2, y2, tk::spline::cspline);
-			ContSpl.set_points(x3, y3, tk::spline::cspline);
-
+			// Use the precomputed splines to get the interpolated values
 			y2[4] = PVSpl(PV);
 			y3[7] = ErosSpl(Eros);
-			
-			return ContSpl(Cont) * 100;
+			float contVal = ContSpl(Cont) * 100;
+
+			return contVal;
 		}
+
 
 		//terrain
 		glm::vec2 lastTreePos;
@@ -1688,13 +1700,13 @@ namespace wc {
 			for (uint32_t z = 0; z < chunkSize; z++) {
 				for (uint32_t x = 0; x < chunkSize; x++) {
 					glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
-					int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+					//int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
 					// /\ \/
-					/*float PV = PVNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+					float PV = PVNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 					float Eros = ErosNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 					float Cont = ContNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 
-					int heightMap = WorldGen(Cont, Eros, PV);*/
+					int heightMap = WorldGen(Cont, Eros, PV);
 						
 				
 					float floraGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
