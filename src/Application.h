@@ -170,6 +170,7 @@ namespace wc {
 				ImGui::Begin("Elemental World", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
 				//ImGui::Text("Elemental World");
 				//ImGui::ShowDemoWindow();
+				
 				//texture 
 				{
 					ImGui::SetCursorPos(scaleRes(ImVec2(412, 0)));
@@ -336,8 +337,8 @@ namespace wc {
 						ImGui::Checkbox("Sky", &Settings::sky);
 
 
-						const char* FPSItems[] = { "unlimited", "30", "45", "60", "120", "240", "300" };
-						//item_current_idx          0         1     2     3     4      5      6
+						const char* FPSItems[] = {"unlimited", "30", "45", "60", "120", "240", "300" };
+						//item_current_idx             0         1     2     3     4      5      6
 						if (ImGui::BeginCombo("FPS Cap", FPSItems[Settings::item_current_idx]))
 						{
 							for (int i = 0; i < std::size(FPSItems); i++)
@@ -381,7 +382,7 @@ namespace wc {
 
 						//ImGui::SetCursorPos(ImVec2(0, 75));
 						const char* ResolutionItems[] = { "640 x 360", "960 x 540", "1920 x 1080", "2560 x 1440", "3840 x 2160", };
-						//item_current_idx3           0            1             2              3              4 
+						//item_current_idx3                    0            1             2              3              4 
 						const char* combo_preview_value2 = ResolutionItems[Settings::ResolutionIndex];  // Pass in the preview value visible before opening the combo (it could be anything)
 						if (ImGui::BeginCombo("Window Resolution", combo_preview_value2))
 						{

@@ -4,7 +4,6 @@
 #include <pch.h>
 #include "../Rendering/AssetManager.h"
 #include "Chunk.h"
-#include "Biome.h"
 #include <FastNoise/FastNoiseLite.h>
 #include <vector>
 #include "CSplines/spline.h"
@@ -17,7 +16,9 @@
 
 #include "../Rendering/Renderer3D.h"
 #include <stb_image/stb_write.h>
+#include "../Biomes.h"
 #include "../Settings.h"
+
 
 namespace wc {
 	enum class GameMsg : uint32_t
@@ -143,6 +144,7 @@ namespace wc {
 			}
 
 			Settings::Load();
+			Biomes::Load();
 
 			CreateScreen();
 
@@ -188,7 +190,7 @@ namespace wc {
 			TreeGenNoise.SetFractalLacunarity(1.0f);
 			TreeGenNoise.SetFractalGain(0.5f);
 
-
+			//TODO - fix noises
 			ContNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
 			ContNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
 			ContNoise.SetFrequency(0.009f);
@@ -988,7 +990,7 @@ namespace wc {
 			float treePoints = TreeGenNoise.GetNoise((float)p.Position.x, (float)p.Position.z) * 0.5f + 0.5f;
 			uint32_t biome = getBiome(temperature, moisture);
 			std::string name;
-			if (biome == 0)	 name = "No Biome!";
+			if (biome == 0)	 name = "No Biome!";//debugging purposses
 			if (biome == 1)  name = "Tundra";
 			if (biome == 2)  name = "Plains";
 			if (biome == 3)  name = "Desert";
@@ -1634,18 +1636,18 @@ namespace wc {
 
 		// WORLD GENERATION
 		uint32_t getBiome(float temperature, float moisture) { //, float height
-			uint32_t biome = 0;
+			uint32_t biome = 0;//if isn't changed and stays on 0, then No Biome!
 			//if (height <= 32)biome = 11;//Aquatic
-			/*else*/if (temperature > 0 && temperature <= 0.25f && moisture > 0)biome = 1;//Taiga
-			else if (temperature > 0.25f && temperature <= 0.625f && moisture > 0 && moisture <= 0.25f)biome = 2;//Plains
-			else if (temperature > 0.625f && temperature <= 1 && moisture > 0 && moisture <= 0.25f)biome = 3;//Desert
-			else if (temperature > 0.25f && temperature <= 0.5f && moisture > 0.25f)biome = 4;//Tundra
-			else if (temperature > 0.5f && temperature <= 0.75f && moisture > 0.25f && moisture <= 0.5f)biome = 5;//Shrubland
-			else if (temperature > 0.75f && temperature <= 1.f && moisture > 0.25f && moisture <= 0.5f)biome = 6;//Savanna
-			else if (temperature > 0.5f && temperature <= 0.75f && moisture > 0.5f && moisture <= 0.75f)biome = 7;//Forest
-			else if (temperature > 0.75f && temperature <= 1.f && moisture > 0.5f && moisture <= 0.75f)biome = 8;//Seasonal Forest
-			else if (temperature > 0.5f && temperature <= 0.75f && moisture > 0.75f && moisture <= 1.f)biome = 9;//Rain Forest
-			else if (temperature > 0.75f && temperature <= 1.f && moisture > 0.75f && moisture <= 1.f)biome = 10;//Swamp
+			/*else*/if (temperature >= Biomes::TaigaTempMin &&       temperature <= Biomes::TaigaTempMax &&           moisture >= Biomes::TaigaMoistMin &&          moisture <= Biomes::TaigaMoistMax)biome = 1;//Taiga
+			else if (temperature > Biomes::PlainsTempMin &&	         temperature <= Biomes::PlainsTempMax &&          moisture > Biomes::PlainsMoistMin &&          moisture <= Biomes::PlainsMoistMax)biome = 2;//Plains
+			else if (temperature > Biomes::DesertTempMin &&          temperature <= Biomes::DesertTempMax &&          moisture > Biomes::DesertMoistMin &&          moisture <= Biomes::DesertMoistMax)biome = 3;//Desert
+			else if (temperature > Biomes::TundraTempMin &&          temperature <= Biomes::TundraTempMax &&          moisture > Biomes::TundraMoistMin &&          moisture <= Biomes::TundraMoistMax)biome = 4;//Tundra
+			else if (temperature > Biomes::ShrublandTempMin &&       temperature <= Biomes::ShrublandTempMax &&       moisture > Biomes::ShrublandMoistMin &&       moisture <= Biomes::ShrublandMoistMax)biome = 5;//Shrubland
+			else if (temperature > Biomes::SavannaTempMin &&         temperature <= Biomes::SavannaTempMax &&         moisture > Biomes::SavannaMoistMin &&         moisture <= Biomes::SavannaMoistMax)biome = 6;//Savanna
+			else if (temperature > Biomes::ForestTempMin &&          temperature <= Biomes::ForestTempMax &&          moisture > Biomes::ForestMoistMin &&          moisture <= Biomes::ForestMoistMax)biome = 7;//Forest
+			else if (temperature > Biomes::SeasonalForestTempMin &&  temperature <= Biomes::SeasonalForestTempMax &&  moisture > Biomes::SeasonalForestMoistMin &&  moisture <= Biomes::SeasonalForestMoistMax)biome = 8;//Seasonal Forest
+			else if (temperature > Biomes::RainForestTempMin &&      temperature <= Biomes::RainForestTempMax &&      moisture > Biomes::RainForestMoistMin &&      moisture <= Biomes::RainForestMoistMax)biome = 9;//Rain Forest
+			else if (temperature > Biomes::SwampTempMin &&           temperature <= Biomes::SwampTempMax &&           moisture > Biomes::SwampMoistMin &&           moisture <= Biomes::SwampMoistMax)biome = 10;//Swamp
 			return biome;
 		}
 		
@@ -1700,13 +1702,13 @@ namespace wc {
 			for (uint32_t z = 0; z < chunkSize; z++) {
 				for (uint32_t x = 0; x < chunkSize; x++) {
 					glm::ivec2 chunkSpace = glm::ivec2(x + chunks[chunk].position.x * chunkSize, z + chunks[chunk].position.z * chunkSize);
-					//int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
+					int heightMap = (int)worldNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y);
 					// /\ \/
-					float PV = PVNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
-					float Eros = ErosNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
-					float Cont = ContNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+					//float PV = PVNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+					//float Eros = ErosNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
+					//float Cont = ContNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
 
-					int heightMap = WorldGen(Cont, Eros, PV);
+					//int heightMap = WorldGen(Cont, Eros, PV);
 						
 				
 					float floraGen = treeNoise.GetNoise((float)chunkSpace.x, (float)chunkSpace.y) * 0.5f + 0.5f;
