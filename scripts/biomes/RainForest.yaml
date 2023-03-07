@@ -1,0 +1,6 @@
+TopBlock: tropical_rainforest_grass_block
+name: "Rain Forest"
+MinTemp: 0.5
+MaxTemp: 0.75
+MinMoist: 0.75
+MaxMoist: 1

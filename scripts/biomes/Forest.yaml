@@ -1,0 +1,6 @@
+TopBlock: dirt
+Name: "Forest"
+MinTemp: 0.5
+MaxTemp: 0.75
+MinMoist: 0.5
+MaxMoist: 0.75

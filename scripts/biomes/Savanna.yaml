@@ -1,0 +1,6 @@
+TopBlock: dirt
+Name: "Savanna"
+MinTemp: 0.75
+MaxTemp: 1
+MinMoist: 0.25
+MaxMoist: 0.5

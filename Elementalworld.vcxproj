@@ -390,7 +390,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.h" />
-    <ClInclude Include="src\Biomes.h" />
     <ClInclude Include="src\entities\Entity.h" />
     <ClInclude Include="src\entities\Player.h" />
     <ClInclude Include="src\Game Mechanics\CommandParser.h" />

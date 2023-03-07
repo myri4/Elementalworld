@@ -1,0 +1,6 @@
+TopBlock: stone_block
+Name: "Taiga"
+MinTemp: -1
+MaxTemp: 0.25
+MinMoist: -1
+MaxMoist: 1

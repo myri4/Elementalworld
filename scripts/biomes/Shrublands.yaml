@@ -1,0 +1,6 @@
+TopBlock: dirt
+Name: "Shrublands"
+MinTemp: 0.5
+MaxTemp: 0.75
+MinMoist: 0.25
+MaxMoist: 0.5

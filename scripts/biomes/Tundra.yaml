@@ -1,0 +1,6 @@
+TopBlock: tundra_grass_block
+Name: "Tundra"
+MinTemp: 0.25
+MaxTemp: 0.5
+MinMoist: 0.25
+MaxMoist: 1

@@ -16,7 +16,7 @@
 
 #include "../Rendering/Renderer3D.h"
 #include <stb_image/stb_write.h>
-#include "../Biomes.h"
+#include "Biome.h"
 #include "../Settings.h"
 
 
@@ -144,7 +144,6 @@ namespace wc {
 			}
 
 			Settings::Load();
-			Biomes::Load();
 
 			CreateScreen();
 
@@ -169,15 +168,15 @@ namespace wc {
 			treeNoise.SetFractalLacunarity(1.f);
 			treeNoise.SetFractalGain(0.003f);
 
-			TempNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
-			TempNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
+			TempNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_OpenSimplex2);
+			TempNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_FBm);
 			TempNoise.SetFrequency(0.0025f);
 			TempNoise.SetFractalOctaves(4);
 			TempNoise.SetFractalLacunarity(1.7f);
 			TempNoise.SetFractalGain(0.35f);
 
-			MoistNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
-			MoistNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
+			MoistNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_OpenSimplex2);
+			MoistNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_FBm);
 			MoistNoise.SetFrequency(0.0025f);
 			MoistNoise.SetFractalLacunarity(1.f);
 			MoistNoise.SetFractalOctaves(4);
@@ -191,22 +190,22 @@ namespace wc {
 			TreeGenNoise.SetFractalGain(0.5f);
 
 			//TODO - fix noises
-			ContNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
-			ContNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
+			ContNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_OpenSimplex2);
+			ContNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_FBm);
 			ContNoise.SetFrequency(0.009f);
 			ContNoise.SetFractalOctaves(7);
 			ContNoise.SetFractalLacunarity(2.f);
 			ContNoise.SetFractalGain(0.5f);
 
-			ErosNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
-			ErosNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
+			ErosNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_OpenSimplex2);
+			ErosNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_FBm);
 			ErosNoise.SetFrequency(0.05f);
 			ErosNoise.SetFractalOctaves(6);
 			ErosNoise.SetFractalLacunarity(2.f);
 			ErosNoise.SetFractalGain(0.5f);
 
-			PVNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_Perlin);
-			PVNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_Ridged);
+			PVNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_OpenSimplex2);
+			PVNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_FBm);
 			PVNoise.SetFrequency(0.025f);
 			PVNoise.SetFractalOctaves(5);
 			PVNoise.SetFractalLacunarity(2.f);
@@ -281,6 +280,7 @@ namespace wc {
 				}
 			}
 
+			//Loading Items
 			for (auto& path : std::filesystem::directory_iterator("scripts/items")) {
 				std::string filename = path.path().stem().string();
 				if (path.is_regular_file()) { //AddItemScript
@@ -305,6 +305,25 @@ namespace wc {
 					if (itemState["textureLocation"]) item.textureID = AssetManager::LoadTexture(diffusePath + itemState["textureLocation"].as<std::string>());
 
 					itemData.push_back(item);					
+				}
+			}
+
+			//Loading Biomes
+			for (auto& path : std::filesystem::directory_iterator("scripts/biomes")) {
+				std::string filename = path.path().stem().string();
+				if (path.is_regular_file()) { //AddBlockScript
+					std::string script = "scripts/biomes/" + filename + ".yaml";
+					YAML::Node biomeState = YAML::LoadFile(script);
+
+					Biome biome;
+					if (biomeState["TopBlock"])biome.topBlock = getBlockID(biomeState["TopBlock"].as<std::string>());
+					if (biomeState["Name"])biome.name = biomeState["Name"].as<std::string>();
+					if (biomeState["MinTemp"])biome.minTemp = biomeState["MinTemp"].as<float>();
+					if (biomeState["MaxTemp"])biome.maxTemp = biomeState["MaxTemp"].as<float>();
+					if (biomeState["MinMoist"])biome.minMois = biomeState["MinMoist"].as<float>();
+					if (biomeState["MaxMoist"])biome.maxMois = biomeState["MaxMoist"].as<float>();
+
+					biomeMap.push_back(biome);
 				}
 			}
 
@@ -348,7 +367,7 @@ namespace wc {
 			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 0.891f, 0.796f, 0.f)));
 			
 			grasslands_grass = getBlockID("grasslands_grass_block");
-			taiga_grass = getBlockID("taiga_grass_block");
+			tundra_grass = getBlockID("tundra_grass_block");
 			savanna_grass = getBlockID("savanna_grass_block");
 			tropical_rainforest_grass = getBlockID("tropical_rainforest_grass_block");
 			swamp_grass = getBlockID("swamp_grass_block");
@@ -534,7 +553,7 @@ namespace wc {
 
 		// Common blocks
 		BlockID grasslands_grass = 0;
-		BlockID taiga_grass = 0;
+		BlockID tundra_grass = 0;
 		BlockID savanna_grass = 0;
 		BlockID tropical_rainforest_grass = 0;
 		BlockID swamp_grass = 0;
@@ -989,20 +1008,7 @@ namespace wc {
 			float moisture = baseMoisture - p.Position.y * 0.0015f;
 			float treePoints = TreeGenNoise.GetNoise((float)p.Position.x, (float)p.Position.z) * 0.5f + 0.5f;
 			uint32_t biome = getBiome(temperature, moisture);
-			std::string name;
-			if (biome == 0)	 name = "No Biome!";//debugging purposses
-			if (biome == 1)  name = "Tundra";
-			if (biome == 2)  name = "Plains";
-			if (biome == 3)  name = "Desert";
-			if (biome == 4)  name = "Taiga";
-			if (biome == 5)  name = "Shrubland";
-			if (biome == 6)  name = "Savanna";
-			if (biome == 7)  name = "Forest";
-			if (biome == 8)  name = "Seasonal Forest";
-			if (biome == 9)  name = "Rain Forest";
-			if (biome == 10) name = "Swamp";
-			//if (biome == 11) name = "Aquatic";
-
+			
 			
 			if (debug_menu && renderGUI) {
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -1011,7 +1017,7 @@ namespace wc {
 				ImGui::Text(std::format("FPS: {0} FrameTime: {1}", (int)(1.f / deltaTime), deltaTime).c_str());
 				ImGui::Text(std::format("Position: X:{0} Y:{1} Z:{2}", p.Position.x, p.Position.y, p.Position.z).c_str());
 				ImGui::Text(std::format("Camera position: X:{0} Y:{1} Z:{2}", camera.Position.x, camera.Position.y, camera.Position.z).c_str());
-				ImGui::Text(std::format("Biome: {0}", name).c_str());
+				ImGui::Text(std::format("Biome: {0}", biomeMap[biome].name).c_str());
 				ImGui::Text(std::format("Temperature: {0}  ;  Moisture: {1}", temperature, moisture).c_str());
 				ImGui::Text(std::format("unchanged Temperature: {0}  ;  unchanged Moisture: {1}", baseTemperature, baseMoisture).c_str());
 				ImGui::Text(std::format("Tree Point: {0}", treePoints).c_str());
@@ -1637,18 +1643,11 @@ namespace wc {
 		// WORLD GENERATION
 		uint32_t getBiome(float temperature, float moisture) { //, float height
 			uint32_t biome = 0;//if isn't changed and stays on 0, then No Biome!
-			//if (height <= 32)biome = 11;//Aquatic
-			/*else*/if (temperature >= Biomes::TaigaTempMin &&       temperature <= Biomes::TaigaTempMax &&           moisture >= Biomes::TaigaMoistMin &&          moisture <= Biomes::TaigaMoistMax)biome = 1;//Taiga
-			else if (temperature > Biomes::PlainsTempMin &&	         temperature <= Biomes::PlainsTempMax &&          moisture > Biomes::PlainsMoistMin &&          moisture <= Biomes::PlainsMoistMax)biome = 2;//Plains
-			else if (temperature > Biomes::DesertTempMin &&          temperature <= Biomes::DesertTempMax &&          moisture > Biomes::DesertMoistMin &&          moisture <= Biomes::DesertMoistMax)biome = 3;//Desert
-			else if (temperature > Biomes::TundraTempMin &&          temperature <= Biomes::TundraTempMax &&          moisture > Biomes::TundraMoistMin &&          moisture <= Biomes::TundraMoistMax)biome = 4;//Tundra
-			else if (temperature > Biomes::ShrublandTempMin &&       temperature <= Biomes::ShrublandTempMax &&       moisture > Biomes::ShrublandMoistMin &&       moisture <= Biomes::ShrublandMoistMax)biome = 5;//Shrubland
-			else if (temperature > Biomes::SavannaTempMin &&         temperature <= Biomes::SavannaTempMax &&         moisture > Biomes::SavannaMoistMin &&         moisture <= Biomes::SavannaMoistMax)biome = 6;//Savanna
-			else if (temperature > Biomes::ForestTempMin &&          temperature <= Biomes::ForestTempMax &&          moisture > Biomes::ForestMoistMin &&          moisture <= Biomes::ForestMoistMax)biome = 7;//Forest
-			else if (temperature > Biomes::SeasonalForestTempMin &&  temperature <= Biomes::SeasonalForestTempMax &&  moisture > Biomes::SeasonalForestMoistMin &&  moisture <= Biomes::SeasonalForestMoistMax)biome = 8;//Seasonal Forest
-			else if (temperature > Biomes::RainForestTempMin &&      temperature <= Biomes::RainForestTempMax &&      moisture > Biomes::RainForestMoistMin &&      moisture <= Biomes::RainForestMoistMax)biome = 9;//Rain Forest
-			else if (temperature > Biomes::SwampTempMin &&           temperature <= Biomes::SwampTempMax &&           moisture > Biomes::SwampMoistMin &&           moisture <= Biomes::SwampMoistMax)biome = 10;//Swamp
-			return biome;
+			for (int i = 0; i < biomeMap.size(); i++) {
+				if (temperature > biomeMap[i].minTemp && temperature <= biomeMap[i].maxTemp && moisture > biomeMap[i].minMois && moisture <= biomeMap[i].maxMois)return i;
+			}
+			//WC_WARN("Could not find any biome");
+			return 0;
 		}
 		
 		int WorldGen(float Cont, float Eros, float PV) {
@@ -1729,13 +1728,7 @@ namespace wc {
 							if (onSand)
 								setBlockTerrain(glm::ivec3(x, y, z), sand);
 							else
-								if (biome == 1)setBlockTerrain(glm::ivec3(x, y, z), stone);
-								else if (biome == 2)setBlockTerrain(glm::ivec3(x, y, z), grasslands_grass);
-								else if (biome == 3)setBlockTerrain(glm::ivec3(x, y, z), sand);
-								else if (biome == 4)setBlockTerrain(glm::ivec3(x, y, z), taiga_grass);
-								else if (biome == 6)setBlockTerrain(glm::ivec3(x, y, z), savanna_grass);
-								else if (biome == 9)setBlockTerrain(glm::ivec3(x, y, z), tropical_rainforest_grass);
-								else if (biome == 10)setBlockTerrain(glm::ivec3(x, y, z), swamp_grass);
+								setBlockTerrain(glm::ivec3(x, y, z), biomeMap[biome].topBlock);
 							if (treePoints > 0.95f && !onSand) {
 								if (lastTreePos == glm::vec2(0)) {
 									setBlockTerrain(glm::ivec3(x, y, z), oak);

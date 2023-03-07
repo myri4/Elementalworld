@@ -9,6 +9,7 @@ namespace wc {
 		Biome() {}
 
 		BlockID topBlock = 0;
+		std::string name = "";
 		float minTemp = 0.f;
 		float maxTemp = 1.f;
 

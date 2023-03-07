@@ -2,38 +2,47 @@ TaigaTempMin: 0;
 TaigaTempMax: 0.25f;
 TaigaMoistMin: 0;
 TaigaMoistMax: 1.f;
+
 PlainsTempMin: 0.25f;
 PlainsTempMax: 0.625f;
 PlainsMoistMin: 0;
 PlainsMoistMax: 0.25f;
+
 DesertTempMin: 0.625f;
 DesertTempMax: 1;
 DesertMoistMin: 0;
 DesertMoistMax: 0.25f;
+
 TundraTempMin: 0.25f;
 TundraTempMax: 0.5f;
 TundraMoistMin: 0.25f;
 TundraMoistMax: 1;
+
 ShrublandTempMin: 0.5f;
 ShrublandTempMax: 0.75f;
 ShrublandMoistMin: 0.25;
 ShrublandMoistMax: 0.5f;
+
 SavannaTempMin: 0.75f;
 SavannaTempMax: 1;
 SavannaMoistMin: 0.25f;
 SavannaMoistMax: 0.5f;
+
 ForestTempMin: 0.5f;
 ForestTempMax: 0.75f;
 ForestMoistMin: 0.5f;
 ForestMoistMax: 0.75f;
+
 SeasonalForestTempMin: 0.75f;
 SeasonalForestTempMax: 1;
 SeasonalForestMoistMin: 0.5f;
 SeasonalForestMoistMax: 0.75f;
+
 RainForestTempMin: 0.5f;
 RainForestTempMax: 0.75f;
 RainForestMoistMin: 0.75f;
 RainForestMoistMax: 1;
+
 SwampTempMin: 0.75f;
 SwampTempMax: 1;
 SwampMoistMin: 0.75f;

@@ -1,0 +1,6 @@
+TopBlock: swamp_grass_block
+Name: "Swamp"
+MinTemp: 0.75
+MaxTemp: 1
+MinMoist: 0.75
+MaxMoist: 1

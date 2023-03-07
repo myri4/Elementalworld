@@ -329,7 +329,7 @@ namespace wc {
 							ImGui::Checkbox("Bloom Toggle", &Settings::bloomEnable);
 							ImGui::SliderFloat("BloomThreshold", &Settings::BloomThreshold, 0.f, 100.f, "%.3f");
 							ImGui::SliderFloat("BloomKnee", &Settings::BloomKnee, 0.f, 100.f, "%.3f");
-
+ 
 							ImGui::Separator();
 							ImGui::TreePop();
 						}

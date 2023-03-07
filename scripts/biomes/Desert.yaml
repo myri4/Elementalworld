@@ -1,0 +1,6 @@
+TopBlock: sand
+Name: "Desert"
+MinTemp: 0.625
+MaxTemp: 1
+MinMoist: 0
+MaxMoist: 0.25

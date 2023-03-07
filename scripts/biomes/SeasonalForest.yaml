@@ -1,0 +1,6 @@
+TopBlock: dirt
+Name: "Seasonal Forest"
+MinTemp: 0.75
+MaxTemp: 1
+MinMoist: 0.5
+MaxMoist: 0.75

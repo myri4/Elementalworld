@@ -304,9 +304,6 @@
     <ClInclude Include="vendor\Include\CSplines\spline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Biomes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\shaders\bloomShader.comp" />

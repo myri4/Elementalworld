@@ -1,0 +1,6 @@
+TopBlock: grasslands_grass_block
+Name: "Plains"
+MinTemp: 0.25
+MaxTemp: 0.625
+MinMoist: 0
+MaxMoist: 0.25
