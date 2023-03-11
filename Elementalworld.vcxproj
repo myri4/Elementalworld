@@ -153,6 +153,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableModules>false</EnableModules>
+      <UndefinePreprocessorDefinitions>far;near;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -185,6 +186,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <EnableModules>false</EnableModules>
+      <UndefinePreprocessorDefinitions>far;near;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -217,6 +219,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <EnableModules>false</EnableModules>
+      <UndefinePreprocessorDefinitions>far;near;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -250,6 +253,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableModules>false</EnableModules>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <UndefinePreprocessorDefinitions>far;near;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -282,6 +286,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <EnableModules>false</EnableModules>
+      <UndefinePreprocessorDefinitions>far;near;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
+      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -314,6 +320,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <EnableModules>false</EnableModules>
+      <UndefinePreprocessorDefinitions>far;near;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

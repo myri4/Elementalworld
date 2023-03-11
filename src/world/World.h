@@ -40,7 +40,6 @@ namespace wc {
 
 	class GameInstance {
 		bool debug_menu = true;
-		Texture m_RenderTexture;
 		DeletionQueue delQueue;
 		// Player related
 		Camera camera;
@@ -57,35 +56,20 @@ namespace wc {
 
 		float rotateSpeed = 1.f * 0.6f; // one cycle is one unit (in minutes)
 		float angle = 0.f;
-		wc::Shader skyShader;
-		wc::DescriptorSet skySet;
 
-		bool m_UpdateModels = false;
 
-		wc::Buffer m_SceneDataBuffer;
-
-		wc::Buffer m_LightBuffer;
-		wc::Buffer m_MaterialsBuffer;
-
-		struct SceneData {
-			glm::mat4 ViewProj = glm::mat4(1.f);
-			glm::vec3 cameraPos = glm::vec3(0.f);
-			alignas(16) glm::vec3 lower_left_corner = glm::vec3(0.f);
-			alignas(16) glm::vec3 horizontal = glm::vec3(0.f);
-			alignas(16) glm::vec3 vertical = glm::vec3(0.f);
-			alignas(16) glm::vec2 windowSize = glm::vec2(0.f);
-			uint32_t numLights = 0;
-			uint32_t bvhCounter = 0;
-		};
-
-		wc::Buffer m_IndirectBuffer; // indirect buffer
 		std::array<Chunk, RenderDistance * RenderDistance * RenderDistance> chunks;
 
 		FastNoiseLite worldNoise;
 		FastNoiseLite treeNoise;
 
-		bool generateTerrain : 1;
+		// Flags
+		bool generateTerrain = false;
+		bool updateChunks = true;
+		bool updateOctree = true;
+
 		int8_t water_level = 32;
+
 
 		uint32_t localPlayerID = 0;
 		std::unordered_map<uint32_t, PlayerDescription> players;
@@ -96,26 +80,6 @@ namespace wc {
 		bool m_WaitingForConnection = true;
 		net::client_interface<GameMsg> m_ClientInstance;
 
-		struct Light {
-			glm::vec3 vector;
-			uint32_t color;
-		};
-		wc::CPUBufferManager<Light> lights;
-		uint32_t maxLights = chunkVolume;
-		// Composite stuff
-		wc::FramebufferWC m_Framebuffer;
-		wc::Image scrTexture;
-		wc::ImageView screenImageView;
-		wc::Sampler screenSampler;
-
-
-		wc::Image finalImage;
-		wc::ComputeShader compositeShader;
-
-		wc::ComputeShader rayTracingShader;
-		wc::Buffer m_BVHBuffer;
-
-		wc::CPUBufferManager<ChunkAABB> m_BVHTransforms;
 	public:
 		std::string worldName = "New world";
 		bool multiPlayer = false;
@@ -123,6 +87,8 @@ namespace wc {
 		Player p;
 
 		void Create() {
+
+			crosshair.Load(GetAssetPath() + "/textures/misc/cursor.png");
 
 			if (!std::filesystem::exists("worlds")) std::filesystem::create_directory("worlds");
 			if (!std::filesystem::exists("cache")) std::filesystem::create_directory("cache");
@@ -133,14 +99,6 @@ namespace wc {
 			}
 
 			Settings::Load();
-
-			CreateScreen();
-
-			m_SceneDataBuffer.Create(sizeof(SceneData), wc::UNIFORM_BUFFER);
-			m_LightBuffer.Create(maxLights * sizeof(Light), wc::UNIFORM_BUFFER);
-			m_MaterialsBuffer.Create(materialData.byte_size(), wc::STORAGE_BUFFER);
-			m_BVHBuffer.Create(sizeof(ChunkAABB) * chunks.size(), wc::STORAGE_BUFFER);			
-
 
 			worldNoise.SetNoiseType(FastNoiseLite::NoiseType::NoiseType_OpenSimplex2);
 			worldNoise.SetFractalType(FastNoiseLite::FractalType::FractalType_FBm);
@@ -156,6 +114,7 @@ namespace wc {
 			treeNoise.SetFractalLacunarity(1.f);
 			treeNoise.SetFrequency(1.f / 3.f);
 			treeNoise.SetFractalGain(0.003f);
+
 			
 			wc::StagingBuffer matBuffer;
 			matBuffer.Create(materialData.byte_size());
@@ -168,10 +127,10 @@ namespace wc {
 			std::string diffusePath = GetAssetPath() + "/textures/block/diffuse/";
 			std::string materialPath = GetAssetPath() + "/textures/block/materials/";
 			
-			Renderer3D::AllocateMesh(MaxVertexCount * (uint32_t)chunks.size(), MaxIndexCount * (uint32_t)chunks.size());
 			//Loading blocks
 			std::vector<Vertex> modelVertices;
 			std::vector<uint32_t> modelIndices;
+			std::vector<Node> bvhData;
 			for (auto& path : std::filesystem::directory_iterator("scripts/blocks")) {
 				std::string filename = path.path().stem().string();
 				if (path.is_regular_file()) { //AddBlockScript
@@ -179,7 +138,7 @@ namespace wc {
 					YAML::Node blockState = YAML::LoadFile(script);
 			
 					Block block;
-					Material material;
+					Material materials[6];
 			
 					if (blockState["name"]) block.name = blockState["name"].as<std::string>(); 
 					
@@ -188,36 +147,40 @@ namespace wc {
 					if (blockState["isCollidable"]) block.isCollidable = blockState["isCollidable"].as<bool>();
 					if (blockState["ConnectionType"]) block.connectionType = magic_enum::enum_cast<ConnectionType>(blockState["ConnectionType"].as<std::string>()).value();
 
-					if (blockState["cull"]) if (blockState["cull"].as<bool>()) material.flags |= WC_CULL_BIT;
+					//if (blockState["cull"]) if (blockState["cull"].as<bool>()) material.flags |= WC_CULL_BIT;
 
 					if (blockState["allTextures"]) {
-						material.albedo[0] = AssetManager::LoadTexture(diffusePath + blockState["allTextures"].as<std::string>());
-						for (int i = 1; i < 6; i++) material.albedo[i] = material.albedo[0];
+						materials[0].albedo = AssetManager::LoadTexture(diffusePath + blockState["allTextures"].as<std::string>());
+						for (int i = 1; i < 6; i++) materials[i].albedo = materials[0].albedo;
 					}
 					else {
 						for (uint32_t i = 0; i < magic_enum::enum_count<BlockTexture>(); i++) {
 							auto name = std::string(magic_enum::enum_name((BlockTexture)i));
 							if (blockState[name]) 
-								material.albedo[i] = AssetManager::LoadTexture(diffusePath + blockState[name].as<std::string>());
+								materials[i].albedo = AssetManager::LoadTexture(diffusePath + blockState[name].as<std::string>());
 						}
 					}
 					if (blockState["emitLight"]) block.emitLight = blockState["emitLight"].as<bool>();
 			
 					if (blockState["modelPath"]) { 
-						material.flags |= WC_MODEL_BIT;
+						block.flags |= WC_MODEL_BIT;
 						block.connectionType = ConnectionType::CUSTOM_MODEL;
 					}
 			
 					if (blockState["materialData"]) {
-						material.materialData[0] = AssetManager::LoadTexture(materialPath + blockState["materialData"].as<std::string>());
-						for (int i = 1; i < 6; i++) material.materialData[i] = material.materialData[0];
+						materials[0].materialData = AssetManager::LoadTexture(materialPath + blockState["materialData"].as<std::string>());
+						for (int i = 1; i < 6; i++) materials[i].materialData = materials[0].materialData;
 					}
-					block.materialID = materialData.push_back(material);
+
+					for (int i = 0; i < 6; i++) {
+						block.materialIDs[i] = materialData.push_back(materials[i]);
+
+					}
+
 					if (blockState["modelPath"]) {
 						std::string path = blockState["modelPath"].as<std::string>();
 						block.meshID = blockMeshes.size();
-						uint32_t id = block.meshID;
-						blockMeshes[id].Load(GetAssetPath() + "/models/" + path, block.materialID, modelVertices, modelIndices);
+						blockMeshes[block.meshID].Load(GetAssetPath() + "/models/" + path, block.materialIDs[0], modelVertices, modelIndices, bvhData);
 						blockMeshes.counter++;
 					}
 			
@@ -251,223 +214,47 @@ namespace wc {
 					itemData.push_back(item);					
 				}
 			}
+			Renderer3D::Build(window.GetSize() / 2, blockData.size(), chunks.size());
+
+			wc::BlockGPU gpuBlockData[blockData.allocated_size()];
+
+			for (int i = 0; i < blockData.size(); i++)			
+				for (int j = 0; j < 6; j++) 
+					gpuBlockData[i].materialIDs[j] = blockData[i].materialIDs[j];
+			
+
+			Renderer3D::m_BlockDataBuffer.SetData(gpuBlockData, sizeof(BlockGPU) * blockData.size());
 
 			matBuffer.Unmap();
-			m_MaterialsBuffer.SetData(matBuffer, materialData.byte_size());
+			Renderer3D::m_MaterialsBuffer.SetData(matBuffer, materialData.byte_size());
 			matBuffer.Destroy();
-			
 
-			m_IndirectBuffer.Create(chunks.size() * sizeof(VkDrawIndexedIndirectCommand), wc::INDIRECT_BUFFER);
-
-			Renderer3D::BuildBuffers(window.GetExtent());
-			Renderer3D::vertexBuffer.SetData(modelVertices.data(), sizeof(Vertex) * modelVertices.size(), sizeof(Vertex) * MaxVertexCount * chunks.size());
-			Renderer3D::indexBuffer.SetData(modelIndices.data(), sizeof(uint32_t) * modelIndices.size(), sizeof(uint32_t) * MaxIndexCount * chunks.size());
-
-						
-			lights.Create(maxLights * sizeof(Light));
-			lights.Map();
-			
-			uint32_t iOffset = 0;
-			wc::CPUBuffer <uint32_t> indices;
-			indices.Create(MaxIndexCount * sizeof(uint32_t));
-			indices.Map();
-			for (uint32_t i = 0; i < MaxIndexCount; i += 6) {
-				indices[i + 0] = 0 + iOffset;
-				indices[i + 1] = 1 + iOffset;
-				indices[i + 2] = 2 + iOffset;
-			
-				indices[i + 3] = 2 + iOffset;
-				indices[i + 4] = 3 + iOffset;
-				indices[i + 5] = 0 + iOffset;
-			
-				iOffset += 4;
-			}
-			indices.Unmap();
-			
-			Renderer3D::indexBuffer.SetData(indices.GetBuffer(), MaxIndexCount * sizeof(uint32_t));
-			indices.Destroy();
-
-			crosshair.Load(GetAssetPath() + "/textures/misc/cursor.png");
-			
-			addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 0.891f, 0.796f, 0.f)));
-			
 			grass = getBlockID("grass_block");
 			stone = getBlockID("stone_block");
+			coal = getBlockID("coal_ore");
+			
+			Renderer3D::UploadModels(modelVertices, modelIndices, bvhData);				
+			
+
+			
+			Renderer3D::addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 0.891f, 0.796f, 0.f)));
+			
 			water = getBlockID("water");
 			sand = getBlockID("sand");
 			oak = getBlockID("wood");
 			leaves = getBlockID("leaves");
-			coal = getBlockID("coal_ore");
 			dirt = getBlockID("dirt");
 			campfire = getBlockID("campfire");
 			murshroom = getBlockID("murshroom");
 			blockHolding = getBlockID("iron_block");
-
-			CreateDynamicPipelines();
-
-			m_BVHTransforms.Create(sizeof(ChunkAABB)* chunks.size());
-			m_BVHTransforms.Map();
-
-			ChunkAABB aabb;
-			aabb.start = glm::vec4(128.f);
-			aabb.end = glm::vec4(129.f);
-			m_BVHTransforms.Add(aabb);			
-		}
-
-		void CreateDynamicPipelines() {
-			auto windowSize = window.GetSize();
-			Renderer3D::CreateLinePipeline(m_Framebuffer.renderPass, m_SceneDataBuffer.GetDescriptorInfo());
-			{
-				wc::ShaderCreateInfo createInfo;
-				createInfo.vertexShader = GetAssetPath() + "/shaders/Renderer3D.vert";
-				createInfo.fragmentShader = GetAssetPath() + "/shaders/Renderer3D.frag";
-				createInfo.windowSize = windowSize;
-				createInfo.renderPass = m_Framebuffer.renderPass;
-				createInfo.vertexDescription = Vertex::get_vertex_description();
-				createInfo.blending = true;
-				createInfo.depthTest = true;
-				createInfo.cachePath = wc::GetCachedAssetPath() + "/shaders/Renderer3D.bin";
-
-				VkDescriptorBindingFlags flags[4];
-				flags[0] = 0;
-				flags[1] = 0;
-				flags[2] = 0;
-				flags[3] = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-
-				uint32_t counts[1];
-				counts[0] = AssetManager::m_Textures.size(); // Set 0 has a variable count descriptor with a maximum of 32 elements
-
-				VkDescriptorSetVariableDescriptorCountAllocateInfo set_counts = {};
-				set_counts.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
-				set_counts.descriptorSetCount = 1;
-				set_counts.pDescriptorCounts = counts;
-				createInfo.bindingFlags = flags;
-				createInfo.bindingFlagCount = std::size(flags);
-				createInfo.dynamicDescriptorCount = counts[0];
-
-				Renderer3D::shader.Create(createInfo);
-				VkDescriptorSetLayout layouts[10];
-				for (int i = 0; i < std::size(layouts); i++) layouts[i] = Renderer3D::shader.getDescriptorLayout();
-
-				wc::descriptorAllocator.allocate(Renderer3D::descriptorSet, layouts, &set_counts, set_counts.descriptorSetCount);
-
-				{
-					wc::DescriptorWriter writer;
-					writer.dstSet = Renderer3D::descriptorSet;
-					writer.write_buffer(0, m_SceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-						.write_buffer(1, m_LightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-						.write_buffer(2, m_MaterialsBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-					writer.Update();
-				}
-				wc::DescriptorWriter writer;
-				writer.dstSet = Renderer3D::descriptorSet;
-
-				std::vector<VkDescriptorImageInfo> infos;
-				for (auto& image : AssetManager::m_Textures) {
-					VkDescriptorImageInfo imageInfo;
-					imageInfo.sampler = image.GetSampler();
-					imageInfo.imageView = image.GetView();
-					imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-					infos.push_back(imageInfo);
-				}
-				
-				writer.write_images(3, infos, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-				writer.Update();
-					
-
-			}
-			{
-				wc::ShaderCreateInfo createInfo;
-				createInfo.vertexShader = GetAssetPath() + "/shaders/skybox.vert";
-				createInfo.fragmentShader = GetAssetPath() + "/shaders/skybox.frag";
-				createInfo.windowSize = windowSize;
-				createInfo.renderPass = m_Framebuffer.renderPass;
-				createInfo.blending = false;
-				createInfo.depthTest = false;
-				createInfo.cachePath = GetCachedAssetPath() + "/shaders/skyShader.bin";
-				skyShader.Create(createInfo);
-				wc::descriptorAllocator.allocate(skySet, skyShader.getDescriptorLayout());
-
-				wc::DescriptorWriter writer;
-				writer.dstSet = skySet;
-				writer.write_buffer(0, m_SceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-					.write_buffer(1, m_LightBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-
-				writer.Update();
-			}
-
-			// Compute pipelines
-			bloomShader.Create(GetAssetPath() + "/shaders/bloomShader.comp");
-			compositeShader.Create(GetAssetPath() + "/shaders/composite.comp");
-			//rayTracingShader.Create(GetAssetPath() + "/shaders/rayTracingShader.comp");
-			{
-				GenerateBloomDescriptor(m_BloomBuffers[0].imageViews[0], screenImageView);
-
-				for (uint32_t currentMip = 1; currentMip < m_BloomMipLevels; currentMip++){
-					// Ping 
-					GenerateBloomDescriptor(m_BloomBuffers[1].imageViews[currentMip], m_BloomBuffers[0].imageViews[0]);
-
-					// Pong 
-					GenerateBloomDescriptor(m_BloomBuffers[0].imageViews[currentMip], m_BloomBuffers[1].imageViews[0]);
-				}
-
-				// First Upsample
-				GenerateBloomDescriptor(m_BloomBuffers[2].imageViews[m_BloomMipLevels - 1], m_BloomBuffers[0].imageViews[0]);
-
-				for (int currentMip = m_BloomMipLevels - 2; currentMip >= 0; currentMip--)
-					GenerateBloomDescriptor(m_BloomBuffers[2].imageViews[currentMip], m_BloomBuffers[0].imageViews[0]);
-			}
-			{
-				wc::DescriptorWriter writer;
-				writer.dstSet = compositeShader.descriptorSet;
-				writer.write_image(0, GetDescriptorData(screenSampler, screenImageView, finalImage), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-					  .write_image(1, GetDescriptorData(screenSampler, screenImageView, scrTexture), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-					  .write_image(2, GetDescriptorData(bloomImageSampler, m_BloomBuffers[2].imageViews[0], VK_IMAGE_LAYOUT_GENERAL), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-					  .Update();
-			}
-			{
-
-				//wc::DescriptorWriter writer;
-				//writer.dstSet = rayTracingShader.descriptorSet;
-				//writer.write_buffer(0, m_SceneDataBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-				//	  .write_image(1, GetDescriptorData(screenSampler, screenImageView, scrTexture), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-				//	  .write_buffer(2, m_BVHBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-				//	  //.write_buffer(3, Renderer3D::vertexBuffer.GetDescriptorInfo(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-				//	  .Update();
-			}
-		}
-
-		void DestroyDynamicPipelines() {
-			Renderer3D::shader.Destroy();
-			Renderer3D::DestroyLinePipeline();
-			skyShader.Destroy();
-			//rayTracingShader.Destroy();
-			compositeShader.Destroy();
-			bloomShader.Destroy();
 		}
 
 		void Destroy() {
 			if (multiPlayer) m_ClientInstance.Disconnect();
 			else if (m_WorldLoaded) SaveWorld();			
 
-			m_SceneDataBuffer.Destroy();
-			m_LightBuffer.Destroy();
-			m_MaterialsBuffer.Destroy();
-			m_BVHBuffer.Destroy();
-			m_BVHTransforms.Unmap(); m_BVHTransforms.Destroy();
-			lights.Unmap(); lights.Destroy();
-			m_IndirectBuffer.Destroy();
-
 			Renderer3D::Destroy();
-			skyShader.SaveCache();
-			skyShader.Destroy();
-			rayTracingShader.Destroy();
-			compositeShader.Destroy();
-			bloomShader.Destroy();
 			AssetManager::Destroy();
-
-			DestroyScreen();
 
 			Settings::Save();
 		}
@@ -492,116 +279,9 @@ namespace wc {
 				p.name = playerName;
 			}
 			LoadWorld();
-		}
+		}		
 
-		void CreateScreen() {
-			// Creating the screen framebuffer
-			wc::AttachmentCreateInfo attachmentInfo = {};
-			attachmentInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT; // GL_RGBA32F
-			attachmentInfo.width = window.GetSize().x;
-			attachmentInfo.height = window.GetSize().y;
-			attachmentInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
-			uint32_t attachment = m_Framebuffer.addAttachment(attachmentInfo);
-			
-			wc::AttachmentCreateInfo depthAttachmentInfo = {};
-			depthAttachmentInfo.format = Renderer3D::depthBuffer.GetFormat();
-			depthAttachmentInfo.width = window.GetSize().x;
-			depthAttachmentInfo.height = window.GetSize().y;
-			depthAttachmentInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-			m_Framebuffer.addAttachment(depthAttachmentInfo);
-			
-			m_Framebuffer.Create(window.GetSize());
-			
-			scrTexture = m_Framebuffer.attachments[attachment].image;
-			screenImageView = m_Framebuffer.attachments[attachment].view;
-			{
-				//allocate and create the image
-				VkImageCreateInfo info = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
-
-				info.imageType = VK_IMAGE_TYPE_2D;
-
-				info.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-
-				info.extent.width = static_cast<uint32_t>(window.GetSize().x);
-				info.extent.height = static_cast<uint32_t>(window.GetSize().y);
-				info.extent.depth = 1;
-
-				info.mipLevels = 1;
-				info.arrayLayers = 1;
-				info.samples = VK_SAMPLE_COUNT_1_BIT;
-				info.tiling = VK_IMAGE_TILING_OPTIMAL;
-				info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-
-				finalImage.Create(info);
-
-				finalImage.layout = VK_IMAGE_LAYOUT_GENERAL;
-				UploadContext::immediate_submit([&](VkCommandBuffer cmd) {finalImage.setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL); });
-			}
-			scrTexture.layout = VK_IMAGE_LAYOUT_GENERAL;
-			
-			glm::ivec2 bloomTexSize = glm::ivec2(window.GetSize().x, window.GetSize().y) / 2;
-			bloomTexSize += glm::ivec2(m_BloomComputeWorkGroupSize - bloomTexSize.x % m_BloomComputeWorkGroupSize, m_BloomComputeWorkGroupSize - bloomTexSize.y % m_BloomComputeWorkGroupSize);
-			m_BloomMipLevels = scrTexture.GetMipLevelCount() - 4;
-			
-			SamplerCreateInfo sampler;
-			
-			sampler.magFilter = Filter::LINEAR;
-			sampler.minFilter = Filter::LINEAR;
-			sampler.mipmapMode = SamplerMipmapMode::LINEAR;
-			sampler.addressModeU = SamplerAddressMode::CLAMP_TO_EDGE;
-			sampler.addressModeV = SamplerAddressMode::CLAMP_TO_EDGE;
-			sampler.addressModeW = SamplerAddressMode::CLAMP_TO_EDGE;
-			sampler.minLod = 0.f;
-			sampler.maxLod = float(m_BloomMipLevels);
-
-			screenSampler.Create(sampler);
-			bloomImageSampler.Create(sampler);
-
-
-			for (int i = 0; i < 3; i++) {
-				m_BloomBuffers[i].Create(bloomTexSize.x, bloomTexSize.y, m_BloomMipLevels);
-				m_BloomBuffers[i].image.SetName("m_BloomBuffers[" + std::to_string(i) + "]");
-			}			
-
-			m_RenderTexture.Create(finalImage, screenSampler, screenImageView);
-		}
-
-		void DestroyScreen() {
-			bloomImageSampler.Destroy();
-			for (int i = 0; i < 3; i++) m_BloomBuffers[i].Destroy();			
-			m_Framebuffer.Destroy();
-			m_Framebuffer.DestroyAttachments();
-			screenSampler.Destroy();
-
-			finalImage.Destroy();
-		}
-
-		void Update(const float& deltaTime) {
-			{
-			wc::CommandBuffer& cmd = RendererContext::mainCommandBuffer;
-			cmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-			VkRenderPassBeginInfo fRPInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-
-			fRPInfo.renderPass = m_Framebuffer.renderPass;
-			fRPInfo.renderArea.offset.x = 0;
-			fRPInfo.renderArea.offset.y = 0;
-			fRPInfo.renderArea.extent = window.GetExtent();
-			fRPInfo.framebuffer = m_Framebuffer.framebuffer;
-
-			VkClearValue clearValuesFB[2];
-
-			VkClearValue& clearValueFB = clearValuesFB[0];
-			clearValueFB.color = { { 0.0f, 0.0f, 0.f, 0.0f } };
-
-			VkClearValue& depthValue = clearValuesFB[1];
-			depthValue.depthStencil.depth = 1.f;
-
-			fRPInfo.clearValueCount = std::size(clearValuesFB);
-			fRPInfo.pClearValues = clearValuesFB;
-			//once we start adding rendering commands, they will go here
-			m_Framebuffer.renderPass.Begin(cmd, fRPInfo);
-
+		void Update(float deltaTime) {			
 			// Multiplayer 
 			if (multiPlayer) {
 				if (m_ClientInstance.IsConnected())
@@ -692,7 +372,6 @@ namespace wc {
 							msg >> chunkID;
 							chunks[chunkID].generated = false;
 							chunks[chunkID].generatedStructures = false;
-							chunks[chunkID].canBeUpdated = true;
 							generateTerrain = true;
 							break;
 						}
@@ -700,7 +379,7 @@ namespace wc {
 					}
 					for (auto& player : players) {
 						if (player.second.nUniqueID != localPlayerID) {
-							Renderer3D::DrawOutlineCube(player.second.Position - p.Size, p.Size * 2.f, glm::vec4(1.f));
+							//Renderer3D::DrawOutlineCube(player.second.Position - p.Size, p.Size * 2.f, glm::vec4(1.f));
 						}
 					}
 				}
@@ -718,19 +397,9 @@ namespace wc {
 				m_ClientInstance.Send(msg);
 			}
 
-			// camera/view transformation
-			SceneData sceneData;
-			sceneData.windowSize = window.GetSize();
-			sceneData.ViewProj = glm::perspective(camera.FOV, sceneData.windowSize.x / sceneData.windowSize.y, 0.1f, 1100.f) * camera.GetViewMatrix();
-			sceneData.cameraPos = camera.Position;
-			sceneData.lower_left_corner = camera.lower_left_corner;
-			sceneData.vertical = camera.vertical;
-			sceneData.horizontal = camera.horizontal;
-			sceneData.numLights = lights.GetCounter();
-			sceneData.bvhCounter = m_BVHTransforms.GetCounter();
-			m_SceneDataBuffer.SetData(&sceneData, sizeof(SceneData));
+			Renderer3D::UpdateCamera(camera);
 
-			lights[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 0.f, 1.f)));
+			Renderer3D::lights[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 0.f, 1.f)));
 
 			angle += deltaTime * rotateSpeed;
 			angle = glm::mod(angle, 360.f);
@@ -740,23 +409,24 @@ namespace wc {
 			for (ChunkID i = 0; i < chunks.size(); i++) {
 				glm::ivec3& currChunkPos = chunks[i].position;
 				glm::ivec3 newPosition = currChunkPos;
-				if (currChunkPos.x < currentPlayerPos.x - chunkHalf) newPosition.x = currentPlayerPos.x + chunkHalf - 1;
-				else if (currChunkPos.x > currentPlayerPos.x + chunkHalf) newPosition.x = currentPlayerPos.x - chunkHalf + 1;
-			
-				else if (currChunkPos.y < currentPlayerPos.y - chunkHalf) newPosition.y = currentPlayerPos.y + chunkHalf - 1;
-				else if (currChunkPos.y > currentPlayerPos.y + chunkHalf) newPosition.y = currentPlayerPos.y - chunkHalf + 1;
-			
-				else if (currChunkPos.z < currentPlayerPos.z - chunkHalf) newPosition.z = currentPlayerPos.z + chunkHalf - 1;
-				else if (currChunkPos.z > currentPlayerPos.z + chunkHalf) newPosition.z = currentPlayerPos.z - chunkHalf + 1;
+				//if (currChunkPos.x < currentPlayerPos.x - chunkHalf) newPosition.x = currentPlayerPos.x + chunkHalf - 1;
+				//else if (currChunkPos.x > currentPlayerPos.x + chunkHalf) newPosition.x = currentPlayerPos.x - chunkHalf + 1;
+				//
+				//else if (currChunkPos.y < currentPlayerPos.y - chunkHalf) newPosition.y = currentPlayerPos.y + chunkHalf - 1;
+				//else if (currChunkPos.y > currentPlayerPos.y + chunkHalf) newPosition.y = currentPlayerPos.y - chunkHalf + 1;
+				//
+				//else if (currChunkPos.z < currentPlayerPos.z - chunkHalf) newPosition.z = currentPlayerPos.z + chunkHalf - 1;
+				//else if (currChunkPos.z > currentPlayerPos.z + chunkHalf) newPosition.z = currentPlayerPos.z - chunkHalf + 1;
 			
 				if (newPosition != currChunkPos) // Reset Chunk
 				{
 					SaveChunk(i);
 					chunks[i].position = newPosition;
-					UpdateNeighbours(i);
-					TryToLoadChunk(i);
-			
-					chunks[i].canBeUpdated = true; // @TODO: try to remove this
+					TryToLoadChunk(i);		
+
+					chunks[i].canBeUpdated = true;
+					updateChunks = true;
+					updateOctree = true;
 				}
 			}
 			
@@ -770,161 +440,59 @@ namespace wc {
 				generateTerrain = false;
 			}
 
-			uint32_t size = lights.GetCounter() ? lights.GetCounter() : 1;
-			lights.Unmap();
-			m_LightBuffer.SetData(lights.GetBuffer(), size * sizeof(Light));
-			lights.Map();
-
-			for (ChunkID i = 0; i < chunks.size(); i++) if (chunks[i].canBeUpdated) { UpdateMesh(i); chunks[i].canBeUpdated = false; }
-
-			if (m_UpdateModels) {
-				m_UpdateModels = false;
-
-				size = m_BVHTransforms.GetCounter() ? m_BVHTransforms.GetCounter() : 1;
-				m_BVHTransforms.Unmap();
-				m_BVHBuffer.SetData(m_BVHTransforms.GetBuffer(), sizeof(ChunkAABB) * size);
-				m_BVHTransforms.Map();
-			}
-
-			// Draw sky
-			if (Settings::sky) {
-				cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, 0, skyShader.getPipelineLayout(), skySet);
-				skyShader.Bind(cmd);
-				cmd.Draw(3);
-			}
-			
-			Renderer3D::Bind(cmd);
-
-			cmd.DrawIndexedIndirect(m_IndirectBuffer, (uint32_t)chunks.size());			
-			Renderer3D::Flush(renderGUI);
-
-			m_Framebuffer.renderPass.End(cmd);
-			cmd.End();
-
-
-			VkSubmitInfo submit = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
-
-			submit.commandBufferCount = 1;
-			submit.pCommandBuffers = cmd.GetPointer();
-
-			submit.pSignalSemaphores = RendererContext::computeSemaphore.GetPointer();
-			submit.signalSemaphoreCount = 1;
-
-			VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-			submit.pWaitDstStageMask = &waitStage;
-
-			//@TODO: prerecord command buffers and remove fences everywhere possible
-			VulkanContext::graphicsQueue.Submit(submit, VK_NULL_HANDLE);
-
-			//RendererContext::renderFence.Wait();
-			//RendererContext::renderFence.Reset();
-			
-			//cmd.Reset();
-			}
-
-			// compute pass
-			{
-				wc::CommandBuffer& cmd = RendererContext::computeCommandBuffer;
-				cmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-				//rayTracingShader.Bind(cmd);
-				//cmd.Dispatch(glm::ceil((glm::vec2)window.GetSize() / glm::vec2(m_BloomComputeWorkGroupSize)));
-
-				if (Settings::bloomEnable) {
-					cmd.BindPipeline(bloomShader.getPipeline());
-					uint32_t counter = 0;
-
-					BloomBufferSettings settings;
-					settings.Params = glm::vec4(Settings::BloomThreshold, Settings::BloomThreshold - Settings::BloomKnee, Settings::BloomKnee * 2.f, 0.25f / Settings::BloomKnee);
-					cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
-					cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, 0, bloomShader.getPipelineLayout(), bloomSets[counter]);
-					counter++;
-					cmd.Dispatch(glm::ceil(glm::vec2(m_BloomBuffers[0].image.GetSize()) / glm::vec2(m_BloomComputeWorkGroupSize)));
-
-					settings.Mode = (int)Renderer3D::BloomMode::Downsample;
-					for (uint32_t currentMip = 1; currentMip < m_BloomMipLevels; currentMip++)
-					{
-						glm::vec2 dispatchSize = glm::ceil((glm::vec2)m_BloomBuffers[0].image.GetMipSize(currentMip) / glm::vec2(m_BloomComputeWorkGroupSize));
-
-						// Ping 
-						settings.LOD = float(currentMip - 1);
-						cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
-
-						cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, 0, bloomShader.getPipelineLayout(), bloomSets[counter]);
-						counter++;
-						cmd.Dispatch(dispatchSize);
-
-						// Pong 
-						settings.LOD = float(currentMip);
-						cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
-
-						cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, 0, bloomShader.getPipelineLayout(), bloomSets[counter]);
-						counter++;
-						cmd.Dispatch(dispatchSize);
+			if (updateChunks) {
+				for (ChunkID i = 0; i < chunks.size(); i++)
+					if (chunks[i].canBeUpdated) { 
+						UpdateChunk(i);				
+						
+						chunks[i].canBeUpdated = false; 
 					}
 
-					// First Upsample		
-					settings.LOD = float(m_BloomMipLevels - 2);
-					settings.Mode = (int)Renderer3D::BloomMode::UpsampleFirst;
-					cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
+				updateChunks = false;
 
-					cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, 0, bloomShader.getPipelineLayout(), bloomSets[counter]);
-					counter++;
+				if (updateOctree) {
+					updateOctree = false;
 
-					cmd.Dispatch(glm::ceil((glm::vec2)m_BloomBuffers[2].image.GetMipSize(m_BloomMipLevels - 1) / glm::vec2(m_BloomComputeWorkGroupSize)));
+					std::vector<ChunkNode> nodes;
+					ChunkNode rootNode;
 
-					settings.Mode = (int)Renderer3D::BloomMode::Upsample;
-					for (int currentMip = m_BloomMipLevels - 2; currentMip >= 0; currentMip--)
-					{
-						settings.LOD = float(currentMip);
-						cmd.PushConstants(bloomShader.getPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(settings), &settings);
 
-						cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, 0, bloomShader.getPipelineLayout(), bloomSets[counter]);
-						counter++;
+					glm::vec3& start = rootNode.start = glm::vec3(0.f);
+					glm::vec3& end = rootNode.end = glm::vec3(0.f);
+					for (ChunkID i = 0; i < chunks.size(); i++) {
+						auto chunkStart = chunks[i].position * glm::ivec3(chunkSize);
+						auto chunkEnd = chunkStart + glm::ivec3(chunkSize);
 
-						cmd.Dispatch(glm::ceil((glm::vec2)m_BloomBuffers[2].image.GetMipSize(currentMip) / glm::vec2(m_BloomComputeWorkGroupSize)));
+						for (int i = 0; i < 3; i++) {
+							if (chunkStart[i] < start[i]) start[i] = chunkStart[i];
+							else if (chunkEnd[i] > end[i]) end[i] = chunkEnd[i];
+						}
 					}
+					nodes.push_back(rootNode);
+					GenerateOctree(nodes, 0, 3);
 
+					Renderer3D::ChunkNodeBuffer.SetData(nodes.data(), sizeof(ChunkNode) * nodes.size());
 				}
-
-				compositeShader.Bind(cmd);
-				cmd.Dispatch(glm::ceil((glm::vec2)window.GetSize() / glm::vec2(m_BloomComputeWorkGroupSize)));
-
-				cmd.End();
-
-
-				VkSubmitInfo submit = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
-
-				submit.commandBufferCount = 1;
-				submit.pCommandBuffers = cmd.GetPointer();
-
-				submit.pWaitSemaphores = RendererContext::computeSemaphore.GetPointer();
-				submit.waitSemaphoreCount = 1;
-
-				VkPipelineStageFlags computeWaitStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-
-				submit.pWaitDstStageMask = &computeWaitStage;
-
-				VulkanContext::computeQueue.Submit(submit, RendererContext::computeFence);
-				RendererContext::computeFence.Wait();
-				RendererContext::computeFence.Reset();
 			}
+
+			Renderer3D::Render();
 		}
 
 		std::vector<std::string> consoleHistory;
 		char consoleBuffer[256];
-		void RenderGUI(const float& deltaTime) {
+		void RenderGUI(float deltaTime) {
 			ImGui::Begin("Screen Render", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
-			ImGui::GetBackgroundDrawList()->AddImage(m_RenderTexture, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
+			ImGui::GetBackgroundDrawList()->AddImage(Renderer3D::m_RenderTexture, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
 			ImGui::End();
 
 			if (debug_menu && renderGUI) {
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
+				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
 				ImGui::Begin("Debug Menu", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
 				ImGui::Text(std::format("FPS: {0} FrameTime: {1}", (int)(1.f / deltaTime), deltaTime).c_str());
 				ImGui::Text(std::format("Position: X:{0} Y:{1} Z:{2}", p.Position.x, p.Position.y, p.Position.z).c_str());
 				ImGui::Text(std::format("Camera position: X:{0} Y:{1} Z:{2}", camera.Position.x, camera.Position.y, camera.Position.z).c_str());
+				ImGui::Text(std::format("ChunkID: {}", getChunkID(getChunkPos(glm::ivec3(p.Position)))).c_str());
 				ImGui::End();
 			}
 
@@ -975,7 +543,7 @@ namespace wc {
 						ImGui::ImageButton(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(90, 90));
 					else
 						ImGui::Button("", ImVec2(90, 90));
-
+				
 					// Our buttons are both drag sources and drag targets here!
 					if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip))
 					{
@@ -989,11 +557,11 @@ namespace wc {
 						{
 							IM_ASSERT(payload->DataSize == sizeof(int));
 							int payload_n = *(const int*)payload->Data;
-
+				
 							auto tmp = p.inventory.data[n];
 							p.inventory.data[n] = p.inventory.data[payload_n];
 							p.inventory.data[payload_n] = tmp;
-
+				
 						}
 						ImGui::EndDragDropTarget();
 					}
@@ -1058,22 +626,31 @@ namespace wc {
 			ImGui::End();
 		}
 
-		void ParseCommand(std::string& command) { // @TODO: Maybe switch to switch statement?
+		void ParseCommand(std::string& command) {
 			consoleHistory.push_back(command);
 			// Command parsing
 			CommandParser cmdParser;
 			CommandType commandType = cmdParser.getCommandType(command);
 			
-			if (commandType == CommandType::textMessage) WC_INFO(command);
-			else if (commandType == CommandType::fly) {
+			switch (commandType) {
+			case wc::CommandType::UNKNOWN:
+				WC_ERROR("Unknow command!");
+				break;
+			case wc::CommandType::textMessage:
+				WC_INFO(command);
+				break;
+			case wc::CommandType::fly:			
 				p.flying = cmdParser.getArgument();
 				p.wasOnGround = false;
 				p.m_isOnGround = false;
 				p.wasFalling = false;
-			}
-			else if (commandType == CommandType::collide) p.collision = cmdParser.getArgument();
-			else if (commandType == CommandType::setBlock) setBlock({ cmdParser.getArgument(1) , cmdParser.getArgument(2) , cmdParser.getArgument(3) }, cmdParser.getArgument(), true, true);
-			else if (commandType == CommandType::set) {
+			
+				break;
+			case wc::CommandType::collide:
+				p.collision = cmdParser.getArgument();
+				break;
+			case wc::CommandType::set:
+			{
 				std::string type = cmdParser.getStringArgument();
 				if (type == "speed") p.MovementSpeed = cmdParser.getArgument(1);
 				else if (type == "time") angle = cmdParser.getArgument(1);
@@ -1081,19 +658,28 @@ namespace wc {
 					WC_ERROR("Indentifier '{0}' is not recognized", type.c_str());
 				}
 			}
-			else if (commandType == CommandType::getBlockID) WC_INFO(getBlock({ cmdParser.getArgument(0) , cmdParser.getArgument(1) , cmdParser.getArgument(2) }));
-			else if (commandType == CommandType::give) { 
+
+				break;
+			case wc::CommandType::setBlock:
+				setBlock({ cmdParser.getArgument(1) , cmdParser.getArgument(2) , cmdParser.getArgument(3) }, cmdParser.getArgument(), true, true);
+				break;
+			case wc::CommandType::give:
+			{
 				std::string itemName = cmdParser.getStringArgument(0);
-				WC_INFO(itemName.c_str()); 
+				WC_INFO(itemName.c_str());
 			}
-			else if (commandType == CommandType::UNKNOWN) WC_ERROR("Unknow command!");
+				break;
+			case wc::CommandType::getBlockID:
+				WC_INFO(getBlock({ cmdParser.getArgument(0) , cmdParser.getArgument(1) , cmdParser.getArgument(2) }));
+				break;
+			}
 			command.clear();
 		}
 
 		bool console = false;
 		bool inventory = false;
 
-		void OnInput(const float& deltaTime) {
+		void OnInput(float deltaTime) {
 			// MENU MANAGMENT
 
 			if (!console && !inventory)
@@ -1197,73 +783,7 @@ namespace wc {
 			if (Keyboard::getKey(Keyboard::Key::F1)) renderGUI = !renderGUI;
 			if (Keyboard::getKey(Keyboard::Key::F2)) {
 				VulkanContext::GetDevice().WaitIdle();
-				VkImageCreateInfo createInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
-				createInfo.imageType = VK_IMAGE_TYPE_2D;
-				createInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-				createInfo.extent.width = window.GetFramebufferExtent().width;
-				createInfo.extent.height = window.GetFramebufferExtent().height;
-				createInfo.extent.depth = 1;
-				createInfo.arrayLayers = 1;
-				createInfo.mipLevels = 1;
-				createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-				createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-				createInfo.tiling = VK_IMAGE_TILING_LINEAR;
-				createInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-				Image img; // @TODO: add constructor
-				img.Create(createInfo, VMA_MEMORY_USAGE_GPU_TO_CPU);
-
-				UploadContext::immediate_submit([&](VkCommandBuffer cmd) {
-					finalImage.setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
-					img.insertImageMemoryBarrier(
-						cmd, 0,
-						VK_ACCESS_TRANSFER_WRITE_BIT,
-						VK_IMAGE_LAYOUT_UNDEFINED,
-						VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-						VK_PIPELINE_STAGE_TRANSFER_BIT,
-						VK_PIPELINE_STAGE_TRANSFER_BIT,
-						VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
-						VkImageCopy imageCopyRegion{};
-						imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-						imageCopyRegion.srcSubresource.layerCount = 1;
-						imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-						imageCopyRegion.dstSubresource.layerCount = 1;
-						imageCopyRegion.extent.width = window.GetFramebufferExtent().width;
-						imageCopyRegion.extent.height = window.GetFramebufferExtent().height;
-						imageCopyRegion.extent.depth = 1;
-
-						vkCmdCopyImage(
-							cmd,
-							finalImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-							img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-							1,
-							&imageCopyRegion);
-
-						// Transition destination image to general layout, which is the required layout for mapping the image memory later on
-						img.insertImageMemoryBarrier(
-							cmd,
-							VK_ACCESS_TRANSFER_WRITE_BIT,
-							VK_ACCESS_MEMORY_READ_BIT,
-							VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-							VK_IMAGE_LAYOUT_GENERAL,
-							VK_PIPELINE_STAGE_TRANSFER_BIT,
-							VK_PIPELINE_STAGE_TRANSFER_BIT,
-							VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
-
-						finalImage.setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
-				});
-
-				uint8_t* data = (uint8_t*)img.Map();
-				data += img.SubresourceLayout().offset;
-
-				glm::ivec2 size = window.GetSize();
-				stbi_flip_vertically_on_write(true);
-				stbi_write_png("screenshots/screenshot.png", size.x, size.y, 4, data, size.x * 4);
-				//delete[] data;
-				img.Unmap();
-
-				img.Destroy();
-
+				
 				WC_INFO("TODO: Implement screenshots back");
 			}
 			if (Keyboard::getKey(Keyboard::Key::F8)) debug_menu = !debug_menu;
@@ -1372,7 +892,7 @@ namespace wc {
 						startBreaking = false;
 						breakPos = vMapCheck;
 					}
-					Renderer3D::DrawOutlineCube(vMapCheck, glm::vec3(1.f), color);
+					//Renderer3D::DrawOutlineCube(vMapCheck, glm::vec3(1.f), color);
 					if (m_BlockBreakTimer.getElapsedTime() >= breakTime && startBreaking) {
 						p.inventory.PushItem({getBlock(vMapCheck), 1});
 						setBlock(vMapCheck, 0, true, true);
@@ -1412,7 +932,6 @@ namespace wc {
 			for (ChunkID chunkID = 0; chunkID < chunks.size(); chunkID++) {
 				chunks[chunkID].position = to3D(chunkID, glm::ivec3(RenderDistance)) + offset;
 
-				UpdateNeighbours(chunkID);
 				TryToLoadChunk(chunkID);
 			}
 			if (!multiPlayer) {
@@ -1431,7 +950,7 @@ namespace wc {
 			config["time"] = angle;
 			YAMLUtils::saveFile("worlds/" + worldName + "/world.properties", config);
 
-			p.Serialize(GetEntityPath());
+			//p.Serialize(GetEntityPath());
 			m_WorldLoaded = false;
 		}
 
@@ -1492,7 +1011,7 @@ namespace wc {
 
 		void GenerateChunkTerrain(const ChunkID& chunk) {
 			memset(&chunks[chunk].data, 0, sizeof(chunks[chunk].data));
-			auto setBlockTerrain = [&](const glm::ivec3& pos, const BlockID& blockID) {
+			auto setBlockTerrain = [&](const glm::ivec3& pos, BlockID blockID) {
 				chunks[chunk].data[pos.x][pos.y][pos.z] = blockID;
 			};
 
@@ -1526,37 +1045,31 @@ namespace wc {
 			}
 
 			chunks[chunk].canBeUpdated = true;
-
-
-			{ int16_t neg = chunks[chunk].neighborNeg[0]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
-			{ int16_t neg = chunks[chunk].neighborNeg[1]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
-			{ int16_t neg = chunks[chunk].neighborNeg[2]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
-
-			{ int16_t Pos = chunks[chunk].neighborPos[0]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
-			{ int16_t Pos = chunks[chunk].neighborPos[1]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
-			{ int16_t Pos = chunks[chunk].neighborPos[2]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
-		}
-
-		// LIGHT MANAGING (deprecated)
-		uint32_t addLight(const glm::vec3& position, const uint32_t& color) {
-			uint32_t light = lights.GetCounter();
-			if (light <= maxLights) 
-				lights.Add(Light(position, color));
-			
-			return light;
-		}
-
-		void removeLight(const glm::vec3& position) {
-			for (uint32_t i = 0; i < lights.GetCounter(); i++)
-				if (lights[i].vector == position) {
-					lights.Remove(i);
-
-					break;
-				}
-		}
+		}		
 
 		// WORLD/CHUNK MANAGING
-		void setBlockLocal(const glm::uvec3& pos, const BlockID& blockID, const ChunkID& chunkID, const bool& playerEdited, const bool& replyToServer) {
+
+		void UpdateChunk(const ChunkID& chunkID) {
+			Chunk& chunk = chunks[chunkID];
+			BlockID data[chunkSize][chunkSize][chunkSize];
+			memcpy(data, chunk.data, sizeof(data));
+			glm::ivec3 chunkPos = chunk.position * glm::ivec3(chunkSize);
+
+			for (uint8_t y = 0; y < chunkSize; y++)
+				for (uint8_t z = 0; z < chunkSize; z++)
+					for (uint8_t x = 0; x < chunkSize; x++) {
+						BlockID block = data[x][y][z];
+						if (block != 0) {
+							if (blockData[block].connectionType == CUSTOM_MODEL) { // @TODO: add more shader-unsupported cases
+								data[x][y][z] = 0; 
+							}
+						}
+					}
+
+			Renderer3D::m_VoxelBuffer.SetData(data, sizeof(data), chunkID * sizeof(Chunk::data));
+		}
+
+		void setBlockLocal(const glm::uvec3& pos, BlockID blockID, const ChunkID& chunkID, bool playerEdited, bool replyToServer) {
 			const uint32_t& x = pos.x;
 			const uint32_t& y = pos.y;
 			const uint32_t& z = pos.z;
@@ -1568,37 +1081,22 @@ namespace wc {
 			glm::ivec3 iGlobalPos = globalPos;
 			if (blockID == 0) {
 				if (blockData[chunkBlockID].emitLight)
-					removeLight(globalPos + glm::vec3(0.5f));
+					Renderer3D::removeLight(globalPos + glm::vec3(0.5f));
 
 				if (blockData[chunkBlockID].connectionType == ConnectionType::CUSTOM_MODEL) {
 					Mesh& mesh = blockMeshes[blockData[chunkBlockID].meshID];
-
-					for (uint32_t i = 0; i < m_BVHTransforms.GetCounter(); i++) {
-						ChunkAABB aabb;
-						aabb.start = mesh.start + glm::vec4(globalPos, 0.f);
-						aabb.end = mesh.end + glm::vec4(globalPos, 0.f);
-
-						if (m_BVHTransforms[i].start == aabb.start && m_BVHTransforms[i].end == aabb.end) {
-							m_BVHTransforms.Remove(i);
-							break;
-						}
-					}
+					Renderer3D::removeModel(mesh.cmd, globalPos);
 				}
 			}
 			else {
 				if (blockData[blockID].emitLight)
-					addLight(globalPos + glm::vec3(0.5f), convertColor(glm::vec4(1.f)));
+					Renderer3D::addLight(globalPos + glm::vec3(0.5f), convertColor(glm::vec4(1.f)));
 
 				if (blockData[blockID].connectionType == ConnectionType::CUSTOM_MODEL) {
 					Mesh& mesh = blockMeshes[blockData[blockID].meshID];
 
-					m_UpdateModels = true;
-
-					ChunkAABB aabb;
-					aabb.start = mesh.start + glm::vec4(globalPos, 0.f);
-					aabb.end = mesh.end + glm::vec4(globalPos, 0.f);
-
-					m_BVHTransforms.Add(aabb);
+					Renderer3D::Draw(mesh.cmd, globalPos);
+					//m_UpdateModels = true;
 				}
 			}			
 
@@ -1612,288 +1110,12 @@ namespace wc {
 				m_ClientInstance.Send(msg);
 			}
 			else if (playerEdited) chunks[chunkID].used = true;
-
-
-			if (x == 0) { int16_t neg = chunks[chunkID].neighborNeg[0]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
-			if (y == 0) { int16_t neg = chunks[chunkID].neighborNeg[1]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
-			if (z == 0) { int16_t neg = chunks[chunkID].neighborNeg[2]; if (neg >= 0) { chunks[neg].canBeUpdated = true; } }
-
-			if (x == chunkSize - 1) { int16_t Pos = chunks[chunkID].neighborPos[0]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
-			if (y == chunkSize - 1) { int16_t Pos = chunks[chunkID].neighborPos[1]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
-			if (z == chunkSize - 1) { int16_t Pos = chunks[chunkID].neighborPos[2]; if (Pos >= 0) { chunks[Pos].canBeUpdated = true; } }
+			updateChunks = true;
 		}
 
-		void setBlock(const glm::ivec3& pos, const BlockID& block, const bool& playerEdited, const bool& replyToServer) {
+		void setBlock(const glm::ivec3& pos, BlockID block, bool playerEdited, bool replyToServer) {
 			int16_t chunk = getChunkID(getChunkPos(pos));
 			if (chunk > -1) setBlockLocal(getBlockPos(pos), block, chunk, playerEdited, replyToServer);
-		}
-
-		// should be replaced with UpdateChunk
-		void UpdateMesh(const ChunkID& chunkID) {
-			uint32_t offset = 0;
-			Chunk& chunk = chunks[chunkID];
-			uint32_t& indexCount = chunks[chunkID].IndexCount;
-			indexCount = 0;
-
-			glm::ivec3 chunkPos = chunk.position * glm::ivec3(chunkSize);
-			ChunkAABB aabb;
-			aabb.start = glm::vec4(chunkPos, 0.f);
-			aabb.end = aabb.start + glm::vec4(chunkSize);
-
-			//Vertex* vertices = (Vertex*)(globalVertices + chunkID * MaxVertexCount);
-			wc::CPUBuffer<Vertex> vertices;
-			vertices.Create(MaxVertexCount * sizeof(Vertex));
-			vertices.Map();
-
-			bool done = false;
-			uint32_t i = 0, j = 0, k = 0, l = 0, w = 0, h = 0, d = 0, u = 0, v = 0, n = 0;
-			uint8_t type = ConnectionType::NON_EXISTENT, checkType = ConnectionType::NON_EXISTENT;
-			BlockID mask[chunkSize * chunkSize];
-			uint32_t textureMask[chunkSize * chunkSize];
-			BlockID blockID = 0, checkBlock = 0;
-			glm::ivec3 x = glm::ivec3(0);
-			glm::ivec3 q = glm::ivec3(0);
-			glm::ivec3 du = glm::ivec3(0);
-			glm::ivec3 dv = glm::ivec3(0);
-			// Sweep over each axis (X, Y and Z)
-			for (d = 0; d < 3; d++)
-			{
-				i = 0, j = 0, k = 0, l = 0, w = 0, h = 0;
-				u = (d + 1) % 3;
-				v = (d + 2) % 3;
-				x[u] = 0;
-				x[v] = 0;
-				x[d] = -1;
-
-				memset(mask, 0, sizeof(mask));
-				memset(textureMask, 0, sizeof(textureMask));
-				q[d] = 1;
-				q[u] = 0;
-				q[v] = 0;
-
-				// Check each slice of the chunk one at a time
-				for (; x[d] < chunkSize;)
-				{
-					// Compute the mask
-					n = 0;
-					for (x[v] = 0; x[v] < chunkSize; x[v]++)
-					{
-						for (x[u] = 0; x[u] < chunkSize; x[u]++)
-						{
-							// q determines the direction (X, Y or Z) that we are searching
-							// m.IsBlockAt(x,y,z) takes global map positions and returns true if a block exists there
-							blockID = 0;
-							type = ConnectionType::NON_EXISTENT;
-							checkBlock = 0;
-							checkType = ConnectionType::NON_EXISTENT;
-
-							if (x[d] >= 0) {
-								blockID = chunk.data[x[0]][x[1]][x[2]];
-								type = blockData[blockID].connectionType;
-							}
-
-							glm::ivec3 xq = x + q;
-							if (xq[d] < chunkSize) {
-								checkBlock = chunk.data[xq.x][xq.y][xq.z];
-								checkType = blockData[checkBlock].connectionType;
-							}
-							else if (chunk.neighborPos[d] > -1) {
-								xq[d] = 0;
-								checkBlock = chunks[chunk.neighborPos[d]].data[xq.x][xq.y][xq.z];
-								checkType = blockData[checkBlock].connectionType;
-							}
-							// The mask is set to true if there is a visible face between two blocks, i.e. both aren't empty and both aren't blocks							
-							Block& checkBlockData = blockData[checkBlock];
-							Block& BlockData = blockData[blockID];
-							if (type != checkType && type != ConnectionType::NON_EXISTENT && checkType != ConnectionType::NON_EXISTENT) {
-								if (blockID != checkBlock && type == ConnectionType::CONNECT_DEFAULT) { mask[n] = blockID + 1; textureMask[n] = materialData[BlockData.materialID].albedo[d]; }
-								else if ((blockID == 0 || type != ConnectionType::CONNECT_DEFAULT) && checkType == ConnectionType::CONNECT_DEFAULT) { mask[n] = checkBlock + 1; textureMask[n] = materialData[checkBlockData.materialID].albedo[d + 3]; }
-
-								else if (blockID != checkBlock && type == ConnectionType::NO_CONNECT) { mask[n] = blockID + 1; textureMask[n] = materialData[BlockData.materialID].albedo[d]; }
-								else if (blockID == 0 && checkType == ConnectionType::NO_CONNECT) { mask[n] = checkBlock + 1; textureMask[n] = materialData[checkBlockData.materialID].albedo[d + 3]; }
-
-								else if (checkBlock == 0 && type == ConnectionType::FLUID_CONNECT) { mask[n] = blockID + 1; textureMask[n] = materialData[BlockData.materialID].albedo[d]; }
-								else if (blockID == 0 && checkType == ConnectionType::FLUID_CONNECT) { mask[n] = checkBlock + 1; textureMask[n] = materialData[checkBlockData.materialID].albedo[d + 3]; }
-							}
-							n++;
-						}
-					}
-
-					x[d]++;
-
-					n = 0;
-
-					// Generate a mesh from the mask using lexicographic ordering,      
-					//   by looping over each block in this slice of the chunk
-					for (j = 0; j < chunkSize; j++)
-					{
-						for (i = 0; i < chunkSize;)
-						{
-							if (textureMask[n])
-							{
-								// Compute the width of this quad and store it in w                        
-								//   This is done by searching along the current axis until mask[n + w] is false
-								for (w = 1; i + w < chunkSize && textureMask[n + w] && textureMask[n + w] == textureMask[n]; w++) {}
-
-								// Compute the height of this quad and store it in h                        
-								//   This is done by checking if every block next to this row (range 0 to w) is also part of the mask.
-								//   For example, if w is 5 we currently have a quad of dimensions 1 x 5. To reduce triangle count,
-								//   greedy meshing will attempt to expand this quad out to CHUNK_SIZE x 5, but will stop if it reaches a hole in the mask
-								done = false;
-								for (h = 1; j + h < chunkSize; h++)
-								{
-									// Check each block next to this quad
-									for (k = 0; k < w; ++k)
-									{
-										// If there's a hole in the mask, exit
-										if (!textureMask[n + k + h * chunkSize] || textureMask[n + k + h * chunkSize] != textureMask[n])
-										{
-											done = true;
-											break;
-										}
-									}
-
-									if (done)
-										break;
-								}
-
-								x[u] = i;
-								x[v] = j;
-
-								// du and dv determine the size and orientation of this face
-								du[u] = w;
-								du[d] = 0;
-								du[v] = 0;
-
-								dv[v] = h;
-								dv[d] = 0;
-								dv[u] = 0;
-								float h1 = (float)h, w1 = (float)w;
-								// Create a quad for this face. Colour, normal or textures are not stored in this block vertex format.
-								glm::vec3 corner[4] = {};
-
-								if (d == 0) { // @TODO: Wrong!
-									corner[2] = x;           // Top-left vertice position
-									corner[3] = x + du;      // Top right vertice position
-									corner[1] = x + dv;      // Bottom left vertice position
-									corner[0] = x + du + dv; // Bottom right vertice position
-								}
-								else if (d == 1) {
-									corner[0] = x;                 // Top-left vertice position
-									corner[1] = x + du;         // Top right vertice position
-									corner[3] = x + dv;         // Bottom left vertice position
-									corner[2] = x + du + dv; // Bottom right vertice position
-								}
-								else if (d == 2) {
-									corner[2] = x;                 // Top-left vertice position
-									corner[1] = x + du;         // Top right vertice position
-									corner[3] = x + dv;         // Bottom left vertice position
-									corner[0] = x + du + dv; // Bottom right vertice position
-									std::swap(h1, w1);
-								}
-								glm::vec3 normal = glm::normalize(glm::cross(corner[2] - corner[0], corner[1] - corner[0]));
-								if (indexCount < MaxIndexCount) {
-									BlockID maskID = mask[n] - 1;
-									glm::vec2 TexCoords[] = {
-										glm::vec2(0.f, 0.f),
-										glm::vec2(0.f, w1),
-										glm::vec2(h1,  w1),
-										glm::vec2(h1,  0.f),
-									};
-
-									uint32_t texID = 0;
-									if (normal == glm::vec3(0.f, -1.f, 0.f)) texID = (uint32_t)BlockTexture::TOP;
-									if (normal == glm::vec3(0.f,  1.f, 0.f)) texID = (uint32_t)BlockTexture::BOTTOM;
-									if (normal == glm::vec3( 1.f, 0.f, 0.f)) texID = (uint32_t)BlockTexture::RIGHT;
-									if (normal == glm::vec3(-1.f, 0.f, 0.f)) texID = (uint32_t)BlockTexture::LEFT;
-									if (normal == glm::vec3(0.f, 0.f,  1.f)) texID = (uint32_t)BlockTexture::FRONT;
-									if (normal == glm::vec3(0.f, 0.f, -1.f)) texID = (uint32_t)BlockTexture::BACK;
-
-									for (uint32_t c = 0; c < std::size(corner); c++) {
-										Vertex vertex = Vertex(corner[c] + (glm::vec3)chunkPos, { TexCoords[c], texID }, normal, blockData[maskID].materialID);
-										vertices[c + offset] = vertex;
-										if (vertex.Position.x < aabb.end.x) aabb.end.x = vertex.Position.x;
-										if (vertex.Position.y < aabb.end.y) aabb.end.y = vertex.Position.y;
-										if (vertex.Position.z < aabb.end.z) aabb.end.z = vertex.Position.z;
-
-										if (vertex.Position.x > aabb.start.x) aabb.start.x = vertex.Position.x;
-										if (vertex.Position.y > aabb.start.y) aabb.start.y = vertex.Position.y;
-										if (vertex.Position.z > aabb.start.z) aabb.start.z = vertex.Position.z;
-									}
-
-									indexCount += 6;
-									offset += (uint32_t)std::size(corner);
-								}
-								// Clear this part of the mask, so we don't add duplicate faces
-								for (l = 0; l < h; l++)
-									for (k = 0; k < w; k++) {
-										mask[n + k + l * chunkSize] = 0;
-										textureMask[n + k + l * chunkSize] = 0;
-									}
-
-								// Increment counters and continue
-								i += w;
-								n += w;
-							}
-							else
-							{
-								i++;
-								n++;
-							}
-						}
-					}
-				}
-			}
-			vertices.Unmap();
-			Renderer3D::vertexBuffer.SetData(vertices.GetBuffer(), MaxVertexCount * sizeof(Vertex), chunkID * MaxVertexCount * sizeof(Vertex));
-			vertices.Destroy();
-			
-			VkDrawIndexedIndirectCommand cmd;
-			cmd.vertexOffset = chunkID * MaxVertexCount;
-			cmd.instanceCount = 1;
-			cmd.firstInstance = 0;
-			cmd.firstIndex = 0;
-			cmd.indexCount = indexCount;
-			m_IndirectBuffer.SetData(&cmd, sizeof(cmd), sizeof(cmd) * chunkID);
-
-			if (indexCount == 0) 
-				aabb.end = aabb.start = glm::vec4(0.f);	
-			else {
-				//m_BVHBuffer.SetData(&aabb, sizeof(aabb), sizeof(ChunkAABB) * m_BvhCounter);
-				//m_BvhCounter++;
-			}
-		}
-
-		// Deprecated
-		void UpdateNeighbours(const ChunkID& chunk) {
-			glm::ivec3 neighborXpos = chunks[chunk].position + glm::ivec3(1, 0, 0);
-			glm::ivec3 neighborYpos = chunks[chunk].position + glm::ivec3(0, 1, 0);
-			glm::ivec3 neighborZpos = chunks[chunk].position + glm::ivec3(0, 0, 1);
-
-			glm::ivec3 neighborXneg = chunks[chunk].position - glm::ivec3(1, 0, 0);
-			glm::ivec3 neighborYneg = chunks[chunk].position - glm::ivec3(0, 1, 0);
-			glm::ivec3 neighborZneg = chunks[chunk].position - glm::ivec3(0, 0, 1);
-
-			if (chunks[chunk].neighborPos[0] != -1) if (chunks[chunks[chunk].neighborPos[0]].position != neighborXpos) { chunks[chunks[chunk].neighborPos[0]].neighborNeg[0] = -1; chunks[chunk].neighborPos[0] = -1; }
-			if (chunks[chunk].neighborPos[1] != -1) if (chunks[chunks[chunk].neighborPos[1]].position != neighborYpos) { chunks[chunks[chunk].neighborPos[1]].neighborNeg[1] = -1; chunks[chunk].neighborPos[1] = -1; }
-			if (chunks[chunk].neighborPos[2] != -1) if (chunks[chunks[chunk].neighborPos[2]].position != neighborZpos) { chunks[chunks[chunk].neighborPos[2]].neighborNeg[2] = -1; chunks[chunk].neighborPos[2] = -1; }
-			
-			if (chunks[chunk].neighborNeg[0] != -1) if (chunks[chunks[chunk].neighborNeg[0]].position != neighborXneg) { chunks[chunks[chunk].neighborNeg[0]].neighborPos[0] = -1; chunks[chunk].neighborNeg[0] = -1; }
-			if (chunks[chunk].neighborNeg[1] != -1) if (chunks[chunks[chunk].neighborNeg[1]].position != neighborYneg) { chunks[chunks[chunk].neighborNeg[1]].neighborPos[1] = -1; chunks[chunk].neighborNeg[1] = -1; }
-			if (chunks[chunk].neighborNeg[2] != -1) if (chunks[chunks[chunk].neighborNeg[2]].position != neighborZneg) { chunks[chunks[chunk].neighborNeg[2]].neighborPos[2] = -1; chunks[chunk].neighborNeg[2] = -1; }
-			
-			for (ChunkID i = 0; i < chunks.size(); i++) {
-				if (chunks[i].position == neighborXpos) { chunks[chunk].neighborPos[0] = i; chunks[chunks[chunk].neighborPos[0]].neighborNeg[0] = chunk; }
-				if (chunks[i].position == neighborYpos) { chunks[chunk].neighborPos[1] = i; chunks[chunks[chunk].neighborPos[1]].neighborNeg[1] = chunk; }
-				if (chunks[i].position == neighborZpos) { chunks[chunk].neighborPos[2] = i; chunks[chunks[chunk].neighborPos[2]].neighborNeg[2] = chunk; }
-			
-				if (chunks[i].position == neighborXneg) { chunks[chunk].neighborNeg[0] = i; chunks[chunks[chunk].neighborNeg[0]].neighborPos[0] = chunk; }
-				if (chunks[i].position == neighborYneg) { chunks[chunk].neighborNeg[1] = i; chunks[chunks[chunk].neighborNeg[1]].neighborPos[1] = chunk; }
-				if (chunks[i].position == neighborZneg) { chunks[chunk].neighborNeg[2] = i; chunks[chunks[chunk].neighborNeg[2]].neighborPos[2] = chunk; }
-			
-				if (chunks[chunk].neighborPos[0] != -1 && chunks[chunk].neighborPos[1] != -1 && chunks[chunk].neighborPos[2] != -1 &&
-					chunks[chunk].neighborNeg[0] != -1 && chunks[chunk].neighborNeg[1] != -1 && chunks[chunk].neighborNeg[2] != -1) return;
-			}
 		}
 
 		BlockID getBlock(const glm::ivec3& pos) {
@@ -1956,109 +1178,60 @@ namespace wc {
 				}
 			}
 		}
-		
-		// Bloom
-		struct BloomImage {
-			std::vector<ImageView> imageViews;
-			Image image;
 
-			void Create(const uint32_t& width, const uint32_t& height, const uint32_t& mipLevels) {
-				VkImageCreateInfo imgInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+		bool isInBox(const glm::vec3& p, const glm::vec3& start, const glm::vec3& end) {
+			return (p.x >= start.x && p.x <= end.x) &&
+				(p.y >= start.y && p.y <= end.y) &&
+				(p.z >= start.z && p.z <= end.z);
+		}
 
-				imgInfo.imageType = VK_IMAGE_TYPE_2D;
+		void GenerateOctree(std::vector<ChunkNode>& nodes, uint32_t parentNodeID, uint32_t depth) {
+			if (depth == 0) {
+				// Base case: we have reached the maximum depth, so create a leaf node
+				ChunkNode& node = nodes[parentNodeID];
+				node.isLeaf = true;
 
-				imgInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+				uint32_t numChildren = 0;
+				for (int i = 0; i < chunks.size(); i++) {
+					glm::vec3 chunkPos = glm::vec3(chunks[i].position) * glm::vec3(chunkSize);
 
-				imgInfo.extent.width = width;
-				imgInfo.extent.height = height;
-				imgInfo.extent.depth = 1;
-
-				imgInfo.mipLevels = mipLevels;
-				imgInfo.arrayLayers = 1;
-				imgInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-				imgInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-				imgInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
-
-				image.Create(imgInfo);
-
-				UploadContext::immediate_submit([&](VkCommandBuffer cmd) {
-					VkImageSubresourceRange range;
-					range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-					range.baseArrayLayer = 0;
-					range.baseMipLevel = 0;
-					range.layerCount = 1;
-					range.levelCount = imgInfo.mipLevels;
-					image.setLayout(cmd, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, range);
-					});
-
-				{
-					VkImageViewCreateInfo createInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-					createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-					createInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-					createInfo.flags = 0;
-					createInfo.image = image;
-					createInfo.subresourceRange.layerCount = 1;
-					createInfo.subresourceRange.levelCount = imgInfo.mipLevels;
-					createInfo.subresourceRange.baseMipLevel = 0;
-					createInfo.subresourceRange.baseArrayLayer = 0;
-					createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-					{ // Creating the first image view
-						ImageView& imageView = imageViews.emplace_back();
-						imageView.Create(createInfo);
+					if (isInBox(chunkPos, node.start, node.end) && isInBox(chunkPos + glm::vec3(chunkSize), node.start, node.end)) {
+						node.children[numChildren] = i;
+						numChildren++;
 					}
 
-					// Create The rest
-					createInfo.subresourceRange.levelCount = 1;
-					for (uint32_t i = 1; i < imgInfo.mipLevels; i++)
-					{
-						createInfo.subresourceRange.baseMipLevel = i;
-						ImageView& imageView = imageViews.emplace_back();
-						imageView.Create(createInfo);
-					}
+					if (numChildren == 8) break;					
 				}
 			}
+			else {
+				// Recursive case: create 8 child nodes and recursively generate their octrees
+				glm::vec3 parentStart = nodes[parentNodeID].start;
+				glm::vec3 parentEnd = nodes[parentNodeID].end;
+				glm::vec3 mid = (parentStart + parentEnd) * 0.5f;
 
-			void Destroy() {
-				for (auto& view : imageViews) view.Destroy();
-				image.Destroy();
-			}
-		} m_BloomBuffers[3];
+				for (int i = 0; i < 8; i++) {
+					glm::vec3 childStart = parentStart;
+					glm::vec3 childEnd = parentEnd;
+					if (i & 1) { childStart.x = mid.x; }
+					else { childEnd.x = mid.x; }
+					if (i & 2) { childStart.y = mid.y; }
+					else { childEnd.y = mid.y; }
+					if (i & 4) { childStart.z = mid.z; }
+					else { childEnd.z = mid.z; }
 
-		wc::ComputeShader bloomShader;
-		wc::Sampler bloomImageSampler;
-		std::vector<VkDescriptorSet> bloomSets;
+					ChunkNode childNode;
 
-		uint32_t m_BloomComputeWorkGroupSize = 4; // @TODO: REMOVE!!!
-		uint32_t m_BloomMipLevels = 1;
+					childNode.start = childStart;
+					childNode.end = childEnd;
+					childNode.parentID = parentNodeID;
 
-		struct BloomBufferSettings {
-			glm::vec4 Params = glm::vec4(1.f); // (x) threshold, (y) threshold - knee, (z) knee * 2, (w) 0.25 / knee
-			float LOD = 0.f;
-			int Mode = (int)Renderer3D::BloomMode::Prefilter;
-		};
+					nodes.push_back(childNode);
 
-		void GenerateBloomDescriptor(const ImageView& outputView, const ImageView& bloomView) {
-			DescriptorSet& descriptor = bloomSets.emplace_back();
-			descriptorAllocator.allocate(descriptor, bloomShader.getDescriptorLayout());
+					uint32_t childNodeID = nodes.size() - 1;
+					nodes[parentNodeID].children[i] = childNodeID;
 
-			{
-				DescriptorWriter writer;
-				writer.dstSet = descriptor;
-				writer.write_image(0, GetDescriptorData(bloomImageSampler, outputView, VK_IMAGE_LAYOUT_GENERAL), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-				writer.Update();
-			}
-			{
-				wc::DescriptorWriter writer;
-				writer.dstSet = descriptor;
-				writer.write_image(1, GetDescriptorData(bloomImageSampler, bloomView, VK_IMAGE_LAYOUT_GENERAL), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-				writer.Update();
-			}
-			{
-				wc::DescriptorWriter writer;
-				writer.dstSet = descriptor;
-				writer.write_image(2, GetDescriptorData(bloomImageSampler, m_BloomBuffers[2].imageViews[0], VK_IMAGE_LAYOUT_GENERAL), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-				writer.Update();
+					GenerateOctree(nodes, childNodeID, depth - 1);
+				}
 			}
 		}
 	};

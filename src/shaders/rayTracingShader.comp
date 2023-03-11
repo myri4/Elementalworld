@@ -1,29 +1,133 @@
 #pragma shader_stage(compute)
+#extension GL_EXT_nonuniform_qualifier : require
+#extension GL_EXT_shader_8bit_storage : require
+
+#define WC_DEBUG 0
+
+#if WC_DEBUG
+
+#extension GL_EXT_debug_printf : enable
+#define printf debugPrintfEXT
+
+#endif
 
 layout(local_size_x = 4, local_size_y = 4) in;
-layout(binding = 1, rgba32f) restrict writeonly uniform image2D o_Image;
+layout(binding = 9, rgba32f) restrict writeonly uniform image2D o_Image;
+layout(binding = 10, set = 0) uniform sampler2D u_Textures[];
 
-#include "include/sceneData.glsl"
+layout (push_constant) uniform Scene
+{
+	vec3 cameraPos;
+	uint u_numLights;
+    vec3 lower_left_corner;
+    uint u_NumDrawCommands;
+    vec3 horizontal;
+    uint _pad;
+    vec3 vertical;
+};
+
+#include "include/sky.glsl"
 #include "include/Geometry.glsl"
+#include "include/pbrUtil.glsl"
+
 
 vec3 rayTrace(inout vec3 refRayOrigin, inout vec3 refRayDirection) {
-	vec3 color = vec3(0.f);	
+	vec3 color = vec3(0.f);
+    vec3 invRayDirection = 1.f / refRayDirection;
+    // Intersection info
+    HitInfo hitInfo = intersect(refRayOrigin, refRayDirection, invRayDirection);
 
-    float t = 0.f;
-    for (int i = 0; i < bvhCounter; i++)
-        if (BoxIntersect(refRayOrigin, 1.f / refRayDirection, chunkBvh[i].start, chunkBvh[i].end, t)){
-            vec3 p = refRayOrigin + t * refRayDirection;
-            vec3 center = chunkBvh[i].end - 0.5f;
+    if (hitInfo.isHit) {
+        uint materialID = 0;
+        vec2 texCoords = vec2(0.f);
 
-            //vec3 dir = (p - center); // if the size is different from 1 this should be normalized
-            //vec2 uv = GetCubeUVFromDir(GetCubeFaceIndex(dir), dir);
-            //color = vec3(uv, 0.f);
+        if (hitInfo.hitCube) {
+            materialID = blockData[hitInfo.blockHit].materialIDs[0];
+            
+            texCoords = hitInfo.uvw.xy;
         }
+        else{
+            hitInfo.p = refRayOrigin + hitInfo.minT * refRayDirection;
+            texCoords = rtLerp(hitInfo.uvw, GetVertex(hitInfo.shapeHit + 1, hitInfo.cmd).TexCoords, 
+            GetVertex(hitInfo.shapeHit + 2, hitInfo.cmd).TexCoords, GetVertex(hitInfo.shapeHit, hitInfo.cmd).TexCoords);
+
+            materialID = GetVertex(hitInfo.shapeHit, hitInfo.cmd).materialID;
+
+			vec3 aPos = GetVertex(hitInfo.shapeHit, hitInfo.cmd).Position;
+
+    		vec3 v1v0 = GetVertex(hitInfo.shapeHit + 1, hitInfo.cmd).Position - aPos;
+    		vec3 v2v0 = GetVertex(hitInfo.shapeHit + 2, hitInfo.cmd).Position - aPos;
+			hitInfo.N = normalize(cross( v1v0, v2v0 ));
+
+        }
+        vec3 albedo = texture(u_Textures[materials[materialID].albedo], texCoords).rgb;
+        
+        vec2 materialInfo = vec2(1.f, 0.f);
+        if (materials[materialID].materialData != 0) materialInfo = texture(u_Textures[materials[materialID].materialData], texCoords).rg;
+
+        float roughness = materialInfo[0];
+	    float metallic = materialInfo[1];
+
+        vec3 V = -refRayDirection;
+
+        // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0
+	    // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
+	    vec3 F0 = mix(vec3(0.04f), albedo, metallic);
+
+	    // reflectance equation
+	    vec3 Lo = vec3(0.f);
+	    for (uint i = 0; i < u_numLights; i++)
+	    {
+	    	// calculate per-light radiance
+	    	vec3 radiance;
+	    	const float c = 1.f / 255.f;
+	    	uint color = lights[i].color;
+	    	radiance.r = float((color & uint(0x000000ff))) * c;
+	    	radiance.g = float((color & uint(0x0000ff00)) >> 8) * c;
+	    	radiance.b = float((color & uint(0x00ff0000)) >> 16) * c;
+	    	float radius = float((color & uint(0xff000000)) >> 24) * c;
+
+	    	vec3 L = lights[i].vector;
+	    	if (radius > 0.f){
+	    		L -= hitInfo.p;
+	    		radiance /= dot(L, L) * radius; // radiance / attenuation
+	    		L = normalize(L);
+	    	}
+
+	    	vec3 H = normalize(L + V);
+
+	    	float NdotL = max(dot(hitInfo.N, L), 0.f);
+	    	float NdotV = max(dot(hitInfo.N, V), 0.f);
+	    	// Cook-Torrance BRDF
+	    	float NDF = DistributionGGX(hitInfo.N, H, roughness);
+	    	float G = GeometrySchlickGGX(NdotV, roughness) * GeometrySchlickGGX(NdotL, roughness);
+	    	// fresnelSchlick
+	    	vec3 F = fresnelSchlick(max(dot(H, V), 0.f), F0);
+
+	    	vec3 numerator = NDF * G * F;
+	    	float denominator = 4.f * NdotV * NdotL + 0.001f; // 0.001 to prevent divide by zero.
+	    	vec3 specular = numerator / denominator;
+
+	    	vec3 kD = (1.f - F) * (1.f - metallic); // diffuse
+	    	Lo += ((kD * albedo / PI + specular) * radiance * NdotL);  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+	    }
+
+	    // ambient lighting (note that the next IBL tutorial will replace
+	    // this ambient lighting with environment lighting).
+
+	    vec3 ambient = ambientColor * albedo;
+
+	    color = ambient + Lo;
+    }    
+    else 
+        color = ComputeSky(refRayOrigin, refRayDirection);
+
+
 	
     return color;
 }
 
-vec3 Render(const in vec3 rayDirection){
+vec3 Render(const in vec3 rayDirection) {
 	vec3 refRayOrigin = cameraPos;
 	vec3 refRayDirection = rayDirection;
 	vec3 color = rayTrace(refRayOrigin, refRayDirection);
@@ -38,5 +142,5 @@ void main()
     uv.y = 1.f - uv.y;
 	vec3 result = Render(normalize(lower_left_corner + uv.x * horizontal + uv.y * vertical - cameraPos));
 
-    if (result != vec3(0.f)) imageStore(o_Image, invocID, vec4(result, 1.f));
+    imageStore(o_Image, invocID, vec4(result, 1.f));
 }

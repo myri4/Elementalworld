@@ -214,7 +214,7 @@ namespace wc {
             CreateSwapchain(VulkanContext::GetPhysicalDevice(), VulkanContext::GetDevice(), VulkanContext::GetInstance());
         }
     
-        void CreateSwapchain(const VkPhysicalDevice& physicalDevice, const VkDevice& device, const VkInstance& instance) {
+        void CreateSwapchain(VkPhysicalDevice physicalDevice, VkDevice device, VkInstance instance) {
             if (glfwCreateWindowSurface(instance, window, VulkanContext::GetAllocator(), &surface) != VK_SUCCESS) WC_ERROR("Failed to create window surface!");
 
             struct SwapChainSupportDetails {
@@ -422,7 +422,7 @@ namespace wc {
             return { (uint32_t)width, (uint32_t)height };
         }
     
-        void close(const bool& value = true) const {
+        void close(bool value = true) const {
             glfwSetWindowShouldClose(window, value);
         }
     
@@ -434,16 +434,16 @@ namespace wc {
             return glfwGetWindowAttrib(window, GLFW_FOCUSED);
         }
     
-        void setCursorPos(const glm::ivec2& pos) {
+        void setCursorPos(glm::ivec2 pos) {
             glfwSetCursorPos(window, pos.x, pos.y);
         }
     
-        void setMaximized(const bool& maximized) {
+        void setMaximized(bool maximized) {
             if (maximized) glfwMaximizeWindow(window);
             else glfwRestoreWindow(window);
         }
     
-        void setPosition(const glm::ivec2& pos) {
+        void setPosition(glm::ivec2 pos) {
             glfwSetWindowPos(window, pos.x, pos.y);
         }
     
@@ -451,19 +451,19 @@ namespace wc {
             glfwSetWindowTitle(window, title.c_str());
         }
     
-        void setSize(const glm::ivec2& size) {
+        void setSize(glm::ivec2 size) {
             glfwSetWindowSize(window, size.x, size.y);
         }
     
-        void setSizeLimits(const glm::ivec2& minSize, const glm::ivec2& maxSize) {
+        void setSizeLimits(glm::ivec2 minSize, glm::ivec2 maxSize) {
             glfwSetWindowSizeLimits(window, minSize.x, minSize.y, maxSize.x, maxSize.y);
         }
     
-        void SetCursorMode(const int& value) {
+        void SetCursorMode(int value) {
             glfwSetInputMode(window, GLFW_CURSOR, value);
         }
     
-        int getKey(const int& key) {
+        int getKey(int key) {
             return glfwGetKey(window, key);
         }
 
@@ -471,7 +471,7 @@ namespace wc {
             return getKey((int)key);
         }
     
-        int getMouse(const int& key) {
+        int getMouse(int key) {
             return glfwGetMouseButton(window, key);
         }
     
@@ -481,7 +481,7 @@ namespace wc {
             return glm::ivec2(x, y);
         }
     
-        VkResult Present(const uint32_t& swapchainImageIndex, const VkSemaphore& renderSemaphore, const VkQueue& presentQueue) {
+        VkResult Present(uint32_t swapchainImageIndex, VkSemaphore renderSemaphore, VkQueue presentQueue) {
             VkPresentInfoKHR presentInfo = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
     
             presentInfo.pSwapchains = &swapchain;

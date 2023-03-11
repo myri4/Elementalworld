@@ -27,7 +27,7 @@ namespace wc {
 	class Sound {
 	public:
 
-		void Create(const std::string& location, const uint32_t& flags = 0) {
+		void Create(const std::string& location, uint32_t flags = 0) {
 			ma_result result;
 
 			result = ma_sound_init_from_file(&m_Engine, location.c_str(), flags, NULL, NULL, &m_Instance);
@@ -46,15 +46,15 @@ namespace wc {
 			ma_sound_stop(&m_Instance);
 		}
 
-		void SetVolume(const float& volume) {
+		void SetVolume(float volume) {
 			ma_sound_set_volume(&m_Instance, volume);
 		}
 
-		void SetPan(const float& pan) {
+		void SetPan(float pan) {
 			ma_sound_set_pan(&m_Instance, pan);
 		}
 
-		void SetPitch(const float& pitch) {
+		void SetPitch(float pitch) {
 			ma_sound_set_pitch(&m_Instance, pitch);
 		}
 	private:

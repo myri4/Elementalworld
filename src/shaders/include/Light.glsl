@@ -6,5 +6,5 @@ struct Light {
 	uint color;
 };
 
-layout (binding = 1, std140) uniform Lighting { Light lights[1]; };
+layout (std430, binding = 0) readonly buffer LightData { Light lights[]; };
 #endif

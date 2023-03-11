@@ -373,6 +373,15 @@ namespace wc {
 		}
 	};
 
+	struct ComputeShaderCreateInfo {
+		std::string path;
+		std::string cachePath;
+
+		VkDescriptorBindingFlags* bindingFlags = nullptr;
+		uint32_t bindingFlagCount = 0;
+		uint32_t dynamicDescriptorCount = 0;
+	};
+
 	class ComputeShader {
 		wc::ComputePipeline pipeline;
 		wc::PipelineLayout pipelineLayout;
@@ -381,80 +390,33 @@ namespace wc {
 		const wc::ComputePipeline& getPipeline() const { return pipeline; }
 		const wc::PipelineLayout& getPipelineLayout() const { return pipelineLayout; }
 		const wc::DescriptorSetLayout& getDescriptorLayout() const { return descriptorLayout; }
-		wc::DescriptorSet descriptorSet = VK_NULL_HANDLE;
 
-		void Create(const std::string& shaderPath) {
+		void Create(const ComputeShaderCreateInfo& createInfo) {
 			ShaderModuleWC shaderModule;
 
-			shaderModule.Create(shaderPath);
+			shaderModule.Create(createInfo.path);
 
 			{ // Reflection
 				std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
 
-					spirv_cross::Compiler compiler(shaderModule.getBinary());
-					spirv_cross::ShaderResources resources = compiler.get_shader_resources();
-					VkShaderStageFlags shaderStage = VK_SHADER_STAGE_COMPUTE_BIT;
+				spirv_cross::Compiler compiler(shaderModule.getBinary());
+				spirv_cross::ShaderResources resources = compiler.get_shader_resources();
+				VkShaderStageFlags shaderStage = VK_SHADER_STAGE_COMPUTE_BIT;
 
-					for (auto& resource : resources.uniform_buffers) {
-						bool add = true;
-						VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-						uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
-						for (auto& layoutBinding : layoutBindings) {
-							if (layoutBinding.descriptorType == descriptorType && layoutBinding.binding == binding)
-							{
-								add = false;
-								layoutBinding.stageFlags |= shaderStage;
-								break;
-							}
-						}
-
-						if (add) {
-							auto& layoutBinding = layoutBindings.emplace_back();
-
-							const auto& type = compiler.get_type(resource.type_id);
-
-							uint32_t descriptorCount = 1;
-							if (type.array[0] > 0) descriptorCount = type.array[0];
-
-							layoutBinding.descriptorType = descriptorType;
-							layoutBinding.descriptorCount = descriptorCount;
-							layoutBinding.stageFlags = shaderStage;
-							layoutBinding.binding = binding;
-							layoutBinding.pImmutableSamplers = nullptr;
+				for (auto& resource : resources.uniform_buffers) {
+					bool add = true;
+					VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+					uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+					for (auto& layoutBinding : layoutBindings) {
+						if (layoutBinding.descriptorType == descriptorType && layoutBinding.binding == binding)
+						{
+							add = false;
+							layoutBinding.stageFlags |= shaderStage;
+							break;
 						}
 					}
 
-					for (auto& resource : resources.storage_buffers) {
-						bool add = true;
-						VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-						uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
-						for (auto& layoutBinding : layoutBindings) {
-							if (layoutBinding.descriptorType == descriptorType && layoutBinding.binding == binding)
-							{
-								add = false;
-								layoutBinding.stageFlags |= shaderStage;
-								break;
-							}
-						}
-
-						if (add) {
-							auto& layoutBinding = layoutBindings.emplace_back();
-
-							const auto& type = compiler.get_type(resource.type_id);
-
-							uint32_t descriptorCount = 1;
-							if (type.array[0] > 0) descriptorCount = type.array[0];
-
-							layoutBinding.descriptorType = descriptorType;
-							layoutBinding.descriptorCount = descriptorCount;
-							layoutBinding.stageFlags = shaderStage;
-							layoutBinding.binding = binding;
-							layoutBinding.pImmutableSamplers = nullptr;
-						}
-					}
-
-
-					for (auto& resource : resources.storage_images) {
+					if (add) {
 						auto& layoutBinding = layoutBindings.emplace_back();
 
 						const auto& type = compiler.get_type(resource.type_id);
@@ -462,14 +424,28 @@ namespace wc {
 						uint32_t descriptorCount = 1;
 						if (type.array[0] > 0) descriptorCount = type.array[0];
 
-						layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+						layoutBinding.descriptorType = descriptorType;
 						layoutBinding.descriptorCount = descriptorCount;
 						layoutBinding.stageFlags = shaderStage;
-						layoutBinding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+						layoutBinding.binding = binding;
 						layoutBinding.pImmutableSamplers = nullptr;
 					}
+				}
 
-					for (auto& resource : resources.sampled_images) {
+				for (auto& resource : resources.storage_buffers) {
+					bool add = true;
+					VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+					uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+					for (auto& layoutBinding : layoutBindings) {
+						if (layoutBinding.descriptorType == descriptorType && layoutBinding.binding == binding)
+						{
+							add = false;
+							layoutBinding.stageFlags |= shaderStage;
+							break;
+						}
+					}
+
+					if (add) {
 						auto& layoutBinding = layoutBindings.emplace_back();
 
 						const auto& type = compiler.get_type(resource.type_id);
@@ -477,22 +453,63 @@ namespace wc {
 						uint32_t descriptorCount = 1;
 						if (type.array[0] > 0) descriptorCount = type.array[0];
 
-						layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+						layoutBinding.descriptorType = descriptorType;
 						layoutBinding.descriptorCount = descriptorCount;
 						layoutBinding.stageFlags = shaderStage;
-						layoutBinding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+						layoutBinding.binding = binding;
 						layoutBinding.pImmutableSamplers = nullptr;
 					}
-				
+				}
+
+
+				for (auto& resource : resources.storage_images) {
+					auto& layoutBinding = layoutBindings.emplace_back();
+
+					const auto& type = compiler.get_type(resource.type_id);
+
+					uint32_t descriptorCount = 1;
+					if (type.array[0] > 0) descriptorCount = type.array[0];
+
+					layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+					layoutBinding.descriptorCount = descriptorCount;
+					layoutBinding.stageFlags = shaderStage;
+					layoutBinding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+					layoutBinding.pImmutableSamplers = nullptr;
+				}
+
+				for (auto& resource : resources.sampled_images) {
+					auto& layoutBinding = layoutBindings.emplace_back();
+
+					const auto& type = compiler.get_type(resource.type_id);
+
+					uint32_t descriptorCount = 1;
+					if (type.array[0] > 0) descriptorCount = type.array[0];
+
+					layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+					layoutBinding.descriptorCount = descriptorCount;
+					layoutBinding.stageFlags = shaderStage;
+					layoutBinding.binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+					layoutBinding.pImmutableSamplers = nullptr;
+				}
+
+				if (createInfo.dynamicDescriptorCount)
+					layoutBindings[layoutBindings.size() - 1].descriptorCount = createInfo.dynamicDescriptorCount;
 
 				VkDescriptorSetLayoutCreateInfo layoutInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
 
 				layoutInfo.pBindings = layoutBindings.data();
 				layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
 
-				descriptorLayout.Create(layoutInfo);
+				VkDescriptorSetLayoutBindingFlagsCreateInfo binding_flags = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
 
-				wc::descriptorAllocator.allocate(descriptorSet, descriptorLayout);
+				if (createInfo.bindingFlagCount > 0) {
+					binding_flags.bindingCount = createInfo.bindingFlagCount;
+					binding_flags.pBindingFlags = createInfo.bindingFlags;
+
+					layoutInfo.pNext = &binding_flags;
+				}
+
+				descriptorLayout.Create(layoutInfo);
 
 				VkPipelineLayoutCreateInfo info = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 
@@ -502,7 +519,7 @@ namespace wc {
 				VkPushConstantRange range;
 				range.size = 0;
 				range.offset = 0;
-				range.stageFlags = shaderStage;
+				range.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 				if (resources.push_constant_buffers.size() > 0) {
 					auto& baseType = compiler.get_type(resources.push_constant_buffers[0].base_type_id);
 					range.size = (uint32_t)compiler.get_declared_struct_size(baseType);
@@ -515,18 +532,29 @@ namespace wc {
 			}
 
 			//finally build the pipeline
-			VkComputePipelineCreateInfo createInfo = { VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
-			createInfo.stage = shaderModule.GetShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT);
-			createInfo.layout = pipelineLayout;
+			VkComputePipelineCreateInfo pipelineCreateInfo = { VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
+			pipelineCreateInfo.stage = shaderModule.GetShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT);
+			pipelineCreateInfo.layout = pipelineLayout;
 
-			pipeline.Create(createInfo);
+			pipeline.Create(pipelineCreateInfo);
 
 			shaderModule.Destroy();
 		}
 
+		void Create(const std::string& path) {
+			ComputeShaderCreateInfo createInfo;
+			createInfo.path = path;
+			Create(createInfo);
+		}
+
 		void Bind(const wc::CommandBuffer& cmd) {
-			cmd.BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, 0, pipelineLayout, descriptorSet);
 			cmd.BindPipeline(pipeline);
+		}
+
+		void SetName(const std::string& name) {
+			pipeline.SetName(name + "_pipeline");
+			pipelineLayout.SetName(name + "_pipelineLayout");
+			descriptorLayout.SetName(name + "_descriptorLayout");
 		}
 
 		void Destroy() {

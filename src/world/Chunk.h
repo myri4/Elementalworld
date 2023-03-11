@@ -3,9 +3,8 @@
 
 namespace wc {
 
-	//int to1D(const glm::vec3& pos) { return (pos.z * chunkSize * chunkSize) + (pos.y * chunkSize) + pos.x; }
-	int to1D(const int& x, const int& y, const int& z) { return (z * chunkSize * chunkSize) + (y * chunkSize) + x; }
-	glm::ivec3 to3D(const int& idx, const glm::ivec3& size) {
+	int to1D(int x, int y, int z) { return (z * chunkSize * chunkSize) + (y * chunkSize) + x; }
+	glm::ivec3 to3D(int idx, const glm::ivec3& size) {
 		int i = idx;
 		int z = i / (size.x * size.y);
 		i -= (z * size.x * size.y);
@@ -14,17 +13,9 @@ namespace wc {
 		return glm::ivec3(x, y, z);
 	}
 
-	struct ChunkAABB {
-		glm::vec4 start = glm::vec4(0.f);
-		glm::vec4 end = glm::vec4(0.f);
-	};
-
 	struct Chunk {
 		glm::ivec3 position = glm::ivec3(0);
 		BlockID data[chunkSize][chunkSize][chunkSize] = { 0 };
-		int16_t neighborPos[3] = { -1,-1,-1 };
-		int16_t neighborNeg[3] = { -1,-1,-1 };
-		uint32_t IndexCount = 0;
 
 		bool used : 1; // Should the chunk be saved
 		bool generated : 1;
@@ -39,7 +30,7 @@ namespace wc {
 		}
 	};
 
-	glm::ivec3 getBlockPos(const int& x, const int& y, const int& z)
+	glm::ivec3 getBlockPos(int x, int y, int z)
 	{
 		return { (chunkSize + (x % chunkSize)) % chunkSize,
 				(chunkSize + (y % chunkSize)) % chunkSize,
@@ -51,7 +42,7 @@ namespace wc {
 		return getBlockPos(pos.x, pos.y, pos.z);
 	}
 
-	glm::ivec3 getChunkPos(const int& x, const int& y, const int& z)
+	glm::ivec3 getChunkPos(int x, int y, int z)
 	{
 		glm::ivec3 res = {
 			x < 0 ? ((x - chunkSize) / chunkSize) : (x / chunkSize),
@@ -70,4 +61,5 @@ namespace wc {
 	{
 		return getChunkPos(pos.x, pos.y, pos.z);
 	}
+
 }

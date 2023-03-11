@@ -177,7 +177,7 @@ namespace wc {
 		*
 		* @return VK_SUCCESS if all resources have been created successfully
 		*/
-		VkResult Create(const glm::ivec2& size)
+		VkResult Create(glm::ivec2 size)
 		{
 			std::vector<VkAttachmentDescription> attachmentDescriptions;
 			for (auto& attachment : attachments)			

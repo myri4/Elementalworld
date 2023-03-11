@@ -40,7 +40,7 @@ namespace wc {
 		}
 
 		//@TODO: Maybe remove argument id and replace it with a stack system?
-		int32_t getArgumentOffset(const uint32_t& argumentID = 0) {
+		int32_t getArgumentOffset(uint32_t argumentID = 0) {
 			uint32_t currArgID = 0;
 			for (uint32_t i = 0; i < args.size(); i++) {
 				if (currArgID == argumentID) return i;
@@ -51,7 +51,7 @@ namespace wc {
 			return -1;
 		}
 
-		std::string getStringArgument(const uint32_t& argumentID = 0) {
+		std::string getStringArgument(uint32_t argumentID = 0) {
 			int32_t argumentOffset = getArgumentOffset(argumentID);
 			if (argumentOffset != -1) {
 				int32_t end = args.find(' ');
@@ -65,7 +65,7 @@ namespace wc {
 			return "";
 		}
 
-		int32_t getArgument(const uint32_t& argumentID = 0) {
+		int32_t getArgument(uint32_t argumentID = 0) {
 			std::string result = getStringArgument(argumentID);
 
 			if (result.size() > 0) return std::stoi(result);

@@ -1,24 +1,111 @@
 #ifndef GEOMETRY_GLSL
 #define GEOMETRY_GLSL
 
-struct AABB{
+#include "Utils.glsl"
+#include "constants.glsl"
+
+struct Node {
     vec3 start;
-    uint meshStart;
+	uint left;
     vec3 end;
-    uint meshSize;
+	uint right;
+	uint first;
+	uint count;
+	uint flags;
+	uint _pad;
+};
+
+struct ChunkNode {
+	vec3 start;
+	uint isLeaf;
+	vec3 end;
+	uint parentID; // not really used in shader just for convinience
+	uint children[8];
+};
+
+struct DrawCommand {
+	uint count;
+	uint firstIndex;
+	uint bvhID;
+	uint baseVertex;
+	vec3 transform;
+	uint _pad1;
 };
 
 struct Vertex {
 	vec3 Position;
 	uint materialID;
-	vec3 TexCoords;
-	uint _pad1;
+	vec2 TexCoords;
+	uint _pad2[2];
 	vec3 Normal;
-	uint _pad2;
+	uint _pad3;
 };
 
-layout (std430, binding = 2) readonly buffer ChunkBVHBuffer { AABB chunkBvh[]; };
-layout (std430, binding = 3) readonly buffer VertexBuffer { Vertex vertices[]; };
+struct Material {
+	uint albedo;
+	uint materialData;
+	uint flags;
+};
+
+struct Block {
+	uint materialIDs[6];
+};
+
+layout (std430, binding = 1) readonly buffer VertexBuffer { Vertex vertices[]; };
+layout (std430, binding = 2) readonly buffer IndexBuffer { uint indices[]; };
+layout (std430, binding = 3) readonly buffer DrawCommandBuffer { DrawCommand drawCommands[]; };
+layout (std430, binding = 4) readonly buffer BVHBuffer { Node nodes[]; };
+layout (std430, binding = 5) readonly buffer ChunkNodeBuffer { ChunkNode chunkNodes[]; };
+layout (std430, binding = 6) readonly buffer MaterialData { Material materials[]; };
+layout (std430, binding = 7) readonly buffer BlockIDs { uint8_t blockIDs[]; };
+layout (std430, binding = 8) readonly buffer Blocks { Block blockData[]; };
+
+Vertex GetVertex(const in uint indexOffset, const in DrawCommand cmd) {
+	return vertices[indices[indexOffset] + cmd.baseVertex];
+}
+
+vec3 Intersection(const in vec3 rayOrigin, const in vec3 rayDirection, const in uint indexOffset, const in DrawCommand cmd) {
+	vec3 a = vertices[indices[indexOffset + 0] + cmd.baseVertex].Position + cmd.transform;
+	vec3 b = vertices[indices[indexOffset + 1] + cmd.baseVertex].Position + cmd.transform;
+	vec3 c = vertices[indices[indexOffset + 2] + cmd.baseVertex].Position + cmd.transform;
+	vec3 e1 = b - a;
+	vec3 e2 = c - a;
+    vec3 crossRDE2 = cross(rayDirection, e2);
+    float dotE1CrossRDE2 = 1.f / dot(e1, crossRDE2);
+	vec3 rOa = rayOrigin - a;
+	vec3 crossROAE1 = cross(rOa, e1);
+	vec2 uv;
+	uv.x = dot(rOa, crossRDE2) * dotE1CrossRDE2;
+	uv.y = dot(rayDirection, crossROAE1 * dotE1CrossRDE2);
+
+	float t = dot(e2, crossROAE1) * dotE1CrossRDE2;
+		if (!(t <= 0.f || uv.x < 0.f || uv.x > 1.f || uv.y < 0.f || uv.x + uv.y > 1.f))
+			return vec3(t, uv);
+		else 
+			return vec3(0.f, uv);	
+}
+
+bool isCoordInBounds(const in ivec3 coords) {
+	return coords.x >= 0 && coords.x < chunkSize &&
+		   coords.y >= 0 && coords.y < chunkSize &&
+		   coords.z >= 0 && coords.z < chunkSize;
+}
+
+ivec3 getBlockPos(const in int x, const in int y, const in int z)
+{
+	return ivec3( (chunkSize + (x % chunkSize)) % chunkSize,
+				  (chunkSize + (y % chunkSize)) % chunkSize,
+				  (chunkSize + (z % chunkSize)) % chunkSize );
+}
+
+ivec3 getBlockPos(const in ivec3 pos)
+{
+	return getBlockPos(pos.x, pos.y, pos.z);
+}
+
+uint getVoxel(const in ivec3 coords, const in int chunkID) {
+	return uint(blockIDs[to1D(coords, chunkSize) + chunkID * chunkVolume]);
+}
 
 int GetCubeFaceIndex(vec3 dir)
 {
@@ -32,32 +119,40 @@ int GetCubeFaceIndex(vec3 dir)
   return 4 + (dir.z > 0 ? 0 : 1);
 }
 
+
+#define RIGHT 0
+#define TOP 1
+#define FRONT 2
+#define LEFT 3
+#define BOTTOM 4
+#define BACK 5
+
+int GetNormalIndex(vec3 normal)
+{
+	
+	if(normal == vec3(0.f, 1.f, 0.f)) return TOP;
+	if(normal == vec3(0.f, -1.f, 0.f)) return BOTTOM;
+	if(normal == vec3(1.f, 0.f, 0.f)) return RIGHT;
+	if(normal == vec3(-1.f, 0.f, 0.f)) return LEFT;
+	if(normal == vec3(0.f, 0.f, 1.f)) return FRONT;
+	if(normal == vec3(0.f, 0.f, -1.f)) return BACK;
+	
+	return 6; // undefined
+}
+
 vec2 GetCubeUVFromDir(int faceIndex, vec3 dir)
 {
   vec2 uv;
   switch (faceIndex)
   {
-    case 0:  uv = vec2(-dir.z,  dir.y); break; // +X
-    case 1:  uv = vec2( dir.z,  dir.y); break; // -X
-    case 2:  uv = vec2( dir.x, -dir.z); break; // +Y
-    case 3:  uv = vec2( dir.x,  dir.z); break; // -Y
-    case 4:  uv = vec2( dir.x,  dir.y); break; // +Z
-    default: uv = vec2(-dir.x,  dir.y); break; // -Z
+  case 0: uv =  vec2(-dir.z, -dir.y); break; // +X
+  case 1: uv =  vec2( dir.z, -dir.y); break; // -X
+  case 2: uv =  vec2( dir.x,  dir.z); break; // +Y
+  case 3: uv =  vec2( dir.x, -dir.z); break; // -Y
+  case 4: uv =  vec2( dir.x, -dir.y); break; // +Z
+  default: uv = vec2(-dir.x, -dir.y); break; // -Z
   }
-  return uv * .5 + .5;
-}
-
-vec3 BoxNormal(AABB box, const vec3 point)
-{
-	vec3 center = (box.end.xyz + box.start.xyz) * 0.5f;
-	vec3 size = (box.end.xyz - box.start.xyz) * 0.5f;
-	vec3 pc = point - center;
-	// step(edge,x) : x < edge ? 0 : 1
-	vec3 normal = vec3(0.0);
-	normal += vec3(sign(pc.x), 0.0, 0.0) * step(abs(abs(pc.x) - size.x), 1.0e-4);
-	normal += vec3(0.0, sign(pc.y), 0.0) * step(abs(abs(pc.y) - size.y), 1.0e-4);
-	normal += vec3(0.0, 0.0, sign(pc.z)) * step(abs(abs(pc.z) - size.z), 1.0e-4);
-	return normalize(normal);
+  return uv + 0.5f;
 }
 
 bool BoxIntersect(vec3 rayOrigin, vec3 invRayDir, vec3 boxMin, vec3 boxMax, out float t) {
@@ -77,5 +172,215 @@ bool BoxIntersect(vec3 rayOrigin, vec3 invRayDir, vec3 boxMin, vec3 boxMax, out 
     if (tNear <= tFar) t = tNear;
     else t = tFar;
     return tNear <= tFar && tFar > 0.f;
+}
+
+bool BoxIntersect(vec3 rayOrigin, vec3 invRayDir, vec3 boxMin, vec3 boxMax, out float tN, out float tF) {
+    vec3 tMin = (boxMin - rayOrigin) * invRayDir;
+    vec3 tMax = (boxMax - rayOrigin) * invRayDir;
+	for (int a = 0; a < 3; a++){
+		if (invRayDir[a] < 0.f){
+			float temp = tMin[a];
+			tMin[a] = tMax[a];
+			tMax[a] = temp;
+		}
+	}
+    vec3 t1 = min(tMin, tMax);
+    vec3 t2 = max(tMin, tMax);
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    float tFar = min(min(t2.x, t2.y), t2.z);
+    if (tNear <= tFar) { tN = tNear; tF = tFar;}
+    else { tN = tFar; tF = tNear;}
+    return tNear <= tFar && tFar > 0.f;
+}
+
+vec2 aabb_intersect(vec3 ro, vec3 rrd, vec3 bmin, vec3 bmax) {
+    vec3 tbot = (bmin - ro) * rrd;
+    vec3 ttop = (bmax - ro) * rrd;
+    vec3 tmin = min(ttop, tbot);
+    vec3 tmax = max(ttop, tbot);
+    vec2 t = max(tmin.xx, tmin.yz);
+    float t0 = max(t.x, t.y);
+    t = min(tmax.xx, tmax.yz);
+    float t1 = min(t.x, t.y);
+
+    return vec2(t0, t1);
+}
+
+bool BoxIntersect(vec3 rayOrigin, vec3 invRayDir, Node node, DrawCommand cmd, out float t) {
+    vec3 tMin = (cmd.transform + node.start - rayOrigin) * invRayDir;
+    vec3 tMax = (cmd.transform + node.end - rayOrigin) * invRayDir;
+	for (int a = 0; a < 3; a++){
+		if (invRayDir[a] < 0.f){
+			float temp = tMin[a];
+			tMin[a] = tMax[a];
+			tMax[a] = temp;
+		}
+	}
+    vec3 t1 = min(tMin, tMax);
+    vec3 t2 = max(tMin, tMax);
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    float tFar = min(min(t2.x, t2.y), t2.z);
+    if (tNear <= tFar) t = tNear;
+    else t = tFar;
+    return tNear <= tFar && tFar > 0.f;
+}
+
+
+struct HitInfo {
+
+    float minT;
+    uint shapeHit;
+    uint blockHit;
+    vec3 uvw;
+    bool isHit;
+    bool hitCube;
+    vec3 N;
+    vec3 p;
+    DrawCommand cmd;
+};
+
+HitInfo intersect(const in vec3 refRayOrigin, const in vec3 refRayDirection, const in vec3 invRayDirection) {
+	HitInfo hitInfo;
+    hitInfo.minT = 1000.f;
+    hitInfo.shapeHit = 0;
+    hitInfo.blockHit = 0;
+    hitInfo.uvw = vec3(0.f);
+    hitInfo.isHit = false;
+    hitInfo.hitCube = false;
+    hitInfo.N = vec3(0.f);
+    hitInfo.p = vec3(0.f);
+
+    uint stack[75];
+    uint stackSize = 0u;
+    stack[stackSize++] = 0;
+    while (stackSize > 0u) {
+        uint nodeIndex = stack[--stackSize];
+        ChunkNode node = chunkNodes[nodeIndex];
+        float tmin, tmax;
+        if (!BoxIntersect(refRayOrigin, invRayDirection, node.start, node.end, tmin, tmax))
+            continue;        
+        
+        if (node.isLeaf == 1u) {
+            // perform leaf node operation
+
+            vec3 parentStart = node.start;
+			vec3 parentEnd = node.end;
+			vec3 mid = (parentStart + parentEnd) * 0.5f;
+
+            for (int i = 7; i >= 0; i--) {
+				vec3 childStart = parentStart;
+				vec3 childEnd = parentEnd;
+				if (bool(i & 1)) { childStart.x = mid.x; }
+				else { childEnd.x = mid.x; }
+				if (bool(i & 2)) { childStart.y = mid.y; }
+				else { childEnd.y = mid.y; }
+				if (bool(i & 4)) { childStart.z = mid.z; }
+				else { childEnd.z = mid.z; }
+
+                vec2 t = aabb_intersect(refRayOrigin, invRayDirection, childStart, childEnd);
+                float tNear = t.x;
+                float tFar = t.y;
+                if (tNear <= tFar && tFar > 0.f && tNear < hitInfo.minT) {
+
+                        if (tNear < 0.f) tNear = 0.f;
+                        tNear += bias;
+                        tFar += bias;
+
+
+                        ivec3 vMapCheck = ivec3(floor(refRayOrigin + tNear * refRayDirection));
+                        ivec3 vStep = ivec3(sign(refRayDirection));
+	                    vec3 vRayUnitStepSize = abs(invRayDirection), vRayLength1D;
+
+	                    // Establish Starting Conditions
+	                    for (int i = 0; i < 3; i++) 
+	            	        if (refRayDirection[i] < 0.f)		
+	            		        vRayLength1D[i] = (refRayOrigin[i] - float(vMapCheck[i]));		
+	            	        else if (refRayDirection[i] > 0.f)		
+	            	        	vRayLength1D[i] = (float(vMapCheck[i] + 1) - refRayOrigin[i]);
+
+                        vRayLength1D *= vRayUnitStepSize;
+                        vMapCheck = getBlockPos(vMapCheck);
+
+	                    float fDistance = 0.f;
+	                    while (fDistance < tFar)
+	                    {
+                            // Walk along shortest path
+                            int axis = vRayLength1D.x < vRayLength1D.y ? 
+                            (vRayLength1D.x < vRayLength1D.z ? 0 : 2) : (vRayLength1D.y < vRayLength1D.z ? 1 : 2);
+
+	            	        // Test tile at new test point
+	            	        if(isCoordInBounds(vMapCheck)) {
+                                uint blockID = getVoxel(vMapCheck, int(node.children[i]));
+	            	        	if (blockID != 0)
+	            	        	{                            
+                                    hitInfo.hitCube = true;
+                                    hitInfo.isHit = true;
+                                    hitInfo.blockHit = blockID;
+                                    if (fDistance == 0.f) fDistance = tNear;
+                                    else fDistance += bias;
+
+                                    hitInfo.minT = min(hitInfo.minT, fDistance);
+                                    hitInfo.p = refRayOrigin + fDistance * refRayDirection;
+
+                                    vec3 center = vec3(vMapCheck) + childStart + 0.5f;
+                                    vec3 dir = hitInfo.p - center; // if the size is different from 1 this should be normalized
+
+                                    vec3 normal = vec3(0.f);
+	                                normal[axis] = -vStep[axis];
+	                                hitInfo.N = normal;
+
+                                    hitInfo.uvw.xy = GetCubeUVFromDir(GetCubeFaceIndex(dir), dir);
+									hitInfo.uvw.z = 1.f - hitInfo.uvw.x - hitInfo.uvw.y;
+
+	            			        break;
+	            		        }
+	            	        }
+                            else break;
+
+
+	            	        vMapCheck[axis] += vStep[axis];
+	            	        fDistance = vRayLength1D[axis];
+	            	        vRayLength1D[axis] += vRayUnitStepSize[axis];		
+	                    }
+
+                    
+                }
+			}
+            //continue;
+        }
+        else{
+
+            for (int i = 7; i >= 0; i--) {
+                uint childIndex = node.children[i];
+                if (childIndex == 0u) 
+                    continue;
+                
+                stack[stackSize++] = childIndex;
+            }
+        }
+    }
+
+    for (int j = 0; j < u_NumDrawCommands; j++) {
+        float boxT = 0.f;
+        bool boxIntersect = BoxIntersect(refRayOrigin, invRayDirection, nodes[drawCommands[j].bvhID], drawCommands[j], boxT);
+        if (boxIntersect && boxT < hitInfo.minT) {
+            for (uint i = drawCommands[j].firstIndex; i < drawCommands[j].count + drawCommands[j].firstIndex; i += 3) {
+
+                vec3 intInfo = Intersection(refRayOrigin, refRayDirection, i, drawCommands[j]);
+
+				if (intInfo.x > 0.f && intInfo.x < hitInfo.minT) {			
+					hitInfo.minT = intInfo.x;
+					hitInfo.uvw.xy = intInfo.yz;
+					hitInfo.uvw.z = 1.f - hitInfo.uvw.x - hitInfo.uvw.y;
+					hitInfo.isHit = true;
+                    hitInfo.shapeHit = i;
+                    hitInfo.cmd = drawCommands[j];
+                    hitInfo.hitCube = false;
+				}
+            }
+        }
+    }
+
+	return hitInfo;
 }
 #endif

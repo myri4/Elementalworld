@@ -43,3 +43,4 @@ namespace wc {
 #define WC_ERROR(...)         wc::Log::GetLogger()->error(__VA_ARGS__)
 #define WC_CRITICAL(...)      wc::Log::GetLogger()->critical(__VA_ARGS__)
 #define WC_DEBUG(...)         wc::Log::GetLogger()->debug(__VA_ARGS__)
+#define WC_TODO WC_INFO("@TODO: Implement!");

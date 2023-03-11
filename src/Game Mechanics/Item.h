@@ -40,11 +40,11 @@ namespace wc {
 	public:
 		ItemSlot data[4 * 9]; // @TODO: probably should be with dynamic size
 
-		void SetItem(const ItemSlot& itemSlot, const uint32_t& id) {
+		void SetItem(ItemSlot itemSlot, uint32_t id) {
 			data[id] = itemSlot;
 		}
 
-		bool PushItem(const ItemSlot& itemSlot) {
+		bool PushItem(ItemSlot itemSlot) {
 			for (int i = 0; i < std::size(data); i++) {
 				if (itemSlot.itemID == data[i].itemID && data[i].amount + itemSlot.amount <= itemData[data[i].itemID].maxStackSize)
 				{
@@ -69,7 +69,7 @@ namespace wc {
 			return false;
 		}
 
-		bool RemoveItem(const uint32_t& id, const uint8_t& amount = 1) {
+		bool RemoveItem(uint32_t id, uint8_t amount = 1) {
 			if (int(data[id].amount - amount) > -1) {
 				data[id].amount -= amount;
 				return true;

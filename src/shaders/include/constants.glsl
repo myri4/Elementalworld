@@ -21,4 +21,8 @@ const float kInfinity = 3.402823466e+38F;
 
 const int WC_MODEL_BIT = 1;
 const int WC_CULL_BIT = 2;
+
+const uint chunkSize = 16;
+const uint chunkVolume = chunkSize * chunkSize * chunkSize;
+const float bias = 1e-4f;
 #endif

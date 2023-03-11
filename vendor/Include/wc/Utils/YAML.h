@@ -8,7 +8,7 @@ namespace YAML {
 	template<>
 	struct convert<glm::vec2>
 	{
-		static Node encode(const glm::vec2& rhs)
+		static Node encode(glm::vec2 rhs)
 		{
 			Node node;
 			node.push_back(rhs.x);
@@ -91,7 +91,7 @@ namespace YAMLUtils {
 		file.close();
 	}
 	
-	YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v)
+	YAML::Emitter& operator<<(YAML::Emitter& out, glm::vec2 v)
 	{
 		out << YAML::Flow;
 		out << YAML::BeginSeq << v.x << v.y << YAML::EndSeq;

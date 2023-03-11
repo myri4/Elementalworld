@@ -44,7 +44,7 @@ namespace wc {
 
 		void Unmap() { vmaUnmapMemory(VulkanContext::GetMemoryAllocator(), allocation); }
 
-		VkResult SetData(const void* data, const VkDeviceSize& size = VK_WHOLE_SIZE) { // @TODO: implement offset parameter
+		VkResult SetData(const void* data, const VkDeviceSize& size = VK_WHOLE_SIZE) {
 			VkResult result;
 			memcpy(Map(result), data, size);
 			Unmap();
@@ -64,7 +64,7 @@ namespace wc {
     private:
         VmaAllocation allocation = VK_NULL_HANDLE;
     public:
-        VkResult Create(const VkDeviceSize& bufferSize, const uint32_t& usage) {
+		VkResult Create(const VkDeviceSize& bufferSize, uint32_t usage = wc::STORAGE_BUFFER) {
 			VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 			bufferInfo.size = bufferSize;
 			bufferInfo.usage = usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -90,7 +90,7 @@ namespace wc {
 			stb.Destroy();
 		}
 
-		void SetData(const void* data, const uint32_t& size, const uint32_t& offset = 0, const uint32_t& srcOffset = 0) {
+		void SetData(const void* data, uint32_t size, uint32_t offset = 0, uint32_t srcOffset = 0) {
 			VkBufferCopy copy;
 			copy.size = size;
 			copy.dstOffset = offset;
@@ -98,7 +98,7 @@ namespace wc {
 			SetData(copy, data);
 		}
 
-		void SetData(const StagingBuffer& buffer, const uint32_t& size, const uint32_t& offset = 0, const uint32_t& srcOffset = 0) {
+		void SetData(const StagingBuffer& buffer, uint32_t size, uint32_t offset = 0, uint32_t srcOffset = 0) {
 			VkBufferCopy copy;
 			copy.size = size;
 			copy.dstOffset = offset;
@@ -111,7 +111,7 @@ namespace wc {
 		VkDescriptorBufferInfo GetDescriptorInfo(const VkDeviceSize& size = VK_WHOLE_SIZE, const VkDeviceSize& offset = 0) {
 			VkDescriptorBufferInfo info;
 			info.buffer = m_RendererID;
-			info.offset = offset;
+			info.offset = 0;
 			info.range = size;
 			return info;
 		}
@@ -160,7 +160,7 @@ namespace wc {
 			counter++;
 		}
 
-		void Remove(const uint32_t& id) {
+		void Remove(uint32_t id) {
 			counter--;
 			this->data[id] = this->data[counter];
 		}

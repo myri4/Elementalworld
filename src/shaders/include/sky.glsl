@@ -1,4 +1,3 @@
-#include "sceneData.glsl"
 #include "Light.glsl"
 #include "constants.glsl"
 

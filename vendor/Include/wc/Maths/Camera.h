@@ -29,7 +29,7 @@ namespace wc{
 		// returns the view matrix calculated using Euler Angles and the LookAt Matrix
 		glm::mat4 GetViewMatrix() const { return glm::lookAt(Position, Position + Front, Up); }
 
-		void Update(const float& aspectRatio) {
+		void Update(float aspectRatio) {
 			// update Front, Right and Up Vectors using the updated Euler angles
 			// calculates the new Front vector from the Camera's (updated) Euler Angles
 			float yaw = glm::radians(Yaw);
@@ -62,10 +62,10 @@ namespace wc{
 		}
 	};
 
-    struct AABB {
+    struct FAABB {
 
-        AABB() {}
-        AABB(const glm::vec3& pos, const glm::vec3& dims) : position(pos), size(dims) {}
+        FAABB() {}
+        FAABB(const glm::vec3& pos, const glm::vec3& dims) : position(pos), size(dims) {}
 
         glm::vec3 getVN(const glm::vec3& normal) const
         {
@@ -134,7 +134,7 @@ namespace wc{
             m_planes[1].distance = mat[3][3] - mat[3][2];
         }
 
-        bool isBoxInFrustum(const AABB& box) const noexcept
+        bool isBoxInFrustum(const FAABB& box) const noexcept
         {
             bool result = true;
             for (auto& plane : m_planes) {

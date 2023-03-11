@@ -27,6 +27,7 @@ namespace wc {
 		Texture SBox;
 		Texture XSBox;
 		Texture XSBox2;
+		Sound music1;
 
 		Clock deltaTimer;
 		float deltaTime = 0.f;
@@ -104,11 +105,6 @@ namespace wc {
 				ImGui_ImplVulkan_CreateFontsTexture(cmd);
 				});
 
-			//clear font textures from cpu data
-			ImGui_ImplVulkan_DestroyFontUploadObjects();					
-
-			gameInstance.Create();
-
 			//@TODO: shorten the lenght
 			background.Load(GetAssetPath() + "/textures/misc/screenshot.png");
 			TitleSBox.Load( GetAssetPath() + "/textures/misc/TitleSBox.png");
@@ -125,6 +121,12 @@ namespace wc {
 			SBox.Load(      GetAssetPath() + "/textures/misc/SBox.png");
 			XSBox.Load(     GetAssetPath() + "/textures/misc/XSBox.png");
 			XSBox2.Load(    GetAssetPath() + "/textures/misc/XSBox.png");
+
+			music1.Create(	GetAssetPath() + "/sounds/music/fg.mp3");
+
+			//clear font textures from cpu data
+			ImGui_ImplVulkan_DestroyFontUploadObjects();
+			gameInstance.Create();
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		static void HelpMarker(const char* desc)

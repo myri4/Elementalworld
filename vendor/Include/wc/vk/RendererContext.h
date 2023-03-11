@@ -143,7 +143,7 @@ namespace RendererContext {
 		return vkAcquireNextImageKHR(VulkanContext::GetDevice(), window.swapchain, timeout, presentSemaphore, nullptr, &swapchainImageIndex);
 	}
 
-	void Begin(const uint32_t& swapchainImageIndex, const wc::Window& window) {
+	void Begin(uint32_t swapchainImageIndex, const wc::Window& window) {
 		VkRenderPassBeginInfo rpInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
 
 		rpInfo.renderPass = defaultRenderPass;

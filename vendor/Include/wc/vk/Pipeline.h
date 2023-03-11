@@ -44,7 +44,7 @@ namespace wc {
 			m_RendererID = VK_NULL_HANDLE;
 		}
 
-		VkResult MergePipelineCaches(const uint32_t& count, const VkPipelineCache* caches) {
+		VkResult MergePipelineCaches(uint32_t count, const VkPipelineCache* caches) {
 			return vkMergePipelineCaches(VulkanContext::GetDevice(), m_RendererID, count, caches);
 		}
 

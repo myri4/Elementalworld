@@ -7,7 +7,7 @@ namespace wc {
 
 	using DescriptorSet = VkDescriptorSet;	
 
-	void UpdateDescriptorSets(const uint32_t& descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites, const uint32_t& descriptorCopyCount = 0, const VkCopyDescriptorSet* pDescriptorCopies = nullptr) {
+	void UpdateDescriptorSets(uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount = 0, const VkCopyDescriptorSet* pDescriptorCopies = nullptr) {
 		vkUpdateDescriptorSets(VulkanContext::GetDevice(), descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
 	}
 
@@ -40,7 +40,7 @@ namespace wc {
 
 		VkResult Reset(const VkDescriptorPoolResetFlags& flags = 0) { return vkResetDescriptorPool(VulkanContext::GetDevice(), m_RendererID, flags); }
 
-		VkResult Allocate(const VkDescriptorSetLayout* layouts, DescriptorSet& set, const void* pNext = nullptr, const uint32_t& descriptorCount = 1) {
+		VkResult Allocate(const VkDescriptorSetLayout* layouts, DescriptorSet& set, const void* pNext = nullptr, uint32_t descriptorCount = 1) {
 			VkDescriptorSetAllocateInfo allocInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
 			allocInfo.descriptorPool = m_RendererID;
 			allocInfo.descriptorSetCount = descriptorCount;
@@ -99,14 +99,14 @@ namespace wc {
 			return false;
 		}
 
-		bool allocate(DescriptorSet& set, const VkDescriptorSetLayout* layouts, const void* pNext, const uint32_t& descriptorCount) {
+		bool allocate(DescriptorSet& set, const VkDescriptorSetLayout& layout, const void* pNext, uint32_t descriptorCount) {
 			if (currentPool == VK_NULL_HANDLE)
 			{
 				currentPool = grab_pool();
 				usedPools.push_back(currentPool);
 			}
 
-			VkResult allocResult = currentPool.Allocate(layouts, set, pNext, descriptorCount);
+			VkResult allocResult = currentPool.Allocate(&layout, set, pNext, descriptorCount);
 			switch (allocResult) {
 			case VK_SUCCESS: return true;
 			case VK_ERROR_FRAGMENTED_POOL:
@@ -115,7 +115,7 @@ namespace wc {
 				currentPool = grab_pool();
 				usedPools.push_back(currentPool);
 
-				allocResult = currentPool.Allocate(layouts, set, pNext, descriptorCount);
+				allocResult = currentPool.Allocate(&layout, set, pNext, descriptorCount);
 
 				//if it still fails then we have big issues
 				if (allocResult == VK_SUCCESS) return true;
@@ -186,7 +186,7 @@ namespace wc {
 	class DescriptorWriter {
 	public:
 		wc::DescriptorSet dstSet = VK_NULL_HANDLE;
-		DescriptorWriter& write_buffer(const uint32_t& binding, const VkDescriptorBufferInfo& bufferInfo, const VkDescriptorType& type) {
+		DescriptorWriter& write_buffer(uint32_t binding, const VkDescriptorBufferInfo& bufferInfo, const VkDescriptorType& type) {
 
 			VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 
@@ -200,7 +200,7 @@ namespace wc {
 			return *this;
 		}
 
-		DescriptorWriter& write_image(const uint32_t& binding, const VkDescriptorImageInfo& imageInfo, const VkDescriptorType& type) {
+		DescriptorWriter& write_image(uint32_t binding, const VkDescriptorImageInfo& imageInfo, const VkDescriptorType& type) {
 			VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 
 			newWrite.descriptorCount = 1;
@@ -213,7 +213,7 @@ namespace wc {
 			return *this;
 		}
 
-		DescriptorWriter& write_images(const uint32_t& binding, const std::vector<VkDescriptorImageInfo>& imageInfo, const VkDescriptorType& type) {
+		DescriptorWriter& write_images(uint32_t binding, const std::vector<VkDescriptorImageInfo>& imageInfo, const VkDescriptorType& type) {
 			VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 
 			newWrite.descriptorCount = (uint32_t)imageInfo.size();
@@ -231,5 +231,33 @@ namespace wc {
 		}
 
 		std::vector<VkWriteDescriptorSet> writes;
+	};
+
+	template<size_t size>
+	class DescriptorWriter2 {
+		uint32_t offset = 0;
+		VkDescriptorBufferInfo bufferInfos[size];
+	public:
+		wc::DescriptorSet dstSet = VK_NULL_HANDLE;
+		void write_buffer(uint32_t binding, const VkDescriptorBufferInfo& bufferInfo, const VkDescriptorType& type) {
+
+			VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+			bufferInfos[offset] = bufferInfo;
+			newWrite.descriptorCount = 1;
+			newWrite.descriptorType = type;
+			newWrite.pBufferInfo = &bufferInfos[offset];
+			newWrite.dstBinding = binding;
+			newWrite.dstSet = dstSet;
+
+			writes[offset] = newWrite;
+			offset++;
+		}
+
+		void Update() {
+			vkUpdateDescriptorSets(VulkanContext::GetDevice(), offset, writes, 0, nullptr);
+		}
+
+		VkWriteDescriptorSet writes[size] = {};
+
 	};
 }

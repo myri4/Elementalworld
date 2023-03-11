@@ -8,7 +8,7 @@ namespace wc {
 	struct InventoryContainer {
 		ItemSlot data[inventorySize];
 
-		bool AddItem(const ItemID& itemID, const uint8_t& slot, const uint8_t& amount = 1) {
+		bool AddItem(ItemID itemID, uint8_t slot, uint8_t amount = 1) {
 			auto findSlot = [&]() {
 				for (uint8_t i = 0; i < inventorySize; i++) {
 					if (data[i].itemID == 0) { // if empty
@@ -51,7 +51,7 @@ namespace wc {
 			return false;
 		}
 
-		bool RemoveItem(const uint32_t& slot, const uint8_t& amount = 1) {
+		bool RemoveItem(uint32_t slot, uint8_t amount = 1) {
 			int diff = data[slot].stack_size - amount;
 			if (diff >= 0) {
 				data[slot].stack_size = diff;
