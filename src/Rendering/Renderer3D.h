@@ -399,6 +399,7 @@ namespace wc {
 
 			wc::ComputeShaderCreateInfo createInfo;
 			createInfo.path = GetAssetPath() + "/shaders/rayTracingShader.comp";
+			createInfo.infoPath = GetAssetPath() + "/shaders/rayTracingShader.si";
 			createInfo.cachePath = wc::GetCachedAssetPath() + "/shaders/rayTracingShader.bin";
 
 			VkDescriptorBindingFlags flags[11];
@@ -418,8 +419,8 @@ namespace wc {
 			shader.Create(createInfo);
 			shader.SetName("main");
 
-			bloomShader.Create(GetAssetPath() + "/shaders/bloomShader.comp");
-			compositeShader.Create(GetAssetPath() + "/shaders/composite.comp");
+			bloomShader.Create(GetAssetPath() + "/shaders/bloomShader.comp", GetAssetPath() + "/shaders/bloomShader.si");
+			compositeShader.Create(GetAssetPath() + "/shaders/composite.comp", GetAssetPath() + "/shaders/composite.si");
 			
 			wc::descriptorAllocator.allocate(mainDescriptorSet, shader.getDescriptorLayout(), &set_counts, 1);
 			wc::descriptorAllocator.allocate(compositeSet, compositeShader.getDescriptorLayout());

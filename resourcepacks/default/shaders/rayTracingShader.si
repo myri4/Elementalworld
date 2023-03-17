@@ -16,7 +16,7 @@
         }
     ],
     "types" : {
-        "_70" : {
+        "_71" : {
             "name" : "DrawCommand",
             "members" : [
                 {
@@ -45,7 +45,7 @@
                 }
             ]
         },
-        "_73" : {
+        "_75" : {
             "name" : "Vertex",
             "members" : [
                 {
@@ -80,7 +80,7 @@
                 }
             ]
         },
-        "_131" : {
+        "_137" : {
             "name" : "Node",
             "members" : [
                 {
@@ -117,7 +117,7 @@
                 }
             ]
         },
-        "_142" : {
+        "_147" : {
             "name" : "HitInfo",
             "members" : [
                 {
@@ -130,6 +130,10 @@
                 },
                 {
                     "name" : "blockHit",
+                    "type" : "uint"
+                },
+                {
+                    "name" : "materialID",
                     "type" : "uint"
                 },
                 {
@@ -154,11 +158,11 @@
                 },
                 {
                     "name" : "cmd",
-                    "type" : "_70"
+                    "type" : "_71"
                 }
             ]
         },
-        "_498" : {
+        "_502" : {
             "name" : "Light",
             "members" : [
                 {
@@ -173,12 +177,12 @@
                 }
             ]
         },
-        "_500" : {
+        "_504" : {
             "name" : "LightData",
             "members" : [
                 {
                     "name" : "lights",
-                    "type" : "_498",
+                    "type" : "_502",
                     "array" : [
                         0
                     ],
@@ -190,7 +194,7 @@
                 }
             ]
         },
-        "_935" : {
+        "_939" : {
             "name" : "Vertex",
             "members" : [
                 {
@@ -232,12 +236,12 @@
                 }
             ]
         },
-        "_937" : {
+        "_941" : {
             "name" : "VertexBuffer",
             "members" : [
                 {
                     "name" : "vertices",
-                    "type" : "_935",
+                    "type" : "_939",
                     "array" : [
                         0
                     ],
@@ -249,7 +253,7 @@
                 }
             ]
         },
-        "_941" : {
+        "_945" : {
             "name" : "IndexBuffer",
             "members" : [
                 {
@@ -266,7 +270,7 @@
                 }
             ]
         },
-        "_1139" : {
+        "_1157" : {
             "name" : "BlockIDs",
             "members" : [
                 {
@@ -283,7 +287,7 @@
                 }
             ]
         },
-        "_1517" : {
+        "_1556" : {
             "name" : "ChunkNode",
             "members" : [
                 {
@@ -314,7 +318,7 @@
                 }
             ]
         },
-        "_1521" : {
+        "_1560" : {
             "name" : "ChunkNode",
             "members" : [
                 {
@@ -351,12 +355,12 @@
                 }
             ]
         },
-        "_1523" : {
+        "_1562" : {
             "name" : "ChunkNodeBuffer",
             "members" : [
                 {
                     "name" : "chunkNodes",
-                    "type" : "_1521",
+                    "type" : "_1560",
                     "array" : [
                         0
                     ],
@@ -368,7 +372,41 @@
                 }
             ]
         },
-        "_1874" : {
+        "_1835" : {
+            "name" : "Block",
+            "members" : [
+                {
+                    "name" : "materialIDs",
+                    "type" : "uint",
+                    "array" : [
+                        6
+                    ],
+                    "array_size_is_literal" : [
+                        true
+                    ],
+                    "offset" : 0,
+                    "array_stride" : 4
+                }
+            ]
+        },
+        "_1837" : {
+            "name" : "Blocks",
+            "members" : [
+                {
+                    "name" : "blockData",
+                    "type" : "_1835",
+                    "array" : [
+                        0
+                    ],
+                    "array_size_is_literal" : [
+                        true
+                    ],
+                    "offset" : 0,
+                    "array_stride" : 24
+                }
+            ]
+        },
+        "_1922" : {
             "name" : "Scene",
             "members" : [
                 {
@@ -408,7 +446,7 @@
                 }
             ]
         },
-        "_1883" : {
+        "_1931" : {
             "name" : "Node",
             "members" : [
                 {
@@ -453,12 +491,12 @@
                 }
             ]
         },
-        "_1885" : {
+        "_1933" : {
             "name" : "BVHBuffer",
             "members" : [
                 {
                     "name" : "nodes",
-                    "type" : "_1883",
+                    "type" : "_1931",
                     "array" : [
                         0
                     ],
@@ -470,7 +508,7 @@
                 }
             ]
         },
-        "_1888" : {
+        "_1936" : {
             "name" : "DrawCommand",
             "members" : [
                 {
@@ -505,12 +543,12 @@
                 }
             ]
         },
-        "_1890" : {
+        "_1938" : {
             "name" : "DrawCommandBuffer",
             "members" : [
                 {
                     "name" : "drawCommands",
-                    "type" : "_1888",
+                    "type" : "_1936",
                     "array" : [
                         0
                     ],
@@ -522,41 +560,7 @@
                 }
             ]
         },
-        "_2076" : {
-            "name" : "Block",
-            "members" : [
-                {
-                    "name" : "materialIDs",
-                    "type" : "uint",
-                    "array" : [
-                        6
-                    ],
-                    "array_size_is_literal" : [
-                        true
-                    ],
-                    "offset" : 0,
-                    "array_stride" : 4
-                }
-            ]
-        },
-        "_2078" : {
-            "name" : "Blocks",
-            "members" : [
-                {
-                    "name" : "blockData",
-                    "type" : "_2076",
-                    "array" : [
-                        0
-                    ],
-                    "array_size_is_literal" : [
-                        true
-                    ],
-                    "offset" : 0,
-                    "array_stride" : 24
-                }
-            ]
-        },
-        "_2163" : {
+        "_2216" : {
             "name" : "Material",
             "members" : [
                 {
@@ -576,12 +580,12 @@
                 }
             ]
         },
-        "_2165" : {
+        "_2218" : {
             "name" : "MaterialData",
             "members" : [
                 {
                     "name" : "materials",
-                    "type" : "_2163",
+                    "type" : "_2216",
                     "array" : [
                         0
                     ],
@@ -621,7 +625,7 @@
     ],
     "ssbos" : [
         {
-            "type" : "_500",
+            "type" : "_504",
             "name" : "LightData",
             "readonly" : true,
             "block_size" : 0,
@@ -629,7 +633,7 @@
             "binding" : 0
         },
         {
-            "type" : "_937",
+            "type" : "_941",
             "name" : "VertexBuffer",
             "readonly" : true,
             "block_size" : 0,
@@ -637,7 +641,7 @@
             "binding" : 1
         },
         {
-            "type" : "_941",
+            "type" : "_945",
             "name" : "IndexBuffer",
             "readonly" : true,
             "block_size" : 0,
@@ -645,7 +649,7 @@
             "binding" : 2
         },
         {
-            "type" : "_1139",
+            "type" : "_1157",
             "name" : "BlockIDs",
             "readonly" : true,
             "block_size" : 0,
@@ -653,7 +657,7 @@
             "binding" : 7
         },
         {
-            "type" : "_1523",
+            "type" : "_1562",
             "name" : "ChunkNodeBuffer",
             "readonly" : true,
             "block_size" : 0,
@@ -661,23 +665,7 @@
             "binding" : 5
         },
         {
-            "type" : "_1885",
-            "name" : "BVHBuffer",
-            "readonly" : true,
-            "block_size" : 0,
-            "set" : 0,
-            "binding" : 4
-        },
-        {
-            "type" : "_1890",
-            "name" : "DrawCommandBuffer",
-            "readonly" : true,
-            "block_size" : 0,
-            "set" : 0,
-            "binding" : 3
-        },
-        {
-            "type" : "_2078",
+            "type" : "_1837",
             "name" : "Blocks",
             "readonly" : true,
             "block_size" : 0,
@@ -685,7 +673,23 @@
             "binding" : 8
         },
         {
-            "type" : "_2165",
+            "type" : "_1933",
+            "name" : "BVHBuffer",
+            "readonly" : true,
+            "block_size" : 0,
+            "set" : 0,
+            "binding" : 4
+        },
+        {
+            "type" : "_1938",
+            "name" : "DrawCommandBuffer",
+            "readonly" : true,
+            "block_size" : 0,
+            "set" : 0,
+            "binding" : 3
+        },
+        {
+            "type" : "_2218",
             "name" : "MaterialData",
             "readonly" : true,
             "block_size" : 0,
@@ -695,8 +699,8 @@
     ],
     "push_constants" : [
         {
-            "type" : "_1874",
-            "name" : "_1876",
+            "type" : "_1922",
+            "name" : "_1924",
             "push_constant" : true
         }
     ]

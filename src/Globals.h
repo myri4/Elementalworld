@@ -30,7 +30,7 @@ namespace wc {
 		SLAB_DOWN, SLAB_UP, SLAB_LEFT, SLAB_RIGHT, SLAB_FRONT, SLAB_BACK,
 		CANT_CONNECT, AIR, CUSTOM_MODEL, NON_EXISTENT
 	};
-	enum class BlockTexture : uint8_t { RIGHT, TOP, FRONT, LEFT, BOTTOM, BACK };
+	enum class BlockTexture : uint8_t { RIGHT, LEFT, TOP, BOTTOM, FRONT, BACK };
 
 	//@TODO: Convert to state machine
 	enum MenuMode : uint32_t { GAME, INVENTORY, MAINMENU, SETTINGS, MULTIPLAYER, ESCMENU, WORLD_SELECTION, WORLD_CREATION };

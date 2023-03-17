@@ -214,7 +214,7 @@ namespace wc {
 					itemData.push_back(item);					
 				}
 			}
-			Renderer3D::Build(window.GetSize() / 2, blockData.size(), chunks.size());
+			Renderer3D::Build(window.GetSize(), blockData.size(), chunks.size());
 
 			wc::BlockGPU gpuBlockData[blockData.allocated_size()];
 
@@ -540,7 +540,7 @@ namespace wc {
 					//	if ((n % 10) != 0)
 						ImGui::SameLine();
 					if (p.inventory.data[n].itemID != 0)
-						ImGui::ImageButton(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(90, 90));
+						ImGui::Image(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(90, 90));
 					else
 						ImGui::Button("", ImVec2(90, 90));
 				
@@ -581,7 +581,10 @@ namespace wc {
 					if ((n % 10) != 0)
 						ImGui::SameLine();
 					//ImGui::Button(names[n], ImVec2(90, 90));
-					ImGui::ImageButton(AssetManager::m_Textures[itemData[coal].textureID], ImVec2(80, 80));
+					if (p.inventory.data[n].itemID != 0)
+						ImGui::ImageButton(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(90, 90));
+					else
+						ImGui::Button("", ImVec2(90, 90));
 					// Our buttons are both drag sources and drag targets here!
 					if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip))
 					{

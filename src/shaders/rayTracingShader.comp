@@ -38,32 +38,22 @@ vec3 rayTrace(inout vec3 refRayOrigin, inout vec3 refRayDirection) {
     HitInfo hitInfo = intersect(refRayOrigin, refRayDirection, invRayDirection);
 
     if (hitInfo.isHit) {
-        uint materialID = 0;
         vec2 texCoords = vec2(0.f);
 
         if (hitInfo.hitCube) {
-            materialID = blockData[hitInfo.blockHit].materialIDs[0];
             
             texCoords = hitInfo.uvw.xy;
         }
         else{
             hitInfo.p = refRayOrigin + hitInfo.minT * refRayDirection;
             texCoords = rtLerp(hitInfo.uvw, GetVertex(hitInfo.shapeHit + 1, hitInfo.cmd).TexCoords, 
-            GetVertex(hitInfo.shapeHit + 2, hitInfo.cmd).TexCoords, GetVertex(hitInfo.shapeHit, hitInfo.cmd).TexCoords);
-
-            materialID = GetVertex(hitInfo.shapeHit, hitInfo.cmd).materialID;
-
-			vec3 aPos = GetVertex(hitInfo.shapeHit, hitInfo.cmd).Position;
-
-    		vec3 v1v0 = GetVertex(hitInfo.shapeHit + 1, hitInfo.cmd).Position - aPos;
-    		vec3 v2v0 = GetVertex(hitInfo.shapeHit + 2, hitInfo.cmd).Position - aPos;
-			hitInfo.N = normalize(cross( v1v0, v2v0 ));
+            GetVertex(hitInfo.shapeHit + 2, hitInfo.cmd).TexCoords, GetVertex(hitInfo.shapeHit, hitInfo.cmd).TexCoords);		
 
         }
-        vec3 albedo = texture(u_Textures[materials[materialID].albedo], texCoords).rgb;
+        vec3 albedo = texture(u_Textures[materials[hitInfo.materialID].albedo], texCoords).rgb;
         
         vec2 materialInfo = vec2(1.f, 0.f);
-        if (materials[materialID].materialData != 0) materialInfo = texture(u_Textures[materials[materialID].materialData], texCoords).rg;
+        if (materials[hitInfo.materialID].materialData != 0) materialInfo = texture(u_Textures[materials[hitInfo.materialID].materialData], texCoords).rg;
 
         float roughness = materialInfo[0];
 	    float metallic = materialInfo[1];

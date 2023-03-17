@@ -347,6 +347,7 @@
     <ClCompile Include="vendor\Include\imgui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="vendor\Include\imgui\imgui_tables.cpp" />
     <ClCompile Include="vendor\Include\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="vendor\Include\simdjson\simdjson.cpp" />
     <ClCompile Include="vendor\Include\spirv_cross\spirv_cfg.cpp" />
     <ClCompile Include="vendor\Include\spirv_cross\spirv_cpp.cpp" />
     <ClCompile Include="vendor\Include\spirv_cross\spirv_cross.cpp" />
@@ -411,6 +412,7 @@
     <ClInclude Include="src\world\GameSerializer.h" />
     <ClInclude Include="src\world\World.h" />
     <ClInclude Include="vendor\Include\miniaudio.h" />
+    <ClInclude Include="vendor\Include\simdjson\simdjson.h" />
     <ClInclude Include="vendor\Include\wc\Audio\AudioEngine.h" />
     <ClInclude Include="vendor\Include\wc\Filesystem\Filesystem.h" />
     <ClInclude Include="vendor\Include\wc\Filesystem\Resourcepack.h" />

@@ -153,6 +153,9 @@
     <ClCompile Include="vendor\Include\imgui\imgui_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="vendor\Include\simdjson\simdjson.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Elementalworld Server\Elementalworld Server.vcxproj" />
@@ -299,6 +302,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\Include\wc\Audio\AudioEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\Include\simdjson\simdjson.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

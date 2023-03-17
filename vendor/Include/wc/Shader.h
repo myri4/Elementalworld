@@ -7,6 +7,7 @@
 #include "vk/Descriptors.h"
 #include "vk/RendererContext.h"
 #include <magic_enum.hpp>
+#include <simdjson/simdjson.h>
 
 namespace wc {
 
@@ -146,7 +147,7 @@ namespace wc {
 				}
 			}
 			else 
-				WC_INFO("Could not find cache file for {}", cachePath.c_str());			
+				WC_INFO("Could not find cache file for {}", cachePath.c_str());	
 
 			{ // Reflection
 				std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
@@ -375,6 +376,7 @@ namespace wc {
 
 	struct ComputeShaderCreateInfo {
 		std::string path;
+		std::string infoPath;
 		std::string cachePath;
 
 		VkDescriptorBindingFlags* bindingFlags = nullptr;
@@ -396,7 +398,10 @@ namespace wc {
 
 			shaderModule.Create(createInfo.path);
 
+			if (createInfo.infoPath.size() == 0) WC_WARN("Shader info for shader with path {} is empty!", createInfo.path);
+
 			{ // Reflection
+
 				std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
 
 				spirv_cross::Compiler compiler(shaderModule.getBinary());
@@ -541,9 +546,10 @@ namespace wc {
 			shaderModule.Destroy();
 		}
 
-		void Create(const std::string& path) {
+		void Create(const std::string& path, const std::string& infoPath) {
 			ComputeShaderCreateInfo createInfo;
 			createInfo.path = path;
+			createInfo.infoPath = infoPath;
 			Create(createInfo);
 		}
 

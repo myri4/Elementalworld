@@ -60,11 +60,11 @@ layout (std430, binding = 6) readonly buffer MaterialData { Material materials[]
 layout (std430, binding = 7) readonly buffer BlockIDs { uint8_t blockIDs[]; };
 layout (std430, binding = 8) readonly buffer Blocks { Block blockData[]; };
 
-Vertex GetVertex(const in uint indexOffset, const in DrawCommand cmd) {
+Vertex GetVertex(uint indexOffset, DrawCommand cmd) {
 	return vertices[indices[indexOffset] + cmd.baseVertex];
 }
 
-vec3 Intersection(const in vec3 rayOrigin, const in vec3 rayDirection, const in uint indexOffset, const in DrawCommand cmd) {
+vec3 Intersection(vec3 rayOrigin, vec3 rayDirection, uint indexOffset, DrawCommand cmd) {
 	vec3 a = vertices[indices[indexOffset + 0] + cmd.baseVertex].Position + cmd.transform;
 	vec3 b = vertices[indices[indexOffset + 1] + cmd.baseVertex].Position + cmd.transform;
 	vec3 c = vertices[indices[indexOffset + 2] + cmd.baseVertex].Position + cmd.transform;
@@ -121,10 +121,10 @@ int GetCubeFaceIndex(vec3 dir)
 
 
 #define RIGHT 0
-#define TOP 1
-#define FRONT 2
-#define LEFT 3
-#define BOTTOM 4
+#define LEFT 1
+#define TOP 2
+#define BOTTOM 3
+#define FRONT 4
 #define BACK 5
 
 int GetNormalIndex(vec3 normal)
@@ -153,6 +153,19 @@ vec2 GetCubeUVFromDir(int faceIndex, vec3 dir)
   default: uv = vec2(-dir.x, -dir.y); break; // -Z
   }
   return uv + 0.5f;
+}
+
+vec3 GetCubeNormal(int faceIndex)
+{
+  switch (faceIndex)
+  {
+  case 0:  return vec3( 1.f,  0.f,  0.f); // +X
+  case 1:  return vec3(-1.f,  0.f,  0.f); // -X
+  case 2:  return vec3( 0.f,  1.f,  0.f); // +Y
+  case 3:  return vec3( 0.f, -1.f,  0.f); // -Y
+  case 4:  return vec3( 0.f,  0.f,  1.f); // +Z
+  default: return vec3( 0.f,  0.f, -1.f); // -Z
+  }
 }
 
 bool BoxIntersect(vec3 rayOrigin, vec3 invRayDir, vec3 boxMin, vec3 boxMax, out float t) {
@@ -231,6 +244,7 @@ struct HitInfo {
     float minT;
     uint shapeHit;
     uint blockHit;
+    uint materialID;
     vec3 uvw;
     bool isHit;
     bool hitCube;
@@ -325,11 +339,10 @@ HitInfo intersect(const in vec3 refRayOrigin, const in vec3 refRayDirection, con
                                     vec3 center = vec3(vMapCheck) + childStart + 0.5f;
                                     vec3 dir = hitInfo.p - center; // if the size is different from 1 this should be normalized
 
-                                    vec3 normal = vec3(0.f);
-	                                normal[axis] = -vStep[axis];
-	                                hitInfo.N = normal;
-
-                                    hitInfo.uvw.xy = GetCubeUVFromDir(GetCubeFaceIndex(dir), dir);
+                                    int faceIndex = GetCubeFaceIndex(dir);
+                                    hitInfo.materialID = blockData[hitInfo.blockHit].materialIDs[faceIndex];
+                                    hitInfo.N = GetCubeNormal(faceIndex);
+                                    hitInfo.uvw.xy = GetCubeUVFromDir(faceIndex, dir);
 									hitInfo.uvw.z = 1.f - hitInfo.uvw.x - hitInfo.uvw.y;
 
 	            			        break;
@@ -375,7 +388,15 @@ HitInfo intersect(const in vec3 refRayOrigin, const in vec3 refRayDirection, con
 					hitInfo.isHit = true;
                     hitInfo.shapeHit = i;
                     hitInfo.cmd = drawCommands[j];
+                    hitInfo.materialID = GetVertex(hitInfo.shapeHit, hitInfo.cmd).materialID;
                     hitInfo.hitCube = false;
+
+
+                    vec3 aPos = GetVertex(hitInfo.shapeHit, hitInfo.cmd).Position;
+
+    		        vec3 v1v0 = GetVertex(hitInfo.shapeHit + 1, hitInfo.cmd).Position - aPos;
+    		        vec3 v2v0 = GetVertex(hitInfo.shapeHit + 2, hitInfo.cmd).Position - aPos;
+			        hitInfo.N = normalize(cross( v1v0, v2v0 ));
 				}
             }
         }
