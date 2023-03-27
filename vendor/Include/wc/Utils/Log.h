@@ -44,3 +44,15 @@ namespace wc {
 #define WC_CRITICAL(...)      wc::Log::GetLogger()->critical(__VA_ARGS__)
 #define WC_DEBUG(...)         wc::Log::GetLogger()->debug(__VA_ARGS__)
 #define WC_TODO WC_INFO("@TODO: Implement!");
+
+#define WC_ENABLE_ASSERTS
+
+
+#ifdef WC_ENABLE_ASSERTS
+// Currently accepts at least the condition and one additional parameter (the message) being optional
+#define WC_DEBUGBREAK(x) __debugbreak()
+#define WC_ASSERT(x) assert(x);
+#else
+#define WC_DEBUGBREAK(x)
+#define WC_ASSERT(...)
+#endif

@@ -111,7 +111,7 @@ namespace wc {
 		VkDescriptorBufferInfo GetDescriptorInfo(const VkDeviceSize& size = VK_WHOLE_SIZE, const VkDeviceSize& offset = 0) {
 			VkDescriptorBufferInfo info;
 			info.buffer = m_RendererID;
-			info.offset = 0;
+			info.offset = offset;
 			info.range = size;
 			return info;
 		}

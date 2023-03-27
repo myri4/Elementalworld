@@ -87,7 +87,7 @@ namespace wc {
 		Player p;
 
 		void Create() {
-
+			AssetManager::Init();
 			crosshair.Load(GetAssetPath() + "/textures/misc/cursor.png");
 
 			if (!std::filesystem::exists("worlds")) std::filesystem::create_directory("worlds");
@@ -120,7 +120,7 @@ namespace wc {
 			matBuffer.Create(materialData.byte_size());
 			
 			blockData.counter = 1;
-			materialData.Data = (Material*)matBuffer.Map();
+			materialData.Data = (BufferMaterial*)matBuffer.Map();
 			materialData.counter = 1;
 			itemData.counter = 1;
 			
@@ -131,6 +131,39 @@ namespace wc {
 			std::vector<Vertex> modelVertices;
 			std::vector<uint32_t> modelIndices;
 			std::vector<Node> bvhData;
+
+			auto setMaterial = [&](const YAML::Node& materialScript, BufferMaterial& material) {
+				if (materialScript["albedo"])
+					material.albedo = AssetManager::LoadTexture(diffusePath + materialScript["albedo"].as<std::string>());
+				else {
+					//WC_ERROR("Albedo map is not defined for {}! Skipping this block", script);
+					//continue;
+				}
+
+				if (materialScript["reflectance"])
+					material.reflectance = materialScript["reflectance"].as<float>();
+				else if (materialScript["reflectancePath"])
+					material.reflectance = -(float)AssetManager::LoadTexture(materialPath + materialScript["reflectancePath"].as<std::string>());
+
+
+				if (materialScript["metallic"])
+					material.metallic = materialScript["metallic"].as<float>();
+				else if (materialScript["metallicPath"])
+					material.metallic = -(float)AssetManager::LoadTexture(materialPath + materialScript["metallicPath"].as<std::string>());
+
+
+				if (materialScript["roughness"])
+					material.roughness = materialScript["roughness"].as<float>();
+				else if (materialScript["roughnessPath"])
+					material.roughness = -(float)AssetManager::LoadTexture(materialPath + materialScript["roughnessPath"].as<std::string>());
+
+
+				if (materialScript["emissive"])
+					material.emissive = materialScript["emissive"].as<float>();
+				else if (materialScript["emissivePath"])
+					material.emissive = -(float)AssetManager::LoadTexture(materialPath + materialScript["emissivePath"].as<std::string>());
+			};
+
 			for (auto& path : std::filesystem::directory_iterator("scripts/blocks")) {
 				std::string filename = path.path().stem().string();
 				if (path.is_regular_file()) { //AddBlockScript
@@ -138,7 +171,7 @@ namespace wc {
 					YAML::Node blockState = YAML::LoadFile(script);
 			
 					Block block;
-					Material materials[6];
+					BufferMaterial materials[6];
 			
 					if (blockState["name"]) block.name = blockState["name"].as<std::string>(); 
 					
@@ -148,34 +181,29 @@ namespace wc {
 					if (blockState["ConnectionType"]) block.connectionType = magic_enum::enum_cast<ConnectionType>(blockState["ConnectionType"].as<std::string>()).value();
 
 					//if (blockState["cull"]) if (blockState["cull"].as<bool>()) material.flags |= WC_CULL_BIT;
-
-					if (blockState["allTextures"]) {
-						materials[0].albedo = AssetManager::LoadTexture(diffusePath + blockState["allTextures"].as<std::string>());
-						for (int i = 1; i < 6; i++) materials[i].albedo = materials[0].albedo;
-					}
-					else {
-						for (uint32_t i = 0; i < magic_enum::enum_count<BlockTexture>(); i++) {
-							auto name = std::string(magic_enum::enum_name((BlockTexture)i));
-							if (blockState[name]) 
-								materials[i].albedo = AssetManager::LoadTexture(diffusePath + blockState[name].as<std::string>());
-						}
-					}
+					
 					if (blockState["emitLight"]) block.emitLight = blockState["emitLight"].as<bool>();
 			
 					if (blockState["modelPath"]) { 
 						block.flags |= WC_MODEL_BIT;
 						block.connectionType = ConnectionType::CUSTOM_MODEL;
 					}
-			
-					if (blockState["materialData"]) {
-						materials[0].materialData = AssetManager::LoadTexture(materialPath + blockState["materialData"].as<std::string>());
-						for (int i = 1; i < 6; i++) materials[i].materialData = materials[0].materialData;
-					}
 
-					for (int i = 0; i < 6; i++) {
-						block.materialIDs[i] = materialData.push_back(materials[i]);
+					if (blockState["allTextures"]) {
+						setMaterial(blockState["allTextures"], materials[0]);
 
+						uint32_t materialID = materialData.push_back(materials[0]);
+						for (int i = 0; i < 6; i++) block.materialIDs[i] = materialID;
 					}
+					else {
+						WC_INFO(block.name);
+						for (uint32_t i = 0; i < magic_enum::enum_count<BlockTexture>(); i++) {
+							auto name = std::string(magic_enum::enum_name((BlockTexture)i));
+							setMaterial(blockState[name], materials[i]);
+							block.materialIDs[i] = materialData.push_back(materials[i]);
+						}
+					}
+					
 
 					if (blockState["modelPath"]) {
 						std::string path = blockState["modelPath"].as<std::string>();
@@ -237,7 +265,7 @@ namespace wc {
 			
 
 			
-			Renderer3D::addLight(glm::vec3(0.f), convertColor(glm::vec4(1.f, 0.891f, 0.796f, 0.f)));
+			Renderer3D::addLight(glm::vec3(0.f), glm::vec3(1.f, 0.891f, 0.796f), 1.f, 0.f);
 			
 			water = getBlockID("water");
 			sand = getBlockID("sand");
@@ -664,7 +692,10 @@ namespace wc {
 
 				break;
 			case wc::CommandType::setBlock:
-				setBlock({ cmdParser.getArgument(1) , cmdParser.getArgument(2) , cmdParser.getArgument(3) }, cmdParser.getArgument(), true, true);
+			{
+				BlockID block = getBlockID(cmdParser.getStringArgument());
+				setBlock({ cmdParser.getArgument(1) , cmdParser.getArgument(2) , cmdParser.getArgument(3) }, block, true, true);
+			}
 				break;
 			case wc::CommandType::give:
 			{
@@ -1093,7 +1124,7 @@ namespace wc {
 			}
 			else {
 				if (blockData[blockID].emitLight)
-					Renderer3D::addLight(globalPos + glm::vec3(0.5f), convertColor(glm::vec4(1.f)));
+					Renderer3D::addLight(globalPos + glm::vec3(0.5f), glm::vec3(1.f), 0.8f, 1.f);
 
 				if (blockData[blockID].connectionType == ConnectionType::CUSTOM_MODEL) {
 					Mesh& mesh = blockMeshes[blockData[blockID].meshID];

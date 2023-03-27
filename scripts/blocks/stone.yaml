@@ -1,8 +1,7 @@
 isCollidable: true
 ConnectionType: "CONNECT_DEFAULT"
 
-allTextures: "stone.png"
-
+allTextures: { albedo: "stone.png" }
 name: "stone_block"
 
 canSlab: true

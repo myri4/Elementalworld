@@ -186,7 +186,7 @@ namespace wc {
 	class DescriptorWriter {
 	public:
 		wc::DescriptorSet dstSet = VK_NULL_HANDLE;
-		DescriptorWriter& write_buffer(uint32_t binding, const VkDescriptorBufferInfo& bufferInfo, const VkDescriptorType& type) {
+		DescriptorWriter& write_buffer(uint32_t binding, const VkDescriptorBufferInfo& bufferInfo, VkDescriptorType type) {
 
 			VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 
@@ -200,7 +200,7 @@ namespace wc {
 			return *this;
 		}
 
-		DescriptorWriter& write_image(uint32_t binding, const VkDescriptorImageInfo& imageInfo, const VkDescriptorType& type) {
+		DescriptorWriter& write_image(uint32_t binding, const VkDescriptorImageInfo& imageInfo, VkDescriptorType type) {
 			VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 
 			newWrite.descriptorCount = 1;
@@ -213,7 +213,7 @@ namespace wc {
 			return *this;
 		}
 
-		DescriptorWriter& write_images(uint32_t binding, const std::vector<VkDescriptorImageInfo>& imageInfo, const VkDescriptorType& type) {
+		DescriptorWriter& write_images(uint32_t binding, const std::vector<VkDescriptorImageInfo>& imageInfo, VkDescriptorType type) {
 			VkWriteDescriptorSet newWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 
 			newWrite.descriptorCount = (uint32_t)imageInfo.size();
@@ -227,7 +227,7 @@ namespace wc {
 		}
 
 		void Update() {
-			vkUpdateDescriptorSets(VulkanContext::GetDevice(), writes.size(), writes.data(), 0, nullptr);
+			vkUpdateDescriptorSets(VulkanContext::GetDevice(), (uint32_t)writes.size(), writes.data(), 0, nullptr);
 		}
 
 		std::vector<VkWriteDescriptorSet> writes;

@@ -111,30 +111,6 @@
     <ClCompile Include="vendor\Include\yaml-src\tag.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\Include\spirv_cross\spirv_cross.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\Include\spirv_cross\spirv_cpp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\Include\spirv_cross\spirv_cfg.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\Include\spirv_cross\spirv_cross_util.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\Include\spirv_cross\spirv_cross_parsed_ir.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\Include\spirv_cross\spirv_glsl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\Include\spirv_cross\spirv_parser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\Include\spirv_cross\spirv_reflect.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="vendor\Include\imgui\imgui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -153,7 +129,16 @@
     <ClCompile Include="vendor\Include\imgui\imgui_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\Include\simdjson\simdjson.cpp">
+    <ClCompile Include="vendor\Include\spirv_cross\spirv_cfg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\Include\spirv_cross\spirv_cross.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\Include\spirv_cross\spirv_cross_parsed_ir.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\Include\spirv_cross\spirv_parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -304,11 +289,10 @@
     <ClInclude Include="vendor\Include\wc\Audio\AudioEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\simdjson\simdjson.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\shaders\bloomShader.comp" />
+    <CustomBuild Include="src\shaders\composite.comp" />
+    <CustomBuild Include="src\shaders\rayTracingShader.comp" />
   </ItemGroup>
 </Project>

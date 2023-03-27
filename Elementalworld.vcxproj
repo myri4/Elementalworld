@@ -261,12 +261,9 @@
       <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuild>
-      <Command>
-      </Command>
-      <Outputs>
-      </Outputs>
-      <AdditionalInputs>
-      </AdditionalInputs>
+      <Command>$(VULKAN_SDK)\Bin\glslc.exe %(FullPath) -std=450core -o $(ProjectDir)resourcepacks\default\shaders\%(Filename)%(Extension) -c -O -I $(ProjectDir)src\shaders\include\</Command>
+      <Outputs>$(ProjectDir)resourcepacks\default\shaders\%(Filename)%(Extension)</Outputs>
+      <AdditionalInputs>$(FullPath)</AdditionalInputs>
       <BuildInParallel>true</BuildInParallel>
     </CustomBuild>
   </ItemDefinitionGroup>
@@ -297,12 +294,9 @@
       <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuild>
-      <Command>
-      </Command>
-      <Outputs>
-      </Outputs>
-      <AdditionalInputs>
-      </AdditionalInputs>
+      <Command>$(VULKAN_SDK)\Bin\glslc.exe %(FullPath) -std=450core -o $(ProjectDir)resourcepacks\default\shaders\%(Filename)%(Extension) -c -O -I $(ProjectDir)src\shaders\include\</Command>
+      <Outputs>$(ProjectDir)resourcepacks\default\shaders\%(Filename)%(Extension)</Outputs>
+      <AdditionalInputs>$(FullPath)</AdditionalInputs>
       <BuildInParallel>true</BuildInParallel>
     </CustomBuild>
   </ItemDefinitionGroup>
@@ -330,12 +324,9 @@
       <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuild>
-      <Command>
-      </Command>
-      <Outputs>
-      </Outputs>
-      <AdditionalInputs>
-      </AdditionalInputs>
+      <Command>$(VULKAN_SDK)\Bin\glslc.exe %(FullPath) -std=450core -o $(ProjectDir)resourcepacks\default\shaders\%(Filename)%(Extension) -c -O -I $(ProjectDir)src\shaders\include\</Command>
+      <Outputs>$(ProjectDir)resourcepacks\default\shaders\%(Filename)%(Extension)</Outputs>
+      <AdditionalInputs>$(FullPath)</AdditionalInputs>
       <BuildInParallel>true</BuildInParallel>
     </CustomBuild>
   </ItemDefinitionGroup>
@@ -347,15 +338,10 @@
     <ClCompile Include="vendor\Include\imgui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="vendor\Include\imgui\imgui_tables.cpp" />
     <ClCompile Include="vendor\Include\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="vendor\Include\simdjson\simdjson.cpp" />
     <ClCompile Include="vendor\Include\spirv_cross\spirv_cfg.cpp" />
-    <ClCompile Include="vendor\Include\spirv_cross\spirv_cpp.cpp" />
     <ClCompile Include="vendor\Include\spirv_cross\spirv_cross.cpp" />
     <ClCompile Include="vendor\Include\spirv_cross\spirv_cross_parsed_ir.cpp" />
-    <ClCompile Include="vendor\Include\spirv_cross\spirv_cross_util.cpp" />
-    <ClCompile Include="vendor\Include\spirv_cross\spirv_glsl.cpp" />
     <ClCompile Include="vendor\Include\spirv_cross\spirv_parser.cpp" />
-    <ClCompile Include="vendor\Include\spirv_cross\spirv_reflect.cpp" />
     <ClCompile Include="vendor\Include\yaml-src\binary.cpp" />
     <ClCompile Include="vendor\Include\yaml-src\contrib\graphbuilder.cpp" />
     <ClCompile Include="vendor\Include\yaml-src\contrib\graphbuilderadapter.cpp" />
@@ -393,6 +379,12 @@
     <CustomBuild Include="src\shaders\bloomShader.comp">
       <FileType>Document</FileType>
     </CustomBuild>
+    <CustomBuild Include="src\shaders\composite.comp">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\shaders\rayTracingShader.comp">
+      <FileType>Document</FileType>
+    </CustomBuild>
     <None Include="src\shaders\vkTriangle.frag" />
     <None Include="src\shaders\vkTriangle.vert" />
   </ItemGroup>
@@ -412,7 +404,6 @@
     <ClInclude Include="src\world\GameSerializer.h" />
     <ClInclude Include="src\world\World.h" />
     <ClInclude Include="vendor\Include\miniaudio.h" />
-    <ClInclude Include="vendor\Include\simdjson\simdjson.h" />
     <ClInclude Include="vendor\Include\wc\Audio\AudioEngine.h" />
     <ClInclude Include="vendor\Include\wc\Filesystem\Filesystem.h" />
     <ClInclude Include="vendor\Include\wc\Filesystem\Resourcepack.h" />

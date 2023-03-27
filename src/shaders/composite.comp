@@ -1,5 +1,7 @@
 #pragma shader_stage(compute)
 
+#include <TonemapFunctions.glsl>
+
 layout(local_size_x = 4, local_size_y = 4) in;
 layout(binding = 0, rgba32f) restrict writeonly uniform image2D o_Image;
 
@@ -17,9 +19,9 @@ void main() {
   vec3 result = screenColor.rgb + bloomColor.rgb;
   
   // HDR tonemapping
-  result = result / (result + 1.f);
+  result = filmic(result);
   // gamma correct
-  result = pow(result, vec3(1.f / 2.2f));
+  result = OECF_sRGBFast(result);
 
   imageStore(o_Image, invocID, vec4(result, 1.f));
 }

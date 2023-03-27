@@ -64,8 +64,8 @@ namespace wc {
 
 
 			WindowCreateInfo windowInfo;
-			windowInfo.width = 1280;
-			windowInfo.height = 720;
+			windowInfo.width = 1280 / 1.5;
+			windowInfo.height = 720 / 1.5;
 			windowInfo.appName = "Elementalworld";
 			//windowInfo.startFullscreen = true;
 			window.Create(windowInfo);
@@ -85,6 +85,8 @@ namespace wc {
 			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 			//io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
 			//this initializes the core structures of imgui
+
+			io.FontDefault = io.Fonts->AddFontFromFileTTF((GetAssetPath() + "/font/Minecraft.ttf").c_str(), 15.f);
 
 			ImGui_ImplGlfw_InitForVulkan(window, false);
 

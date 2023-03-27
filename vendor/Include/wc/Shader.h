@@ -1,13 +1,14 @@
 #pragma once
 
+#pragma warning(push, 0)
 #include <magic_enum.hpp>
+#pragma warning(pop)
+
 #include "vk/Buffer.h"
 #include "vk/Pipeline.h"
 #include "vk/Renderpass.h"
 #include "vk/Descriptors.h"
 #include "vk/RendererContext.h"
-#include <magic_enum.hpp>
-#include <simdjson/simdjson.h>
 
 namespace wc {
 

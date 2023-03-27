@@ -11,11 +11,17 @@ namespace wc {
 
 	namespace AssetManager {
 		namespace {
-			std::vector<wc::Sampler> m_Samplers;
 			std::unordered_map<std::string, uint32_t> m_Cache; // This becomes obsolete after we transition to pre-baked asset packs
 		}
 
 		std::vector<wc::Texture> m_Textures;
+
+		void Init() {
+			wc::Texture texture;
+			glm::vec3 white = glm::vec3(1.f);
+			texture.Load(&white, 1, 1, false, false);
+			m_Textures.push_back(texture);
+		}
 	
 		uint32_t LoadTexture(const std::string& file)
 		{

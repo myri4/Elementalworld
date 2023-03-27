@@ -1,6 +1,5 @@
 isCollidable: false
-allTextures: "campfire.png"
-materialData: "campfire.png"
+allTextures: { albedo: "campfire.png", emissivePath: "campfire.png" }
 modelPath: "campfire.obj"
 name: "campfire"
 

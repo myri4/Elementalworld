@@ -1,5 +1,5 @@
 #include "Light.glsl"
-#include "constants.glsl"
+#include "Geometry.glsl"
 
 float hash( const in float n ) {
 	return fract(sin(n)*4378.5453);
@@ -71,39 +71,15 @@ vec3 getStars(in vec3 from, in vec3 dir, float power)
 	return pow(color*2.25, vec3(power));
 }
 
-vec3 position = vec3(0.f);
-bool raySphereIntersect(const in vec3 rayOrigin, const in vec3 rayDirection, const in float radius, inout float t0, inout float t1) {
-	vec3 L = position - rayOrigin;
-	float tca = dot(L, rayDirection);
-
-	//if (tca < 0) return false;
-
-	float s2 = (dot(L, L)) - (tca * tca);
-
-	if (s2 > radius * radius) return false;	
-
-	float thc = sqrt((radius * radius) - s2);
-	t0 = tca - thc; 
-    t1 = tca + thc;
-
-	if (t0 > t1) {
-		float t = t0;
-		t0 = t1;
-		t1 = t;
-	}
-
-	return true;
-}
-
 vec3 computeIncidentLight(const in vec3 orig, const in vec3 dir, out float mixer) 
 { 
-    uint numSamples = 16; 
+    uint numSamples = 16;
     uint numSamplesLight = 8; 
     float t0 = 0.f, t1 = 0.f; 
     float g = 0.76f; 
 	vec3 sunDirection = lights[0].vector;
 	float tmin = 0.f, tmax = kInfinity;
-    if (!raySphereIntersect(orig, dir, atmosphereRadius, t0, t1) || t1 < 0) return vec3(0.f); 
+    if (!raySphereIntersect(orig, dir, atmosphereRadius, earthPosition, t0, t1) || t1 < 0) return vec3(0.f); 
     if (t0 > tmin && t0 > 0) tmin = t0; 
     if (t1 < tmax) tmax = t1; 
     float segmentLength = (tmax - tmin) / numSamples; 
@@ -123,7 +99,7 @@ vec3 computeIncidentLight(const in vec3 orig, const in vec3 dir, out float mixer
         opticalDepthM += hm; 
         // light optical depth
         float t0Light = 0.f, t1Light = 0.f; 
-        raySphereIntersect(samplePosition, sunDirection, atmosphereRadius, t0Light, t1Light); 
+        raySphereIntersect(samplePosition, sunDirection, atmosphereRadius, earthPosition, t0Light, t1Light); 
         float segmentLengthLight = t1Light / numSamplesLight, tCurrentLight = 0; 
         float opticalDepthLightR = 0.f, opticalDepthLightM = 0.f; 
         uint j = 0; 
@@ -145,24 +121,4 @@ vec3 computeIncidentLight(const in vec3 orig, const in vec3 dir, out float mixer
     } 
 	mixer = phaseR;
     return (sumR * betaR * phaseR + sumM * betaM * phaseM) * 20.f;
-}
-
-vec3 ComputeSky(vec3 camPos, vec3 rayDir){
-
-	vec3 color =clamp(getNebula(camPos, rayDir, 1.0, 0.5) * 1.5, 0.0, 1.0) * vec3(0.0, 0.0, 1.0);
-    vec3 color2=clamp(getNebula(camPos, rayDir, 2.0, 0.5) * 1.5, 0.0, 1.0) * vec3(0.0, 1.0, 1.0);
-	
-    vec3 color3=clamp(getNebula(camPos, -rayDir, 2.0, 0.5) * 0.9, 0.0, 1.0) * vec3(1.0, 0.0, 0.0);
-    vec3 color4=clamp(getNebula(camPos, -rayDir, 3.0, 0.5) * 0.7, 0.0, 1.0) * vec3(1.0, 1.0, 0.0);
-    
-    vec3 color5=clamp(getNebula(camPos, rayDir.yxz + rayDir.yzx, 1.5, 0.5) * 0.9, 0.0, 1.0) * vec3(0.0, 1.0, 0.0);
-    vec3 color6=clamp(getNebula(camPos, rayDir.yxz + rayDir.yzx, 2.5, 0.5) * 0.7, 0.0, 1.0) * vec3(0.333, 0.333, 0.333);
-    
-    vec3 colorStars=clamp(getStars(camPos, rayDir, 0.9), 0.0, 1.0);
-	
-	float mixer = 0.f;
-	vec3 daySky = computeIncidentLight(vec3(camPos.x, earthRadius + camPos.y, camPos.z), rayDir, mixer);
-	vec3 nightSky = color + color2 + color3 + color4 + color5 + color6 + colorStars;
-	color = mix(daySky, nightSky, mixer);
-    return color;
 }

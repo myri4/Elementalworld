@@ -1,11 +1,13 @@
 #pragma once
 
+#pragma warning(push, 0)
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include <vma/vk_mem_alloc.h>
+#pragma warning(pop)
 #include <unordered_set>
 
-#define WC_GRAPHICS_DEBUGGER 1
+#define WC_GRAPHICS_DEBUGGER 0
 #define WC_SHADER_DEBUG_PRINT 0
 
 #define VK_CHECK(x)                                                 \
@@ -315,14 +317,14 @@ namespace VulkanContext {
 	}
 	
 
-	QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& device/*, VkSurfaceKHR surface*/) {
+	QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& physicalDevice/*, VkSurfaceKHR surface*/) {
 		QueueFamilyIndices indices;
 
 		uint32_t queueFamilyCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
 		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
 		int i = 0;
 		for (const auto& queueFamily : queueFamilies) {
@@ -439,7 +441,7 @@ namespace VulkanContext {
 				//VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT
 			};
 			validationFeatures.pEnabledValidationFeatures = enabledFeatures;
-			validationFeatures.enabledValidationFeatureCount = std::size(enabledFeatures);
+			validationFeatures.enabledValidationFeatureCount = (uint32_t)std::size(enabledFeatures);
 
 			debugCreateInfo.pNext = (VkValidationFeaturesEXT*)&validationFeatures;
 

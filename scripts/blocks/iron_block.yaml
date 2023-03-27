@@ -1,8 +1,7 @@
 isCollidable: true
 ConnectionType: "CONNECT_DEFAULT"
 
-allTextures: "rustediron2_basecolor.png"
-materialData: "iron_block.png"
+allTextures: { albedo: "rustediron2_basecolor.png", roughnessPath: "rustediron2_roughness.png", metallicPath: "rustediron2_metallic.png", reflectance: 0.5 }
 
 name: "iron_block"
 itemName: "Iron Block"

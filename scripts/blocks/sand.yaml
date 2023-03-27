@@ -1,6 +1,6 @@
 isCollidable: true
 ConnectionType: "CONNECT_DEFAULT"
 
-allTextures: "sand.png"
+allTextures: { albedo: "sand.png" }
 
 name: "sand"

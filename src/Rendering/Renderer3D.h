@@ -76,7 +76,9 @@ namespace wc {
 
 	struct Light {
 		glm::vec3 vector;
-		uint32_t color;
+		float intensity;
+		glm::vec3 color;
+		float radius;
 	};
 
 	struct SceneData {
@@ -89,11 +91,28 @@ namespace wc {
 		glm::vec3 vertical = glm::vec3(0.f);
 	};
 
-	struct Material {
+	enum ShadingModel {
+		Unlit,
+		DefaultLit,
+		ClearCoat,
+		Anisotropic,
+		Subsurface,
+		Cloth
+	};
+
+	struct BufferMaterial {
+		BufferMaterial() = default;
+
 		uint32_t albedo = 0;
-		uint32_t materialData = 0;
-		uint32_t flags = 0;
-		Material() = default;
+		float metallic = 0.f;
+		float roughness = 1.f;
+		float reflectance = 0.f;
+		//float clearCoat = 0.f;
+		//float clearCoatRoughness = 0.f;
+		//float anisotropy = 0.f;
+		//glm::vec3 anisotropyDirection = glm::vec3(0.f);
+		//float ior = 1.f;
+		float emissive = 0.f;
 	};
 
 	struct BlockGPU {
@@ -101,7 +120,7 @@ namespace wc {
 		BlockGPU() = default;
 	};
 
-	PointerList<Material, 140> materialData;
+	PointerList<BufferMaterial, 140> materialData;
 
 	namespace Renderer3D {
 		const int OctreeCount = GetTreeCount(3);
@@ -394,7 +413,7 @@ namespace wc {
 			BVHBuffer.Create(sizeof(Node) * meshSize);
 			BVHBuffer.SetName("BVHBuffer");
 
-			ChunkNodeBuffer.Create(sizeof(ChunkNode) * (chunksSize + OctreeCount));
+			ChunkNodeBuffer.Create(sizeof(ChunkNode) * OctreeCount);
 			ChunkNodeBuffer.SetName("ChunkNodeBuffer");
 
 			wc::ComputeShaderCreateInfo createInfo;
@@ -505,10 +524,10 @@ namespace wc {
 		}
 
 		// LIGHT MANAGING (deprecated)
-		uint32_t addLight(const glm::vec3& position, uint32_t color) {
+		uint32_t addLight(const glm::vec3& position, const glm::vec3& color, float intensity, float radius) {
 			uint32_t light = lights.GetCounter();
 			if (light <= maxLights)
-				lights.Add(Light(position, color));
+				lights.Add({ position, intensity, color, radius});
 
 			return light;
 		}

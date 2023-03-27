@@ -321,22 +321,22 @@ namespace wc {
             swapchainImageViews.resize(swapchainImages.size());
 
             for (size_t i = 0; i < swapchainImages.size(); i++) {
-                VkImageViewCreateInfo createInfo{};
-                createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                createInfo.image = swapchainImages[i];
-                createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                createInfo.format = swapchainImageFormat;
-                createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-                createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-                createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-                createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-                createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                createInfo.subresourceRange.baseMipLevel = 0;
-                createInfo.subresourceRange.levelCount = 1;
-                createInfo.subresourceRange.baseArrayLayer = 0;
-                createInfo.subresourceRange.layerCount = 1;
+                VkImageViewCreateInfo viewCreateInfo{};
+                viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                viewCreateInfo.image = swapchainImages[i];
+                viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                viewCreateInfo.format = swapchainImageFormat;
+                viewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+                viewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+                viewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+                viewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+                viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                viewCreateInfo.subresourceRange.baseMipLevel = 0;
+                viewCreateInfo.subresourceRange.levelCount = 1;
+                viewCreateInfo.subresourceRange.baseArrayLayer = 0;
+                viewCreateInfo.subresourceRange.layerCount = 1;
 
-                if (swapchainImageViews[i].Create(createInfo) != VK_SUCCESS)
+                if (swapchainImageViews[i].Create(viewCreateInfo) != VK_SUCCESS)
                     WC_ERROR("Failed to create image views!");
             }
         }
