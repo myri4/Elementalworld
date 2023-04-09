@@ -1,6 +1,6 @@
 isCollidable: true
 ConnectionType: "NO_CONNECT"
 
-allTextures: { albedo: "glass.png" }
+allTextures: { albedo: "glass.png", reflectance: 0.65 }
 
 name: "glass"

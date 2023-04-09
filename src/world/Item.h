@@ -1,5 +1,5 @@
 #pragma once
-#include "../world/Block.h"
+#include "Block.h"
 #include <wc/Utils/List.h>
 
 namespace wc {
@@ -37,18 +37,18 @@ namespace wc {
 	};
 
 	class Inventory {
+		ItemSlot m_Data[4 * 9]; // @TODO: probably should be with dynamic size
 	public:
-		ItemSlot data[4 * 9]; // @TODO: probably should be with dynamic size
 
-		void SetItem(ItemSlot itemSlot, uint32_t id) {
-			data[id] = itemSlot;
-		}
+		ItemSlot& operator[](const size_t& index) { return m_Data[index]; }
+		const ItemSlot& operator[](const size_t& index) const { return m_Data[index]; }
+		constexpr size_t size() const { return std::size(m_Data); }
 
 		bool PushItem(ItemSlot itemSlot) {
-			for (int i = 0; i < std::size(data); i++) {
-				if (itemSlot.itemID == data[i].itemID && data[i].amount + itemSlot.amount <= itemData[data[i].itemID].maxStackSize)
+			for (int i = 0; i < std::size(m_Data); i++) {
+				if (itemSlot.itemID == m_Data[i].itemID && m_Data[i].amount + itemSlot.amount <= itemData[m_Data[i].itemID].maxStackSize)
 				{
-					data[i].amount += itemSlot.amount;
+					m_Data[i].amount += itemSlot.amount;
 					return true;
 				}
 			}
@@ -58,10 +58,10 @@ namespace wc {
 
 		bool AddItem(const ItemSlot& itemSlot) {
 
-			for (int i = 0; i < std::size(data); i++) {
-				if (data[i].itemID == 0 || data[i].amount == 0)
+			for (int i = 0; i < std::size(m_Data); i++) {
+				if (m_Data[i].itemID == 0 || m_Data[i].amount == 0)
 				{
-					SetItem(itemSlot, i);
+					m_Data[i] = itemSlot;
 					return true;
 				}
 			}
@@ -70,8 +70,8 @@ namespace wc {
 		}
 
 		bool RemoveItem(uint32_t id, uint8_t amount = 1) {
-			if (int(data[id].amount - amount) > -1) {
-				data[id].amount -= amount;
+			if (int(m_Data[id].amount - amount) > -1) {
+				m_Data[id].amount -= amount;
 				return true;
 			}
 

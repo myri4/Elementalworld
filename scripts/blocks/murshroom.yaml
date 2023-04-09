@@ -1,7 +1,6 @@
 isCollidable: false
 
 allTextures: { albedo: "murshroom.png", emissivePath: "murshroom.png" }
-modelPath: "Murshroom.obj"
-emitLight: true
+modelPath: "murshroom.glb"
 
 name: "murshroom"

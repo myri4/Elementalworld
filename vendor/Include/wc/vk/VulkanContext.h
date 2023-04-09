@@ -1,13 +1,18 @@
 #pragma once
 
 #pragma warning(push, 0)
-#include <vulkan/vulkan.h>
+#define VK_NO_PROTOTYPES
+#define VMA_STATIC_VULKAN_FUNCTIONS 0
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+
+#include <volk/volk.h>
 #include <GLFW/glfw3.h>
 #include <vma/vk_mem_alloc.h>
 #pragma warning(pop)
 #include <unordered_set>
-
-#define WC_GRAPHICS_DEBUGGER 0
+#include <glm/glm.hpp>
+#include "../Utils/Log.h"
+#define WC_GRAPHICS_DEBUGGER 1
 #define WC_SHADER_DEBUG_PRINT 0
 
 #define VK_CHECK(x)                                                 \
@@ -21,6 +26,41 @@
 		}                                                           \
 	} while (0)
 
+	template<class T>
+	VkObjectType GetObjectType() {		
+		if (typeid(T) == typeid(VkInstance)) return VK_OBJECT_TYPE_INSTANCE;
+		if (typeid(T) == typeid(VkPhysicalDevice)) return VK_OBJECT_TYPE_PHYSICAL_DEVICE;
+		if (typeid(T) == typeid(VkDevice)) return VK_OBJECT_TYPE_DEVICE;
+		if (typeid(T) == typeid(VkQueue)) return VK_OBJECT_TYPE_QUEUE;
+		if (typeid(T) == typeid(VkSemaphore)) return VK_OBJECT_TYPE_SEMAPHORE;
+		if (typeid(T) == typeid(VkCommandBuffer)) return VK_OBJECT_TYPE_COMMAND_BUFFER;
+		if (typeid(T) == typeid(VkFence)) return VK_OBJECT_TYPE_FENCE;
+		if (typeid(T) == typeid(VkDeviceMemory)) return VK_OBJECT_TYPE_DEVICE_MEMORY;
+		if (typeid(T) == typeid(VkBuffer)) return VK_OBJECT_TYPE_BUFFER;
+		if (typeid(T) == typeid(VkImage)) return VK_OBJECT_TYPE_IMAGE;
+		if (typeid(T) == typeid(VkEvent)) return VK_OBJECT_TYPE_EVENT;
+		if (typeid(T) == typeid(VkQueryPool)) return VK_OBJECT_TYPE_QUERY_POOL;
+		if (typeid(T) == typeid(VkBufferView)) return VK_OBJECT_TYPE_BUFFER_VIEW;
+		if (typeid(T) == typeid(VkImageView)) return VK_OBJECT_TYPE_IMAGE_VIEW;
+		if (typeid(T) == typeid(VkShaderModule)) return VK_OBJECT_TYPE_SHADER_MODULE;
+		if (typeid(T) == typeid(VkPipelineCache)) return VK_OBJECT_TYPE_PIPELINE_CACHE;
+		if (typeid(T) == typeid(VkPipelineLayout)) return VK_OBJECT_TYPE_PIPELINE_LAYOUT;
+		if (typeid(T) == typeid(VkRenderPass)) return VK_OBJECT_TYPE_RENDER_PASS;
+		if (typeid(T) == typeid(VkPipeline)) return VK_OBJECT_TYPE_PIPELINE;
+		if (typeid(T) == typeid(VkDescriptorSetLayout)) return VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT;
+		if (typeid(T) == typeid(VkSampler)) return VK_OBJECT_TYPE_SAMPLER;
+		if (typeid(T) == typeid(VkDescriptorPool)) return VK_OBJECT_TYPE_DESCRIPTOR_POOL;
+		if (typeid(T) == typeid(VkDescriptorSet)) return VK_OBJECT_TYPE_DESCRIPTOR_SET;
+		if (typeid(T) == typeid(VkFramebuffer)) return VK_OBJECT_TYPE_FRAMEBUFFER;
+		if (typeid(T) == typeid(VkCommandPool)) return VK_OBJECT_TYPE_COMMAND_POOL;
+		
+		return VK_OBJECT_TYPE_UNKNOWN;
+	}
+
+	namespace VulkanContext {
+		void SetObjectName(VkObjectType object_type, uint64_t object_handle, const char* object_name);
+	}
+
 template <class T>
 class RendererObject {
 protected:
@@ -31,11 +71,27 @@ public:
 	operator const T& () const { return m_RendererID; }
 	operator bool() const { return m_RendererID != VK_NULL_HANDLE; }
 
+	VkObjectType GetType() {
+		return GetObjectType<T>();
+	}
+
+	void SetName(const char* name) { VulkanContext::SetObjectName(GetType(), (uint64_t)m_RendererID, name); }
+	void SetName(const std::string& name) { VulkanContext::SetObjectName(GetType(), (uint64_t)m_RendererID, name.c_str()); }
+
 	T* GetPointer() { return &m_RendererID; }
 	const T* GetPointer() const { return &m_RendererID; }
 };
 
 namespace wc {
+	size_t align(size_t originalSize, size_t alignment)
+	{
+		size_t alignedSize = originalSize;
+		if (alignment > 0) 
+			alignedSize = (alignedSize + alignment - 1) & ~(alignment - 1);
+		
+		return alignedSize;
+	}
+
 	enum class Vendor : uint32_t {
 		AMD = 0x1002,
 		ImgTec = 0x1010,
@@ -63,6 +119,7 @@ namespace wc {
 	class PhysicalDevice : public RendererObject<VkPhysicalDevice> {
 		VkPhysicalDeviceFeatures features = {};
 		VkPhysicalDeviceProperties properties = {};
+		VkPhysicalDeviceProperties2 properties2 = {};
 		VkPhysicalDeviceMemoryProperties memoryProperties = {};
 	public:
 	 
@@ -90,9 +147,16 @@ namespace wc {
 			return formatProperties;
 		}
 
+		void QueryProperties2(void* pNext = nullptr) {
+			properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+			properties2.pNext = pNext;
+			vkGetPhysicalDeviceProperties2(m_RendererID, &properties2);
+		}
+
 		VkPhysicalDeviceFeatures GetFeatures() const { return features; }
 
 		VkPhysicalDeviceProperties GetProperties() const { return properties; }
+		VkPhysicalDeviceProperties2 GetProperties2() const { return properties2; }
 
 		VkPhysicalDeviceMemoryProperties GetMemoryProperties() const { return memoryProperties; }
 	};
@@ -120,11 +184,13 @@ namespace wc {
 
 namespace VulkanContext {
 	namespace {
-		wc::Instance instance;
-		wc::PhysicalDevice physicalDevice;
-		wc::Device device;
+		inline wc::Instance instance;
+		inline wc::PhysicalDevice physicalDevice;
+		inline wc::Device device;
 
-		VmaAllocator vmaAllocator;		
+		inline VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptorBufferProperties;
+
+		inline VmaAllocator vmaAllocator;		
 
 #if WC_GRAPHICS_DEBUGGER
 		VkDebugUtilsMessengerEXT debug_messenger; // Vulkan debug output handle	
@@ -140,7 +206,7 @@ namespace VulkanContext {
 			{
 			case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 				WC_ERROR(pCallbackData->pMessage);
-				//__debugbreak();
+				//WC_DEBUGBREAK();
 				//OutputDebugString(pCallbackData->pMessage);
 				break;
 
@@ -171,18 +237,6 @@ namespace VulkanContext {
 
 			return true;
 		}
-		PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabel = nullptr;
-		PFN_vkCmdInsertDebugUtilsLabelEXT vkCmdInsertDebugUtilsLabel = nullptr;
-		PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabel = nullptr;
-
-		PFN_vkQueueBeginDebugUtilsLabelEXT vkQueueBeginDebugUtilsLabel = nullptr;
-		PFN_vkQueueInsertDebugUtilsLabelEXT vkQueueInsertDebugUtilsLabel = nullptr;
-		PFN_vkQueueEndDebugUtilsLabelEXT vkQueueEndDebugUtilsLabel = nullptr;
-
-		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectName = nullptr;
-
-		PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
-		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
 
 		void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
 			createInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
@@ -217,7 +271,7 @@ namespace VulkanContext {
 		label.color[1] = color[1];
 		label.color[2] = color[2];
 		label.color[3] = color[3];
-		vkCmdBeginDebugUtilsLabel(command_buffer, &label);
+		vkCmdBeginDebugUtilsLabelEXT(command_buffer, &label);
 #endif
 	}
 
@@ -230,13 +284,13 @@ namespace VulkanContext {
 		label.color[1] = color[1];
 		label.color[2] = color[2];
 		label.color[3] = color[3];
-		vkCmdInsertDebugUtilsLabel(command_buffer, &label);
+		vkCmdInsertDebugUtilsLabelEXT(command_buffer, &label);
 #endif
 	}
 
 	void EndLabel(VkCommandBuffer command_buffer) { 
 #if WC_GRAPHICS_DEBUGGER
-		vkCmdEndDebugUtilsLabel(command_buffer); 
+		vkCmdEndDebugUtilsLabelEXT(command_buffer); 
 #endif
 	}
 
@@ -250,7 +304,7 @@ namespace VulkanContext {
 		label.color[1] = color[1];
 		label.color[2] = color[2];
 		label.color[3] = color[3];
-		vkQueueBeginDebugUtilsLabel(queue, &label);
+		vkQueueBeginDebugUtilsLabelEXT(queue, &label);
 #endif
 	}
 
@@ -263,24 +317,24 @@ namespace VulkanContext {
 		label.color[1] = color[1];
 		label.color[2] = color[2];
 		label.color[3] = color[3];
-		vkQueueInsertDebugUtilsLabel(queue, &label);
+		vkQueueInsertDebugUtilsLabelEXT(queue, &label);
 #endif
 	}
 
 	void EndLabel(const VkQueue& queue) { 
 #if WC_GRAPHICS_DEBUGGER
-		vkQueueEndDebugUtilsLabel(queue); 
+		vkQueueEndDebugUtilsLabelEXT(queue); 
 #endif
 	}
 
-	void SetObjectName(const VkObjectType& object_type, const uint64_t& object_handle, const char* object_name)
+	void SetObjectName(VkObjectType object_type, uint64_t object_handle, const char* object_name)
 	{
 #if WC_GRAPHICS_DEBUGGER
 		VkDebugUtilsObjectNameInfoEXT name_info = { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
 		name_info.objectType = object_type;
 		name_info.objectHandle = object_handle;
 		name_info.pObjectName = object_name;
-		vkSetDebugUtilsObjectName(device, &name_info);
+		vkSetDebugUtilsObjectNameEXT(device, &name_info);
 #endif
 	}
 
@@ -310,21 +364,21 @@ namespace VulkanContext {
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
 #if WC_GRAPHICS_DEBUGGER
-			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);		
+		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);		
 #endif
 
 		return extensions;
 	}
 	
 
-	QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& physicalDevice/*, VkSurfaceKHR surface*/) {
+	QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& physDevice/*, VkSurfaceKHR surface*/) {
 		QueueFamilyIndices indices;
 
 		uint32_t queueFamilyCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+		vkGetPhysicalDeviceQueueFamilyProperties(physDevice, &queueFamilyCount, nullptr);
 
 		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+		vkGetPhysicalDeviceQueueFamilyProperties(physDevice, &queueFamilyCount, queueFamilies.data());
 
 		int i = 0;
 		for (const auto& queueFamily : queueFamilies) {
@@ -341,14 +395,14 @@ namespace VulkanContext {
 		return indices;
 	}
 
-	bool isDeviceSuitable(const VkPhysicalDevice& device, const std::vector<const char*>& deviceExtensions/*, VkSurfaceKHR surface*/) {
-		QueueFamilyIndices indices = findQueueFamilies(device/*, surface*/);
+	bool isDeviceSuitable(const VkPhysicalDevice& physDevice, const std::vector<const char*>& deviceExtensions/*, VkSurfaceKHR surface*/) {
+		QueueFamilyIndices indices = findQueueFamilies(physDevice/*, surface*/);
 
 		uint32_t extensionCount;
-		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+		vkEnumerateDeviceExtensionProperties(physDevice, nullptr, &extensionCount, nullptr);
 
 		std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+		vkEnumerateDeviceExtensionProperties(physDevice, nullptr, &extensionCount, availableExtensions.data());
 
 		std::unordered_set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
@@ -420,17 +474,17 @@ namespace VulkanContext {
 			appInfo.engineVersion = VK_MAKE_VERSION(1, 2, 0);
 			appInfo.apiVersion = VK_API_VERSION_1_2;
 
-			VkInstanceCreateInfo createInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
-			createInfo.pApplicationInfo = &appInfo;
+			VkInstanceCreateInfo instanceCreateInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
+			instanceCreateInfo.pApplicationInfo = &appInfo;
 
 			auto extensions = getRequiredExtensions();
-			createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-			createInfo.ppEnabledExtensionNames = extensions.data();
+			instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+			instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
 
 #if WC_GRAPHICS_DEBUGGER
 			VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-			createInfo.ppEnabledLayerNames = validationLayers.data();
+			instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+			instanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
 
 			populateDebugMessengerCreateInfo(debugCreateInfo);
 
@@ -445,33 +499,22 @@ namespace VulkanContext {
 
 			debugCreateInfo.pNext = (VkValidationFeaturesEXT*)&validationFeatures;
 
-			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+			instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 
 
 #endif
 
-			if (instance.Create(createInfo) != VK_SUCCESS)
+			if (instance.Create(instanceCreateInfo) != VK_SUCCESS)
 				WC_ERROR("Failed to create instance!");
+
+			volkLoadInstance(instance);
 		}
 		
 #if WC_GRAPHICS_DEBUGGER
-			VkDebugUtilsMessengerCreateInfoEXT createInfo;
-			populateDebugMessengerCreateInfo(createInfo);
+			VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
+			populateDebugMessengerCreateInfo(debugCreateInfo);
 
-			vkCmdBeginDebugUtilsLabel = (PFN_vkCmdBeginDebugUtilsLabelEXT)instance.GetProcAddress("vkCmdBeginDebugUtilsLabelEXT");
-			vkCmdInsertDebugUtilsLabel = (PFN_vkCmdInsertDebugUtilsLabelEXT)instance.GetProcAddress("vkCmdInsertDebugUtilsLabelEXT");
-			vkCmdEndDebugUtilsLabel = (PFN_vkCmdEndDebugUtilsLabelEXT)instance.GetProcAddress("vkCmdEndDebugUtilsLabelEXT");
-
-			vkQueueBeginDebugUtilsLabel = (PFN_vkQueueBeginDebugUtilsLabelEXT)instance.GetProcAddress("vkQueueBeginDebugUtilsLabelEXT");
-			vkQueueInsertDebugUtilsLabel = (PFN_vkQueueInsertDebugUtilsLabelEXT)instance.GetProcAddress("vkQueueInsertDebugUtilsLabelEXT");
-			vkQueueEndDebugUtilsLabel = (PFN_vkQueueEndDebugUtilsLabelEXT)instance.GetProcAddress("vkQueueEndDebugUtilsLabelEXT");
-
-			vkSetDebugUtilsObjectName = (PFN_vkSetDebugUtilsObjectNameEXT)instance.GetProcAddress("vkSetDebugUtilsObjectNameEXT");
-
-			vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)instance.GetProcAddress("vkCreateDebugUtilsMessengerEXT");
-			vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)instance.GetProcAddress("vkDestroyDebugUtilsMessengerEXT");
-
-			if (vkCreateDebugUtilsMessengerEXT(instance, &createInfo, VulkanContext::GetAllocator(), &debug_messenger) != VK_SUCCESS)
+			if (vkCreateDebugUtilsMessengerEXT(instance, &debugCreateInfo, VulkanContext::GetAllocator(), &debug_messenger) != VK_SUCCESS)
 				WC_ERROR("Failed to set up debug messenger!");
 #endif
 
@@ -497,9 +540,9 @@ namespace VulkanContext {
 			std::vector<VkPhysicalDevice> devices(deviceCount);
 			vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
-			for (const auto& device : devices) {
-				if (isDeviceSuitable(device, deviceExtensions)) {
-					physicalDevice = device;
+			for (const auto& currentDevice : devices) {
+				if (isDeviceSuitable(currentDevice, deviceExtensions)) {
+					physicalDevice = currentDevice;
 					break;
 				}
 			}
@@ -541,6 +584,11 @@ namespace VulkanContext {
 			features12.runtimeDescriptorArray = true;
 			features12.descriptorBindingVariableDescriptorCount = true;
 			features12.descriptorBindingPartiallyBound = true;
+			features12.bufferDeviceAddress = true;
+
+			VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptorBufferFeatures = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT };
+			descriptorBufferFeatures.descriptorBuffer = true;
+			descriptorBufferFeatures.descriptorBufferImageLayoutIgnored = true;
 
 			VkDeviceCreateInfo createInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
 
@@ -553,6 +601,12 @@ namespace VulkanContext {
 			createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
 			createInfo.pNext = &features12;
+			features12.pNext = &descriptorBufferFeatures;
+
+			descriptorBufferProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT;
+			physicalDevice.QueryProperties2(&descriptorBufferProperties);
+
+
 
 #if WC_GRAPHICS_DEBUGGER
 			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
@@ -568,10 +622,17 @@ namespace VulkanContext {
 			transferQueue.GetDeviceQueue(indices.transferFamily.value());
 		}
 
+		VmaVulkanFunctions vulkanFunctions = {};
+		vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+		vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+		
 		VmaAllocatorCreateInfo allocatorInfo = {};
+		allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
 		allocatorInfo.physicalDevice = physicalDevice;
 		allocatorInfo.device = device;
 		allocatorInfo.instance = instance;
+		allocatorInfo.pVulkanFunctions = &vulkanFunctions;
+		allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 		vmaCreateAllocator(&allocatorInfo, &vmaAllocator);
 	}
 

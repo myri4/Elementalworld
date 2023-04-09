@@ -2,7 +2,7 @@
 #define CONSTANTS_GLSL
 
 const float Epsilon = 1e-5;
-const float bias = 1e-4f;
+const float bias = 1e-5f;
 const float kInfinity = 3.402823466e+38F;
 
 const float PI = 3.14159265358979323846264338327950288;

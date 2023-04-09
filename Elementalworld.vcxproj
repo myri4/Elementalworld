@@ -124,21 +124,21 @@
     <IncludePath>$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)bin\intermediates\$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)bin\intermediates\$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir)vendor\Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)vendor\Libraries;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)bin\intermediates\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)bin\intermediates\$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -148,7 +148,8 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -158,7 +159,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuild>
       <Command>
@@ -182,7 +183,8 @@
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <EnableModules>false</EnableModules>
@@ -193,7 +195,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuild>
       <Command>
@@ -217,7 +219,8 @@
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
       <EnableModules>false</EnableModules>
       <UndefinePreprocessorDefinitions>far;near;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
@@ -226,7 +229,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuild>
       <Command>
@@ -242,7 +245,7 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NOMINMAX</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;JPH_DISABLE_CUSTOM_ALLOCATOR;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -258,13 +261,14 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuild>
       <Command>$(VULKAN_SDK)\Bin\glslc.exe %(FullPath) -std=450core -o $(ProjectDir)resourcepacks\default\shaders\%(Filename)%(Extension) -c -O -I $(ProjectDir)src\shaders\include\</Command>
       <Outputs>$(ProjectDir)resourcepacks\default\shaders\%(Filename)%(Extension)</Outputs>
-      <AdditionalInputs>$(FullPath)</AdditionalInputs>
+      <AdditionalInputs>$(FullPath);$(ProjectDir)src\shaders\include\*.glsl</AdditionalInputs>
       <BuildInParallel>true</BuildInParallel>
+      <Message>Shader compilation</Message>
     </CustomBuild>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -273,7 +277,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>NOMINMAX</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;JPH_DISABLE_CUSTOM_ALLOCATOR;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -291,13 +295,14 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuild>
-      <Command>$(VULKAN_SDK)\Bin\glslc.exe %(FullPath) -std=450core -o $(ProjectDir)resourcepacks\default\shaders\%(Filename)%(Extension) -c -O -I $(ProjectDir)src\shaders\include\</Command>
+      <Command>$(VULKAN_SDK)\Bin\glslc.exe %(FullPath) -std=450core -o $(ProjectDir)resourcepacks\default\shaders\%(Filename)%(Extension) -c -O0 -I $(ProjectDir)src\shaders\include\</Command>
       <Outputs>$(ProjectDir)resourcepacks\default\shaders\%(Filename)%(Extension)</Outputs>
-      <AdditionalInputs>$(FullPath)</AdditionalInputs>
+      <AdditionalInputs>$(FullPath);$(ProjectDir)src\shaders\include\*.glsl</AdditionalInputs>
       <BuildInParallel>true</BuildInParallel>
+      <Message>Shader compilation</Message>
     </CustomBuild>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
@@ -306,7 +311,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>NOMINMAX</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;JPH_DISABLE_CUSTOM_ALLOCATOR;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -321,13 +326,14 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuild>
       <Command>$(VULKAN_SDK)\Bin\glslc.exe %(FullPath) -std=450core -o $(ProjectDir)resourcepacks\default\shaders\%(Filename)%(Extension) -c -O -I $(ProjectDir)src\shaders\include\</Command>
       <Outputs>$(ProjectDir)resourcepacks\default\shaders\%(Filename)%(Extension)</Outputs>
-      <AdditionalInputs>$(FullPath)</AdditionalInputs>
+      <AdditionalInputs>$(FullPath);$(ProjectDir)src\shaders\include\*.glsl</AdditionalInputs>
       <BuildInParallel>true</BuildInParallel>
+      <Message>Shader compilation</Message>
     </CustomBuild>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -385,32 +391,39 @@
     <CustomBuild Include="src\shaders\rayTracingShader.comp">
       <FileType>Document</FileType>
     </CustomBuild>
+    <None Include="src\shaders\include\constants.glsl" />
+    <None Include="src\shaders\include\fresnel.glsl" />
+    <None Include="src\shaders\include\Geometry.glsl" />
+    <None Include="src\shaders\include\Light.glsl" />
+    <None Include="src\shaders\include\Math.glsl" />
+    <None Include="src\shaders\include\pbrUtil.glsl" />
+    <None Include="src\shaders\include\sky.glsl" />
+    <None Include="src\shaders\include\TonemapFunctions.glsl" />
+    <None Include="src\shaders\include\Utils.glsl" />
     <None Include="src\shaders\vkTriangle.frag" />
     <None Include="src\shaders\vkTriangle.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.h" />
-    <ClInclude Include="src\entities\Entity.h" />
-    <ClInclude Include="src\entities\Player.h" />
-    <ClInclude Include="src\Game Mechanics\CommandParser.h" />
-    <ClInclude Include="src\Game Mechanics\Inventory.h" />
-    <ClInclude Include="src\Game Mechanics\Item.h" />
+    <ClInclude Include="src\world\Player.h" />
+    <ClInclude Include="src\world\CommandParser.h" />
+    <ClInclude Include="src\world\Inventory.h" />
+    <ClInclude Include="src\world\Item.h" />
     <ClInclude Include="src\Rendering\Renderer3D.h" />
     <ClInclude Include="src\Globals.h" />
     <ClInclude Include="src\Settings.h" />
     <ClInclude Include="src\world\Biome.h" />
     <ClInclude Include="src\world\Block.h" />
     <ClInclude Include="src\world\Chunk.h" />
-    <ClInclude Include="src\world\GameSerializer.h" />
     <ClInclude Include="src\world\World.h" />
-    <ClInclude Include="vendor\Include\miniaudio.h" />
     <ClInclude Include="vendor\Include\wc\Audio\AudioEngine.h" />
+    <ClInclude Include="vendor\Include\wc\Core\Defines.h" />
     <ClInclude Include="vendor\Include\wc\Filesystem\Filesystem.h" />
     <ClInclude Include="vendor\Include\wc\Filesystem\Resourcepack.h" />
     <ClInclude Include="vendor\Include\wc\Framebuffer.h" />
     <ClInclude Include="src\Rendering\AssetManager.h" />
-    <ClInclude Include="vendor\Include\wc\Maths\AssimpGLMHelpers.h" />
-    <ClInclude Include="vendor\Include\wc\Maths\Camera.h" />
+    <ClInclude Include="vendor\Include\wc\Math\AssimpGLMHelpers.h" />
+    <ClInclude Include="vendor\Include\wc\Math\Camera.h" />
     <ClInclude Include="vendor\Include\wc\Shader.h" />
     <ClInclude Include="vendor\Include\vk\Initializers.h" />
     <ClInclude Include="vendor\Include\vk\VulkanContext.h" />
@@ -422,8 +435,6 @@
     <ClInclude Include="vendor\Include\wc\Utils\DeletionQueue.h" />
     <ClInclude Include="vendor\Include\wc\Utils\List.h" />
     <ClInclude Include="vendor\Include\wc\Utils\Log.h" />
-    <ClInclude Include="vendor\Include\wc\Utils\NonCopyable.h" />
-    <ClInclude Include="vendor\Include\wc\Utils\Random.h" />
     <ClInclude Include="vendor\Include\wc\Utils\Time.h" />
     <ClInclude Include="vendor\Include\wc\Utils\Window.h" />
     <ClInclude Include="vendor\Include\wc\Utils\YAML.h" />

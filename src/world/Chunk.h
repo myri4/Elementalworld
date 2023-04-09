@@ -3,30 +3,28 @@
 
 namespace wc {
 
-	int to1D(int x, int y, int z) { return (z * chunkSize * chunkSize) + (y * chunkSize) + x; }
-	glm::ivec3 to3D(int idx, const glm::ivec3& size) {
-		int i = idx;
-		int z = i / (size.x * size.y);
-		i -= (z * size.x * size.y);
-		int y = i / size.x;
-		int x = i % size.x;
-		return glm::ivec3(x, y, z);
-	}
+	constexpr uint16_t chunkSize = 16;
+	constexpr uint32_t chunkVolume = chunkSize * chunkSize * chunkSize;
+
+	using ChunkID = uint16_t;
 
 	struct Chunk {
 		glm::ivec3 position = glm::ivec3(0);
 		BlockID data[chunkSize][chunkSize][chunkSize] = { 0 };
-
+		glm::vec3 boxStart;
+		glm::vec3 boxEnd;
 		bool used : 1; // Should the chunk be saved
 		bool generated : 1;
 		bool canBeUpdated : 1;
 		bool generatedStructures : 1;
+		bool empty : 1;
 
 		Chunk() {
 			used = false;
 			generated = true;
 			canBeUpdated = false;
 			generatedStructures = true;
+			empty = true;
 		}
 	};
 

@@ -146,6 +146,15 @@
     <None Include="..\Elementalworld Server\Elementalworld Server.vcxproj" />
     <None Include="src\shaders\vkTriangle.frag" />
     <None Include="src\shaders\vkTriangle.vert" />
+    <None Include="src\shaders\include\fresnel.glsl" />
+    <None Include="src\shaders\include\constants.glsl" />
+    <None Include="src\shaders\include\Geometry.glsl" />
+    <None Include="src\shaders\include\Light.glsl" />
+    <None Include="src\shaders\include\Math.glsl" />
+    <None Include="src\shaders\include\sky.glsl" />
+    <None Include="src\shaders\include\pbrUtil.glsl" />
+    <None Include="src\shaders\include\Utils.glsl" />
+    <None Include="src\shaders\include\TonemapFunctions.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.h">
@@ -163,19 +172,16 @@
     <ClInclude Include="src\world\World.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game Mechanics\CommandParser.h">
+    <ClInclude Include="src\world\CommandParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game Mechanics\Inventory.h">
+    <ClInclude Include="src\world\Inventory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game Mechanics\Item.h">
+    <ClInclude Include="src\world\Item.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\entities\Entity.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\entities\Player.h">
+    <ClInclude Include="src\world\Player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\Include\wc\Model\Animation.h">
@@ -244,12 +250,6 @@
     <ClInclude Include="vendor\Include\wc\Utils\Log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\Utils\NonCopyable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\Include\wc\Utils\Random.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="vendor\Include\wc\Utils\Time.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -259,10 +259,10 @@
     <ClInclude Include="vendor\Include\wc\Utils\YAML.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\Maths\AssimpGLMHelpers.h">
+    <ClInclude Include="vendor\Include\wc\Math\AssimpGLMHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\Maths\Camera.h">
+    <ClInclude Include="vendor\Include\wc\Math\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\AssetManager.h">
@@ -274,19 +274,16 @@
     <ClInclude Include="src\Settings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\world\GameSerializer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="vendor\Include\wc\Filesystem\Filesystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\Include\wc\Filesystem\Resourcepack.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\miniaudio.h">
+    <ClInclude Include="vendor\Include\wc\Audio\AudioEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\Include\wc\Audio\AudioEngine.h">
+    <ClInclude Include="vendor\Include\wc\Core\Defines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

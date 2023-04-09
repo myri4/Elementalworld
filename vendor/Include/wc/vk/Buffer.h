@@ -15,9 +15,9 @@ namespace wc {
 
 	class StagingBuffer : public RendererObject<VkBuffer> {
 	private:
-		VmaAllocation allocation = VK_NULL_HANDLE;
+		VmaAllocation m_Allocation = VK_NULL_HANDLE;
 	public:
-		VkResult Create(const VkDeviceSize& bufferSize, const VkBufferUsageFlagBits& usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT) {
+		VkResult Create(VkDeviceSize bufferSize, const VkBufferUsageFlagBits& usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT) {
 			VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 			bufferInfo.size = bufferSize;
 			bufferInfo.usage = usage;
@@ -27,13 +27,13 @@ namespace wc {
 
 			return vmaCreateBuffer(VulkanContext::GetMemoryAllocator(), &bufferInfo, &vmaallocInfo,
 				&m_RendererID,
-				&allocation,
+				&m_Allocation,
 				nullptr);
 		}
 
 		void* Map(VkResult& result) {
 			void* data;
-			result = vmaMapMemory(VulkanContext::GetMemoryAllocator(), allocation, &data);
+			result = vmaMapMemory(VulkanContext::GetMemoryAllocator(), m_Allocation, &data);
 			return data;
 		}
 
@@ -42,9 +42,9 @@ namespace wc {
 			return Map(res);
 		}
 
-		void Unmap() { vmaUnmapMemory(VulkanContext::GetMemoryAllocator(), allocation); }
+		void Unmap() { vmaUnmapMemory(VulkanContext::GetMemoryAllocator(), m_Allocation); }
 
-		VkResult SetData(const void* data, const VkDeviceSize& size = VK_WHOLE_SIZE) {
+		VkResult SetData(const void* data, VkDeviceSize size = VK_WHOLE_SIZE) {
 			VkResult result;
 			memcpy(Map(result), data, size);
 			Unmap();
@@ -52,31 +52,38 @@ namespace wc {
 		}
 
 		void Destroy() { 
-			vmaDestroyBuffer(VulkanContext::GetMemoryAllocator(), m_RendererID, allocation);
+			vmaDestroyBuffer(VulkanContext::GetMemoryAllocator(), m_RendererID, m_Allocation);
 			m_RendererID = VK_NULL_HANDLE;
-		}
-
-		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)m_RendererID, name); }
-		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)m_RendererID, name.c_str()); }
+		}		
 	};
 
     class Buffer : public RendererObject<VkBuffer> {
     private:
-        VmaAllocation allocation = VK_NULL_HANDLE;
+        VmaAllocation m_Allocation = VK_NULL_HANDLE;
     public:
-		VkResult Create(const VkDeviceSize& bufferSize, uint32_t usage = wc::STORAGE_BUFFER) {
-			VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-			bufferInfo.size = bufferSize;
-			bufferInfo.usage = usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+		VkResult Create(VkDeviceSize bufferSize, uint32_t usage = wc::STORAGE_BUFFER) {
+			VkBufferCreateInfo bufferInfo = { 
+				.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+				.size = bufferSize,
+				.usage = usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			};
 
 			VmaAllocationCreateInfo vmaallocInfo = {};
 			vmaallocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
 			return vmaCreateBuffer(VulkanContext::GetMemoryAllocator(), &bufferInfo, &vmaallocInfo,
 				&m_RendererID,
-				&allocation,
+				&m_Allocation,
 				nullptr);
         }
+
+		VkDeviceAddress GetDeviceAddress() {
+			VkBufferDeviceAddressInfo pInfo = { 
+				.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+				.buffer = m_RendererID
+			};
+			return vkGetBufferDeviceAddress(VulkanContext::GetDevice(), &pInfo);
+		}
 
 		void SetData(const VkBufferCopy& copy, const StagingBuffer& stagingBuffer) {
 			UploadContext::immediate_submit([=](VkCommandBuffer cmd) { vkCmdCopyBuffer(cmd, stagingBuffer, m_RendererID, 1, &copy); });
@@ -106,65 +113,62 @@ namespace wc {
 			SetData(copy, buffer);
 		}
 
-		void Destroy() { vmaDestroyBuffer(VulkanContext::GetMemoryAllocator(), m_RendererID, allocation); }
+		void Destroy() { vmaDestroyBuffer(VulkanContext::GetMemoryAllocator(), m_RendererID, m_Allocation); }
 
-		VkDescriptorBufferInfo GetDescriptorInfo(const VkDeviceSize& size = VK_WHOLE_SIZE, const VkDeviceSize& offset = 0) {
+		VkDescriptorBufferInfo GetDescriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) {
 			VkDescriptorBufferInfo info;
 			info.buffer = m_RendererID;
 			info.offset = offset;
 			info.range = size;
 			return info;
 		}
-
-		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)m_RendererID, name); }
-		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)m_RendererID, name.c_str()); }
     };
 
 	template<typename T>
 	class CPUBuffer {
 	protected:
-		StagingBuffer buffer;
-		T* data = nullptr;
+		StagingBuffer m_Buffer;
+		T* m_Data = nullptr;
 	public:
-		void Create(const VkDeviceSize& bufferSize) {
-			buffer.Create(bufferSize);
+		void Create(VkDeviceSize bufferSize) {
+			m_Buffer.Create(bufferSize);
 		}
 
 		void Map() {
-			data = (T*)buffer.Map();
+			m_Data = (T*)m_Buffer.Map();
 		}
 
 		void Unmap() {
-			buffer.Unmap();
+			m_Buffer.Unmap();
 		}
 
 		const StagingBuffer& GetBuffer() {
-			return buffer;
+			return m_Buffer;
 		}
 
 		void Destroy() {
-			buffer.Destroy();
+			m_Buffer.Destroy();
 		}
 
-		inline operator T* () { return data; }
-		inline operator T* () const { return data; }
+		inline operator T* () { return m_Data; }
+		inline operator T* () const { return m_Data; }
 	};
 
 	template<typename T>
 	class CPUBufferManager : public CPUBuffer<T> {
 	private:
-		uint32_t counter = 0;
+		uint32_t m_Counter = 0;
 	public:
 		void Add(const T& object) {
-			this->data[counter] = object;
-			counter++;
+			this->m_Data[m_Counter] = object;
+			m_Counter++;
 		}
 
 		void Remove(uint32_t id) {
-			counter--;
-			this->data[id] = this->data[counter];
+			m_Counter--;
+			this->m_Data[id] = this->m_Data[m_Counter];
 		}
 
-		uint32_t GetCounter() { return counter; }
+		uint32_t GetCounter() { return m_Counter; }
 	};
 }

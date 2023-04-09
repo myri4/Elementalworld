@@ -7,7 +7,7 @@
 #define SPECULAR_V_SMITH_GGX        0
 #define SPECULAR_V_GGX_ANISOTROPIC  1
 
-#define BRDF_ANISOTROPIC_V          SPECULAR_V_GGX_ANISOTROPIC
+#define BRDF_ANISOTROPIC_V          SPECULAR_V_SMITH_GGX
 
 //------------------------------------------------------------------------------
 // Specular BRDF implementations

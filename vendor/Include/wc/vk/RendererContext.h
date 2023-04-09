@@ -102,8 +102,7 @@ namespace RendererContext {
 		computeSemaphore.Create();
 	}
 
-	void DestroyDefaultRenderPass(wc::Window& window) {
-		window.DestoySwapchain();
+	void DestroyDefaultRenderPass() {
 
 		for (auto& framebuffer : framebuffers)
 			framebuffer.Destroy();
@@ -111,22 +110,8 @@ namespace RendererContext {
 		defaultRenderPass.Destroy();
 	}
 
-	void RecreateDefaultRenderPass(wc::Window& window) {
-		int width = 0, height = 0;
-		glfwGetFramebufferSize(window, &width, &height);
-		while (width == 0 || height == 0) {
-			glfwGetFramebufferSize(window, &width, &height);
-			glfwWaitEvents();
-		}
-
-		VulkanContext::GetDevice().WaitIdle();
-		DestroyDefaultRenderPass(window);
-		window.CreateSwapchain(VulkanContext::GetPhysicalDevice(), VulkanContext::GetDevice(), VulkanContext::GetInstance());
-		CreateDefaultRenderPass(window);
-	}
-
-	void Destroy(wc::Window& window) {
-		DestroyDefaultRenderPass(window);
+	void Destroy() {
+		DestroyDefaultRenderPass();
 
 		commandPool.Destroy();
 		computeCommandPool.Destroy();

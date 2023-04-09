@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <array>
+#include <iomanip>
 
 #define GLM_FORCE_PURE
 #include <glm/glm.hpp>
@@ -20,7 +21,6 @@
 // Utilities
 #include <wc/Utils/Log.h>
 #include <wc/Utils/Time.h>
-#include <wc/Utils/Random.h>
 #include <wc/Utils/Window.h>
 #include <wc/Utils/List.h>
 
@@ -31,7 +31,7 @@
 #include <wc/vk/Renderpass.h>
 #include <wc/vk/Synchronization.h>
 
-#include <wc/Maths/Camera.h>
+#include <wc/Math/Camera.h>
 
 // GUI
 #include <imgui/imgui.h>

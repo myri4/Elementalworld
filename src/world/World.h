@@ -5,44 +5,23 @@
 #include "../Rendering/AssetManager.h"
 #include "Chunk.h"
 #include "Biome.h"
+#include "Player.h"
+#include "CommandParser.h"
 #include <FastNoise/FastNoiseLite.h>
-#include "../entities/Player.h"
-#include "../Game Mechanics/CommandParser.h"
-
-#include <wc/Shader.h>
-#include <wc/Framebuffer.h>
-#include <wc/Utils/DeletionQueue.h>
 
 #include "../Rendering/Renderer3D.h"
 #include <stb_image/stb_write.h>
 #include "../Settings.h"
 
-namespace wc {
-	enum class GameMsg : uint32_t
-	{
-		Server_GetStatus,
-		Server_GetPing,
+namespace wc {	
 
-		Client_Accepted,
-		Client_AssignID,
-		Client_RegisterWithServer,
-		Client_UnregisterWithServer,
-
-		Game_AddPlayer,
-		Game_RemovePlayer,
-		Game_UpdatePlayer,
-
-		RequestChunk,
-		SendChunk,
-		GenerateChunk,
-		BlockEdit
-	};
+	// Raw game data
+	inline List<Block, 40> m_BlockData;
+	inline List<Biome, 40> m_BiomeData;
 
 	class GameInstance {
-		bool debug_menu = true;
-		DeletionQueue delQueue;
+
 		// Player related
-		Camera camera;
 		float MouseSensitivity = 5.f;
 		float gravity = 20.f;
 
@@ -52,6 +31,8 @@ namespace wc {
 		bool thirdPerson = false;
 
 		// Graphics
+		Renderer3D m_Renderer;
+		Camera& camera = m_Renderer.camera;
 		Texture crosshair;
 
 		float rotateSpeed = 1.f * 0.6f; // one cycle is one unit (in minutes)
@@ -68,8 +49,26 @@ namespace wc {
 		bool updateChunks = true;
 		bool updateOctree = true;
 
+		bool console = false;
+		bool inventory = false;
+		bool renderGUI = true;
+		bool debug_menu = true;
+
 		int8_t water_level = 32;
 
+		// Common blocks
+		BlockID grass = 0;
+		BlockID stone = 0;
+		BlockID water = 0;
+		BlockID sand = 0;
+		BlockID oak = 0;
+		BlockID leaves = 0;
+		BlockID coal = 0;
+		BlockID dirt = 0;
+		BlockID campfire = 0;
+		BlockID murshroom = 0;
+
+		BlockID blockHolding = 0;
 
 		uint32_t localPlayerID = 0;
 		std::unordered_map<uint32_t, PlayerDescription> players;
@@ -77,18 +76,40 @@ namespace wc {
 		// Data managing
 		bool m_WorldLoaded = false;
 		// Multiplayer
+		enum class GameMsg : uint32_t
+		{
+			Server_GetStatus,
+			Server_GetPing,
+
+			Client_Accepted,
+			Client_AssignID,
+			Client_RegisterWithServer,
+			Client_UnregisterWithServer,
+
+			Game_AddPlayer,
+			Game_RemovePlayer,
+			Game_UpdatePlayer,
+
+			RequestChunk,
+			SendChunk,
+			GenerateChunk,
+			BlockEdit
+		};
+
 		bool m_WaitingForConnection = true;
 		net::client_interface<GameMsg> m_ClientInstance;
 
+		// Command console
+		std::vector<std::string> consoleHistory;
+		char consoleBuffer[256];
 	public:
 		std::string worldName = "New world";
 		bool multiPlayer = false;
-		bool renderGUI = true;
 		Player p;
 
-		void Create() {
-			AssetManager::Init();
-			crosshair.Load(GetAssetPath() + "/textures/misc/cursor.png");
+		void Create(AssetManager& assetManager) {
+			assetManager.Init();
+			crosshair = assetManager.LoadImage(GetAssetPath() + "/textures/misc/cursor.png");
 
 			if (!std::filesystem::exists("worlds")) std::filesystem::create_directory("worlds");
 			if (!std::filesystem::exists("cache")) std::filesystem::create_directory("cache");
@@ -119,7 +140,7 @@ namespace wc {
 			wc::StagingBuffer matBuffer;
 			matBuffer.Create(materialData.byte_size());
 			
-			blockData.counter = 1;
+			m_BlockData.counter = 1;
 			materialData.Data = (BufferMaterial*)matBuffer.Map();
 			materialData.counter = 1;
 			itemData.counter = 1;
@@ -128,13 +149,13 @@ namespace wc {
 			std::string materialPath = GetAssetPath() + "/textures/block/materials/";
 			
 			//Loading blocks
-			std::vector<Vertex> modelVertices;
+			std::vector<Renderer3D::Vertex> modelVertices;
 			std::vector<uint32_t> modelIndices;
 			std::vector<Node> bvhData;
 
 			auto setMaterial = [&](const YAML::Node& materialScript, BufferMaterial& material) {
 				if (materialScript["albedo"])
-					material.albedo = AssetManager::LoadTexture(diffusePath + materialScript["albedo"].as<std::string>());
+					material.albedo = assetManager.LoadTexture(diffusePath + materialScript["albedo"].as<std::string>());
 				else {
 					//WC_ERROR("Albedo map is not defined for {}! Skipping this block", script);
 					//continue;
@@ -143,25 +164,46 @@ namespace wc {
 				if (materialScript["reflectance"])
 					material.reflectance = materialScript["reflectance"].as<float>();
 				else if (materialScript["reflectancePath"])
-					material.reflectance = -(float)AssetManager::LoadTexture(materialPath + materialScript["reflectancePath"].as<std::string>());
+					material.reflectance = -(float)assetManager.LoadTexture(materialPath + materialScript["reflectancePath"].as<std::string>());
 
 
 				if (materialScript["metallic"])
 					material.metallic = materialScript["metallic"].as<float>();
 				else if (materialScript["metallicPath"])
-					material.metallic = -(float)AssetManager::LoadTexture(materialPath + materialScript["metallicPath"].as<std::string>());
+					material.metallic = -(float)assetManager.LoadTexture(materialPath + materialScript["metallicPath"].as<std::string>());
 
 
 				if (materialScript["roughness"])
 					material.roughness = materialScript["roughness"].as<float>();
 				else if (materialScript["roughnessPath"])
-					material.roughness = -(float)AssetManager::LoadTexture(materialPath + materialScript["roughnessPath"].as<std::string>());
+					material.roughness = -(float)assetManager.LoadTexture(materialPath + materialScript["roughnessPath"].as<std::string>());
 
 
 				if (materialScript["emissive"])
 					material.emissive = materialScript["emissive"].as<float>();
 				else if (materialScript["emissivePath"])
-					material.emissive = -(float)AssetManager::LoadTexture(materialPath + materialScript["emissivePath"].as<std::string>());
+					material.emissive = -(float)assetManager.LoadTexture(materialPath + materialScript["emissivePath"].as<std::string>());
+
+
+				if (materialScript["clearCoat"])
+					material.clearCoat = materialScript["clearCoat"].as<float>();
+				else if (materialScript["clearCoatPath"])
+					material.clearCoat = -(float)assetManager.LoadTexture(materialPath + materialScript["clearCoatPath"].as<std::string>());
+				
+				
+				if (materialScript["anisotropy"])
+					material.anisotropy = materialScript["anisotropy"].as<float>();
+				else if (materialScript["anisotropyPath"])
+					material.anisotropy = -(float)assetManager.LoadTexture(materialPath + materialScript["anisotropyPath"].as<std::string>());
+				
+				//// @TODO: Should be rotation instead
+				//if (materialScript["anisotropyDirection"])
+				//	material.anisotropyDirection = materialScript["anisotropyDirection"].as<glm::vec3>();
+				
+				if (materialScript["ior"])
+					material.ior = materialScript["ior"].as<float>();
+				else if (materialScript["iorPath"])
+					material.ior = -(float)assetManager.LoadTexture(materialPath + materialScript["iorPath"].as<std::string>());
 			};
 
 			for (auto& path : std::filesystem::directory_iterator("scripts/blocks")) {
@@ -173,16 +215,13 @@ namespace wc {
 					Block block;
 					BufferMaterial materials[6];
 			
-					if (blockState["name"]) block.name = blockState["name"].as<std::string>(); 
-					
-					else WC_WARN("No block name is specified in '{0}'. Block name 'air' assumed.", script);
+					if (blockState["name"]) block.name = blockState["name"].as<std::string>();					
+					else WC_WARN("No block name is specified in '{}'. Block name 'air' assumed.", script);
 			
 					if (blockState["isCollidable"]) block.isCollidable = blockState["isCollidable"].as<bool>();
 					if (blockState["ConnectionType"]) block.connectionType = magic_enum::enum_cast<ConnectionType>(blockState["ConnectionType"].as<std::string>()).value();
 
 					//if (blockState["cull"]) if (blockState["cull"].as<bool>()) material.flags |= WC_CULL_BIT;
-					
-					if (blockState["emitLight"]) block.emitLight = blockState["emitLight"].as<bool>();
 			
 					if (blockState["modelPath"]) { 
 						block.flags |= WC_MODEL_BIT;
@@ -196,7 +235,6 @@ namespace wc {
 						for (int i = 0; i < 6; i++) block.materialIDs[i] = materialID;
 					}
 					else {
-						WC_INFO(block.name);
 						for (uint32_t i = 0; i < magic_enum::enum_count<BlockTexture>(); i++) {
 							auto name = std::string(magic_enum::enum_name((BlockTexture)i));
 							setMaterial(blockState[name], materials[i]);
@@ -212,13 +250,13 @@ namespace wc {
 						blockMeshes.counter++;
 					}
 			
-					blockData.push_back(block);					
+					m_BlockData.PushBack(block);
 				}
 			}
 
 			for (auto& path : std::filesystem::directory_iterator("scripts/items")) {
 				std::string filename = path.path().stem().string();
-				if (path.is_regular_file()) { //AddItemScript
+				if (path.is_regular_file()) { 
 					std::string script = "scripts/items/" + filename + ".yaml";
 					YAML::Node itemState = YAML::LoadFile(script);
 					Item item;
@@ -237,36 +275,34 @@ namespace wc {
 
 					if (itemState["model"]) {}
 
-					if (itemState["textureLocation"]) item.textureID = AssetManager::LoadTexture(diffusePath + itemState["textureLocation"].as<std::string>());
+					if (itemState["textureLocation"]) item.textureID = assetManager.LoadTexture(diffusePath + itemState["textureLocation"].as<std::string>());
 
-					itemData.push_back(item);					
+					itemData.PushBack(item);
 				}
 			}
-			Renderer3D::Build(window.GetSize(), blockData.size(), chunks.size());
+			Renderer3D::Init(assetManager);
+			Renderer3D::CreateBuffers(m_BlockData.size(), chunks.size());
+			m_Renderer.Create(window.GetSize(), assetManager);
+			wc::BlockGPU gpuBlockData[m_BlockData.allocatedSize()];
 
-			wc::BlockGPU gpuBlockData[blockData.allocated_size()];
-
-			for (int i = 0; i < blockData.size(); i++)			
+			for (int i = 0; i < m_BlockData.size(); i++)
 				for (int j = 0; j < 6; j++) 
-					gpuBlockData[i].materialIDs[j] = blockData[i].materialIDs[j];
+					gpuBlockData[i].materialIDs[j] = m_BlockData[i].materialIDs[j];
 			
 
-			Renderer3D::m_BlockDataBuffer.SetData(gpuBlockData, sizeof(BlockGPU) * blockData.size());
+			m_Renderer.GetBlockDataBuffer().SetData(gpuBlockData, sizeof(BlockGPU) * m_BlockData.size());
 
 			matBuffer.Unmap();
-			Renderer3D::m_MaterialsBuffer.SetData(matBuffer, materialData.byte_size());
+			m_Renderer.GetMaterialsBuffer().SetData(matBuffer, materialData.byte_size());
 			matBuffer.Destroy();
 
+			Renderer3D::UploadModels(modelVertices, modelIndices, bvhData);	
+			
+			m_Renderer.addLight(glm::vec3(0.f), glm::vec3(1.f, 0.891f, 0.796f), 1.f, 0.f);
+			
 			grass = getBlockID("grass_block");
 			stone = getBlockID("stone_block");
 			coal = getBlockID("coal_ore");
-			
-			Renderer3D::UploadModels(modelVertices, modelIndices, bvhData);				
-			
-
-			
-			Renderer3D::addLight(glm::vec3(0.f), glm::vec3(1.f, 0.891f, 0.796f), 1.f, 0.f);
-			
 			water = getBlockID("water");
 			sand = getBlockID("sand");
 			oak = getBlockID("wood");
@@ -281,25 +317,11 @@ namespace wc {
 			if (multiPlayer) m_ClientInstance.Disconnect();
 			else if (m_WorldLoaded) SaveWorld();			
 
-			Renderer3D::Destroy();
-			AssetManager::Destroy();
+			m_Renderer.Destroy();
+			Renderer3D::Deinit();			
 
 			Settings::Save();
 		}
-
-		// Common blocks
-		BlockID grass = 0;
-		BlockID stone = 0;
-		BlockID water = 0;
-		BlockID sand = 0;
-		BlockID oak = 0;
-		BlockID leaves = 0;
-		BlockID coal = 0;
-		BlockID dirt = 0;
-		BlockID campfire = 0;
-		BlockID murshroom = 0;
-
-		BlockID blockHolding = 0;
 
 		void Join(const std::string& ip, const std::string& playerName) {
 			if (multiPlayer) {
@@ -425,9 +447,7 @@ namespace wc {
 				m_ClientInstance.Send(msg);
 			}
 
-			Renderer3D::UpdateCamera(camera);
-
-			Renderer3D::lights[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 0.f, 1.f)));
+			m_Renderer.m_Lights[0].vector = -glm::vec3(glm::vec4(1.f, 0.f, 0.f, 0.f) * glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 0.f, 1.f)));
 
 			angle += deltaTime * rotateSpeed;
 			angle = glm::mod(angle, 360.f);
@@ -469,14 +489,14 @@ namespace wc {
 			}
 
 			if (updateChunks) {
+				updateChunks = false;
+
 				for (ChunkID i = 0; i < chunks.size(); i++)
 					if (chunks[i].canBeUpdated) { 
 						UpdateChunk(i);				
 						
 						chunks[i].canBeUpdated = false; 
 					}
-
-				updateChunks = false;
 
 				if (updateOctree) {
 					updateOctree = false;
@@ -485,8 +505,8 @@ namespace wc {
 					ChunkNode rootNode;
 
 
-					glm::vec3& start = rootNode.start = glm::vec3(0.f);
-					glm::vec3& end = rootNode.end = glm::vec3(0.f);
+					glm::vec3& start = rootNode.min = glm::vec3(0.f);
+					glm::vec3& end = rootNode.max = glm::vec3(0.f);
 					for (ChunkID i = 0; i < chunks.size(); i++) {
 						auto chunkStart = chunks[i].position * glm::ivec3(chunkSize);
 						auto chunkEnd = chunkStart + glm::ivec3(chunkSize);
@@ -497,20 +517,66 @@ namespace wc {
 						}
 					}
 					nodes.push_back(rootNode);
-					GenerateOctree(nodes, 0, 3);
+					GenerateOctree(nodes, 0, 4);
 
-					Renderer3D::ChunkNodeBuffer.SetData(nodes.data(), sizeof(ChunkNode) * nodes.size());
+					m_Renderer.GetChunkNodeBuffer().SetData(nodes.data(), sizeof(ChunkNode)* nodes.size());
 				}
 			}
 
-			Renderer3D::Render();
+			m_Renderer.Render();
+
+			if (Keyboard::getKey(Keyboard::Key::F2)) {
+				VulkanContext::GetDevice().WaitIdle();
+
+				uint32_t width = m_Renderer.GetScreenSize().x;
+				uint32_t height = m_Renderer.GetScreenSize().y;
+
+				StagingBuffer stagingBuffer;
+				stagingBuffer.Create(sizeof(float) * 4 * width * height, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+				UploadContext::immediate_submit([&](VkCommandBuffer cmd) {
+					m_Renderer.GetFinalImage().setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+					VkBufferImageCopy copyRegion = {};
+					copyRegion.bufferOffset = 0;
+					copyRegion.bufferRowLength = 0;
+					copyRegion.bufferImageHeight = 0;
+
+					copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+					copyRegion.imageSubresource.mipLevel = 0;
+					copyRegion.imageSubresource.baseArrayLayer = 0;
+					copyRegion.imageSubresource.layerCount = 1;
+					copyRegion.imageExtent.width = width;
+					copyRegion.imageExtent.height = height;
+					copyRegion.imageExtent.depth = 1;
+
+					//copy the buffer into the image
+					vkCmdCopyImageToBuffer(cmd, m_Renderer.GetFinalImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stagingBuffer, 1, &copyRegion);
+
+					m_Renderer.GetFinalImage().setLayout(cmd, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+					});
+
+				float* imagedata = (float*)stagingBuffer.Map();
+
+				const auto now = std::chrono::system_clock::now();
+				auto filename = std::format("screenshots/screenshot_{:%d-%m-%Y-%H-%M-%OS}.png", now);
+
+				int bytes_per_pixel = 4;
+				uint32_t bytes_per_scanline = bytes_per_pixel * width;
+				uint8_t* imageOutput = new uint8_t[width * height * bytes_per_pixel];
+
+				for (int i = 0; i < width * height * bytes_per_pixel; i++)				
+					imageOutput[i] = (uint8_t)(imagedata[i] * 255.f);
+				
+				stbi_write_png(filename.c_str(), width, height, bytes_per_pixel, imageOutput, bytes_per_scanline);
+				delete[] imageOutput;
+				stagingBuffer.Unmap();
+				stagingBuffer.Destroy();
+			}
 		}
 
-		std::vector<std::string> consoleHistory;
-		char consoleBuffer[256];
-		void RenderGUI(float deltaTime) {
+		void RenderGUI(float deltaTime, const AssetManager& assetManager) {
 			ImGui::Begin("Screen Render", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
-			ImGui::GetBackgroundDrawList()->AddImage(Renderer3D::m_RenderTexture, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
+			ImGui::GetBackgroundDrawList()->AddImage(m_Renderer.GetRenderTexture(), ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
 			ImGui::End();
 
 			if (debug_menu && renderGUI) {
@@ -567,8 +633,8 @@ namespace wc {
 					ImGui::PushID(n);
 					//	if ((n % 10) != 0)
 						ImGui::SameLine();
-					if (p.inventory.data[n].itemID != 0)
-						ImGui::Image(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(90, 90));
+					if (p.inventory[n].itemID != 0)
+						ImGui::Image(assetManager.m_Textures[itemData[p.inventory[n].itemID].textureID], ImVec2(90, 90));
 					else
 						ImGui::Button("", ImVec2(90, 90));
 				
@@ -586,9 +652,9 @@ namespace wc {
 							IM_ASSERT(payload->DataSize == sizeof(int));
 							int payload_n = *(const int*)payload->Data;
 				
-							auto tmp = p.inventory.data[n];
-							p.inventory.data[n] = p.inventory.data[payload_n];
-							p.inventory.data[payload_n] = tmp;
+							auto tmp = p.inventory[n];
+							p.inventory[n] = p.inventory[payload_n];
+							p.inventory[payload_n] = tmp;
 				
 						}
 						ImGui::EndDragDropTarget();
@@ -602,15 +668,15 @@ namespace wc {
 				ImGui::SetNextWindowSize(ImVec2(1000, 500));
 				ImGui::SetNextWindowPos(ImVec2((window.GetSize().x - 1000) / 2, (window.GetSize().y - 600) / 2));
 				ImGui::Begin("Inventory", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar);
-
-				for (int n = 0; n < std::size(p.inventory.data); n++)
+			
+				for (int n = 0; n < p.inventory.size(); n++)
 				{
 					ImGui::PushID(n);
 					if ((n % 10) != 0)
 						ImGui::SameLine();
 					//ImGui::Button(names[n], ImVec2(90, 90));
-					if (p.inventory.data[n].itemID != 0)
-						ImGui::ImageButton(AssetManager::m_Textures[itemData[p.inventory.data[n].itemID].textureID], ImVec2(90, 90));
+					if (p.inventory[n].itemID != 0)
+						ImGui::ImageButton(assetManager.m_Textures[itemData[p.inventory[n].itemID].textureID], ImVec2(90, 90));
 					else
 						ImGui::Button("", ImVec2(90, 90));
 					// Our buttons are both drag sources and drag targets here!
@@ -626,18 +692,18 @@ namespace wc {
 						if (payload)
 						{
 							int payload_n = *(const int*)payload->Data;
-
-							ItemSlot tmp = p.inventory.data[n];
-							p.inventory.data[n] = p.inventory.data[payload_n];
-							p.inventory.data[payload_n] = tmp;
-
+			
+							ItemSlot tmp = p.inventory[n];
+							p.inventory[n] = p.inventory[payload_n];
+							p.inventory[payload_n] = tmp;
+			
 						}
 						ImGui::EndDragDropTarget();
 					}
 					ImGui::PopID();
 				}
-
-
+			
+			
 				ImGui::End();
 			}
 		}
@@ -700,7 +766,7 @@ namespace wc {
 			case wc::CommandType::give:
 			{
 				std::string itemName = cmdParser.getStringArgument(0);
-				WC_INFO(itemName.c_str());
+				p.inventory.AddItem({ getItemID(itemName) , 1 });
 			}
 				break;
 			case wc::CommandType::getBlockID:
@@ -709,9 +775,6 @@ namespace wc {
 			}
 			command.clear();
 		}
-
-		bool console = false;
-		bool inventory = false;
 
 		void OnInput(float deltaTime) {
 			// MENU MANAGMENT
@@ -815,11 +878,7 @@ namespace wc {
 			}
 
 			if (Keyboard::getKey(Keyboard::Key::F1)) renderGUI = !renderGUI;
-			if (Keyboard::getKey(Keyboard::Key::F2)) {
-				VulkanContext::GetDevice().WaitIdle();
-				
-				WC_INFO("TODO: Implement screenshots back");
-			}
+			
 			if (Keyboard::getKey(Keyboard::Key::F8)) debug_menu = !debug_menu;
 			if (Keyboard::getKey(Keyboard::Key::Enter) && console) {
 				if (consoleBuffer[0] == '/') { 
@@ -883,24 +942,15 @@ namespace wc {
 
 			float fMaxDistance = 6.f;
 
-			glm::ivec3 vMapCheck = glm::floor(vRayStart), vMapLastCheck = glm::floor(vRayStart), vStep = glm::ivec3(0);
 			glm::vec3 vRayLength1D = glm::vec3(0.f);
 			glm::vec3& vRayDir = camera.Front;
+			glm::ivec3 vMapCheck = glm::floor(vRayStart), vMapLastCheck = glm::floor(vRayStart), vStep = glm::ivec3(glm::sign(vRayDir));
 			glm::vec3 vRayUnitStepSize = abs(1.f / vRayDir);
 
 			// Establish Starting Conditions
-			for (int i = 0; i < 3; i++) {
-				if (vRayDir[i] < 0)
-				{
-					vStep[i] = -1;
-					vRayLength1D[i] = (vRayStart[i] - float(vMapCheck[i])) * vRayUnitStepSize[i];
-				}
-				else
-				{
-					vStep[i] = 1;
-					vRayLength1D[i] = (float(vMapCheck[i] + 1) - vRayStart[i]) * vRayUnitStepSize[i];
-				}
-			}
+			vRayLength1D[0] = (vRayDir[0] < 0.f ? (vRayStart[0] - float(vMapCheck[0])) : (float(vMapCheck[0]) + 1.f - vRayStart[0])) * vRayUnitStepSize[0];
+			vRayLength1D[1] = (vRayDir[1] < 0.f ? (vRayStart[1] - float(vMapCheck[1])) : (float(vMapCheck[1]) + 1.f - vRayStart[1])) * vRayUnitStepSize[1];
+			vRayLength1D[2] = (vRayDir[2] < 0.f ? (vRayStart[2] - float(vMapCheck[2])) : (float(vMapCheck[2]) + 1.f - vRayStart[2])) * vRayUnitStepSize[2];
 
 			bool bTileFound = false;
 			float fDistance = 0.f;
@@ -919,14 +969,14 @@ namespace wc {
 
 				// Test tile at new test point
 				BlockID blockID = getBlock(vMapCheck);
-				Block& block = blockData[blockID];
+				Block& block = m_BlockData[blockID];
 				if (blockID > 0 && block.connectionType != ConnectionType::FLUID_CONNECT)
 				{
 					if (breakPos != vMapCheck) {
 						startBreaking = false;
 						breakPos = vMapCheck;
 					}
-					//Renderer3D::DrawOutlineCube(vMapCheck, glm::vec3(1.f), color);
+					//DrawOutlineCube(vMapCheck, glm::vec3(1.f), color);
 					if (m_BlockBreakTimer.getElapsedTime() >= breakTime && startBreaking) {
 						p.inventory.PushItem({getBlock(vMapCheck), 1});
 						setBlock(vMapCheck, 0, true, true);
@@ -964,7 +1014,7 @@ namespace wc {
 
 			glm::ivec3 offset = getChunkPos(p.Position) - glm::ivec3(chunkSize / 2);
 			for (ChunkID chunkID = 0; chunkID < chunks.size(); chunkID++) {
-				chunks[chunkID].position = to3D(chunkID, glm::ivec3(RenderDistance)) + offset;
+				chunks[chunkID].position = to3D(chunkID, RenderDistance) + offset;
 
 				TryToLoadChunk(chunkID);
 			}
@@ -1089,18 +1139,35 @@ namespace wc {
 			memcpy(data, chunk.data, sizeof(data));
 			glm::ivec3 chunkPos = chunk.position * glm::ivec3(chunkSize);
 
+			glm::vec3 start = chunk.position * glm::ivec3(chunkSize);
+			glm::vec3 end = start + glm::vec3(chunkSize);
+
 			for (uint8_t y = 0; y < chunkSize; y++)
 				for (uint8_t z = 0; z < chunkSize; z++)
 					for (uint8_t x = 0; x < chunkSize; x++) {
 						BlockID block = data[x][y][z];
 						if (block != 0) {
-							if (blockData[block].connectionType == CUSTOM_MODEL) { // @TODO: add more shader-unsupported cases
+							chunk.empty = false;
+							if (m_BlockData[block].connectionType == CUSTOM_MODEL) { // @TODO: add more shader-unsupported cases
 								data[x][y][z] = 0; 
+							}
+							else {
+								if (chunkPos.x + x < start.x) start.x = chunkPos.x + x;
+								else if (chunkPos.x + x > end.x) end.x = chunkPos.x + x;
+								
+								if (chunkPos.y + y < start.y) start.y = chunkPos.y + y;
+								else if (chunkPos.y + y > end.y) end.y = chunkPos.y + y;
+								
+								if (chunkPos.z + z < start.z) start.z = chunkPos.z + z;
+								else if (chunkPos.z + z > end.z) end.z = chunkPos.z + z;
 							}
 						}
 					}
 
-			Renderer3D::m_VoxelBuffer.SetData(data, sizeof(data), chunkID * sizeof(Chunk::data));
+			chunk.boxStart = start;
+			chunk.boxEnd = end;
+
+			m_Renderer.GetVoxelBuffer().SetData(data, sizeof(data), chunkID * sizeof(Chunk::data));
 		}
 
 		void setBlockLocal(const glm::uvec3& pos, BlockID blockID, const ChunkID& chunkID, bool playerEdited, bool replyToServer) {
@@ -1114,22 +1181,18 @@ namespace wc {
 			glm::vec3 globalPos = glm::vec3(chunks[chunkID].position) * glm::vec3(chunkSize) + glm::vec3(pos);
 			glm::ivec3 iGlobalPos = globalPos;
 			if (blockID == 0) {
-				if (blockData[chunkBlockID].emitLight)
-					Renderer3D::removeLight(globalPos + glm::vec3(0.5f));
 
-				if (blockData[chunkBlockID].connectionType == ConnectionType::CUSTOM_MODEL) {
-					Mesh& mesh = blockMeshes[blockData[chunkBlockID].meshID];
-					Renderer3D::removeModel(mesh.cmd, globalPos);
+				if (m_BlockData[chunkBlockID].connectionType == ConnectionType::CUSTOM_MODEL) {
+					Mesh& mesh = blockMeshes[m_BlockData[chunkBlockID].meshID];
+					m_Renderer.removeModel(mesh.cmd, globalPos);
 				}
 			}
 			else {
-				if (blockData[blockID].emitLight)
-					Renderer3D::addLight(globalPos + glm::vec3(0.5f), glm::vec3(1.f), 0.8f, 1.f);
 
-				if (blockData[blockID].connectionType == ConnectionType::CUSTOM_MODEL) {
-					Mesh& mesh = blockMeshes[blockData[blockID].meshID];
+				if (m_BlockData[blockID].connectionType == ConnectionType::CUSTOM_MODEL) {
+					Mesh& mesh = blockMeshes[m_BlockData[blockID].meshID];
 
-					Renderer3D::Draw(mesh.cmd, globalPos);
+					m_Renderer.Draw(mesh.cmd, globalPos);
 					//m_UpdateModels = true;
 				}
 			}			
@@ -1169,10 +1232,18 @@ namespace wc {
 		}
 
 		BlockID getBlockID(const std::string& name) {
-			for (BlockID i = 0; i < blockData.size(); i++)
-				if (blockData[i].name == name) return i;
+			for (BlockID i = 0; i < m_BlockData.size(); i++)
+				if (m_BlockData[i].name == name) return i;
 
 			WC_WARN("Could not find {0}. Air block assumed.", name);
+			return 0;
+		}
+
+		ItemID getItemID(const std::string& name) {
+			for (BlockID i = 0; i < itemData.size(); i++)
+				if (itemData[i].name == name) return i;
+
+			WC_WARN("Could not find {0}.", name);
 			return 0;
 		}
 
@@ -1203,7 +1274,7 @@ namespace wc {
 			uint16_t counter = 0;
 			for (auto& block : blocks) {
 				for (uint16_t i = 0; i < block.second; i++) {
-					glm::ivec3 pos = to3D(counter, glm::ivec3(chunkSize));
+					glm::ivec3 pos = to3D(counter, chunkSize);
 					uint8_t x = pos.x;
 					uint8_t y = pos.z;
 					uint8_t z = pos.y;
@@ -1213,39 +1284,37 @@ namespace wc {
 			}
 		}
 
-		bool isInBox(const glm::vec3& p, const glm::vec3& start, const glm::vec3& end) {
-			return (p.x >= start.x && p.x <= end.x) &&
-				(p.y >= start.y && p.y <= end.y) &&
-				(p.z >= start.z && p.z <= end.z);
+		bool isInBox(const glm::vec3& point, const glm::vec3& start, const glm::vec3& end) {
+			return (point.x >= start.x && point.x <= end.x) &&
+				(point.y >= start.y && point.y <= end.y) &&
+				(point.z >= start.z && point.z <= end.z);
 		}
 
-		void GenerateOctree(std::vector<ChunkNode>& nodes, uint32_t parentNodeID, uint32_t depth) {
+		void GenerateOctree(std::vector<ChunkNode>& nodes, uint32_t nodeID, uint32_t depth) {
 			if (depth == 0) {
 				// Base case: we have reached the maximum depth, so create a leaf node
-				ChunkNode& node = nodes[parentNodeID];
-				node.isLeaf = true;
-
-				uint32_t numChildren = 0;
+				ChunkNode& node = nodes[nodeID];
+				
 				for (int i = 0; i < chunks.size(); i++) {
-					glm::vec3 chunkPos = glm::vec3(chunks[i].position) * glm::vec3(chunkSize);
-
-					if (isInBox(chunkPos, node.start, node.end) && isInBox(chunkPos + glm::vec3(chunkSize), node.start, node.end)) {
-						node.children[numChildren] = i;
-						numChildren++;
-					}
-
-					if (numChildren == 8) break;					
+					Chunk& chunk = chunks[i];
+				
+					if (isInBox(chunk.boxStart, node.min, node.max) && isInBox(chunk.boxEnd, node.min, node.max)) {
+						node.children[0] = i * chunkVolume;
+						node.min = chunk.boxStart;
+						node.max = chunk.boxEnd;
+						node.parentID = nodeID;
+						node.flags |= IS_LEAF_BIT;
+						if (chunk.empty) node.flags |= IS_EMPTY_BIT;
+					}					
 				}
 			}
 			else {
 				// Recursive case: create 8 child nodes and recursively generate their octrees
-				glm::vec3 parentStart = nodes[parentNodeID].start;
-				glm::vec3 parentEnd = nodes[parentNodeID].end;
-				glm::vec3 mid = (parentStart + parentEnd) * 0.5f;
-
+				glm::vec3 mid = (nodes[nodeID].min + nodes[nodeID].max) * 0.5f;
+				bool empty = true;
 				for (int i = 0; i < 8; i++) {
-					glm::vec3 childStart = parentStart;
-					glm::vec3 childEnd = parentEnd;
+					glm::vec3 childStart = nodes[nodeID].min;
+					glm::vec3 childEnd = nodes[nodeID].max;
 					if (i & 1) { childStart.x = mid.x; }
 					else { childEnd.x = mid.x; }
 					if (i & 2) { childStart.y = mid.y; }
@@ -1255,17 +1324,21 @@ namespace wc {
 
 					ChunkNode childNode;
 
-					childNode.start = childStart;
-					childNode.end = childEnd;
-					childNode.parentID = parentNodeID;
+					childNode.min = childStart;
+					childNode.max = childEnd;
+					childNode.parentID = nodeID;
 
+					uint32_t childNodeID = nodes.size();
 					nodes.push_back(childNode);
 
-					uint32_t childNodeID = nodes.size() - 1;
-					nodes[parentNodeID].children[i] = childNodeID;
+					nodes[nodeID].children[i] = childNodeID;
 
 					GenerateOctree(nodes, childNodeID, depth - 1);
+
+					if (!bool(nodes[childNodeID].flags & IS_EMPTY_BIT)) empty = false;
 				}
+
+				if (empty) nodes[nodeID].flags |= IS_EMPTY_BIT;
 			}
 		}
 	};

@@ -1,18 +1,8 @@
 #pragma once
 
 #include "VulkanContext.h"
-#include <fstream>
-#include <spirv_cross/spirv_cross.hpp>
 
-namespace wc {	
-
-	struct VertexInputDescription {
-
-		std::vector<VkVertexInputBindingDescription> bindings;
-		std::vector<VkVertexInputAttributeDescription> attributes;
-
-		VkPipelineVertexInputStateCreateFlags flags = 0;
-	};
+namespace wc {
 
 	struct Pipeline : public RendererObject<VkPipeline> {
 
@@ -23,9 +13,25 @@ namespace wc {
 			vkDestroyPipeline(VulkanContext::GetDevice(), m_RendererID, VulkanContext::GetAllocator());
 			m_RendererID = VK_NULL_HANDLE;
 		}
+	};
 
-		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)m_RendererID, name); }
-		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)m_RendererID, name.c_str()); }
+	struct ComputePipeline : public Pipeline {
+
+		VkResult Create(const VkComputePipelineCreateInfo& pipelineInfo, VkPipelineCache cache = VK_NULL_HANDLE) {
+			return vkCreateComputePipelines(VulkanContext::GetDevice(), cache, 1, &pipelineInfo, VulkanContext::GetAllocator(), &m_RendererID);
+		}
+	};
+
+	struct PipelineLayout : public RendererObject<VkPipelineLayout> {
+
+		VkResult Create(const VkPipelineLayoutCreateInfo& info) {
+			return vkCreatePipelineLayout(VulkanContext::GetDevice(), &info, VulkanContext::GetAllocator(), &m_RendererID);
+		}
+
+		void Destroy() { 
+			vkDestroyPipelineLayout(VulkanContext::GetDevice(), m_RendererID, VulkanContext::GetAllocator());
+			m_RendererID = VK_NULL_HANDLE;
+		}
 	};
 
 	struct PipelineCacheData {
@@ -77,22 +83,11 @@ namespace wc {
 			if (memcmp(header.pipelineCacheUUID, VulkanContext::GetProperties().pipelineCacheUUID, sizeof(header.pipelineCacheUUID)) != 0) return false;
 			return true;
 		}
-
-		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE_CACHE, (uint64_t)m_RendererID, name); }
-		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE_CACHE, (uint64_t)m_RendererID, name.c_str()); }
 	};
 
-
-	struct ComputePipeline : public Pipeline {
-
-		VkResult Create(const VkComputePipelineCreateInfo& pipelineInfo, VkPipelineCache cache = VK_NULL_HANDLE) {
-			return vkCreateComputePipelines(VulkanContext::GetDevice(), cache, 1, &pipelineInfo, VulkanContext::GetAllocator(), &m_RendererID);
-		}
-	};
 
 	struct PipelineBuilder {
 		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
-		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 		VkViewport viewport = { 0.f };
 		VkRect2D scissor = {};
 		VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
@@ -123,7 +118,7 @@ namespace wc {
 
 			pipelineInfo.stageCount = (uint32_t)shaderStages.size();
 			pipelineInfo.pStages = shaderStages.data();
-			pipelineInfo.pVertexInputState = &vertexInputInfo;
+			pipelineInfo.pVertexInputState = nullptr;
 
 			VkPipelineInputAssemblyStateCreateInfo inputAssembly = { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
 
@@ -182,42 +177,6 @@ namespace wc {
 			else			
 				return newPipeline;			
 		}
-	};	
-	
-	VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info(const VertexInputDescription& desc) {
-		VkPipelineVertexInputStateCreateInfo info = { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
-
-		info.pVertexAttributeDescriptions = desc.attributes.data();
-		info.vertexAttributeDescriptionCount = (uint32_t)desc.attributes.size();
-
-		info.pVertexBindingDescriptions = desc.bindings.data();
-		info.vertexBindingDescriptionCount = (uint32_t)desc.bindings.size();
-		return info;
-	}
-
-	VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info() {
-		VkPipelineVertexInputStateCreateInfo info = { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
-
-		info.pVertexAttributeDescriptions = nullptr;
-		info.vertexAttributeDescriptionCount = 0;
-
-		info.pVertexBindingDescriptions = nullptr;
-		info.vertexBindingDescriptionCount = 0;
-		return info;
-	}
-
-	struct PipelineLayout : public RendererObject<VkPipelineLayout> {
-
-		VkResult Create(const VkPipelineLayoutCreateInfo& info) {
-			return vkCreatePipelineLayout(VulkanContext::GetDevice(), &info, VulkanContext::GetAllocator(), &m_RendererID);
-		}
-
-		void Destroy() { 
-			vkDestroyPipelineLayout(VulkanContext::GetDevice(), m_RendererID, VulkanContext::GetAllocator());
-			m_RendererID = VK_NULL_HANDLE;
-		}
-
-		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)m_RendererID, name); }
-		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)m_RendererID, name.c_str()); }
 	};
+
 }

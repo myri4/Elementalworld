@@ -121,16 +121,10 @@ namespace wc {
 
 			assert(aspectMask > 0);
 
-			VkImageCreateInfo imageInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
-			imageInfo.imageType = VK_IMAGE_TYPE_2D;
+			ImageCreateInfo imageInfo;
 			imageInfo.format = createinfo.format;
-			imageInfo.extent.width = createinfo.width;
-			imageInfo.extent.height = createinfo.height;
-			imageInfo.extent.depth = 1;
-			imageInfo.mipLevels = 1;
-			imageInfo.arrayLayers = 1;
-			imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-			imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+			imageInfo.width = createinfo.width;
+			imageInfo.height = createinfo.height;
 			imageInfo.usage = createinfo.usage;
 
 			// Create image for this attachment

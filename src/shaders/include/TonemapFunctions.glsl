@@ -1,3 +1,11 @@
+#define ACES 0
+#define Filmic 1
+#define Reinhard 2 
+#define Uncharted2 3 
+#define Uchimura 4
+#define Lottes 5
+#define Unreal 6
+
 //------------------------------------------------------------------------------
 // Tone mapping
 //------------------------------------------------------------------------------

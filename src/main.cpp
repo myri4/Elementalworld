@@ -1,23 +1,34 @@
 ﻿//#define GLM_FORCE_INTRINSICS 
+#pragma warning( push )
+#pragma warning( disable : 4702) // Disable unreachable code
 #define GLFW_INCLUDE_NONE
+#define GLM_FORCE_SILENT_WARNINGS
 #include "Application.h"
 
 //DANGEROUS!
 #pragma warning(push, 0)
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image/stb_image.h>
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image/stb_write.h>
+
+#define VOLK_IMPLEMENTATION 
+#include <volk/volk.h>
+
 #define VMA_IMPLEMENTATION
 #include <vma/vk_mem_alloc.h>
+
 #define MINIAUDIO_IMPLEMENTATION
 #include <miniaudio.h>
+
 #pragma warning(pop)
 
 namespace wc {
 	Application app;
 
-	int main(int argc, char* argv[]) {
+	int main() {
 		wc::Log::Init();
 		glfwSetErrorCallback([](int error, const char* description) {
 			switch (error)
@@ -55,6 +66,7 @@ namespace wc {
 		if (glfwVulkanSupported()) {
 
 			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+			VK_CHECK(volkInitialize());
 			app.Start();
 		}
 		else 
@@ -65,6 +77,6 @@ namespace wc {
 	}
 }
 
-int main(int argc, char* argv[]) {
-	return wc::main(argc, argv);
+int main() {
+	return wc::main();
 }

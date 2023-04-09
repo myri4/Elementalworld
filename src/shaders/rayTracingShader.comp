@@ -1,7 +1,6 @@
 #pragma shader_stage(compute)
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_EXT_shader_8bit_storage : require
-#extension GL_EXT_control_flow_attributes : require
 
 #define WC_DEBUG 0
 
@@ -13,7 +12,7 @@
 #endif
 
 layout(local_size_x = 4, local_size_y = 4) in;
-layout(binding = 9, rgba32f) restrict writeonly uniform image2D o_Image;
+layout(binding = 9, rgba32f) restrict uniform image2D u_Image;
 layout(binding = 10, set = 0) uniform sampler2D u_Textures[];
 
 #define MATERIAL_PROPERTY(x, uv) x >= 0.f ? x : texture(u_Textures[int(abs(x))], uv).r
@@ -25,8 +24,10 @@ layout (push_constant) uniform Scene
     vec3 lower_left_corner;
     uint u_NumDrawCommands;
     vec3 horizontal;
-    uint _pad;
+    uint MaxBounceCount;
     vec3 vertical;
+	uint NumRaysPerPixel;
+	uint Frame;
 };
 
 #include <sky.glsl>
@@ -40,36 +41,36 @@ vec3 rayTrace(inout vec3 refRayOrigin, inout vec3 refRayDirection) {
     HitInfo hitInfo = intersect(refRayOrigin, refRayDirection, invRayDirection);
 
     if (hitInfo.isHit) {
-        vec2 texCoords = vec2(0.f);
+        
+		vec2 texCoords = hitInfo.texCoords;
 
-        if (hitInfo.hitCube) {
-            
-            texCoords = hitInfo.uvw.xy;
-        }
-        else{
-            hitInfo.p = refRayOrigin + hitInfo.minT * refRayDirection;
-            texCoords = rtLerp(hitInfo.uvw, GetVertex(hitInfo.shapeHit + 1, hitInfo.cmd).TexCoords, 
-            GetVertex(hitInfo.shapeHit + 2, hitInfo.cmd).TexCoords, GetVertex(hitInfo.shapeHit, hitInfo.cmd).TexCoords);		
-
-        }
-		vec3 v = -refRayDirection;
-		vec3 n = hitInfo.N;
-
-	    float NoV = max(dot(n, v), 1e-4);
-
-        vec3 albedo = texture(u_Textures[materials[hitInfo.materialID].albedo], texCoords).rgb;
+		vec4 texCol = texture(u_Textures[materials[hitInfo.materialID].albedo], texCoords);
+        vec3 albedo = texCol.rgb;
+		float alpha = texCol.a;
 	    float metallic = MATERIAL_PROPERTY(materials[hitInfo.materialID].metallic, texCoords);
         float perceptualRoughness = max(MATERIAL_PROPERTY(materials[hitInfo.materialID].roughness, texCoords), MIN_PERCEPTUAL_ROUGHNESS);
 		float reflectance = MATERIAL_PROPERTY(materials[hitInfo.materialID].reflectance, texCoords);
 		float emissive = MATERIAL_PROPERTY(materials[hitInfo.materialID].emissive, texCoords);
+		float anisotropy = materials[hitInfo.materialID].anisotropy;
+		float ior = materials[hitInfo.materialID].ior;
 
-		if (emissive > 0.f) return albedo * (emissive + 1.f);
+		if (emissive > 0.f) return albedo * (emissive + 1.f);		
 
-		vec3 diffuseColor = (1.0 - metallic) * albedo;
+		vec3 v = -refRayDirection;
+		vec3 t = hitInfo.T;
+		vec3 b = hitInfo.B;
+		vec3 n = hitInfo.N;
+
+	    float NoV = max(dot(n, v), 1e-4);
+
+		vec3 diffuseColor = albedo * (1.0 - metallic);
 		
         float roughness = max(perceptualRoughness * perceptualRoughness, MIN_ROUGHNESS);
 
-		vec3 F0 = 0.16 * reflectance * reflectance * (1.0 - metallic) + albedo * metallic;
+		float at = max(roughness * (1.0 + anisotropy), MIN_ROUGHNESS);
+		float ab = max(roughness * (1.0 - anisotropy), MIN_ROUGHNESS);
+
+		vec3 F0 = albedo * metallic + (0.16 * reflectance * reflectance * (1.0 - metallic));
 
 	    // reflectance equation
 	    vec3 Lo = vec3(0.f);
@@ -92,14 +93,42 @@ vec3 rayTrace(inout vec3 refRayOrigin, inout vec3 refRayDirection) {
 	    	float NoH = saturate(dot(n, H));
 	    	float LoH = saturate(dot(L, H));
 	    	float HoV = saturate(dot(H, v));
+			vec3 F = fresnelSchlick(LoH, F0); // Look it if is HoV or LoH
+			if (anisotropy == 0.f){
+			
+				float D = D_GGX(roughness, NoH, H);
+				float V = V_SmithGGXCorrelated(roughness, NoV, NoL);
+				vec3 Fd = diffuseColor * Fd_Burley(roughness, NoV, NoL, LoH);
+				vec3 Fr = (D * V) * F;
+				
+				Lo += (lights[i].intensity * radiance) * NoL * (Fd + Fr);
+			}
+			else
+			{
+				float ToV = dot(t, v);
+				float BoV = dot(b, v);
+				float ToL = dot(t, L);
+				float BoL = dot(b, L);
+				float ToH = dot(t, H);
+				float BoH = dot(b, H);
 
-			float D = D_GGX(roughness, NoH, H);
-			float V = V_SmithGGXCorrelated(roughness, NoV, NoL);
-			vec3 F = fresnelSchlick(LoH, F0);
-			vec3 Fd = diffuseColor * Fd_Burley(roughness, NoV, NoL, LoH);
-			vec3 Fr = (D * V) * F;
+				float D = D_GGX_Anisotropic(at, ab, ToH, BoH, NoH);
+				float V = visibilityAnisotropic(roughness, at, ab, ToV, BoV, ToL, BoL, NoV, NoL);
+				vec3 Fd = diffuseColor * Fd_Burley(roughness, NoV, NoL, LoH);
+				vec3 Fr = (D * V) * F;
+				
+				Lo += (lights[i].intensity * radiance) * NoL * (Fd + Fr);
+				/*
+				Should use this when doing reflections with ansitropy
+				vec3  anisotropyDirection = anisotropy >= 0.0 ? anisotropicB : anisotropicT;
+				vec3  anisotropicTangent  = cross(anisotropyDirection, v);
+				vec3  anisotropicNormal   = cross(anisotropicTangent, anisotropyDirection);
+				float bendFactor          = abs(anisotropy) * saturate(5.0 * perceptualRoughness);
+				vec3  bentNormal          = normalize(mix(n, anisotropicNormal, bendFactor));
 
-			Lo += (lights[i].intensity * radiance) * NoL * (Fd + Fr);
+				vec3 r = reflect(-v, bentNormal);
+				*/
+			}
 	    }
 
 		vec3 ambientColor = vec3(0.03f);
@@ -131,20 +160,123 @@ vec3 rayTrace(inout vec3 refRayOrigin, inout vec3 refRayDirection) {
     return color;
 }
 
-vec3 Render(const in vec3 rayDirection) {
-	vec3 refRayOrigin = cameraPos;
-	vec3 refRayDirection = rayDirection;
-	vec3 color = rayTrace(refRayOrigin, refRayDirection);
-
-	return color;
+float RandomValue(inout uint seed) {
+	seed = seed * 747796405u + 2891336453u;
+	uint result = ((seed >> ((seed >> 28u) + 4u)) ^ seed) * 277803737u;
+	return result / 4294967295.f;
 }
+
+float RandomValueNormalDistribution(inout uint seed) {
+	float theta = 2.f * PI * RandomValue(seed);
+	float rho = sqrt(-2.f * log(RandomValue(seed)));
+	return rho * cos(theta);
+}
+
+vec3 RandomDirection(inout uint seed){
+	float x = RandomValueNormalDistribution(seed);
+	float y = RandomValueNormalDistribution(seed);
+	float z = RandomValueNormalDistribution(seed);
+	return normalize(vec3(x, y, z));
+}
+
+vec3 RandomHemisphereDirection(vec3 normal, inout uint seed){
+	vec3 dir = RandomDirection(seed);
+	return dir * sign(dot(normal, dir));
+}
+
+vec3 Trace(vec3 rayOrigin, vec3 rayDirection, inout uint seed) {
+	vec3 invRayDirection = 1.f / rayDirection;
+
+	vec3 incomingLight = vec3(0.f);
+	vec3 rayColor = vec3(1.f);
+
+	for(int i = 0; i <= MaxBounceCount; i++) {
+		HitInfo hitInfo = intersect(rayOrigin, rayDirection, invRayDirection);
+
+		if (hitInfo.isHit) {
+			vec3 n = hitInfo.N;
+			vec2 texCoords = hitInfo.texCoords;
+			
+			vec3 albedo = texture(u_Textures[materials[hitInfo.materialID].albedo], texCoords).rgb;
+			float alpha = texture(u_Textures[materials[hitInfo.materialID].albedo], texCoords).a;
+			float emissive = MATERIAL_PROPERTY(materials[hitInfo.materialID].emissive, texCoords);
+
+			float ior = materials[hitInfo.materialID].ior;
+
+			vec3 emittedLight = emissive * albedo; // attenuation
+			float roughness = MATERIAL_PROPERTY(materials[hitInfo.materialID].roughness, texCoords);
+			float metallic = MATERIAL_PROPERTY(materials[hitInfo.materialID].metallic, texCoords);
+
+			rayOrigin = hitInfo.p + n * Epsilon;
+			
+			vec3 diffuseDirection = normalize(n + RandomDirection(seed));
+			vec3 specularDirection = reflect(rayDirection, n);
+			rayDirection = mix(specularDirection, diffuseDirection, roughness);
+
+			incomingLight += emittedLight * rayColor;
+			if (emissive == 0.f) rayColor *= albedo;
+		}
+		else 
+		{
+			vec3 color1 = clamp(getNebula(rayOrigin, rayDirection, 1.0, 0.5) * 1.5, 0.0, 1.0) * vec3(0.0, 0.0, 1.0);
+    		vec3 color2 = clamp(getNebula(rayOrigin, rayDirection, 2.0, 0.5) * 1.5, 0.0, 1.0) * vec3(0.0, 1.0, 1.0);
+					    
+     		vec3 color3 = clamp(getNebula(rayOrigin, -rayDirection, 2.0, 0.5) * 0.9, 0.0, 1.0) * vec3(1.0, 0.0, 0.0);
+    		vec3 color4 = clamp(getNebula(rayOrigin, -rayDirection, 3.0, 0.5) * 0.7, 0.0, 1.0) * vec3(1.0, 1.0, 0.0);
+					    
+     		vec3 color5 = clamp(getNebula(rayOrigin, rayDirection.yxz + rayDirection.yzx, 1.5, 0.5) * 0.9, 0.0, 1.0) * vec3(0.0, 1.0, 0.0);
+    		vec3 color6 = clamp(getNebula(rayOrigin, rayDirection.yxz + rayDirection.yzx, 2.5, 0.5) * 0.7, 0.0, 1.0) * vec3(0.333, 0.333, 0.333);
+		
+    		vec3 colorStars = clamp(getStars(rayOrigin, rayDirection, 0.9), 0.0, 1.0);
+			
+			float mixer = 0.f;
+			vec3 daySky = computeIncidentLight(vec3(rayOrigin.x, earthRadius + rayOrigin.y, rayOrigin.z), rayDirection, mixer);
+			vec3 nightSky = color1 + color2 + color3 + color4 + color5 + color6 + colorStars;
+			vec3 sky = mix(daySky, nightSky, mixer);
+
+			incomingLight += nightSky * rayColor;
+			break;
+		}
+	}
+
+	return incomingLight;
+}
+
+#define OLD_RENDERER 0
+#define NEW_RENDERER 1
+
+#define RENDERER OLD_RENDERER 
 
 void main()
 {
-    ivec2 invocID = ivec2(gl_GlobalInvocationID.xy);
-    vec2 uv = (invocID / vec2(imageSize(o_Image)));
-    uv.y = 1.f - uv.y;
-	vec3 result = Render(normalize(lower_left_corner + uv.x * horizontal + uv.y * vertical - cameraPos));
+	ivec2 size = imageSize(u_Image);
+    ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
 
-    imageStore(o_Image, invocID, vec4(result, 1.f));
+    vec2 uv = (pixelCoord / vec2(size));
+    uv.y = 1.f - uv.y;
+
+	uint pixelIndex = pixelCoord.y * size.x + pixelCoord.x + Frame * 719393;
+	
+	vec3 rayOrigin = cameraPos;
+	vec3 rayDirection = normalize(lower_left_corner + uv.x * horizontal + uv.y * vertical - cameraPos);
+
+#if RENDERER == OLD_RENDERER 
+	vec3 result = rayTrace(rayOrigin, rayDirection);
+#elif RENDERER == NEW_RENDERER
+
+	vec3 result = vec3(0.f);
+
+	for(int i = 0; i < NumRaysPerPixel; i++)
+		result += Trace(rayOrigin, rayDirection, pixelIndex);
+
+	result /= NumRaysPerPixel;
+	
+	vec4 oldResult = imageLoad(u_Image, pixelCoord);
+	
+	float weight = 1.f / (Frame + 1);
+	result = mix(oldResult.rgb, result, weight);
+#endif
+	
+
+    imageStore(u_Image, pixelCoord, vec4(result, 1.f));
 }

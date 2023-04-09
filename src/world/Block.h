@@ -1,26 +1,28 @@
 #pragma once
 #include <glm/glm.hpp>
-#include <vector>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <wc/Maths/AssimpGLMHelpers.h>
-#include <wc/Utils/Log.h>
-#include "../Game Mechanics/Item.h"
-#include <magic_enum.hpp>
-#include <wc/Utils/List.h>
-#include <wc/Utils/YAML.h>
-#include "../Rendering/AssetManager.h"
-#include "../Rendering/Renderer3D.h"
+#include "Item.h"
 #include "../Globals.h"
 
 namespace wc {
 
+	enum ConnectionType : uint8_t {
+		CONNECT_DEFAULT, FLUID_CONNECT, NO_CONNECT,
+		SLAB_DOWN, SLAB_UP, SLAB_LEFT, SLAB_RIGHT, SLAB_FRONT, SLAB_BACK,
+		CANT_CONNECT, AIR, CUSTOM_MODEL, NON_EXISTENT
+	};
+	enum class BlockTexture : uint8_t { RIGHT, LEFT, TOP, BOTTOM, FRONT, BACK };
+
+	const uint32_t WC_MODEL_BIT = 0x1;
+	const uint32_t WC_CULL_BIT = 0x2;
+
+	using BlockID = uint8_t;
+	using MaterialID = uint8_t;
+	using MeshID = uint32_t;
+
 	struct Block {
-		bool emitLight : 1;
 		ConnectionType connectionType = ConnectionType::AIR;
 
-		bool isCollidable : 1;
+		bool isCollidable = false;
 		MeshID meshID = 0;
 		uint8_t variations = 0;
 		MaterialID materialIDs[6] = { 0 };
@@ -30,11 +32,6 @@ namespace wc {
 
 		std::string name = "air";
 
-		Block() {
-			isCollidable = false;
-			emitLight = false;
-		}
+		Block() {}
 	};
-
-	List<Block, 40> blockData;
 }

@@ -25,9 +25,22 @@ namespace wc {
 			m_RendererID = VK_NULL_HANDLE;
 		}
 
-		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)m_RendererID, name); }
-		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)m_RendererID, name.c_str()); }
+		VkDeviceSize GetDescriptorSize() {
+			VkDeviceSize size = 0;
+			vkGetDescriptorSetLayoutSizeEXT(VulkanContext::GetDevice(), m_RendererID, &size);
+			return size;
+		}
+
+		VkDeviceSize GetDescriptorBindingOffset(uint32_t binding) {
+			VkDeviceSize offset = 0;
+			vkGetDescriptorSetLayoutBindingOffsetEXT(VulkanContext::GetDevice(), m_RendererID, binding, &offset);
+			return offset;
+		}
 	};
+
+	void GetDescriptor(const VkDescriptorGetInfoEXT* pCreateInfo, size_t dataSize, void* pDescriptor) {
+		vkGetDescriptorEXT(VulkanContext::GetDevice(), pCreateInfo, dataSize, pDescriptor);
+	}
 
 	struct DescriptorPool : public RendererObject<VkDescriptorPool> {
 
@@ -52,9 +65,6 @@ namespace wc {
 		}
 
 		VkResult Free(const DescriptorSet& set) { return vkFreeDescriptorSets(VulkanContext::GetDevice(), m_RendererID, 1, &set); }
-
-		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_POOL, (uint64_t)m_RendererID, name); }
-		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_POOL, (uint64_t)m_RendererID, name.c_str()); }
 	};	
 
 	class DescriptorAllocator {

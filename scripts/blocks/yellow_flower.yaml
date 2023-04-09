@@ -1,7 +1,0 @@
-isCollidable: false
-ConnectionType: "CUSTOM_MODEL"
-
-allTextures: { albedo: "yellow_flower.png" }
-emitLight: false
-
-name: "yellow_flower"

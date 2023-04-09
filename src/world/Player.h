@@ -1,5 +1,6 @@
 #pragma once
-#include "../Game Mechanics/Inventory.h"
+#include "../world/Inventory.h"
+#include <wc/Utils/YAML.h>
 
 namespace wc {
 	const uint32_t inventorySizeX = 9;

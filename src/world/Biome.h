@@ -1,12 +1,10 @@
 #pragma once
 
 #include "Block.h"
-#include <wc/Utils/List.h>
 
 namespace wc {	
-	class Biome {
-	public:
-		Biome() {}
+	struct Biome {
+		Biome() = default;
 
 		BlockID topBlock = 0;
 		float minTemp = 0.f;
@@ -15,5 +13,4 @@ namespace wc {
 		float minMois = 0.f;
 		float maxMois = 1.f;
 	};
-	List<Biome, 40> biomeMap;
 }

@@ -4,14 +4,13 @@
 namespace wc {	
 	GameInstance gameInstance;
 
-	char username[256] = "";
-	char password[256] = "";
 	char serverIP[128] = "";
 
 	class Application {
 	private:
+		AssetManager m_AssetManager;
+
 		char newWorldName[256];
-		std::string joinIp = "some ip idk";
 		Texture background;
 		Texture TitleSBox;
 		Texture Box;
@@ -23,27 +22,46 @@ namespace wc {
 		Texture Chain3;
 		Texture LBox;
 		Texture MidBox;
-		Texture MidBox2;
 		Texture SBox;
 		Texture XSBox;
-		Texture XSBox2;
-		Sound music1;
 
 		Clock deltaTimer;
-		float deltaTime = 0.f;
-
-		ImVec2 scaleRes(const ImVec2& position) {
-			const ImVec2 malenRes = ImVec2(1920, 1080);
-			ImVec2 windowRes = ImVec2(window.GetSize().x, window.GetSize().y);
-			ImVec2 finalPos;
-			finalPos.x = position.x / malenRes.x * windowRes.x;
-			finalPos.y = position.y / malenRes.y * windowRes.y;
-			return finalPos;
-		}
+		float deltaTime = 0.f;		
 
 		//----------------------------------------------------------------------------------------------------------------------
 		bool IsEngineOK() { return window.isOpen(); }
 		//----------------------------------------------------------------------------------------------------------------------
+
+		void Resize() {
+			int width = 0, height = 0;
+			glfwGetFramebufferSize(window, &width, &height);
+			while (width == 0 || height == 0) {
+				glfwGetFramebufferSize(window, &width, &height);
+				glfwWaitEvents();
+			}
+
+			VulkanContext::GetDevice().WaitIdle();
+			RendererContext::DestroyDefaultRenderPass();
+			window.DestoySwapchain();
+			window.CreateSwapchain(VulkanContext::GetPhysicalDevice(), VulkanContext::GetDevice(), VulkanContext::GetInstance());
+			RendererContext::CreateDefaultRenderPass(window);
+
+			ImGui_ImplVulkan_Shutdown();
+			ImGui_ImplGlfw_Shutdown();
+			ImGui_ImplVulkan_InitInfo init_info = {};
+			init_info.Instance = VulkanContext::GetInstance();
+			init_info.PhysicalDevice = VulkanContext::GetPhysicalDevice();
+			init_info.Device = VulkanContext::GetDevice();
+			init_info.Queue = RendererContext::GetGraphicsQueue();
+			init_info.DescriptorPool = descriptorAllocator.GetCurrentPool();
+			init_info.MinImageCount = 2;
+			init_info.ImageCount = 2;
+			init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+			ImGui_ImplVulkan_Init(&init_info, RendererContext::GetRenderPass());
+			ImGui_ImplGlfw_InitForVulkan(window, false);
+		}
+
 		void OnInput() {
 			window.poolEvents();
 
@@ -54,7 +72,9 @@ namespace wc {
 					ChangeMenu(MenuMode::GAME);
 
 
-				if (Keyboard::getKey(Keyboard::Key::Escape)) ChangeMenu(MenuMode::ESCMENU);
+				if (menuMode == MenuMode::GAME && Keyboard::getKey(Keyboard::Key::Escape)) ChangeMenu(MenuMode::ESCMENU);
+
+				if (Keyboard::getKey(Keyboard::Key::F3)) Resize();
 			}
 		}
 		//----------------------------------------------------------------------------------------------------------------------
@@ -64,8 +84,9 @@ namespace wc {
 
 
 			WindowCreateInfo windowInfo;
-			windowInfo.width = 1280 / 1.5;
-			windowInfo.height = 720 / 1.5;
+			windowInfo.width = 1280;
+			windowInfo.height = 720;
+			windowInfo.resizeable = false;
 			windowInfo.appName = "Elementalworld";
 			//windowInfo.startFullscreen = true;
 			window.Create(windowInfo);
@@ -84,12 +105,12 @@ namespace wc {
 			io.IniFilename = nullptr;
 			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 			//io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
-			//this initializes the core structures of imgui
 
 			io.FontDefault = io.Fonts->AddFontFromFileTTF((GetAssetPath() + "/font/Minecraft.ttf").c_str(), 15.f);
 
 			ImGui_ImplGlfw_InitForVulkan(window, false);
 
+			ImGui_ImplVulkan_LoadFunctions([](const char* function_name, void*) { return vkGetInstanceProcAddr(VulkanContext::GetInstance(), function_name); });
 			//this initializes imgui for Vulkan
 			ImGui_ImplVulkan_InitInfo init_info = {};
 			init_info.Instance = VulkanContext::GetInstance();
@@ -100,35 +121,30 @@ namespace wc {
 			init_info.MinImageCount = 2;
 			init_info.ImageCount = 2;
 			init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-
 			ImGui_ImplVulkan_Init(&init_info, RendererContext::GetRenderPass());
 
 			UploadContext::immediate_submit([&](VkCommandBuffer cmd) {
 				ImGui_ImplVulkan_CreateFontsTexture(cmd);
 				});
 
-			//@TODO: shorten the lenght
-			background.Load(GetAssetPath() + "/textures/misc/screenshot.png");
-			TitleSBox.Load( GetAssetPath() + "/textures/misc/TitleSBox.png");
-			Box.Load(       GetAssetPath() + "/textures/misc/Box.png");
-			LogoLong.Load(  GetAssetPath() + "/textures/misc/LongLogo.png");
-			LogoBox.Load(   GetAssetPath() + "/textures/misc/LogoBox.png");
-			TitleBox.Load(  GetAssetPath() + "/textures/misc/TitleBox.png");
-			Chain1.Load(    GetAssetPath() + "/textures/misc/Chain1.png");
-			Chain2.Load(    GetAssetPath() + "/textures/misc/Chain2.png");
-			Chain3.Load(    GetAssetPath() + "/textures/misc/Chain3.png");
-			LBox.Load(      GetAssetPath() + "/textures/misc/LBox.png");
-			MidBox.Load(    GetAssetPath() + "/textures/misc/MidBox.png");
-			MidBox2.Load(   GetAssetPath() + "/textures/misc/MidBox.png");
-			SBox.Load(      GetAssetPath() + "/textures/misc/SBox.png");
-			XSBox.Load(     GetAssetPath() + "/textures/misc/XSBox.png");
-			XSBox2.Load(    GetAssetPath() + "/textures/misc/XSBox.png");
-
-			music1.Create(	GetAssetPath() + "/sounds/music/fg.mp3");
+			//@TODO: shorten the length
+			background = m_AssetManager.LoadImage(GetAssetPath() + "/textures/misc/screenshot.png");
+			TitleSBox = m_AssetManager.LoadImage(GetAssetPath() + "/textures/misc/TitleSBox.png");
+			Box = m_AssetManager.LoadImage(GetAssetPath() + "/textures/misc/Box.png");
+			LogoLong = m_AssetManager.LoadImage(GetAssetPath() + "/textures/misc/LongLogo.png");
+			LogoBox = m_AssetManager.LoadImage(GetAssetPath() + "/textures/misc/LogoBox.png");
+			TitleBox = m_AssetManager.LoadImage(GetAssetPath() + "/textures/misc/TitleBox.png");
+			Chain1 = m_AssetManager.LoadImage(GetAssetPath() + "/textures/misc/Chain1.png");
+			Chain2 = m_AssetManager.LoadImage(GetAssetPath() + "/textures/misc/Chain2.png");
+			Chain3 = m_AssetManager.LoadImage(GetAssetPath() + "/textures/misc/Chain3.png");
+			LBox = m_AssetManager.LoadImage(GetAssetPath() + "/textures/misc/LBox.png");
+			MidBox = m_AssetManager.LoadImage(GetAssetPath() + "/textures/misc/MidBox.png");
+			SBox = m_AssetManager.LoadImage(GetAssetPath() + "/textures/misc/SBox.png");
+			XSBox = m_AssetManager.LoadImage(GetAssetPath() + "/textures/misc/XSBox.png");
 
 			//clear font textures from cpu data
 			ImGui_ImplVulkan_DestroyFontUploadObjects();
-			gameInstance.Create();
+			gameInstance.Create(m_AssetManager);
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		static void HelpMarker(const char* desc)
@@ -151,8 +167,12 @@ namespace wc {
 
 			VkResult result = RendererContext::AcquireNextImageKHR(window, swapchainImageIndex);
 
-			if (result == VK_ERROR_OUT_OF_DATE_KHR)
-				RendererContext::RecreateDefaultRenderPass(window);
+			if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+				VulkanContext::GetDevice().WaitIdle();
+				WC_INFO("Resize 1");
+				Resize();
+				return;
+			}
 			
 			
 			//imgui commands
@@ -161,7 +181,7 @@ namespace wc {
 
 			//loading crosshair and console
 			if (menuMode == MenuMode::GAME)
-				gameInstance.RenderGUI(deltaTime);			
+				gameInstance.RenderGUI(deltaTime, m_AssetManager);			
 
 			//loading escape menu
 			if (menuMode == MenuMode::ESCMENU) gameInstance.RenderImGuiEscapeMenu();
@@ -173,8 +193,6 @@ namespace wc {
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::Begin("Elemental World", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
 				//ImGui::Text("Elemental World");
-				//ImGui::ShowDemoWindow();
-				//texture 
 				{
 					ImGui::SetCursorPos(scaleRes(ImVec2(412, 0)));
 					ImGui::Image(TitleSBox, scaleRes(ImVec2(130, 117)));
@@ -236,16 +254,19 @@ namespace wc {
 				ImGui::SetCursorPos(scaleRes(ImVec2(581, 359.5)));
 				if (ImGui::ImageButton(MidBox, scaleRes(ImVec2(759, 77)))) ChangeMenu(MenuMode::WORLD_SELECTION);				
 				//-Multiplayer
+				ImGui::PushID(1);
 				ImGui::SetCursorPos(scaleRes(ImVec2(581, 600.5)));
-				if (ImGui::ImageButton(MidBox2, scaleRes(ImVec2(759, 77)))) ChangeMenu(MenuMode::MULTIPLAYER);
-				
+				if (ImGui::ImageButton(MidBox, scaleRes(ImVec2(759, 77)))) ChangeMenu(MenuMode::MULTIPLAYER);
+				ImGui::PopID();
 				//-Settings
 				ImGui::SetCursorPos(scaleRes(ImVec2(581, 842.5)));
 				if (ImGui::ImageButton(XSBox, scaleRes(ImVec2(279, 77)))) ChangeMenu(MenuMode::SETTINGS);
 				
 				//-Quit Game
+				ImGui::PushID(1);
 				ImGui::SetCursorPos(scaleRes(ImVec2(1052, 842.5f)));
-				if (ImGui::ImageButton(XSBox2, scaleRes(ImVec2(279, 77)))) window.close();
+				if (ImGui::ImageButton(XSBox, scaleRes(ImVec2(279, 77)))) window.close();
+				ImGui::PopID();
 				
 				ImGui::PopStyleColor(2);
 
@@ -275,6 +296,10 @@ namespace wc {
 				//create world
 				ImGui::SetCursorPos(ImVec2(0, window.GetSize().y - 25));
 				if (ImGui::Button("Create World")) ChangeMenu(MenuMode::WORLD_CREATION);
+
+				ImGui::SameLine();
+				if (ImGui::Button("Back"))
+					ChangeBack();
 				
 
 				//background 
@@ -296,6 +321,11 @@ namespace wc {
 					ChangeMenu(MenuMode::GAME);
 
 				}
+
+				ImGui::SetCursorPos(ImVec2(0, window.GetSize().y - 25));
+				if (ImGui::Button("Back"))
+					ChangeBack();
+
 				//background 
 				ImGui::GetBackgroundDrawList()->AddImage(background, ImVec2(0, 0), ImVec2(window.GetSize().x, window.GetSize().y));
 				ImGui::End();
@@ -310,7 +340,7 @@ namespace wc {
 				if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags)) {
 					if (ImGui::BeginTabItem("Gameplay")) {
 
-						ImGui::SliderInt("Render Distance - (in chunks)", &Settings::i1, 1, 60); ImGui::SameLine(); HelpMarker("[Ctrl + Click] to input value");
+						ImGui::SliderInt("Render Distance - (in chunks)", &Settings::RenderDistance, 1, 60); ImGui::SameLine(); HelpMarker("[Ctrl + Click] to input value");
 
 						ImGui::InputFloat("Mouse Speed", &Settings::MouseSensitivity, 0.1);
 						ImGui::InputFloat("Mouse Zoom Speed", &Settings::ZoomMouseSensitivity, 0.1);
@@ -324,26 +354,27 @@ namespace wc {
 
 					if (ImGui::BeginTabItem("Graphics")) {
 						if (ImGui::TreeNode("Bloom")) {
-							ImGui::Checkbox("Bloom Toggle", &Settings::bloomEnable);
-							ImGui::SliderFloat("BloomThreshold", &Settings::BloomThreshold, 0.f, 100.f, "%.3f");
-							ImGui::SliderFloat("BloomKnee", &Settings::BloomKnee, 0.f, 100.f, "%.3f");
+							ImGui::Checkbox("Toggle", &Settings::bloomEnable);
+							ImGui::SliderFloat("Threshold", &Settings::BloomThreshold, 0.f, 10.f, "%.3f");
+							ImGui::SliderFloat("Knee", &Settings::BloomKnee, 0.f, 1.f, "%.3f");
 
 							ImGui::Separator();
 							ImGui::TreePop();
 						}
-						ImGui::Checkbox("Colour Blind Mode", &Settings::ColorBlindMode);
-						ImGui::Checkbox("Sky", &Settings::sky);
+						ImGui::Checkbox("Color Blind Mode", &Settings::ColorBlindMode);
+
+						ImGui::SliderInt("Max Bounce Count", &Settings::maxBounceCount, 1, 100, "%d%", ImGuiSliderFlags_AlwaysClamp);
+						ImGui::SliderInt("Rays per pixel", &Settings::raysPerPixel, 1, 100, "%d%", ImGuiSliderFlags_AlwaysClamp);
 
 
-						const char* FPSItems[] = { "unlimited", "30", "45", "60", "120", "240", "300" };
-						//item_current_idx          0         1     2     3     4      5      6
-						if (ImGui::BeginCombo("FPS Cap", FPSItems[Settings::item_current_idx]))
+						const char* FPSItems[] = { "Unlimited", "30", "45", "60", "120", "240", "300" };
+						if (ImGui::BeginCombo("FPS Cap", FPSItems[Settings::FPSCap]))
 						{
 							for (int i = 0; i < std::size(FPSItems); i++)
 							{
-								const bool is_selected = (Settings::item_current_idx == i);
+								const bool is_selected = (Settings::FPSCap == i);
 								if (ImGui::Selectable(FPSItems[i], is_selected))
-									Settings::item_current_idx = i;
+									Settings::FPSCap = i;
 
 
 								// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
@@ -353,7 +384,22 @@ namespace wc {
 							ImGui::EndCombo();
 						}
 
+						const char* toneMapNames[] = { "ACES", "Filmic", "Reinhard", "Uncharted 2", "Uchimura", "Lottes", "Unreal" };
+						if (ImGui::BeginCombo("Tonemap function", toneMapNames[Settings::toneMapFunctionID]))
+						{
+							for (int i = 0; i < std::size(toneMapNames); i++)
+							{
+								const bool is_selected = (Settings::toneMapFunctionID == i);
+								if (ImGui::Selectable(toneMapNames[i], is_selected))
+									Settings::toneMapFunctionID = i;
 
+
+								// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+								if (is_selected)
+									ImGui::SetItemDefaultFocus();
+							}
+							ImGui::EndCombo();
+						}
 
 						ImGui::EndTabItem();
 					}
@@ -442,99 +488,21 @@ namespace wc {
 				ImGui::End();
 			}
 
-			static bool islogged = false;
-			static bool isplmenopen = false;
-			static bool showpas = false;
-			static bool require = false;
 			if (menuMode == MenuMode::MULTIPLAYER) {
 				ImGui::SetNextWindowSize(ImVec2(window.GetSize().x, window.GetSize().y));
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::Begin("Multiplayer", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
 
-				ImGui::SetCursorPos(ImVec2(window.GetSize().x - 150, 7));
-				if (ImGui::Button("[*]")) {
-					isplmenopen = !isplmenopen;
-				}
-
-				if (isplmenopen) {
-					ImGui::SetNextWindowSize(ImVec2(130, 130));
-					ImGui::SetNextWindowPos(ImVec2(window.GetSize().x - 185, 30));
-					ImGui::Begin("Player Menu", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
-
-					if (username[0] != 0 && password[0] != 0) require = true;
-					else require = false;
-					ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
-					if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags)) {
-						if (ImGui::BeginTabItem("Log-In")) {
-							ImGuiInputTextFlags input_flags = 0;
-							if (!showpas) input_flags = ImGuiInputTextFlags_Password;
-							ImGui::InputTextWithHint("  ", "<username>", username, IM_ARRAYSIZE(username));
-							if (showpas) {
-								ImGui::BeginDisabled();
-								ImGui::InputTextWithHint(" ", "<password>", password, IM_ARRAYSIZE(password), input_flags);
-								ImGui::EndDisabled();
-							}
-							else ImGui::InputTextWithHint(" ", "<password>", password, IM_ARRAYSIZE(password), input_flags);
-							ImGui::Checkbox("Show Password", &showpas);
-							if (!require) {
-								ImGui::BeginDisabled();
-								ImGui::Button("Done");
-								ImGui::EndDisabled();
-								ImGui::SameLine(); HelpMarker("Fill the fields!");
-							}
-							else if (ImGui::Button("Done")) {
-								//proverqva dali ima takuv account v data bazata
-								// ako ne - error i kazva da promeni "username or password"
-								// log in
-								//islogged = true;
-								isplmenopen = false;
-							}
-							ImGui::EndTabItem();
-						}
-						if (ImGui::BeginTabItem("Sign-Up")) {
-							ImGuiInputTextFlags input_flags = 0;
-							if (!showpas) input_flags = ImGuiInputTextFlags_Password;
-							ImGui::InputTextWithHint("  ", "<username>", username, IM_ARRAYSIZE(username));
-							if (showpas) {
-								ImGui::BeginDisabled();
-								ImGui::InputTextWithHint(" ", "<password>", password, IM_ARRAYSIZE(password), input_flags);
-								ImGui::EndDisabled();
-							}
-							else ImGui::InputTextWithHint(" ", "<password>", password, IM_ARRAYSIZE(password), input_flags);
-							//ImGui::InputTextMultiline();
-							ImGui::Checkbox("Show Password", &showpas);
-							if (!require) {
-								ImGui::BeginDisabled();
-								ImGui::Button("Done");
-								ImGui::EndDisabled();
-								ImGui::SameLine(); HelpMarker("Fill the fields!");
-							}
-							else if (ImGui::Button("Done")) {
-								//suzdava account i save-va acc info
-								// log in the new acc
-								//islogged = true;
-								isplmenopen = false;
-							}
-							ImGui::EndTabItem();
-						}
-						ImGui::EndTabBar();
-					}
-
-					ImGui::End();
-				}
-
 				ImGui::SetCursorPos(ImVec2(window.GetSize().x - 110, 7));
-				if (ImGui::Button("Back")) {
-					ChangeBack();
-					isplmenopen = false;
-				}
+				if (ImGui::Button("Back")) 
+					ChangeBack();				
 
 				ImGui::SetNextWindowSize(ImVec2(200, 50));
 				ImGui::SetNextWindowPos(ImVec2(0, window.GetSize().y - 50));
 				ImGui::Begin("IP inp", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
-				ImGui::InputTextWithHint("  ", "<server IP>", serverIP, IM_ARRAYSIZE(serverIP));
+				ImGui::InputTextWithHint("  ", "Server IP", serverIP, IM_ARRAYSIZE(serverIP));
 				ImGui::SameLine();
-				if (ImGui::Button("Add")) {
+				if (ImGui::Button("Join")) {
 					//add server in displayables and in servers.yamal (file)
 					YAML::Node servers = YAML::LoadFile("servers.yaml");
 					std::string key = serverIP;
@@ -567,31 +535,35 @@ namespace wc {
 
 			RendererContext::ExecuteGraphicsCommands();
 
-			VkResult presentationResult = window.Present(swapchainImageIndex, RendererContext::GetRenderSemaphore(), RendererContext::GetPresentQueue());
-
-			if (presentationResult == VK_ERROR_OUT_OF_DATE_KHR || presentationResult == VK_SUBOPTIMAL_KHR) 
-				RendererContext::RecreateDefaultRenderPass(window);
-			
+			VkResult presentationResult = window.Present(swapchainImageIndex, RendererContext::GetRenderSemaphore(), RendererContext::GetPresentQueue());			
 
 
 			RendererContext::renderFence.Wait();
 			RendererContext::renderFence.Reset();
 
 			cmd.Reset();
+
+			if (presentationResult == VK_ERROR_OUT_OF_DATE_KHR || presentationResult == VK_SUBOPTIMAL_KHR) {
+				VulkanContext::GetDevice().WaitIdle();
+				WC_INFO("Resize 2");
+				Resize();
+			}
 		}
 		//----------------------------------------------------------------------------------------------------------------------
 		void OnDelete() {
 			VulkanContext::GetDevice().WaitIdle();
 
-			TextureDeletionQueue.flush();
 			ImGui_ImplVulkan_Shutdown();
-			gameInstance.Destroy();
+			ImGui_ImplGlfw_Shutdown();
+			gameInstance.Destroy(); 
+			m_AssetManager.Destroy();
 
 			UploadContext::Destroy();
 
 			descriptorAllocator.Destroy();
 
-			RendererContext::Destroy(window);
+			window.DestoySwapchain();
+			RendererContext::Destroy();
 			window.Destroy();
 
 			DestroyAudioEngine();

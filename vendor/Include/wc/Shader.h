@@ -10,6 +10,9 @@
 #include "vk/Descriptors.h"
 #include "vk/RendererContext.h"
 
+#include <fstream>
+#include <spirv_cross/spirv_cross.hpp>
+
 namespace wc {
 
 	std::vector<uint32_t> ReadBinary(const std::string& filename) {
@@ -105,7 +108,6 @@ namespace wc {
 		std::string cachePath;
 		glm::vec2 windowSize = glm::vec2(0.f);
 		wc::RenderPass renderPass;
-		wc::VertexInputDescription vertexDescription;
 		bool blending = false;
 		bool depthTest = true;
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -303,8 +305,6 @@ namespace wc {
 				pipelineLayout.Create(info);
 			}
 
-			pipelineBuilder.vertexInputInfo = wc::vertex_input_state_create_info(createInfo.vertexDescription);
-
 			//build viewport and scissor from the swapchain extents
 			pipelineBuilder.viewport.x = 0.f;
 			pipelineBuilder.viewport.y = createInfo.windowSize.y; // change this to 0 to invert
@@ -386,11 +386,11 @@ namespace wc {
 	};
 
 	class ComputeShader {
-		wc::ComputePipeline pipeline;
+		wc::ComputePipeline m_Pipeline;
 		wc::PipelineLayout pipelineLayout;
 		wc::DescriptorSetLayout descriptorLayout;
 	public:
-		const wc::ComputePipeline& getPipeline() const { return pipeline; }
+		const wc::ComputePipeline& getPipeline() const { return m_Pipeline; }
 		const wc::PipelineLayout& getPipelineLayout() const { return pipelineLayout; }
 		const wc::DescriptorSetLayout& getDescriptorLayout() const { return descriptorLayout; }
 
@@ -542,7 +542,7 @@ namespace wc {
 			pipelineCreateInfo.stage = shaderModule.GetShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT);
 			pipelineCreateInfo.layout = pipelineLayout;
 
-			pipeline.Create(pipelineCreateInfo);
+			m_Pipeline.Create(pipelineCreateInfo);
 
 			shaderModule.Destroy();
 		}
@@ -555,20 +555,23 @@ namespace wc {
 		}
 
 		void Bind(const wc::CommandBuffer& cmd) {
-			cmd.BindPipeline(pipeline);
+			cmd.BindPipeline(m_Pipeline);
+		}
+
+		void PushConstants(CommandBuffer cmd, uint32_t size, const void* data, uint32_t offset = 0) {
+			cmd.PushConstants(pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, size, data, offset);
 		}
 
 		void SetName(const std::string& name) {
-			pipeline.SetName(name + "_pipeline");
+			m_Pipeline.SetName(name + "_pipeline");
 			pipelineLayout.SetName(name + "_pipelineLayout");
 			descriptorLayout.SetName(name + "_descriptorLayout");
 		}
 
 		void Destroy() {
-			pipeline.Destroy();
+			m_Pipeline.Destroy();
 			pipelineLayout.Destroy();
 			descriptorLayout.Destroy();
 		}
 	};
-
 }

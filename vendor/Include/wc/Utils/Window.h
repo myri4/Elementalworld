@@ -160,6 +160,7 @@ namespace wc {
         std::string appName;
         bool startFullscreen = false;
         bool decorated = true;
+        bool resizeable = true;
     };
 
     const char* getClipboard() { return glfwGetClipboardString(nullptr); }
@@ -173,7 +174,7 @@ namespace wc {
         void Create(const WindowCreateInfo& info) {
             if (info.startFullscreen) monitor = glfwGetPrimaryMonitor();
     
-            glfwWindowHint(GLFW_RESIZABLE, false);
+            glfwWindowHint(GLFW_RESIZABLE, info.resizeable);
             window = glfwCreateWindow(info.width, info.height, info.appName.c_str(), monitor, nullptr);
             glfwSetWindowUserPointer(window, this);
     
@@ -375,6 +376,10 @@ namespace wc {
             glfwSetKeyCallback(window, callback);
         }
     
+        void SetFocus(bool focus = true) {
+            glfwWindowHint(GLFW_FOCUSED, focus);
+        }
+
         void Destroy() const {
             glfwDestroyWindow(window);
         }

@@ -1,6 +1,4 @@
 isCollidable: false
 allTextures: { albedo: "campfire.png", emissivePath: "campfire.png" }
-modelPath: "campfire.obj"
+modelPath: "campfire.glb"
 name: "campfire"
-
-emitLight: true

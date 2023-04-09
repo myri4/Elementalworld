@@ -5,17 +5,17 @@
 #include "Pipeline.h"
 #include "Descriptors.h"
 
-namespace wc {
+namespace wc {	
 
 	class CommandBuffer : public RendererObject<VkCommandBuffer> {
 	public:
 		
 		CommandBuffer() = default;
-		CommandBuffer(const VkCommandBuffer& handle) { m_RendererID = handle; }
+		CommandBuffer(VkCommandBuffer handle) { m_RendererID = handle; }
 
 		VkResult Begin(const VkCommandBufferBeginInfo& info) const { return vkBeginCommandBuffer(m_RendererID, &info); }
 
-		VkResult Begin(const VkCommandBufferUsageFlags& flags) const {
+		VkResult Begin(VkCommandBufferUsageFlags flags) const {
 			VkCommandBufferBeginInfo info = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
 
 			info.pInheritanceInfo = nullptr;
@@ -24,7 +24,7 @@ namespace wc {
 			return vkBeginCommandBuffer(m_RendererID, &info);
 		}
 
-		void BindPipeline(const Pipeline& pipeline) const {
+		void BindPipeline(Pipeline pipeline) const {
 			vkCmdBindPipeline(m_RendererID, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 		}
 
@@ -32,20 +32,28 @@ namespace wc {
 			vkCmdBindPipeline(m_RendererID, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 		}
 
-		void BindVertexBuffer(const VkBuffer& vertex_buffer) const {
+		void BindVertexBuffer(VkBuffer vertex_buffer) const {
 			VkDeviceSize offset = 0;
 			vkCmdBindVertexBuffers(m_RendererID, 0, 1, &vertex_buffer, &offset);
 		}
 
-		void BindIndexBuffer(const VkBuffer& index_buffer, const VkIndexType& indexType = VK_INDEX_TYPE_UINT32) const {
+		void BindIndexBuffer(VkBuffer index_buffer, const VkIndexType& indexType = VK_INDEX_TYPE_UINT32) const {
 			vkCmdBindIndexBuffer(m_RendererID, index_buffer, 0, indexType);
 		}
 
-		void BindDescriptorSet(const VkPipelineBindPoint& bindPoint, uint32_t binding, const PipelineLayout& layout, const VkDescriptorSet& set) const {
+		void BindDescriptorSet(VkPipelineBindPoint bindPoint, uint32_t binding, PipelineLayout layout, VkDescriptorSet set) const {
 			vkCmdBindDescriptorSets(m_RendererID, bindPoint, layout, binding, 1, &set, 0, nullptr);
 		}
 
-		void PushConstants(const VkPipelineLayout& pipeline_layout, const VkShaderStageFlags& shader_stage_flags, uint32_t size, const void* data, uint32_t offset = 0) const {
+		void BindDescriptorBuffers(uint32_t bufferCount, VkDescriptorBufferBindingInfoEXT* bindingInfos) {
+			vkCmdBindDescriptorBuffersEXT(m_RendererID, bufferCount, bindingInfos);
+		}
+
+		void SetDescriptorBufferOffsets(VkPipelineBindPoint bindPoint, PipelineLayout layout, uint32_t firstSet, uint32_t setCount, const uint32_t* bufferIndices, const VkDeviceSize* offsets) {
+			vkCmdSetDescriptorBufferOffsetsEXT(m_RendererID, bindPoint, layout, firstSet, setCount, bufferIndices, offsets);
+		}
+
+		void PushConstants(VkPipelineLayout pipeline_layout, const VkShaderStageFlags& shader_stage_flags, uint32_t size, const void* data, uint32_t offset = 0) const {
 			vkCmdPushConstants(m_RendererID, pipeline_layout, shader_stage_flags, offset, size, data);
 		}
 
@@ -57,11 +65,11 @@ namespace wc {
 			vkCmdDrawIndexed(m_RendererID, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 		}
 
-		void DrawIndirect(const VkBuffer& buffer, uint32_t drawCount = 1, uint32_t offset = 0) const {
+		void DrawIndirect(VkBuffer buffer, uint32_t drawCount = 1, uint32_t offset = 0) const {
 			vkCmdDrawIndirect(m_RendererID, buffer, offset, drawCount, sizeof(VkDrawIndirectCommand));
 		}
 
-		void DrawIndexedIndirect(const VkBuffer& buffer, uint32_t drawCount = 1, uint32_t offset = 0) const {
+		void DrawIndexedIndirect(VkBuffer buffer, uint32_t drawCount = 1, uint32_t offset = 0) const {
 			vkCmdDrawIndexedIndirect(m_RendererID, buffer, offset, drawCount, sizeof(VkDrawIndexedIndirectCommand));
 		}
 
@@ -81,7 +89,7 @@ namespace wc {
 			Dispatch(glm::ivec2(groupCount));
 		}
 
-		void DispatchIndirect(const VkBuffer& buffer, const VkDeviceSize& offset = 0) const {
+		void DispatchIndirect(VkBuffer buffer, VkDeviceSize offset = 0) const {
 			vkCmdDispatchIndirect(m_RendererID, buffer, offset);
 		}
 
@@ -91,17 +99,14 @@ namespace wc {
 
 		VkResult End() const { return vkEndCommandBuffer(m_RendererID); }
 
-		VkResult Reset(const VkCommandBufferResetFlags& flags = 0) const { return vkResetCommandBuffer(m_RendererID, flags); }
-
-		void SetName(const char* name)        { VulkanContext::SetObjectName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)m_RendererID, name);	}
-		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)m_RendererID, name.c_str()); }
+		VkResult Reset(VkCommandBufferResetFlags flags = 0) const { return vkResetCommandBuffer(m_RendererID, flags); }
 	};
 
 	class CommandPool : public RendererObject<VkCommandPool> {
 	public:
 		VkResult Create(const VkCommandPoolCreateInfo& createInfo) { return vkCreateCommandPool(VulkanContext::GetDevice(), &createInfo, VulkanContext::GetAllocator(), &m_RendererID); }
 
-		VkResult Create(uint32_t queueFamilyIndex, const VkCommandPoolCreateFlags& createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) {
+		VkResult Create(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) {
 			//create a command pool for commands submitted to the graphics queue.
 			VkCommandPoolCreateInfo commandPoolInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
 
@@ -111,7 +116,7 @@ namespace wc {
 			return Create(commandPoolInfo);
 		}
 
-		VkResult Allocate(const VkCommandBufferLevel& level, CommandBuffer& commandBuffer) const { // @TODO: add support for allocating multiple command buffers
+		VkResult Allocate(VkCommandBufferLevel level, CommandBuffer& commandBuffer) const { // @TODO: add support for allocating multiple command buffers
 			VkCommandBufferAllocateInfo cmdAllocInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
 
 			//commands will be made from our _commandPool
@@ -125,20 +130,16 @@ namespace wc {
 			return vkAllocateCommandBuffers(VulkanContext::GetDevice(), &cmdAllocInfo, commandBuffer.GetPointer());
 		}
 
-		VkResult Reset(const VkCommandPoolResetFlags& flags = 0) { return vkResetCommandPool(VulkanContext::GetDevice(), m_RendererID, flags); }
+		VkResult Reset(VkCommandPoolResetFlags flags = 0) { return vkResetCommandPool(VulkanContext::GetDevice(), m_RendererID, flags); }
 
-		void Trim(const VkCommandPoolTrimFlags& flags = 0) { vkTrimCommandPool(VulkanContext::GetDevice(), m_RendererID, flags); }
+		void Trim(VkCommandPoolTrimFlags flags = 0) { vkTrimCommandPool(VulkanContext::GetDevice(), m_RendererID, flags); }
 
-		void Free(const CommandBuffer& cmd) { vkFreeCommandBuffers(VulkanContext::GetDevice(), m_RendererID, 1, cmd.GetPointer()); }
+		void Free(CommandBuffer cmd) { vkFreeCommandBuffers(VulkanContext::GetDevice(), m_RendererID, 1, cmd.GetPointer()); }
 
 		void Destroy() { 
 			vkDestroyCommandPool(VulkanContext::GetDevice(), m_RendererID, VulkanContext::GetAllocator());
 			m_RendererID = VK_NULL_HANDLE;
 		}
-
-
-		void SetName(const char* name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)m_RendererID, name); }
-		void SetName(const std::string& name) { VulkanContext::SetObjectName(VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)m_RendererID, name.c_str()); }
 	};
 
 	namespace UploadContext	{
