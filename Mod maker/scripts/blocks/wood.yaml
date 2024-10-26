@@ -1,0 +1,11 @@
+isCollidable: true
+ConnectionType: "CONNECT_DEFAULT"
+
+TOP:    {albedo: "log_top.png"}
+BOTTOM: {albedo: "log_top.png"}
+FRONT:  {albedo: "log_side.png"}
+BACK:   {albedo: "log_side.png"}
+LEFT:   {albedo: "log_side.png"}
+RIGHT:  {albedo: "log_side.png"}
+
+name: "wood"

@@ -1,0 +1,7 @@
+textureLocation: iron_ore.png
+model: modelPathHere
+maxStackSize: 100
+block: iron_ore
+type: Block
+name: iron_ore
+displayName: iron_ore

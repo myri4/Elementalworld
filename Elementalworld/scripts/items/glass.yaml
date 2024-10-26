@@ -1,0 +1,7 @@
+textureLocation: glass.png
+model: modelPathHere
+maxStackSize: 100
+block: glass
+type: Block
+name: glass
+displayName: glass

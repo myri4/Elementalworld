@@ -1,0 +1,7 @@
+textureLocation: water.png
+model: modelPathHere
+maxStackSize: 100
+block: water
+type: Block
+name: water
+displayName: water

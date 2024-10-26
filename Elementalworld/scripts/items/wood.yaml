@@ -1,0 +1,7 @@
+textureLocation: log_top.png
+model: modelPathHere
+maxStackSize: 100
+block: wood
+type: Block
+name: wood
+displayName: wood

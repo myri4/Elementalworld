@@ -1,0 +1,41 @@
+#pragma shader_stage(compute)
+
+#include <TonemapFunctions.glsl>
+
+layout(local_size_x = 4, local_size_y = 4) in;
+layout(binding = 0, rgba32f) restrict writeonly uniform image2D o_Image;
+
+layout(binding = 1) uniform sampler2D screenTexture;
+layout(binding = 2) uniform sampler2D bloomTexture;
+
+layout (push_constant) uniform Scene
+{
+	uint tonemapper;
+};
+
+void main() { 
+  vec2 imgSize = vec2(imageSize(o_Image));
+  ivec2 invocID = ivec2(gl_GlobalInvocationID);
+  vec2 texCoords = vec2(float(invocID.x) / imgSize.x, float(invocID.y) / imgSize.y);
+  texCoords += (1.f / imgSize) * 0.5f;
+
+  vec4 screenColor = texture(screenTexture, texCoords);
+  vec4 bloomColor = texture(bloomTexture, texCoords); 
+  vec3 result = screenColor.rgb + bloomColor.rgb;
+  
+  // HDR tonemapping  
+
+  switch (tonemapper){
+	case ACES: result = Tonemap_ACES(result);
+	case Filmic: result = filmic(result);
+	case Reinhard: result = reinhard(result);
+	case Uncharted2: result = uncharted2Tonemap(result);
+	case Uchimura: result = uchimura(result);
+	case Lottes: result = lottes(result);
+	case Unreal: result = unreal(result);
+  }
+  // gamma correct
+  result = OECF_sRGBFast(result);
+
+  imageStore(o_Image, invocID, vec4(result, 1.f));
+}

@@ -1,0 +1,6 @@
+isCollidable: true
+ConnectionType: "NO_CONNECT"
+
+allTextures: { albedo: "leaves.png" }
+
+name: "leaves"

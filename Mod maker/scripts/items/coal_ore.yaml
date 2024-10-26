@@ -1,0 +1,7 @@
+textureLocation: coal_ore.png
+model: modelPathHere
+maxStackSize: 100
+block: coal_ore
+type: Block
+name: coal_ore
+displayName: coal_ore

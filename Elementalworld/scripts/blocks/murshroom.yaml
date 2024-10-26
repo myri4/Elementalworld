@@ -1,0 +1,6 @@
+isCollidable: false
+
+allTextures: { albedo: "murshroom.png", emissivePath: "murshroom.png" }
+modelPath: "murshroom.glb"
+
+name: "murshroom"

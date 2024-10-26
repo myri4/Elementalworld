@@ -1,0 +1,11 @@
+isCollidable: true
+ConnectionType: "CONNECT_DEFAULT"
+
+TOP:    {albedo: "hay_bale_top.png"}
+BOTTOM: {albedo: "hay_bale_top.png"}
+FRONT:  {albedo: "hay_bale_side.png"}
+BACK:   {albedo: "hay_bale_side.png"}
+LEFT:   {albedo: "hay_bale_side.png"}
+RIGHT:  {albedo: "hay_bale_side.png"}
+
+name: "hay_bale"

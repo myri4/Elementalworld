@@ -1,0 +1,7 @@
+textureLocation: green_coral.png
+model: modelPathHere
+maxStackSize: 100
+block: green_coral
+type: Block
+name: green_coral
+displayName: green_coral

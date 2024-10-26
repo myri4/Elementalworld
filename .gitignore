@@ -8,4 +8,10 @@
 .vs/Elementalworld/v17/fileList.bin
 .vs/Elementalworld/v17/.suo
 .vs/Elementalworld/project-colors.json
+bin/
+.vs/
+Elementalworld/screenshots/
 
+Elementalworld/servers.yaml
+Elementalworld/settings.yaml
+*.txt

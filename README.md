@@ -9,7 +9,7 @@
 * [Invite to the Discord server](https://discord.gg/edRSfvSw)
 
 # Commit policy
- Every commit to this repository should have a **UPDATE.md** file to it with proper formatting divided in a few sections in the following order:
+ Every commit to this repository should have a **changelog.md** file to it with proper formatting divided in a few sections in the following order:
 
 * Changes
 * Bugfixes
@@ -23,9 +23,6 @@
  * Gameplay 
  * Optimization
  * Other
-
- ## Engine commitment
- For new features for the engine you should write a little ``README.md`` file explaining how does the new system work and how to use it properly.
 
 # Navigation
  ``\bin`` - This is the location of the output executable file.

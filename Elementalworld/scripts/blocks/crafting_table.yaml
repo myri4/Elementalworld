@@ -1,0 +1,11 @@
+isCollidable: true
+ConnectionType: "CONNECT_DEFAULT"
+
+TOP:    {albedo: "crafting_table_top.png"}
+BOTTOM: {albedo: "crafting_table_bottom.png"}
+FRONT:  {albedo: "crafting_table_side1.png"}
+BACK:   {albedo: "crafting_table_side2.png"}
+LEFT:   {albedo: "crafting_table_side3.png"}
+RIGHT:  {albedo: "crafting_table_side4.png"}
+
+name: "crafting_table"

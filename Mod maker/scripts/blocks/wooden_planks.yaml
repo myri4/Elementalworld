@@ -1,0 +1,7 @@
+isCollidable: true
+ConnectionType: "CONNECT_DEFAULT"
+
+allTextures: { albedo: "wooden_planks.png" }
+
+name: "wooden_planks"
+canSlab: true

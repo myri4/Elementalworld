@@ -1,0 +1,11 @@
+isCollidable: true
+ConnectionType: "CONNECT_DEFAULT"
+
+TOP:    {albedo: "grass_block_top.png"}
+BOTTOM: {albedo: "dirt.png"}
+FRONT:  {albedo: "grass_block_side.png"}
+BACK:   {albedo: "grass_block_side.png"}
+LEFT:   {albedo: "grass_block_side.png"}
+RIGHT:  {albedo: "grass_block_side.png"}
+
+name: "grass_block"
